@@ -1,0 +1,456 @@
+{
+  "rules": {
+    "sauditrainers": {
+      ".read": "((auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com')) || (auth != null && root.child('sauditrainers/admins/' + auth.uid).exists()))",
+      ".write": "((auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com')) || (auth != null && root.child('sauditrainers/admins/' + auth.uid).exists()))",
+      "content": {
+        ".read": true
+      },
+      "meta": {
+        ".read": true
+      },
+      "halls": {
+        ".read": true
+      },
+      "trainers": {
+        ".read": true,
+        "$id": {
+          ".validate": "newData.hasChildren(['name', 'code'])",
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 60",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "nameEn": {
+            ".validate": "newData.isString() && newData.val().length <= 60",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "title": {
+            ".validate": "newData.isString() && newData.val().length <= 80",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "gender": {
+            ".validate": "newData.val() == 'm' || newData.val() == 'f'",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "region": {
+            ".validate": "newData.isString() && newData.val().length <= 20",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "city": {
+            ".validate": "newData.isString() && newData.val().length <= 40",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "bio": {
+            ".validate": "newData.isString() && newData.val().length <= 1200",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "topics": {
+            ".validate": "newData.isString() && newData.val().length <= 800",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "certs": {
+            ".validate": "newData.isString() && newData.val().length <= 800",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "langs": {
+            ".validate": "newData.isString() && newData.val().length <= 60",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "theme": {
+            ".validate": "newData.isString() && newData.val().length <= 20",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "photoUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 300",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "years": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 60",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "hours": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "programs": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "specs": {
+            ".validate": "newData.hasChildren()",
+            "$i": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
+            },
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "modes": {
+            ".validate": "newData.hasChildren()",
+            "$i": {
+              ".validate": "newData.isString() && newData.val().length <= 10"
+            },
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "links": {
+            "$k": {
+              ".validate": "$k.matches(/^(whatsapp|email|linkedin|x|instagram|youtube|website)$/) && newData.isString() && newData.val().length <= 200"
+            },
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "updatedAt": {
+            ".validate": "newData.isNumber()",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "id": {
+            ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "code": {
+            ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "slug": {
+            ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "status": {
+            ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "appId": {
+            ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "uid": {
+            ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "featured": {
+            ".validate": "newData.isBoolean()"
+          },
+          "demo": {
+            ".validate": "newData.isBoolean()"
+          },
+          "publishedAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "expiresAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "photos": {
+        ".read": true,
+        "$id": {
+          ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)",
+          ".validate": "newData.isString() && newData.val().beginsWith('data:image/') && newData.val().length < 250000"
+        }
+      },
+      "stats": {
+        ".read": true,
+        "$kind": {
+          "$id": {
+            ".write": "$kind.matches(/^(views|clicks)$/) && newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1"
+          }
+        }
+      },
+      "private": {
+        "$id": {
+          ".read": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+        }
+      },
+      "notes": {
+        "$id": {
+          ".read": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+        }
+      },
+      "leads": {
+        ".read": "auth != null && query.orderByChild == 'trainerId' && query.equalTo == root.child('sauditrainers/uids/' + auth.uid).val()",
+        ".indexOn": [
+          "trainerId"
+        ],
+        "$id": {
+          ".write": "(!data.exists() && newData.hasChildren([\"trainerId\", \"org\", \"person\", \"phone\", \"topic\", \"ts\", \"status\"])) || ((auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com')) || (auth != null && root.child('sauditrainers/admins/' + auth.uid).exists()))",
+          "org": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "person": {
+            ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "phone": {
+            ".validate": "newData.isString() && newData.val().matches(/^9665[0-9]{8}$/)"
+          },
+          "email": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "topic": {
+            ".validate": "newData.isString() && newData.val().length <= 160"
+          },
+          "when": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "mode": {
+            ".validate": "newData.isString() && newData.val().length <= 10"
+          },
+          "msg": {
+            ".validate": "newData.isString() && newData.val().length <= 2000"
+          },
+          "trainerId": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "trainerName": {
+            ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "status": {
+            ".validate": "newData.val() == 'new' || (((auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com')) || (auth != null && root.child('sauditrainers/admins/' + auth.uid).exists())) || newData.val() == 'done')",
+            ".write": "auth != null && data.parent().child('trainerId').val() == root.child('sauditrainers/uids/' + auth.uid).val() && (newData.val() == 'done' || newData.val() == 'new')"
+          },
+          "ts": {
+            ".validate": "newData.isNumber() && newData.val() <= now + 60000"
+          },
+          "id": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "requests": {
+        "$id": {
+          ".write": "(!data.exists() && newData.hasChildren([\"org\", \"person\", \"phone\", \"topic\", \"ts\", \"status\"])) || ((auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com')) || (auth != null && root.child('sauditrainers/admins/' + auth.uid).exists()))",
+          "org": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "person": {
+            ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "phone": {
+            ".validate": "newData.isString() && newData.val().matches(/^9665[0-9]{8}$/)"
+          },
+          "email": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "topic": {
+            ".validate": "newData.isString() && newData.val().length <= 160"
+          },
+          "when": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "mode": {
+            ".validate": "newData.isString() && newData.val().length <= 10"
+          },
+          "msg": {
+            ".validate": "newData.isString() && newData.val().length <= 2000"
+          },
+          "spec": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "region": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "size": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
+          },
+          "matches": {
+            ".validate": {
+              ".validate": "newData.hasChildren()",
+              "$i": {
+                ".validate": "newData.isString() && newData.val().length <= 20"
+              }
+            }
+          },
+          "status": {
+            ".validate": "newData.val() == 'new' || (((auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com')) || (auth != null && root.child('sauditrainers/admins/' + auth.uid).exists())) || newData.val() == 'done')"
+          },
+          "ts": {
+            ".validate": "newData.isNumber() && newData.val() <= now + 60000"
+          },
+          "id": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "hallReqs": {
+        "$id": {
+          ".write": "(!data.exists() && newData.hasChildren([\"type\", \"name\", \"phone\", \"region\", \"ts\", \"status\"])) || ((auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com')) || (auth != null && root.child('sauditrainers/admins/' + auth.uid).exists()))",
+          "type": {
+            ".validate": "newData.val() == 'book' || newData.val() == 'list'"
+          },
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "phone": {
+            ".validate": "newData.isString() && newData.val().matches(/^9665[0-9]{8}$/)"
+          },
+          "region": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "city": {
+            ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "capacity": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 5000"
+          },
+          "when": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "desc": {
+            ".validate": "newData.isString() && newData.val().length <= 2000"
+          },
+          "status": {
+            ".validate": "newData.val() == 'new' || (((auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com')) || (auth != null && root.child('sauditrainers/admins/' + auth.uid).exists())) || newData.val() == 'done')"
+          },
+          "ts": {
+            ".validate": "newData.isNumber() && newData.val() <= now + 60000"
+          },
+          "id": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "applications": {
+        "$id": {
+          ".write": "(!data.exists() && newData.hasChildren([\"name\", \"phone\", \"email\", \"region\", \"specs\", \"tot\", \"ts\", \"status\"])) || ((auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com')) || (auth != null && root.child('sauditrainers/admins/' + auth.uid).exists()))",
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "nameEn": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "title": {
+            ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "gender": {
+            ".validate": "newData.val() == 'm' || newData.val() == 'f'"
+          },
+          "region": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "city": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "bio": {
+            ".validate": "newData.isString() && newData.val().length <= 1200"
+          },
+          "topics": {
+            ".validate": "newData.isString() && newData.val().length <= 800"
+          },
+          "certs": {
+            ".validate": "newData.isString() && newData.val().length <= 800"
+          },
+          "langs": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "theme": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "photoUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 300"
+          },
+          "years": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 60"
+          },
+          "hours": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
+          },
+          "programs": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000"
+          },
+          "specs": {
+            ".validate": "newData.hasChildren()",
+            "$i": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
+            }
+          },
+          "modes": {
+            ".validate": "newData.hasChildren()",
+            "$i": {
+              ".validate": "newData.isString() && newData.val().length <= 10"
+            }
+          },
+          "phone": {
+            ".validate": "newData.isString() && newData.val().matches(/^9665[0-9]{8}$/)"
+          },
+          "email": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "cvUrl": {
+            ".validate": "newData.isString() && newData.val().length <= 300"
+          },
+          "tot": {
+            ".validate": "newData.val() == true"
+          },
+          "photo": {
+            ".validate": "newData.isString() && newData.val().beginsWith('data:image/') && newData.val().length < 250000"
+          },
+          "decidedAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "trainerId": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "status": {
+            ".validate": "newData.val() == 'new' || (((auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com')) || (auth != null && root.child('sauditrainers/admins/' + auth.uid).exists())) || newData.val() == 'done')"
+          },
+          "ts": {
+            ".validate": "newData.isNumber() && newData.val() <= now + 60000"
+          },
+          "id": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "$other": {
+            ".validate": false
+          },
+          "links": {
+            "$k": {
+              ".validate": "$k.matches(/^(whatsapp|email|linkedin|x|instagram|youtube|website)$/) && newData.isString() && newData.val().length <= 200"
+            }
+          },
+          ".validate": "$id.matches(/^A[0-9A-Z]{7}$/)"
+        }
+      },
+      "appStatus": {
+        "$id": {
+          ".read": true,
+          ".write": "(!data.exists() && newData.child('status').val() == 'new' && $id.matches(/^A[0-9A-Z]{7}$/)) || ((auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com')) || (auth != null && root.child('sauditrainers/admins/' + auth.uid).exists()))",
+          "status": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "ts": {
+            ".validate": "newData.isNumber()"
+          },
+          "note": {
+            ".validate": "newData.isString() && newData.val().length <= 500"
+          },
+          "trainerSlug": {
+            ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "uids": {
+        "$uid": {
+          ".read": "auth != null && auth.uid == $uid"
+        }
+      },
+      "admins": {
+        "$uid": {
+          ".read": "auth != null && auth.uid == $uid",
+          ".write": "(auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com')) || (auth != null && auth.uid == $uid && !data.exists() && auth.token.email_verified == true && root.child('sauditrainers/adminInvites/' + auth.token.email.toLowerCase().replace('.', ',')).exists())"
+        }
+      },
+      "adminInvites": {
+        ".write": "(auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com'))",
+        "$key": {
+          ".read": "auth != null && auth.token.email_verified == true && auth.token.email.toLowerCase().replace('.', ',') == $key",
+          ".write": "auth != null && auth.token.email_verified == true && auth.token.email.toLowerCase().replace('.', ',') == $key && !newData.exists()"
+        }
+      }
+    }
+  }
+}
