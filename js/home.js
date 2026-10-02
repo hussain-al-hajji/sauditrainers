@@ -194,7 +194,8 @@ Pages.profile = {
         ${extras.length ? `<div class="pbox reveal"><h3><i class="fa-solid fa-list"></i>معلومات إضافية</h3><dl class="dl">${extras.map(f => `<dt>${esc(f.label)}</dt><dd>${esc(String(t.extra[f.k]).replace(/\|/g, '، '))}</dd>`).join('')}</dl></div>` : ''}
         <div class="pbox reveal"><h3><i class="fa-solid fa-circle-info"></i>معلومات سريعة</h3>
           <div class="kv">
-            <div><small>المنطقة</small><b>${esc(regionName(t.region) || '—')}${t.city ? ' · ' + esc(t.city) : ''}</b></div>
+            <div><small>${regionsOf(t).length > 1 ? 'المناطق' : 'المنطقة'}</small><b>${esc(regionsLabel(t) || '—')}${t.city ? ' · ' + esc(t.city) : ''}</b></div>
+            ${t.travel ? '<div><small>التنقل</small><b><i class="fa-solid fa-plane"></i> مستعد للسفر حسب الاحتياجات التدريبية</b></div>' : ''}
             <div><small>طريقة التقديم</small><b>${md.map(m => DELIVERY.find(d => d.k === m)?.name).filter(Boolean).join('، ') || '—'}</b></div>
             ${Number(t.years) ? `<div><small>سنوات الخبرة</small><b class="num">${esc(t.years)}</b></div>` : ''}
             ${Number(t.hours) ? `<div><small>الساعات التدريبية</small><b class="num">${fmtNum(t.hours)}</b></div>` : ''}

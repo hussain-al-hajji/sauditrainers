@@ -18,6 +18,10 @@ const REGIONS = [
 ];
 const regionOf = k => REGIONS.find(r => r.k === k);
 const regionName = k => regionOf(k)?.name || '';
+// مناطق المدرب: القائمة المختارة (regions) أو المنطقة الواحدة القديمة (region)؛ الأولى هي الرئيسية
+const regionsOf = t => { const l = (Array.isArray(t?.regions) ? t.regions : Object.values(t?.regions || {})).filter(k => regionOf(k)); const all = l.length ? l : (regionOf(t?.region) ? [t.region] : []); return all.filter((k, i) => all.indexOf(k) === i); };
+// نص المناطق: كاملاً، أو مختصراً للبطاقة (أول منطقتين و+n)
+const regionsLabel = (t, short = false) => { const n = regionsOf(t).map(regionName); return short && n.length > 2 ? `${n.slice(0, 2).join('، ')} +${n.length - 2}` : n.join('، '); };
 
 // حدود المملكة مبسّطة (خط طول، خط عرض) للرسم الفني في الواجهة
 const KSA_OUTLINE = [

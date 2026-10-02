@@ -26,7 +26,7 @@ const Social = (() => {
 
   function vars(t, s, platform) {
     const specs = Data.specs(t).map(specName);
-    return { name: t.name || '', title: t.title || '', region: regionName(t.region), city: t.city || '', specs: specs.join('، '), spec1: specs[0] || '', years: Number(t.years) ? String(t.years) : '', hours: Number(t.hours) ? fmtNum(t.hours) : '',
+    return { name: t.name || '', title: t.title || '', region: regionsLabel(t), city: t.city || '', specs: specs.join('، '), spec1: specs[0] || '', years: Number(t.years) ? String(t.years) : '', hours: Number(t.hours) ? fmtNum(t.hours) : '',
       bio: String(t.bio || '').slice(0, platform === 'instagram' ? 700 : 900), link: profileUrl(t), code: t.code || '', hashtags: s.hashtags || '', handle: s.handles?.[platform] || '' };
   }
   // يملأ القالب، ويحذف الجزء الذي متغيره فارغ (مثل «خبرة {years} سنة» دون خبرة)

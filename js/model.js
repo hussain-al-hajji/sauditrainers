@@ -27,12 +27,12 @@ const Data = (() => {
   const clicks = id => Number(Store.get(`stats/clicks/${id}`) || 0);
 
   // نص البحث المجمّع لكل مدرب
-  const hay = t => normAr([t.name, t.title, t.bio, t.topics, t.certs, t.city, regionName(t.region), ...specs(t).map(specName)].join(' '));
+  const hay = t => normAr([t.name, t.title, t.bio, t.topics, t.certs, t.city, regionsLabel(t), ...specs(t).map(specName)].join(' '));
 
   function search(list, { q = '', region = '', spec = '', mode = '', gender = '' } = {}) {
     const terms = normAr(q).split(' ').filter(Boolean);
     return list.map(t => {
-      if (region && t.region !== region) return null;
+      if (region && !regionsOf(t).includes(region)) return null;
       if (spec && !specs(t).includes(spec)) return null;
       if (mode && !modes(t).includes(mode)) return null;
       if (gender && t.gender !== gender) return null;
@@ -53,7 +53,7 @@ const Data = (() => {
     return live().map(t => {
       let s = 0; const why = [];
       if (req.spec && specs(t).includes(req.spec)) { s += 40; why.push('التخصص'); }
-      if (req.region && t.region === req.region) { s += 25; why.push('المنطقة'); }
+      if (req.region && regionsOf(t).includes(req.region)) { s += 25; why.push('المنطقة'); }
       else if (req.mode === 'online' && modes(t).includes('online')) { s += 15; why.push('عن بُعد'); }
       if (req.mode && modes(t).includes(req.mode)) s += 10;
       if (terms.length) { const h = hay(t); const hit = terms.filter(w => h.includes(w)).length; if (hit) { s += Math.round(25 * hit / terms.length); why.push('الموضوع'); } }
@@ -62,7 +62,7 @@ const Data = (() => {
     }).filter(x => x.s >= 35).sort((a, b) => b.s - a.s).slice(0, 6);
   }
 
-  const regionCounts = () => { const o = {}; live().forEach(t => { o[t.region] = (o[t.region] || 0) + 1; }); return o; };
+  const regionCounts = () => { const o = {}; live().forEach(t => regionsOf(t).forEach(r => { o[r] = (o[r] || 0) + 1; })); return o; };
   const specCounts = () => { const o = {}; live().forEach(t => specs(t).forEach(s => { o[s] = (o[s] || 0) + 1; })); return o; };
 
   // رقم المدرب: ST0001، ST0002 ... (عدّاد ذرّي حتى لا يتكرر)
@@ -79,7 +79,7 @@ const Data = (() => {
   }
 
   // الحقول العامة للمدرب (المسموح بتعديلها من صفحته — تطابق القواعد)
-  const PUBLIC_FIELDS = ['name', 'nameEn', 'title', 'gender', 'region', 'city', 'bio', 'specs', 'topics', 'modes', 'years', 'hours', 'programs', 'certs', 'langs', 'theme', 'photoUrl', 'photoX', 'photoY', 'photoZ', 'noPhoto', 'cardSpecs'];
+  const PUBLIC_FIELDS = ['name', 'nameEn', 'title', 'gender', 'region', 'city', 'bio', 'specs', 'topics', 'modes', 'years', 'hours', 'programs', 'certs', 'langs', 'theme', 'photoUrl', 'photoX', 'photoY', 'photoZ', 'noPhoto', 'cardSpecs', 'regions', 'travel'];
   // تقسيم إجابات الحقول المخصصة: العامة تظهر في صفحة المدرب، والباقي في بياناته الإدارية
   const splitExtra = extra => { const pub = {}, priv = {}; Object.entries(extra || {}).forEach(([k, v]) => { (FormKit.isPublicExtra(k) ? pub : priv)[k] = v; }); return { pub, priv }; };
   const pick = (o, keys) => { const r = {}; keys.forEach(k => { if (o[k] !== undefined) r[k] = o[k]; }); return r; };

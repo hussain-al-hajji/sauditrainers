@@ -28,6 +28,8 @@ PUBLIC = {
     'years': N(60), 'hours': N(100000), 'programs': N(10000),
     # إطار الصورة الدائرية: الموضع والتكبير
     'noPhoto': 'newData.isBoolean()',
+    # مناطق التواجد (الأولى هي region) والاستعداد للسفر
+    'regions': str_list(13, 20), 'travel': 'newData.isBoolean()',
     'cardSpecs': str_list(6, 20),
     'photoX': N(100), 'photoY': N(100), 'photoZ': 'newData.isNumber() && newData.val() >= 1 && newData.val() <= 3',
 }

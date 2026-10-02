@@ -71,9 +71,9 @@ Pages.join = {
       const d = FormKit.read(form);
       const show = f => {
         const v = f.custom ? d.extra[f.k] : d[f.k];
-        if ((v == null || v === '') && f.type !== 'tot' || f.type === 'theme' || f.type === 'photo' || (f.type === 'tot' && v == null)) return '';
+        if ((v == null || v === '') && f.type !== 'tot' || (v === false && f.type === 'consent') || f.type === 'theme' || f.type === 'photo' || (f.type === 'tot' && v == null)) return '';
         const txt = f.type === 'specs' ? Data.specs(d).map(specName).join('، ') : f.type === 'modes' ? Data.modes(d).map(m => DELIVERY.find(x => x.k === m)?.name).join('، ')
-          : f.type === 'region' ? regionName(v) : f.type === 'gender' ? (v === 'f' ? 'مدربة' : 'مدرب') : f.type === 'consent' ? '✓' : f.type === 'tot' ? (v ? 'حصلت على شهادة TOT' : 'لم أحصل على الشهادة حتى الآن') : String(v).replace(/\|/g, '، ');
+          : f.type === 'region' ? regionsLabel(d) : f.type === 'gender' ? (v === 'f' ? 'مدربة' : 'مدرب') : f.type === 'consent' ? '✓' : f.type === 'tot' ? (v ? 'حصلت على شهادة TOT' : 'لم أحصل على الشهادة حتى الآن') : String(v).replace(/\|/g, '، ');
         return `<dt>${esc(f.label)}</dt><dd>${esc(txt)}</dd>`;
       };
       $('#sum', root).innerHTML = `<dl class="dl">${steps.flatMap(s => s.fields).map(show).join('')}</dl>`;

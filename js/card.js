@@ -45,7 +45,7 @@ const Card = (() => {
       <h2 class="tc-name">${esc(t.name || 'اسم المدرب')}</h2>
       ${t.title ? `<p class="tc-title">${esc(t.title)}</p>` : ''}
       <div class="tc-meta">
-        ${t.region ? `<span><i class="fa-solid fa-location-dot"></i>${esc(regionName(t.region))}${t.city ? ' · ' + esc(t.city) : ''}</span>` : ''}
+        ${regionsOf(t).length ? `<span><i class="fa-solid fa-location-dot"></i>${esc(regionsLabel(t, true))}${t.city && regionsOf(t).length === 1 ? ' · ' + esc(t.city) : ''}</span>` : ''}
       </div>
       ${stats.length ? `<div class="tc-stats">${stats.join('')}</div>` : ''}
       ${sp.length ? `<div class="tc-chips">${sp.slice(0, 6).map(s => `<span><i class="fa-solid ${specOf(s)?.icon || 'fa-shapes'}"></i>${esc(specName(s))}</span>`).join('')}</div>` : ''}
@@ -62,7 +62,7 @@ const Card = (() => {
       <div class="tm-body">
         <h3>${esc(t.name)}<i class="fa-solid fa-circle-check tm-ok" title="موثّق"></i></h3>
         <p class="tm-title">${esc(t.title || '')}</p>
-        <div class="tm-meta">${t.region ? `<span><i class="fa-solid fa-location-dot"></i>${esc(regionName(t.region))}</span>` : ''}${Number(t.years) ? `<span><i class="fa-solid fa-hourglass-half"></i><b class="num">${esc(t.years)}</b> سنة</span>` : ''}</div>
+        <div class="tm-meta">${regionsOf(t).length ? `<span><i class="fa-solid fa-location-dot"></i>${esc(regionsLabel(t, true))}</span>` : ''}${Number(t.years) ? `<span><i class="fa-solid fa-hourglass-half"></i><b class="num">${esc(t.years)}</b> سنة</span>` : ''}</div>
         <div class="tm-chips">${sp.slice(0, 3).map(s => `<span>${esc(specName(s))}</span>`).join('')}${nAll > 3 ? `<span class="more num">+${nAll - 3}</span>` : ''}</div>
       </div>
       <span class="tm-go">عرض البطاقة <i class="fa-solid fa-arrow-left"></i></span>
@@ -184,7 +184,7 @@ const Card = (() => {
     ctx.fillText(t.name || '', W / 2, y);
     ctx.font = `600 32px ${BODY}`; ctx.fillStyle = th.accent;
     wrap(ctx, t.title, W - 260, 2).forEach(l => { y += 54; ctx.fillText(l, W / 2, y); });
-    const meta = regionName(t.region);
+    const meta = regionsLabel(t, true);
     if (meta) { y += 52; ctx.font = `500 27px ${UI}`; ctx.fillStyle = hex(fg, 0.8); ctx.fillText(meta, W / 2, y); }
 
     // الإحصاءات

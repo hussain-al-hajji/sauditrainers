@@ -12,8 +12,9 @@ const CORE_FIELDS = {
   name: { label: 'الاسم كما يظهر في البطاقة', type: 'text', max: 60, ph: 'مثال: أ. سارة العتيبي', req: true, lock: true },
   nameEn: { label: 'الاسم بالإنجليزية', type: 'text', max: 60, ltr: true, ph: 'Sarah Alotaibi', hint: 'يُستخدم في رابط صفحتك المختصر' },
   gender: { label: 'الجنس', type: 'gender', req: true },
-  region: { label: 'المنطقة', type: 'region', req: true, lock: true },
-  city: { label: 'المدينة', type: 'text', max: 40, req: true },
+  region: { label: 'المنطقة (يمكن اختيار أكثر من منطقة)', type: 'region', req: true, lock: true, w: 'full' },
+  city: { label: 'المدينة', type: 'text', max: 40 },
+  travel: { label: 'مستعد للسفر حسب الاحتياجات التدريبية', type: 'consent', w: 'full' },
   phone: { label: 'الجوال', type: 'tel', req: true, lock: true, priv: true, hint: 'للتواصل الإداري فقط — لا يظهر لأحد في المنصة' },
   email: { label: 'البريد الإلكتروني', type: 'email', req: true, lock: true, priv: true, hint: 'تصلك عليه طلبات الجهات التدريبية' },
   title: { label: 'اللقب المهني (سطر تعريفي)', type: 'text', max: 80, req: true, ph: 'مثال: مدربة معتمدة في القيادة والتحول الرقمي', w: 'full' },
@@ -50,13 +51,13 @@ function defaultForms() {
   const f = ks => ks.map(k => ({ k }));
   return {
     join: { steps: [
-      { id: 's1', title: 'البيانات', icon: 'fa-id-card', desc: 'بيانات التواصل الإداري لا تظهر لأحد في المنصة.', fields: f(['name', 'nameEn', 'gender', 'region', 'city', 'phone', 'email']) },
+      { id: 's1', title: 'البيانات', icon: 'fa-id-card', desc: 'بيانات التواصل الإداري لا تظهر لأحد في المنصة.', fields: f(['name', 'nameEn', 'gender', 'region', 'city', 'travel', 'phone', 'email']) },
       { id: 's2', title: 'التخصص', icon: 'fa-layer-group', desc: 'اختر ما تمارس التدريب فيه فعلياً؛ تظهر بطاقتك في نتائج هذه التخصصات.', fields: f(['title', 'specs', 'topics', 'modes']) },
       { id: 's3', title: 'الخبرة', icon: 'fa-award', desc: 'الأرقام تظهر في بطاقتك كمؤشرات بارزة.', fields: [{ k: 'tot' }, { k: 'cvUrl', hidden: true }, ...f(['years', 'hours', 'programs', 'certs', 'bio', 'langs'])] },
       { id: 's4', title: 'الصورة والتصميم', icon: 'fa-camera', desc: 'هذه الخطوة اختيارية: عند الرغبة في نشر صورتك أضف رابط مشاركتها من Google Drive أو أي مساحة تخزين سحابية ونسّقها داخل الدائرة، أو أجّلها الآن وأضفها لاحقاً من لوحتك. واختر تصميم بطاقتك.', fields: f(['photoUrl', 'theme']) }
     ] },
     admin: { steps: [
-      { id: 'a1', title: 'البيانات الأساسية', icon: 'fa-id-card', fields: f(['name', 'nameEn', 'gender', 'region', 'city', 'phone', 'email']) },
+      { id: 'a1', title: 'البيانات الأساسية', icon: 'fa-id-card', fields: f(['name', 'nameEn', 'gender', 'region', 'city', 'travel', 'phone', 'email']) },
       { id: 'a2', title: 'التخصص', icon: 'fa-layer-group', fields: f(['title', 'specs', 'bio', 'topics', 'modes']) },
       { id: 'a3', title: 'الخبرة', icon: 'fa-award', fields: f(['years', 'hours', 'programs', 'certs', 'langs']) },
       { id: 'a4', title: 'الصورة والتصميم', icon: 'fa-camera', fields: f(['photoUrl', 'theme']) }
@@ -103,7 +104,7 @@ const FormKit = (() => {
       case 'textarea': return `<textarea name="${name}" ${rq} ${ph} maxlength="${f.max || 1000}">${esc(v)}</textarea>`;
       case 'number': return `<input type="number" name="${name}" min="0" ${f.max ? `max="${f.max}"` : ''} value="${esc(v ?? '')}" ${ph}>`;
       case 'gender': return `<select name="gender" ${rq}><option value="">اختر</option>${opt('m', 'مدرب', v)}${opt('f', 'مدربة', v)}</select>`;
-      case 'region': return `<select name="region" ${rq}><option value="">اختر المنطقة</option>${REGIONS.map(r => opt(r.k, r.name, v)).join('')}</select>`;
+      case 'region': { const on = regionsOf(d); return `<div class="checks">${REGIONS.map(r => `<label class="chk"><input type="checkbox" name="regions" data-multi value="${r.k}" ${on.includes(r.k) ? 'checked' : ''}><span><i class="fa-solid fa-location-dot"></i>${esc(r.name)}</span></label>`).join('')}</div>`; }
       case 'select': return `<select name="${name}" ${rq}><option value="">اختر</option>${arr(f.opts).map(o => opt(o, o, v)).join('')}</select>`;
       case 'multi': { const cur = String(v || '').split('|'); return `<div class="checks">${arr(f.opts).map(o => `<label class="chk"><input type="checkbox" name="${name}" data-multi value="${esc(o)}" ${cur.includes(o) ? 'checked' : ''}><span>${esc(o)}</span></label>`).join('')}</div>`; }
       case 'specs': {
@@ -160,7 +161,7 @@ const FormKit = (() => {
   // reqKeys: عند تمريرها تحدد الحقول الإلزامية فعلياً (نموذج الإدارة)؛ وإلا فحسب إعداد الحقل
   function fieldHTML(f, d, reqKeys) {
     if (f.type === 'consent') return `<div class="field full req-box">${input(f, d)}${f.hint ? `<small>${esc(f.hint)}</small>` : ''}</div>`;
-    const group = ['specs', 'modes', 'multi', 'theme', 'photo', 'langs', 'tot'].includes(f.type);
+    const group = ['region', 'specs', 'modes', 'multi', 'theme', 'photo', 'langs', 'tot'].includes(f.type);
     const lab = `${esc(f.label)}${(reqKeys ? reqKeys.includes(f.k) : required(f)) ? ' *' : ' <em class="opt">(اختياري)</em>'}${f.type === 'specs' ? ` <small>(${esc(f.hint || '')})</small>` : ''}`;
     const hint = f.type !== 'specs' && f.hint ? `<small>${esc(f.hint)}</small>` : '';
     return group ? `<div class="field ${f.w === 'full' ? 'full' : ''}" data-f="${esc(f.k)}"><span>${lab}</span>${input(f, d)}${hint}</div>`
@@ -180,6 +181,7 @@ const FormKit = (() => {
     d.noPhoto = d.noPhoto === '1' && d.gender === 'f'; // الصورة الرمزية للمدربات فقط
     if ('tot' in d) { d.tot = d.tot === '1' ? true : d.tot === '0' ? false : undefined; if (d.tot === undefined) delete d.tot; }
     if ('langsSel' in d || 'langsOther' in d) { d.langs = [...(d.langsSel || []), ...(d.langsOther ? [d.langsOther] : [])].join('، '); delete d.langsSel; delete d.langsOther; }
+    if ('regions' in d) { d.regions = d.regions.filter(k => regionOf(k)); d.region = d.regions[0] || ''; } // الأولى رئيسية (البطاقة والبحث)
     if (d.specs) {
       d.specs = d.specs.slice(0, MAX_SPECS);
       d.cardSpecs = (d.cardSpecs || []).filter(k => d.specs.includes(k)).slice(0, MAX_CARD_SPECS);

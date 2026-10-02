@@ -219,7 +219,7 @@ function appDetail(a) {
         <dl class="dl">
           <dt>رقم الطلب</dt><dd class="num">${esc(a.id)}</dd><dt>التاريخ</dt><dd>${fmtTs(a.ts)}</dd>
           <dt>الجوال</dt><dd><a class="num" href="${esc(waLink(a.phone))}" target="_blank">${esc(a.phone)}</a></dd><dt>البريد</dt><dd><a href="mailto:${esc(a.email)}">${esc(a.email)}</a>${a.receivedEmailAt ? ' ' + sentBadge(a.receivedEmailAt).replace('أُرسل', 'وصله تأكيد الاستلام') : ''}</dd>
-          <dt>المنطقة</dt><dd>${esc(regionName(a.region))} ${esc(a.city || '')}</dd><dt>الجنس</dt><dd>${a.gender === 'f' ? 'مدربة' : 'مدرب'}</dd>
+          <dt>المنطقة</dt><dd>${esc(regionsLabel(a))} ${esc(a.city || '')}${a.travel ? ' · مستعد للسفر' : ''}</dd><dt>الجنس</dt><dd>${a.gender === 'f' ? 'مدربة' : 'مدرب'}</dd>
           <dt>اللقب</dt><dd>${esc(a.title)}</dd><dt>التخصصات</dt><dd>${Data.specs(a).map(specName).join('، ')}</dd><dt>على البطاقة</dt><dd>${Data.cardSpecs(a).map(specName).join('، ') || '—'}</dd>
           <dt>البرامج</dt><dd>${esc(a.topics || '—')}</dd><dt>الخبرة</dt><dd><span class="num">${a.years || 0}</span> سنة · <span class="num">${a.hours || 0}</span> ساعة · <span class="num">${a.programs || 0}</span> برنامج</dd>
           <dt>TOT</dt><dd>${a.tot === true ? '✅ حصل على الشهادة' : a.tot === false ? 'لم يحصل عليها بعد' : '—'}</dd><dt>الإقرار</dt><dd>${a.ack ? '✅ وافق على إقرار الفرص' : '—'}</dd><dt>الشهادات</dt><dd>${nl2br(a.certs || '—')}</dd>
@@ -317,7 +317,7 @@ function aTrainers(main) {
   const f = JSON.parse(main.dataset.f || '{}');
   let list = Data.all();
   if (f.q) list = Data.search(list, { q: f.q });
-  if (f.region) list = list.filter(t => t.region === f.region);
+  if (f.region) list = list.filter(t => regionsOf(t).includes(f.region));
   if (f.st === 'live') list = list.filter(Data.isLive); else if (f.st === 'hidden') list = list.filter(t => t.status !== 'active'); else if (f.st === 'nocode') list = list.filter(t => !Store.get(`secrets/codes/${t.id}`));
   main.innerHTML = `
     <div class="dash-h"><h2>المدربون <span class="muted num" style="font-size:1rem">(${list.length})</span></h2><div class="row"><button class="btn sm" id="imp"><i class="fa-solid fa-file-import"></i> استيراد</button><button class="btn sm" id="exp"><i class="fa-solid fa-file-csv"></i> تصدير CSV</button><button class="btn primary sm" id="add"><i class="fa-solid fa-plus"></i> إضافة مدرب</button></div></div>
@@ -329,7 +329,7 @@ function aTrainers(main) {
     <div class="tbl-wrap"><table class="tbl"><thead><tr><th>المدرب</th><th>المنطقة</th><th>الحالة</th><th>المشاهدات</th><th>تاريخ الانضمام</th><th></th></tr></thead><tbody>
       ${list.map(t => `<tr>
         <td><div class="who">${Card.avatar(t, 'av')}<div><b>${esc(t.name)} ${t.featured ? '<i class="fa-solid fa-star" style="color:var(--gold)"></i>' : ''}</b><small class="num">${esc(t.code)}</small> <small>· ${esc(t.title || '')}</small></div></div></td>
-        <td>${esc(regionName(t.region))}</td>
+        <td>${esc(regionsLabel(t))}</td>
         <td>${Data.isLive(t) ? '<span class="pill ok">منشور</span>' : '<span class="pill gray">مخفي</span>'} ${Store.get(`secrets/codes/${t.id}`) ? '' : '<span class="pill bad" title="لم يُصدر رمز دخول">بلا رمز</span>'}</td>
         <td class="num">${Data.views(t.id)}</td>
         <td class="num">${fmtDate(t.publishedAt)}</td>
@@ -368,7 +368,7 @@ function aTrainers(main) {
 }
 
 // الحقول الإلزامية في نموذج الإضافة من الإدارة (نفس إلزامية تعديل المدرب لبطاقته)
-const ADMIN_REQUIRED = ['name', 'gender', 'region', 'city', 'phone', 'email', 'title', 'specs', 'bio', 'modes', 'langs'];
+const ADMIN_REQUIRED = ['name', 'gender', 'region', 'phone', 'email', 'title', 'specs', 'bio', 'modes', 'langs'];
 function trainerEditor(t) {
   const isNew = !t;
   t = t || { status: 'active', theme: 'brand', langs: 'العربية' };
@@ -490,7 +490,7 @@ function importDialog() {
 function exportCSV() {
   const cols = ['code', 'name', 'title', 'region', 'city', 'phone', 'email', 'specs', 'topics', 'years', 'hours', 'status', 'joined', 'views', 'url'];
   const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const rows = Data.all().map(t => { const p = Store.get(`private/${t.id}`) || {}; return [t.code, t.name, t.title, regionName(t.region), t.city, p.phone, p.email, Data.specs(t).map(specName).join('، '), t.topics, t.years, t.hours, Data.isLive(t) ? 'منشور' : 'مخفي', fmtDate(t.publishedAt), Data.views(t.id), profileUrl(t)].map(q).join(','); });
+  const rows = Data.all().map(t => { const p = Store.get(`private/${t.id}`) || {}; return [t.code, t.name, t.title, regionsLabel(t), t.city, p.phone, p.email, Data.specs(t).map(specName).join('، '), t.topics, t.years, t.hours, Data.isLive(t) ? 'منشور' : 'مخفي', fmtDate(t.publishedAt), Data.views(t.id), profileUrl(t)].map(q).join(','); });
   download(`sauditrainers-${new Date().toISOString().slice(0, 10)}.csv`, '﻿' + [cols.join(','), ...rows].join('\n'), 'text/csv;charset=utf-8');
 }
 

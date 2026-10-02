@@ -97,6 +97,17 @@
             ".validate": "newData.isBoolean()",
             ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
           },
+          "regions": {
+            ".validate": "newData.hasChildren()",
+            "$i": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
+            },
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "travel": {
+            ".validate": "newData.isBoolean()",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
           "cardSpecs": {
             ".validate": "newData.hasChildren()",
             "$i": {
@@ -431,6 +442,15 @@
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000"
           },
           "noPhoto": {
+            ".validate": "newData.isBoolean()"
+          },
+          "regions": {
+            ".validate": "newData.hasChildren()",
+            "$i": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
+            }
+          },
+          "travel": {
             ".validate": "newData.isBoolean()"
           },
           "cardSpecs": {
