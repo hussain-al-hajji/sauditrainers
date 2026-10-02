@@ -10,7 +10,7 @@ const LANG_OPTS = ['العربية', 'الإنجليزية'];
 // الحقول الأساسية: lock = لا تُخفى ولا يُلغى إلزامها، priv = بيانات إدارية لا تظهر لأحد، joinOnly = في طلب التسجيل فقط
 const CORE_FIELDS = {
   name: { label: 'الاسم كما يظهر في البطاقة', type: 'text', max: 60, ph: 'مثال: أ. سارة العتيبي', req: true, lock: true },
-  nameEn: { label: 'الاسم بالإنجليزية', type: 'text', max: 60, ltr: true, ph: 'Sarah Alotaibi', hint: 'يُستخدم في رابط صفحتك المختصر' },
+  nameEn: { label: 'الاسم بالإنجليزية', type: 'text', max: 60, ltr: true, ph: 'Sarah Alotaibi', hint: 'يُكتب تلقائياً من اسمك العربي ويمكنك تعديله، ويُستخدم في رابط صفحتك المختصر' },
   gender: { label: 'الجنس', type: 'gender', req: true },
   region: { label: 'المنطقة (يمكن اختيار أكثر من منطقة)', type: 'region', req: true, lock: true, w: 'full' },
   city: { label: 'المدينة', type: 'text', max: 40 },
@@ -249,6 +249,13 @@ const FormKit = (() => {
       };
       inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addSpec(); } });
       $('[data-spec-add]', sb).addEventListener('click', addSpec);
+    }
+    // اسم المدرب بالإنجليزية: يُقترح تلقائياً من الاسم العربي حتى يعدّله المستخدم بنفسه
+    const nAr = $('[name=name]', form), nEn = $('[name=nameEn]', form);
+    if (nAr && nEn) {
+      let auto = !nEn.value || nEn.value === arToEn(nAr.value);
+      nAr.addEventListener('input', () => { if (!auto) return; nEn.value = arToEn(nAr.value); nEn.dispatchEvent(new Event('input', { bubbles: true })); });
+      nEn.addEventListener('input', e => { if (e.isTrusted) auto = !nEn.value; });
     }
     const lo = $('[data-lang-other]', form);
     lo && lo.addEventListener('change', e => { const t = $('.lang-other', form); t.classList.toggle('hidden', !e.target.checked); if (!e.target.checked) t.value = ''; else t.focus(); preview(); });

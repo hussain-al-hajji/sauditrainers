@@ -45,6 +45,68 @@ const normAr = s => toEnDigits(String(s || '').toLowerCase())
   .replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي')
   .replace(/\s+/g, ' ').trim();
 
+/* كتابة الاسم العربي بالحروف الإنجليزية (نقحرة): قاموس للأسماء الشائعة، وقواعد حروف احتياطية لغيرها. اقتراح أولي يعدّله المستخدم */
+const NAME_EN = (() => {
+  const d = {};
+  const add = (en, ar) => ar.split(' ').forEach(a => { d[a] = en; });
+  add('Mohammed', 'محمد'); add('Ahmed', 'أحمد احمد'); add('Abdullah', 'عبدالله'); add('Abdulrahman', 'عبدالرحمن'); add('Abdulaziz', 'عبدالعزيز'); add('Abdulilah', 'عبدالإله عبدالاله');
+  add('Abdulmajeed', 'عبدالمجيد'); add('Abdulkareem', 'عبدالكريم'); add('Abdulmohsen', 'عبدالمحسن'); add('Abdulelah', 'عبدالإله'); add('Khalid', 'خالد'); add('Fahad', 'فهد'); add('Saad', 'سعد'); add('Salman', 'سلمان');
+  add('Saud', 'سعود'); add('Faisal', 'فيصل'); add('Nasser', 'ناصر'); add('Turki', 'تركي'); add('Bandar', 'بندر'); add('Naif', 'نايف'); add('Mishaal', 'مشعل'); add('Majed', 'ماجد');
+  add('Yousef', 'يوسف'); add('Ibrahim', 'إبراهيم ابراهيم'); add('Ismail', 'إسماعيل اسماعيل'); add('Ali', 'علي'); add('Hassan', 'حسن'); add('Hussain', 'حسين'); add('Omar', 'عمر'); add('Othman', 'عثمان');
+  add('Talal', 'طلال'); add('Waleed', 'وليد'); add('Hisham', 'هشام'); add('Saleh', 'صالح'); add('Sulaiman', 'سليمان'); add('Sultan', 'سلطان'); add('Mansour', 'منصور'); add('Mubarak', 'مبارك');
+  add('Nawaf', 'نواف'); add('Badr', 'بدر'); add('Rashed', 'راشد'); add('Ziyad', 'زياد'); add('Anas', 'أنس'); add('Osama', 'أسامة'); add('Hani', 'هاني'); add('Yasser', 'ياسر'); add('Raed', 'رائد');
+  add('Nabil', 'نبيل'); add('Adel', 'عادل'); add('Kareem', 'كريم'); add('Fawaz', 'فواز'); add('Rayan', 'ريان'); add('Muhannad', 'مهند'); add('Hamad', 'حمد'); add('Hamzah', 'حمزة'); add('Jaber', 'جابر');
+  add('Thamer', 'ثامر'); add('Ayman', 'أيمن'); add('Basil', 'باسل'); add('Tariq', 'طارق'); add('Hatem', 'حاتم'); add('Hamdan', 'حمدان'); add('Mazen', 'مازن'); add('Moayad', 'مؤيد'); add('Mohannad', 'مهند');
+  add('Sarah', 'سارة'); add('Noura', 'نورة'); add('Hanan', 'حنان'); add('Mona', 'منى'); add('Huda', 'هدى'); add('Reem', 'ريم'); add('Lama', 'لمى'); add('Lina', 'لينا'); add('Amal', 'أمل'); add('Amira', 'أميرة');
+  add('Hind', 'هند'); add('Dana', 'دانة'); add('Ghada', 'غادة'); add('Abeer', 'عبير'); add('Maha', 'مها'); add('Nouf', 'نوف'); add('Shahad', 'شهد'); add('Joud', 'جود'); add('Rima', 'ريما'); add('Layla', 'ليلى');
+  add('Fatimah', 'فاطمة'); add('Aisha', 'عائشة'); add('Khadijah', 'خديجة'); add('Maryam', 'مريم'); add('Zainab', 'زينب'); add('Salma', 'سلمى'); add('Rana', 'رنا'); add('Rahaf', 'رهف'); add('Bushra', 'بشرى');
+  add('Tahani', 'تهاني'); add('Arwa', 'أروى'); add('Wafa', 'وفاء'); add('Samar', 'سمر'); add('Sahar', 'سحر'); add('Najla', 'نجلاء'); add('Ibtisam', 'ابتسام'); add('Asmaa', 'أسماء'); add('Afnan', 'أفنان');
+  add('Latifa', 'لطيفة'); add('Moudhi', 'موضي'); add('Jawaher', 'جواهر'); add('Shaimaa', 'شيماء'); add('Alanoud', 'العنود'); add('Aljawharah', 'الجوهرة'); add('Haifa', 'هيفاء'); add('Ruba', 'ربى'); add('Lujain', 'لجين');
+  add('Alorayfi', 'العريفي'); add('Alotaibi', 'العتيبي'); add('Alqahtani', 'القحطاني'); add('Aldosari', 'الدوسري'); add('Alghamdi', 'الغامدي'); add('Alzahrani', 'الزهراني'); add('Alshehri', 'الشهري');
+  add('Alasiri', 'العسيري'); add('Almalki', 'المالكي'); add('Alharbi', 'الحربي'); add('Almutairi', 'المطيري'); add('Alshammari', 'الشمري'); add('Alanazi', 'العنزي'); add('Alsubaie', 'السبيعي');
+  add('Alkhaldi', 'الخالدي'); add('Alyami', 'اليامي'); add('Albalawi', 'البلوي'); add('Aljuhani', 'الجهني'); add('Alharbi', 'الحربي'); add('Alsharif', 'الشريف'); add('Alsulami', 'السلمي'); add('Albaqami', 'البقمي');
+  add('Alrashidi', 'الرشيدي'); add('Alomari', 'العمري'); add('Alahmadi', 'الأحمدي'); add('Aldakhil', 'الدخيل'); add('Alhajji', 'الحاجي'); add('Altamimi', 'التميمي'); add('Alsudairi', 'السديري'); add('Alrajhi', 'الراجحي');
+  add('Alsaleh', 'الصالح'); add('Alabdullah', 'العبدالله'); add('Alshathri', 'الشثري'); add('Alothaimeen', 'العثيمين'); add('Alsaadi', 'السعدي'); add('Almansour', 'المنصور'); add('Alfahad', 'الفهد'); add('Alhazmi', 'الحازمي');
+  add('Alsaif', 'السيف'); add('Alsuhaimi', 'السهيمي'); add('Alshamrani', 'الشمراني'); add('Almarri', 'المري'); add('Alanazi', 'العنزي'); add('Alzahrani', 'الزهراني'); add('Alharthi', 'الحارثي'); add('Alqarni', 'القرني'); add('Alshahrani', 'الشهراني');
+  add('Alqahtani', 'القحطاني'); add('Aldossary', 'الدوسري'); add('Alfaifi', 'الفيفي'); add('Alnemer', 'النمر'); add('Albishi', 'البيشي'); add('Alaqeel', 'العقيل'); add('Almousa', 'الموسى'); add('Alhumaidi', 'الحميدي');
+  add('Aziz', 'العزيز'); add('Rahman', 'الرحمن'); add('Kareem', 'الكريم'); add('Majeed', 'المجيد'); add('Malik', 'الملك'); add('Mohsen', 'المحسن'); add('Ilah', 'الإله'); add('Hadi', 'الهادي'); add('Latif', 'اللطيف'); add('Samad', 'الصمد');
+  return d;
+})();
+const AR_LETTERS = { ا: 'a', أ: 'a', إ: 'i', آ: 'aa', ب: 'b', ت: 't', ث: 'th', ج: 'j', ح: 'h', خ: 'kh', د: 'd', ذ: 'dh', ر: 'r', ز: 'z', س: 's', ش: 'sh', ص: 's', ض: 'd', ط: 't', ظ: 'z', ع: 'a', غ: 'gh', ف: 'f', ق: 'q', ك: 'k', ل: 'l', م: 'm', ن: 'n', ه: 'h', ة: 'a', ء: '', ئ: 'e', ؤ: 'o', ى: 'a', و: 'o', ي: 'i' };
+const AR_VOWELS = new Set(['a', 'e', 'i', 'o', 'u']);
+function arWord(w) {
+  w = w.replace(/[ً-ْـ]/g, ''); // التشكيل والتطويل
+  if (NAME_EN[w]) return NAME_EN[w];
+  const bare = w.replace(/^ال/, ''), pre = bare !== w && bare.length > 1;
+  if (pre && NAME_EN[bare]) return 'Al' + NAME_EN[bare].toLowerCase();
+  if (/^عبد.{2,}/.test(w)) { const r = w.slice(3).replace(/^ال/, ''); return r === 'له' ? 'Abdullah' : 'Abdul' + (NAME_EN['ال' + r] || arWord(r)).toLowerCase(); }
+  // قواعد الحروف الاحتياطية: حرف بحرف مع إدخال حرف علّة بين الحروف الساكنة المتتالية
+  let out = '';
+  [...(pre ? bare : w)].forEach((ch, i, a) => {
+    let l = AR_LETTERS[ch]; if (l == null) return;
+    if (ch === 'و' || ch === 'ي') l = i === 0 ? (ch === 'و' ? 'w' : 'y') : (ch === 'و' ? 'o' : 'i');
+    if (ch === 'ة' && i === a.length - 1) l = 'ah';
+    const prev = out.slice(-1);
+    if (out && !AR_VOWELS.has(prev) && !AR_VOWELS.has(l[0]) && l[0] !== 'h') out += 'a'; // حرفان ساكنان متتاليان: نفصل بينهما بحرف علّة
+    out += l;
+  });
+  out = out.replace(/aa+/g, 'aa').replace(/([aeiou])\1{2,}/g, '$1$1');
+  out = out.charAt(0).toUpperCase() + out.slice(1);
+  return pre ? 'Al' + out.toLowerCase() : out;
+}
+function arToEn(name) {
+  const words = String(name || '').trim().replace(/^(?:د|م|أ|ا)\.\s*/, '').split(/\s+/).filter(Boolean);
+  const out = []; let skip = false;
+  words.forEach((w, i) => {
+    if (skip) { skip = false; return; }
+    if (w === 'بن' || w === 'ابن') { out.push('bin'); return; }
+    if (w === 'بنت') { out.push('bint'); return; }
+    if (w === 'آل' && words[i + 1]) { out.push('Al ' + arWord(words[i + 1]).replace(/^Al/, '')); skip = true; return; }
+    if (w === 'عبد' && words[i + 1]) { out.push(arWord('عبد' + words[i + 1])); skip = true; return; }
+    if (/[ء-ي]/.test(w)) out.push(arWord(w)); else out.push(w);
+  });
+  return out.join(' ');
+}
 // الكلمة الأولى من الاسم دون اللقب المختصر (أ. / م. / د.) أو الصفة
 const firstName = name => String(name || '').trim().replace(/^(?:(?:د|م|أ|ا)\.|دكتور|الدكتور|مهندس|المهندس|أستاذ|الأستاذ)\s*/, '').split(/\s+/)[0] || '';
 function initials(name) {
