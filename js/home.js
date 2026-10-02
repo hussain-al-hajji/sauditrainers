@@ -235,13 +235,14 @@ function leadForm(t) {
       ${field('تفاصيل إضافية', '<textarea name="msg" maxlength="1500"></textarea>')}
       <button class="btn primary lg">إرسال الطلب</button>
     </form>`);
-  m.$('#lf').onsubmit = e => {
+  m.$('#lf').onsubmit = async e => {
     e.preventDefault();
     const d = formData(e.target);
     if (!d.org || !d.person || !d.topic) { toast('أكمل الحقول المطلوبة', 'error'); return; }
     if (!validPhone(d.phone)) { toast('رقم الجوال غير صحيح', 'error'); return; }
     if (d.email && !validEmail(d.email)) { toast('البريد الإلكتروني غير صحيح', 'error'); return; }
-    const id = Store.push('leads', { ...d, phone: phoneDigits(d.phone), trainerId: t.id, trainerName: t.name, ts: Date.now(), status: 'new' });
+    const id = await Store.pushConfirmed('leads', { ...d, phone: phoneDigits(d.phone), trainerId: t.id, trainerName: t.name, ts: Date.now(), status: 'new' });
+    if (!id) { toast('تعذّر إرسال الطلب، أعد المحاولة', 'error'); return; }
     Automation.notify('lead', id);
     m.close();
     modal(`<div class="done-card"><div class="big"><i class="fa-solid fa-check"></i></div><h3 style="justify-content:center">تم إرسال طلبك</h3><p class="muted">وصل طلبك إلى ${esc(t.name)} وإلى فريق المنصة، وسيتواصل معك قريباً بإذن الله.</p><button class="btn primary" data-close>حسناً</button></div>`);
@@ -291,12 +292,13 @@ Pages.request = {
         : '<p class="muted small">لا توجد مطابقة مباشرة حالياً — أرسل الطلب وسيبحث فريقنا لك.</p>';
     };
     form.addEventListener('input', debounce(draw, 200));
-    form.onsubmit = e => {
+    form.onsubmit = async e => {
       e.preventDefault();
       const d = formData(form);
       if (!validPhone(d.phone)) { toast('رقم الجوال غير صحيح', 'error'); return; }
       const matches = Data.match(d).map(x => x.t.id);
-      const rid = Store.push('requests', { ...d, phone: phoneDigits(d.phone), size: Number(d.size) || 0, matches, ts: Date.now(), status: 'new' });
+      const rid = await Store.pushConfirmed('requests', { ...d, phone: phoneDigits(d.phone), size: Number(d.size) || 0, matches, ts: Date.now(), status: 'new' });
+      if (!rid) { toast('تعذّر إرسال الطلب، أعد المحاولة', 'error'); return; }
       Automation.notify('request', rid);
       form.innerHTML = `<div class="done-card"><div class="big"><i class="fa-solid fa-check"></i></div><h2>تم استلام طلبك</h2><p class="muted">سيتواصل معك فريق المنصة بالترشيحات المناسبة قريباً. يمكنك أيضاً التواصل مباشرة مع المدربين المقترحين.</p><a class="btn primary" href="#/trainers">تصفّح المدربين</a></div>`;
     };
@@ -339,11 +341,11 @@ Pages.halls = {
       form.elements.type.value = b.dataset.t;
       $$('[data-l]', form).forEach(s => { s.textContent = L[b.dataset.t][s.dataset.l]; });
     });
-    form.onsubmit = e => {
+    form.onsubmit = async e => {
       e.preventDefault();
       const d = formData(form);
       if (!validPhone(d.phone)) { toast('رقم الجوال غير صحيح', 'error'); return; }
-      Store.push('hallReqs', { ...d, phone: phoneDigits(d.phone), capacity: Number(d.capacity) || 0, ts: Date.now(), status: 'new' });
+      if (!await Store.pushConfirmed('hallReqs', { ...d, phone: phoneDigits(d.phone), capacity: Number(d.capacity) || 0, ts: Date.now(), status: 'new' })) { toast('تعذّر الإرسال، أعد المحاولة', 'error'); return; }
       form.innerHTML = `<div class="done-card"><div class="big"><i class="fa-solid fa-check"></i></div><h2>تم الإرسال</h2><p class="muted">سيتواصل معك فريق المنصة قريباً.</p></div>`;
     };
   }

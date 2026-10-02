@@ -249,7 +249,8 @@ const Store = (() => {
   function writeFailed(err) {
     console.error(err);
     lastError = { message: err.message || String(err), ts: Date.now() };
-    window.toast && toast('لم يتم الحفظ في قاعدة البيانات: ' + lastError.message, 'error');
+    const denied = /permission[_ ]denied/i.test(lastError.message) || err.code === 'PERMISSION_DENIED';
+    window.toast && toast(denied ? 'رفضت قواعد Firebase الحفظ (PERMISSION_DENIED). تأكد من نشر أحدث ملف database.rules.json في Realtime Database ← Rules.' : 'لم يتم الحفظ في قاعدة البيانات: ' + lastError.message, 'error');
     if (rootRef) listeners.forEach((l, key) => l.ref.once('value').then(snap => {
       if (l.isQ) { const q = queryData.get(key); if (q) { q.data = snap.val() || {}; mergeQueries(l.path); } }
       else if (l.path) state = setIn(state, l.path, snap.val()); else state = snap.val() || {};
@@ -266,6 +267,23 @@ const Store = (() => {
       track(rootRef.child(p).set(val));
     } else saveLocal();
     notify();
+  }
+
+  // حفظ مع انتظار تأكيد الخادم: يعيد true عند النجاح وfalse عند الرفض (للنماذج العامة حتى لا يُعرض نجاح كاذب)
+  async function setConfirmed(path, val) {
+    if (!rootRef) { set(path, val); return true; }
+    val = clean(val);
+    const p = parts(path).join('/');
+    if (!p) throw new Error('refusing to overwrite database root');
+    state = setIn(state, path, val); notify();
+    pending++; notify();
+    try { await rootRef.child(p).set(val); lastError = null; return true; }
+    catch (e) { writeFailed(e); state = setIn(state, path, null); notify(); return false; }
+    finally { pending = Math.max(0, pending - 1); notify(); }
+  }
+  async function pushConfirmed(path, obj) {
+    const id = newId();
+    return (await setConfirmed(`${path}/${id}`, { ...obj, id })) ? id : null;
   }
 
   function update(path, obj) {
@@ -310,7 +328,7 @@ const Store = (() => {
   const subscribe = fn => { subs.add(fn); return () => subs.delete(fn); };
   const dump = () => JSON.parse(JSON.stringify(state || {}));
 
-  return { init, get, list, set, update, remove, push, transaction, newId, subscribe, seedOnce, dump, setScope, watch, readOnce, secondaryAuth,
+  return { init, get, list, set, setConfirmed, pushConfirmed, update, remove, push, transaction, newId, subscribe, seedOnce, dump, setScope, watch, readOnce, secondaryAuth,
     get auth() { return authApi; }, get hasAuth() { return !!authApi; }, get scope() { return scopeKey; },
     get mode() { return mode; }, get lastError() { return lastError; },
     get connected() { return connected; }, get everConnected() { return everConnected; }, get pending() { return pending; } };

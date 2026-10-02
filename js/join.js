@@ -88,9 +88,15 @@ Pages.join = {
       if (d.cvUrl) rec.cvUrl = d.cvUrl;
       if (d.tot != null) rec.tot = !!d.tot;
       if (Object.keys(d.extra).length) rec.extra = d.extra;
-      $('#wn', root).disabled = true;
-      Store.set(`applications/${id}`, rec);
-      Store.set(`appStatus/${id}`, { status: 'new', ts: Date.now() });
+      if (!rec.noPhoto) delete rec.noPhoto;
+      $('#wn', root).disabled = true; $('#wn', root).innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ الإرسال';
+      // لا يُعرض نجاح إلا بعد أن يؤكد الخادم الحفظ
+      if (!await Store.setConfirmed(`applications/${id}`, rec)) {
+        $('#wn', root).disabled = false; $('#wn', root).innerHTML = '<i class="fa-solid fa-paper-plane"></i> إعادة إرسال الطلب';
+        toast('تعذّر إرسال الطلب ولم يُحفظ. بياناتك محفوظة في هذه الصفحة؛ أعد المحاولة أو تواصل مع الإدارة.', 'error');
+        return;
+      }
+      await Store.setConfirmed(`appStatus/${id}`, { status: 'new', ts: Date.now() });
       Automation.notify('application', id);
       try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
       $('.wiz-main', root).innerHTML = `<div class="done-card">
