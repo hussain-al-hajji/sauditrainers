@@ -245,7 +245,7 @@ const Card = (() => {
     return cv;
   }
 
-  const photoWarn = cv => cv.photoFailed && toast('تعذّر قراءة الصورة من الرابط؛ تأكد أن ملف Google Drive مشارَك «لأي شخص لديه الرابط»', 'error');
+  const photoWarn = cv => cv.photoFailed && toast('تعذّر قراءة الصورة من الرابط؛ تأكد أن الملف مشارَك «لأي شخص لديه الرابط» وأنه رابط مباشر لصورة', 'error');
   async function toBlob(t, format) {
     const cv = await render(t, format); photoWarn(cv);
     return new Promise(r => cv.toBlob(r, 'image/png'));

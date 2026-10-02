@@ -48,7 +48,7 @@ function initials(name) {
 }
 
 /* روابط */
-// رابط صورة Google Drive بصيغة تُعرض مباشرة وتُرسم على اللوحة (يتطلب مشاركة الملف «لأي شخص لديه الرابط»)
+// رابط مشاركة الصورة (Drive وDropbox وOneDrive أو رابط مباشر) بصيغة تُعرض مباشرة وتُرسم على اللوحة (يتطلب مشاركة الملف «لأي شخص لديه الرابط»)
 const driveId = url => { const m = String(url || '').match(/\/d\/([\w-]{10,})/) || String(url || '').match(/[?&]id=([\w-]{10,})/); return m ? m[1] : ''; };
 function driveImg(url, w = 800) {
   url = String(url || '').trim();
@@ -56,9 +56,16 @@ function driveImg(url, w = 800) {
   if (url.startsWith('data:image/')) return url; // للمعاينة والبيانات التجريبية فقط
   const id = driveId(url);
   if (id && /drive\.google|docs\.google|googleusercontent/.test(url)) return `https://lh3.googleusercontent.com/d/${id}=w${w}`;
-  return /^https:\/\/lh3\.googleusercontent\.com\/[^\s"'<>]+$/.test(url) ? url : '';
+  if (!/^https:\/\/[^\s"'<>]+$/.test(url)) return '';
+  // Dropbox: رابط المشاركة ← رابط مباشر
+  if (/^https:\/\/(www\.)?dropbox\.com\//.test(url)) return url.replace(/^https:\/\/(www\.)?dropbox\.com/, 'https://dl.dropboxusercontent.com').replace(/([?&])dl=\d/, '$1raw=1');
+  // OneDrive: رابط المشاركة ← محتوى الملف عبر واجهة المشاركة
+  if (/^https:\/\/(1drv\.ms|onedrive\.live\.com|[\w-]+\.sharepoint\.com)\//.test(url)) return 'https://api.onedrive.com/v1.0/shares/u!' + btoa(url).replace(/=+$/, '').replace(/\//g, '_').replace(/\+/g, '-') + '/root/content';
+  return url; // رابط مباشر لصورة على أي مساحة تخزين
 }
-const isDriveLink = url => !!driveId(url) && /drive\.google|docs\.google/.test(url);
+// أي رابط https لصورة (Google Drive أو Dropbox أو OneDrive أو رابط مباشر)، أو معاينة data:
+const isImageLink = url => !!driveImg(url, 100);
+const isDriveLink = isImageLink;
 // كشف بيانات التواصل داخل النصوص العامة (جوال، بريد، روابط) لأن التواصل يتم عبر المنصة فقط
 function leaksContact(text) {
   const t = toEnDigits(text);

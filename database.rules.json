@@ -175,7 +175,23 @@
       },
       "private": {
         "$id": {
-          ".read": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          ".read": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)",
+          "phone": {
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)",
+            ".validate": "newData.isString() && (newData.val() == '' || newData.val().matches(/^9665[0-9]{8}$/))"
+          },
+          "email": {
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)",
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "extra": {
+            "$k": {
+              ".validate": "$k.matches(/^[a-z0-9_]{1,30}$/) && newData.isString() && newData.val().length <= 1000"
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
         }
       },
       "notes": {

@@ -69,12 +69,25 @@ function portalHome(main, t) {
             <li>شارك بطاقتك في لينكدإن وإكس — كل مشاهدة تُحتسب في لوحتك.</li>
           </ul>
         </div>
-        <div class="pbox"><h3><i class="fa-solid fa-lock"></i>بيانات إدارية (لا تظهر للعامة)</h3><dl class="dl"><dt>الجوال</dt><dd class="num">${esc(priv.phone || '—')}</dd><dt>البريد</dt><dd>${esc(priv.email || '—')}</dd><dt>تاريخ الانضمام</dt><dd>${fmtDate(t.publishedAt)}</dd><dt>الاشتراك</dt><dd>مدى الحياة</dd></dl><p class="small muted">لتعديلها تواصل مع إدارة المنصة.</p></div>
+        <div class="pbox"><h3><i class="fa-solid fa-lock"></i>بيانات التواصل (لا تظهر للعامة)</h3>
+          <form id="pc" novalidate style="display:grid;gap:10px">
+            ${field('الجوال', `<input type="tel" name="phone" dir="ltr" maxlength="15" placeholder="05xxxxxxxx" value="${esc(priv.phone || '')}">`)}
+            ${field('البريد الإلكتروني', `<input type="email" name="email" dir="ltr" maxlength="120" value="${esc(priv.email || '')}">`)}
+            <div class="row between"><small class="muted">تصلك عليهما طلبات الجهات التدريبية. تاريخ الانضمام: ${fmtDate(t.publishedAt)} · الاشتراك مدى الحياة.</small><button class="btn primary sm">حفظ بيانات التواصل</button></div>
+          </form></div>
       </div>
       <div class="preview">${Card.full(t)}</div>
     </div>
     <p class="ack-note"><i class="fa-solid fa-circle-info"></i>${esc(Data.content().join.disclaimer || '')}</p>`;
   countUp(main); tilt(main);
+  $('#pc', main).onsubmit = e => {
+    e.preventDefault();
+    const f = e.target, phone = f.phone.value.trim(), email = f.email.value.trim();
+    if (phone && !validPhone(phone)) { toast('رقم الجوال غير صحيح (مثال: 0501234567)', 'error'); return; }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { toast('البريد الإلكتروني غير صحيح', 'error'); return; }
+    Store.update(`private/${t.id}`, { phone: phone ? phoneDigits(phone) : '', email });
+    toast('تم حفظ بيانات التواصل');
+  };
   $('#sh', main).onclick = () => Card.share(t);
   $('#cl', main).onclick = () => copyText(profileUrl(t), 'تم نسخ رابط صفحتك');
   $$('[data-img]', main).forEach(b => b.onclick = () => Card.save(t, b.dataset.img));

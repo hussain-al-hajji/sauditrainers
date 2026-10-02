@@ -26,7 +26,7 @@ const CORE_FIELDS = {
   certs: { label: 'الشهادات والاعتمادات', type: 'textarea', max: 800, ph: 'مثال: شهادة إعداد المدربين TOT', w: 'full' },
   bio: { label: 'نبذة تعريفية', type: 'textarea', max: 1200, req: true, ph: 'عرّف بنفسك وبخبرتك التدريبية وأبرز إنجازاتك', hint: 'لا تضع أرقام تواصل أو بريداً أو روابط؛ التواصل يتم عبر المنصة', w: 'full' },
   langs: { label: 'لغة التدريب', type: 'langs', w: 'full' },
-  photoUrl: { label: 'الصورة الشخصية (رابط Google Drive) — اختيارية', type: 'photo', w: 'full' },
+  photoUrl: { label: 'الصورة الشخصية (رابط مشاركة الصورة) — اختيارية', type: 'photo', w: 'full' },
   theme: { label: 'تصميم البطاقة', type: 'theme', w: 'full' },
   tot: { label: 'شهادة تدريب المدربين (TOT)', type: 'tot', req: true, joinOnly: true, w: 'full' },
   cvUrl: { label: 'رابط الشهادات أو السيرة الذاتية', type: 'url', joinOnly: true, priv: true, ltr: true, ph: 'https://drive.google.com/...', hint: 'يطّلع عليه فريق المراجعة فقط', w: 'full' }
@@ -44,7 +44,7 @@ const FIELD_TYPES = [
   { k: 'email', name: 'بريد إلكتروني', icon: 'fa-at' },
   { k: 'consent', name: 'إقرار / موافقة', icon: 'fa-square-check' }
 ];
-const typeName = t => FIELD_TYPES.find(x => x.k === t)?.name || ({ gender: 'اختيار الجنس', region: 'المنطقة', specs: 'التخصصات', modes: 'طريقة التقديم', photo: 'صورة من Drive', theme: 'تصميم البطاقة' }[t] || t);
+const typeName = t => FIELD_TYPES.find(x => x.k === t)?.name || ({ gender: 'اختيار الجنس', region: 'المنطقة', specs: 'التخصصات', modes: 'طريقة التقديم', photo: 'صورة من رابط', theme: 'تصميم البطاقة' }[t] || t);
 
 function defaultForms() {
   const f = ks => ks.map(k => ({ k }));
@@ -53,7 +53,7 @@ function defaultForms() {
       { id: 's1', title: 'البيانات', icon: 'fa-id-card', desc: 'بيانات التواصل الإداري لا تظهر لأحد في المنصة.', fields: f(['name', 'nameEn', 'gender', 'region', 'city', 'phone', 'email']) },
       { id: 's2', title: 'التخصص', icon: 'fa-layer-group', desc: 'اختر ما تمارس التدريب فيه فعلياً؛ تظهر بطاقتك في نتائج هذه التخصصات.', fields: f(['title', 'specs', 'topics', 'modes']) },
       { id: 's3', title: 'الخبرة', icon: 'fa-award', desc: 'الأرقام تظهر في بطاقتك كمؤشرات بارزة.', fields: [{ k: 'tot' }, { k: 'cvUrl', hidden: true }, ...f(['years', 'hours', 'programs', 'certs', 'bio', 'langs'])] },
-      { id: 's4', title: 'الصورة والتصميم', icon: 'fa-camera', desc: 'هذه الخطوة اختيارية: عند الرغبة في نشر صورتك أضف رابطها من Google Drive ونسّقها داخل الدائرة، أو أجّلها الآن وأضفها لاحقاً من لوحتك. واختر تصميم بطاقتك.', fields: f(['photoUrl', 'theme']) }
+      { id: 's4', title: 'الصورة والتصميم', icon: 'fa-camera', desc: 'هذه الخطوة اختيارية: عند الرغبة في نشر صورتك أضف رابط مشاركتها من Google Drive أو أي مساحة تخزين سحابية ونسّقها داخل الدائرة، أو أجّلها الآن وأضفها لاحقاً من لوحتك. واختر تصميم بطاقتك.', fields: f(['photoUrl', 'theme']) }
     ] },
     admin: { steps: [
       { id: 'a1', title: 'البيانات الأساسية', icon: 'fa-id-card', fields: f(['name', 'nameEn', 'gender', 'region', 'city', 'phone', 'email']) },
@@ -147,8 +147,8 @@ const FormKit = (() => {
         <button type="button" class="btn sm ${d.noPhoto ? 'primary' : 'ghost'}" data-nophoto><i class="fa-solid fa-user-slash"></i> <span>${d.noPhoto ? 'ستظهر بطاقتي بصورة رمزية — اضغط للتراجع وإضافة صورة' : 'لا أرغب بنشر الصورة الشخصية مطلقاً'}</span></button>
         <small class="muted">تظهر في بطاقتك صورة رمزية بلا ملامح تشير إلى أن صاحبة البطاقة مدربة.</small></div>
       <p class="pf-msg small muted">${src ? '' : 'اختيارية — يمكنك تأجيل هذه الخطوة الآن وإضافة صورتك لاحقاً من لوحتك عند الرغبة في نشرها.'}</p>
-      <details class="drive-help"><summary><i class="fa-brands fa-google-drive"></i> كيف أضيف صورتي من Google Drive؟</summary>
-        <ol><li>ارفع صورة شخصية واضحة إلى Google Drive.</li><li>اضغط على الصورة بالزر الأيمن ← مشاركة ← «أي شخص لديه الرابط» (عارض).</li><li>انسخ الرابط والصقه هنا، ثم نسّق الصورة داخل الدائرة.</li></ol></details>
+      <details class="drive-help"><summary><i class="fa-solid fa-cloud-arrow-up"></i> كيف أضيف رابط صورتي؟</summary>
+        <ol><li>ارفع صورة شخصية واضحة إلى Google Drive أو Dropbox أو OneDrive (أو أي مساحة تخزين تعطي رابطاً مباشراً للصورة).</li><li>اجعل المشاركة «أي شخص لديه الرابط» (عارض).</li><li>انسخ رابط المشاركة والصقه هنا، ثم نسّق الصورة داخل الدائرة. إن لم تظهر المعاينة فالرابط غير مباشر أو المشاركة مغلقة.</li></ol></details>
     </div>`;
   }
   function fieldHTML(f, d) {
@@ -195,7 +195,7 @@ const FormKit = (() => {
       if (f.type === 'tel' && !validPhone(v)) return bad(f, 'رقم الجوال غير صحيح (مثال: 0501234567)');
       if (f.type === 'email' && !validEmail(v)) return bad(f, 'البريد الإلكتروني غير صحيح');
       if (f.type === 'url' && !safeUrl(v)) return bad(f, `الرابط غير صحيح: ${f.label}`);
-      if (f.type === 'photo' && !d.noPhoto && !isDriveLink(v) && !String(v).startsWith('data:image/')) return bad(f, 'أضف رابط مشاركة الصورة من Google Drive');
+      if (f.type === 'photo' && !d.noPhoto && !isImageLink(v)) return bad(f, 'أضف رابط مشاركة الصورة من Google Drive أو أي مساحة تخزين سحابية (https)');
       if (f.type === 'specs' && d.specsOther) { const lk = leaksContact(d.specsOther); if (lk) return bad(f, `التخصص الجديد يحتوي ${lk}`); }
       if (['text', 'textarea'].includes(f.type) && !f.priv && f.k !== 'nameEn') { const leak = leaksContact(v); if (leak) return bad(f, `«${f.label}» يحتوي ${leak}. التواصل مع المدربين يتم عبر نموذج المنصة فقط`); }
     }
@@ -232,13 +232,13 @@ const FormKit = (() => {
       if (d.noPhoto) { c.className = 'pf-circle avw sym'; c.innerHTML = Card.symbol('f'); msg.textContent = 'ستظهر في بطاقتك صورة رمزية بلا ملامح تشير إلى أن صاحبتها مدربة.'; return; }
       c.classList.remove('sym');
       if (!d.photoUrl) { c.classList.add('ph'); c.innerHTML = '<i class="fa-solid fa-user"></i>'; msg.textContent = ''; return; }
-      if (!isDriveLink(d.photoUrl) && !d.photoUrl.startsWith('data:image/')) { msg.textContent = 'الصق رابط مشاركة من Google Drive'; return; }
+      if (!isImageLink(d.photoUrl)) { msg.textContent = 'الصق رابط مشاركة الصورة (Google Drive أو Dropbox أو OneDrive أو رابط مباشر)'; return; }
       let img = $('img', c);
       if (!img || img.dataset.src !== src) {
         c.classList.remove('ph'); c.innerHTML = `<img alt="" referrerpolicy="no-referrer" data-src="${esc(src)}">`; img = $('img', c);
         msg.textContent = 'جارٍ تحميل الصورة...';
         img.onload = () => { msg.textContent = 'كبّر الصورة قليلاً ثم حرّك الموضعين لضبط الإطار داخل الدائرة'; };
-        img.onerror = () => { c.classList.add('ph'); c.textContent = c.dataset.i; msg.textContent = 'تعذّر قراءة الصورة — تأكد أن الملف مشارَك «لأي شخص لديه الرابط»'; };
+        img.onerror = () => { c.classList.add('ph'); c.textContent = c.dataset.i; msg.textContent = 'تعذّر قراءة الصورة — تأكد أن الملف مشارَك «لأي شخص لديه الرابط» وأن الرابط لصورة وليس لمجلد'; };
         img.src = src;
       }
       img.style.cssText = Card.imgStyle(f);

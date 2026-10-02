@@ -102,7 +102,14 @@ rules = {
             'stats': {'.read': True, '$kind': {'$id': {
                 '.write': "$kind.matches(/^(views|clicks)$/) && newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
             }}},
-            'private': {'$id': {'.read': self_trainer}},
+            # بيانات التواصل الخاصة: يقرؤها المدرب ويعدّل جواله وبريده فقط (والباقي للإدارة)
+            'private': {'$id': {
+                '.read': self_trainer,
+                'phone': {'.write': self_trainer, '.validate': "newData.isString() && (newData.val() == '' || " + phone.split('&& ', 1)[1] + ")"},
+                'email': {'.write': self_trainer, '.validate': S(120)},
+                'extra': extra,
+                '$other': {'.validate': False},
+            }},
             'notes': {'$id': {'.read': self_trainer}},
             'leads': {
                 '.read': f"auth != null && query.orderByChild == 'trainerId' && query.equalTo == {me}",
