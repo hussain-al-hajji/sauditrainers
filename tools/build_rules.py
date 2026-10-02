@@ -28,6 +28,9 @@ PUBLIC = {
     'years': N(60), 'hours': N(100000), 'programs': N(10000),
     # إطار الصورة الدائرية: الموضع والتكبير
     'noPhoto': 'newData.isBoolean()',
+    # تخصص جديد يقترحه المدرب (يعتمده المشرف ليدخل الكتالوج)
+    'specsOther': S(60),
+    'cardSpecs': str_list(6, 20),
     'photoX': N(100), 'photoY': N(100), 'photoZ': 'newData.isNumber() && newData.val() >= 1 && newData.val() <= 3',
 }
 # إجابات الحقول المخصصة في النماذج (تُدار من لوحة الإدارة ← النماذج)
@@ -42,7 +45,7 @@ def fields(spec, write=None):
     return out
 
 trainer_fields = fields(PUBLIC, self_trainer)
-trainer_fields['specs'] = {**str_list(6, 20), '.write': self_trainer}
+trainer_fields['specs'] = {**str_list(15, 20), '.write': self_trainer}
 trainer_fields['modes'] = {**str_list(3, 10), '.write': self_trainer}
 trainer_fields['extra'] = {**extra, '.write': self_trainer}
 trainer_fields['updatedAt'] = {'.validate': 'newData.isNumber()', '.write': self_trainer}
@@ -70,7 +73,7 @@ lead_spec = {'org': S(120), 'person': S(80), 'phone': phone, 'email': S(120), 't
              'emailedAt': 'newData.isNumber()', 'waSentAt': 'newData.isNumber()', 'notifiedAt': 'newData.isNumber()'}
 req_spec = {**{k: v for k, v in lead_spec.items() if k not in ('trainerId', 'trainerName')}, 'spec': S(20), 'region': S(20), 'size': N(100000), 'matches': str_list(6, 20)}
 hall_spec = {'type': "newData.val() == 'book' || newData.val() == 'list'", 'name': S(120), 'phone': phone, 'region': S(20), 'city': S(80), 'capacity': N(5000), 'when': S(120), 'desc': S(2000)}
-app_spec = {**PUBLIC, 'specs': 'newData.hasChildren()', 'modes': 'newData.hasChildren()', 'phone': phone, 'email': S(120), 'cvUrl': S(300), 'tot': 'newData.isBoolean()',
+app_spec = {**PUBLIC, 'specs': 'newData.hasChildren()', 'modes': 'newData.hasChildren()', 'phone': phone, 'email': S(120), 'cvUrl': S(300), 'tot': 'newData.isBoolean()', 'ack': 'newData.isBoolean()',
             'decidedAt': 'newData.isNumber()', 'notifiedAt': 'newData.isNumber()', 'trainerId': S(20),
             # مراحل الطلب: علامات الإرسال تكتبها الإدارة والأتمتة
             **{k: 'newData.isNumber()' for k in ['receivedEmailAt', 'initialAt', 'finalAt', 'noticeInitialMail', 'noticeInitialWa', 'noticeFinalMail', 'noticeFinalWa']}}
@@ -79,7 +82,7 @@ lead = public_form(['trainerId', 'org', 'person', 'phone', 'topic', 'ts', 'statu
 # المدرب يحدّث حالة الطلب الموجه له فقط
 lead['status']['.write'] = f"auth != null && data.parent().child('trainerId').val() == {me} && (newData.val() == 'done' || newData.val() == 'new')"
 app = public_form(['name', 'phone', 'email', 'region', 'specs', 'ts', 'status'], app_spec)
-app['specs'] = {**str_list(6, 20)}
+app['specs'] = {**str_list(15, 20)}
 app['modes'] = {**str_list(3, 10)}
 app['extra'] = extra
 

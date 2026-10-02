@@ -33,7 +33,7 @@ const Card = (() => {
 
   // البطاقة الكاملة (صفحة المدرب والمعاينة ولوحة المدرب)
   function full(t, { preview = false } = {}) {
-    const sp = Data.specs(t), md = Data.modes(t), th = themeOf(t.theme);
+    const sp = Data.cardSpecs(t), md = Data.modes(t), th = themeOf(t.theme);
     const stats = [stat(t.years, 'سنة خبرة'), stat(t.hours, 'ساعة تدريبية'), stat(t.programs, 'برنامج ودورة')].filter(Boolean);
     return `<article class="tcard full ${themeCls(t)}" data-tilt="8" style="${themeVars(t)}">
       <div class="tc-glow"></div><div class="tc-holo"></div>
@@ -49,14 +49,14 @@ const Card = (() => {
         ${md.map(m => DELIVERY.find(d => d.k === m)).filter(Boolean).map(d => `<span><i class="fa-solid ${d.icon}"></i>${d.name}</span>`).join('')}
       </div>
       ${stats.length ? `<div class="tc-stats">${stats.join('')}</div>` : ''}
-      ${sp.length ? `<div class="tc-chips">${sp.slice(0, 5).map(s => `<span><i class="fa-solid ${specOf(s)?.icon || 'fa-shapes'}"></i>${esc(specName(s))}</span>`).join('')}</div>` : ''}
+      ${sp.length ? `<div class="tc-chips">${sp.slice(0, 6).map(s => `<span><i class="fa-solid ${specOf(s)?.icon || 'fa-shapes'}"></i>${esc(specName(s))}</span>`).join('')}</div>` : ''}
       <footer class="tc-foot"><span>sauditrainers.sa</span><span class="tc-bar"></span></footer>
     </article>`;
   }
 
   // البطاقة المصغرة (دليل المدربين)
   function mini(t, i = 0) {
-    const sp = Data.specs(t);
+    const sp = Data.cardSpecs(t), nAll = Data.specs(t).length;
     return `<a class="tmini reveal ${themeCls(t)}" href="#/t/${esc(encodeURIComponent(t.slug || t.id))}" style="${themeVars(t)};--d:${Math.min(i, 12) * 40}ms" data-tilt="6">
       <div class="tm-head"><div class="tm-glow"></div>${t.featured ? '<span class="tm-star" title="مدرب مميز"><i class="fa-solid fa-star"></i></span>' : ''}<span class="tm-code num">${esc(t.code || '')}</span></div>
       <div class="tm-ring">${avatar(t, 'tm-photo')}</div>
@@ -64,7 +64,7 @@ const Card = (() => {
         <h3>${esc(t.name)}<i class="fa-solid fa-circle-check tm-ok" title="موثّق"></i></h3>
         <p class="tm-title">${esc(t.title || '')}</p>
         <div class="tm-meta">${t.region ? `<span><i class="fa-solid fa-location-dot"></i>${esc(regionName(t.region))}</span>` : ''}${Number(t.years) ? `<span><i class="fa-solid fa-hourglass-half"></i><b class="num">${esc(t.years)}</b> سنة</span>` : ''}</div>
-        <div class="tm-chips">${sp.slice(0, 3).map(s => `<span>${esc(specName(s))}</span>`).join('')}${sp.length > 3 ? `<span class="more num">+${sp.length - 3}</span>` : ''}</div>
+        <div class="tm-chips">${sp.slice(0, 3).map(s => `<span>${esc(specName(s))}</span>`).join('')}${nAll > 3 ? `<span class="more num">+${nAll - 3}</span>` : ''}</div>
       </div>
       <span class="tm-go">عرض البطاقة <i class="fa-solid fa-arrow-left"></i></span>
     </a>`;
@@ -212,7 +212,7 @@ const Card = (() => {
     }
 
     // التخصصات
-    const sp = Data.specs(t).slice(0, format === 'story' ? 6 : 4).map(specName);
+    const sp = Data.cardSpecs(t).slice(0, format === 'story' ? 6 : 4).map(specName);
     if (sp.length) {
       y += 36; ctx.font = `600 26px ${UI}`;
       const rows = []; let row = [], rw = 0; const maxW = W - 220;

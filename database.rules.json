@@ -80,6 +80,17 @@
             ".validate": "newData.isBoolean()",
             ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
           },
+          "specsOther": {
+            ".validate": "newData.isString() && newData.val().length <= 60",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "cardSpecs": {
+            ".validate": "newData.hasChildren()",
+            "$i": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
+            },
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
           "photoX": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100",
             ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
@@ -390,6 +401,15 @@
           "noPhoto": {
             ".validate": "newData.isBoolean()"
           },
+          "specsOther": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "cardSpecs": {
+            ".validate": "newData.hasChildren()",
+            "$i": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
+            }
+          },
           "photoX": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
           },
@@ -421,6 +441,9 @@
             ".validate": "newData.isString() && newData.val().length <= 300"
           },
           "tot": {
+            ".validate": "newData.isBoolean()"
+          },
+          "ack": {
             ".validate": "newData.isBoolean()"
           },
           "decidedAt": {

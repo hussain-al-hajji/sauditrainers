@@ -100,6 +100,7 @@ const App = (() => {
   async function start() {
     const mode = await Store.init();
     await Security.restore();
+    loadSpecialties(); Store.subscribe(loadSpecialties);
     if (mode === 'local' || Auth.current()?.kind === 'admin') await Store.seedOnce(() => ({ content: defaultContent(), counters: { trainer: 0 }, meta: { createdAt: Date.now() } }));
     render();
     Store.subscribe(refresh);

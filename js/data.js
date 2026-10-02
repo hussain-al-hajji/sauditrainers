@@ -30,35 +30,42 @@ const KSA_OUTLINE = [
   [35.2, 28.0], [34.62, 28.1], [34.8, 28.6], [34.95, 29.36]
 ];
 
-// كتالوج التخصصات (مبني على تخصصات الموقع الحالي)
-const SPECIALTIES = [
-  { k: 'hr-dev', name: 'التنمية البشرية وتطوير الذات', icon: 'fa-seedling' },
-  { k: 'leadership', name: 'القيادة والإدارة', icon: 'fa-chess-king' },
-  { k: 'it', name: 'تقنية المعلومات', icon: 'fa-microchip' },
-  { k: 'programming', name: 'البرمجة وتطوير التطبيقات', icon: 'fa-code' },
-  { k: 'ai-data', name: 'الذكاء الاصطناعي والبيانات', icon: 'fa-brain' },
-  { k: 'cyber', name: 'الأمن السيبراني', icon: 'fa-shield-halved' },
-  { k: 'digital', name: 'التحول الرقمي', icon: 'fa-arrows-rotate' },
-  { k: 'content', name: 'صناعة المحتوى والإعلام', icon: 'fa-clapperboard' },
-  { k: 'marketing', name: 'التسويق والمبيعات', icon: 'fa-bullhorn' },
-  { k: 'entrepreneur', name: 'ريادة الأعمال', icon: 'fa-rocket' },
-  { k: 'innovation', name: 'الابتكار والتفكير الإبداعي', icon: 'fa-lightbulb' },
-  { k: 'finance', name: 'المحاسبة والمالية', icon: 'fa-coins' },
-  { k: 'projects', name: 'إدارة المشاريع', icon: 'fa-diagram-project' },
-  { k: 'hr', name: 'الموارد البشرية', icon: 'fa-people-group' },
-  { k: 'career', name: 'الإرشاد المهني ومهارات التوظيف', icon: 'fa-compass' },
-  { k: 'soft', name: 'مهارات الاتصال والعرض', icon: 'fa-comments' },
-  { k: 'education', name: 'التعليم وتصميم التدريب', icon: 'fa-chalkboard-user' },
-  { k: 'family', name: 'الأسرة والتربية', icon: 'fa-house-chimney-user' },
-  { k: 'health', name: 'الصحة والسلامة', icon: 'fa-heart-pulse' },
-  { k: 'quality', name: 'الجودة والتميز المؤسسي', icon: 'fa-award' },
-  { k: 'languages', name: 'اللغات', icon: 'fa-language' },
-  { k: 'customer', name: 'خدمة العملاء', icon: 'fa-headset' },
-  { k: 'volunteer', name: 'العمل التطوعي وغير الربحي', icon: 'fa-hand-holding-heart' },
-  { k: 'other', name: 'تخصصات أخرى', icon: 'fa-shapes' }
-];
+// كتالوج التخصصات الافتراضي: يُعدَّل من لوحة الإدارة ← التخصصات (محفوظ في content/specialties/list)، ويمكن للمدرب اقتراح تخصص عبر «أخرى»
+const DEFAULT_SPECS = [
+  ['ecom', 'التجارة الإلكترونية والتسويق الرقمي والعمل الحر عبر الإنترنت', 'fa-cart-shopping'], ['entrepreneur', 'ريادة الأعمال ودراسة الجدوى', 'fa-rocket'],
+  ['supply', 'إدارة سلاسل الإمداد والعمليات اللوجستية والتشغيل', 'fa-truck-fast'], ['customer', 'خدمة العملاء وعلاقات العملاء وإدارة حسابات العملاء', 'fa-headset'],
+  ['speaking', 'مهارات الخطابة والإلقاء', 'fa-microphone-lines'], ['tot', 'تدريب المدربين وتأهيل المرشدين', 'fa-chalkboard-user'],
+  ['strategy', 'التخطيط والاستراتيجية', 'fa-chess'], ['marketing', 'إدارة المبيعات والتسويق', 'fa-bullhorn'],
+  ['design', 'التصميم', 'fa-pen-ruler'], ['editing', 'المونتاج', 'fa-film'], ['motion', 'الموشن جرافيك', 'fa-wand-magic-sparkles'], ['law', 'القانون', 'fa-scale-balanced'],
+  ['finance', 'المحاسبة والماليّة', 'fa-coins'], ['hr', 'إدارة الموارد البشرية', 'fa-people-group'], ['programming', 'تقنية المعلومات، البرمجة وتطوير التطبيقات', 'fa-code'],
+  ['innovation', 'الابتكار', 'fa-lightbulb'], ['fashion', 'تصميم الأزياء', 'fa-shirt'], ['crafts', 'الحرف اليدوية والتراثية', 'fa-hands'], ['computer', 'مهارات استخدام الحاسب الآلي', 'fa-computer'],
+  ['career', 'التوجيه المهني، مهارات البحث عن عمل، واستخدام منصات التوظيف', 'fa-compass'], ['tourism', 'السياحة والفندقة والضيافة', 'fa-hotel'], ['projects', 'إدارة المشاريع', 'fa-diagram-project'],
+  ['cx', 'تجربة العميل ورحلة العميل', 'fa-route'], ['data', 'تحليل وتمثيل البيانات', 'fa-chart-pie'], ['cyber', 'الأمن السيبراني وأمن المعلومات', 'fa-shield-halved'],
+  ['safety', 'السلامة والصحة المهنية', 'fa-helmet-safety'], ['childhood', 'الطفولة والتربية', 'fa-children'], ['family', 'التنمية والاستشارات الأسرية', 'fa-house-chimney-user'],
+  ['leadership', 'المهارات القيادية وقيادة فريق العمل', 'fa-chess-king'], ['soft', 'المهارات الشخصية الناعمة، والمهارات المهنيّة الأساسية', 'fa-comments'],
+  ['pr', 'العلاقات العامة والإعلام', 'fa-newspaper'], ['change', 'إدارة التغيير', 'fa-arrows-rotate'], ['hr-dev', 'التنمية البشرية وتطوير الذات', 'fa-seedling'],
+  ['industrial', 'التدريب الصناعي', 'fa-industry'], ['health', 'التثقيف الصحي', 'fa-heart-pulse'], ['business', 'إدارة الأعمال', 'fa-briefcase'],
+  ['crisis', 'إدارة الأزمات والكوارث', 'fa-triangle-exclamation'], ['events', 'التنظيم وإدارة الحشود والفعاليات', 'fa-people-roof'], ['art', 'الرسم والفنون التشكيلية', 'fa-palette'],
+  ['music', 'الموسيقى والعزف', 'fa-music'], ['calligraphy', 'الخط العربي', 'fa-pen-nib'], ['labor', 'الثقافة العمالية ونظام العمل السعودي', 'fa-gavel'],
+  ['firstaid', 'الإسعافات الأولية', 'fa-kit-medical'], ['digital', 'التحول الرقمي', 'fa-microchip'], ['ai-data', 'الذكاء الاصطناعي', 'fa-brain'], ['ml', 'تعلم الآلة', 'fa-robot'],
+  ['protocol', 'المراسم والتشريفات', 'fa-handshake'], ['disability', 'تدريب وتأهيل ذوي الإعاقة', 'fa-wheelchair'], ['content', 'كتابة وصناعة المحتوى', 'fa-clapperboard'],
+  ['homebiz', 'المشاريع الحرفية والمنزلية', 'fa-house-laptop'], ['kpi', 'مؤشرات قياس الأداء KPIs', 'fa-gauge-high'],
+  ['education', 'التعليم وتصميم التدريب', 'fa-graduation-cap'], ['quality', 'الجودة والتميز المؤسسي', 'fa-award'], ['languages', 'اللغات', 'fa-language'], ['volunteer', 'العمل التطوعي وغير الربحي', 'fa-hand-holding-heart'],
+  ['other', 'تخصصات أخرى', 'fa-shapes']
+].map(([k, name, icon]) => ({ k, name, icon }));
+// الكتالوج الفعّال: يُحدَّث في مكانه (نفس المصفوفة) من القاعدة، فتبقى المراجع إليه سليمة
+const SPECIALTIES = DEFAULT_SPECS.map(x => ({ ...x }));
+function loadSpecialties() {
+  const stored = (typeof Store !== 'undefined' ? arr(Store.get('content/specialties/list')) : []).filter(x => x && x.k && x.name);
+  const src = stored.length ? stored : DEFAULT_SPECS;
+  if (!src.some(x => x.k === 'other')) src.push(DEFAULT_SPECS[DEFAULT_SPECS.length - 1]);
+  SPECIALTIES.length = 0;
+  src.forEach(x => SPECIALTIES.push({ k: x.k, name: x.name, icon: /^fa-[a-z0-9-]{1,40}$/.test(x.icon || '') ? x.icon : 'fa-shapes' }));
+}
 const specOf = k => SPECIALTIES.find(s => s.k === k);
-const specName = k => specOf(k)?.name || k;
+const specName = k => specOf(k)?.name || '';
+// التخصصات التي تُعرض للاختيار (دون «أخرى»)
+const pickableSpecs = () => SPECIALTIES.filter(s => s.k !== 'other');
 
 // ثيمات البطاقة التعريفية: مشتقة من لونَي الشعار (الأخضر #005430 والكريمي #EEF3E5) بدرجات متقاربة
 const CARD_THEMES = [
@@ -110,8 +117,9 @@ function defaultContent() {
       fee: 720,
       feeNote: 'رسوم الاشتراك مرة واحدة',
       period: 'اشتراك مدى الحياة',
-      requirements: 'الجنسية السعودية\nحضور دورة واحدة على الأقل في إعداد المدربين (TOT)\nخبرة تدريبية عملية في المجال المختار',
+      requirements: 'الجنسية السعودية\nشهادة تدريب المدربين (TOT)، أو الإفادة بعدم الحصول عليها بعد\nخبرة تدريبية عملية في المجال المختار',
       benefits: 'اشتراك واحد مدى الحياة دون تجديد سنوي\nبطاقة تعريفية احترافية بصورتك وتخصصاتك وخبراتك\nصفحة خاصة بك قابلة للمشاركة في منصات التواصل\nظهورك في نتائج البحث بالمنطقة والتخصص\nنشر سيرتك وخبراتك في حسابات المنصة\nترشيحك للجهات التدريبية المناسبة لتخصصك\nلوحة خاصة لتعديل بياناتك ومتابعة المهتمين',
+      disclaimer: 'يحرص الموقع على الترويج لسيرتكم الذاتية مع ترشيحكم لجميع الفرص المناسبة التي تصل إلينا، ومع ذلك لا يضمن الموقع نوع أو عدد الفرص التدريبية التي قد يحصل عليها المدرب من خلالنا.',
       payment: 'يتم السداد بالتحويل البنكي على الحساب المسجل باسم المنصة في المركز السعودي للأعمال، وإرسال إيصال التحويل إلى البريد الإلكتروني. الرسوم تُدفع مرة واحدة فقط والاشتراك مدى الحياة. مهلة السداد شهر من تاريخ قبول الطلب.',
     },
     halls: {

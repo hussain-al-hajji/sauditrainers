@@ -12,7 +12,9 @@ const Data = (() => {
   };
 
   const photo = t => (t && !t.noPhoto && driveImg(t.photoUrl)) || '';
-  const specs = t => (Array.isArray(t?.specs) ? t.specs : Object.values(t?.specs || {})).filter(Boolean);
+  const specs = t => (Array.isArray(t?.specs) ? t.specs : Object.values(t?.specs || {})).filter(k => k && specOf(k));
+  // ما يظهر في البطاقة التعريفية: ما اختاره المدرب (حتى 6) من تخصصاته، وإلا أول 6
+  const cardSpecs = t => { const all = specs(t), cs = (Array.isArray(t?.cardSpecs) ? t.cardSpecs : Object.values(t?.cardSpecs || {})).filter(k => all.includes(k)); return (cs.length ? cs : all).slice(0, 6); };
   const modes = t => (Array.isArray(t?.modes) ? t.modes : Object.values(t?.modes || {})).filter(Boolean);
   const topics = t => splitList(t?.topics);
 
@@ -77,11 +79,24 @@ const Data = (() => {
   }
 
   // الحقول العامة للمدرب (المسموح بتعديلها من صفحته — تطابق القواعد)
-  const PUBLIC_FIELDS = ['name', 'nameEn', 'title', 'gender', 'region', 'city', 'bio', 'specs', 'topics', 'modes', 'years', 'hours', 'programs', 'certs', 'langs', 'theme', 'photoUrl', 'photoX', 'photoY', 'photoZ', 'noPhoto'];
+  const PUBLIC_FIELDS = ['name', 'nameEn', 'title', 'gender', 'region', 'city', 'bio', 'specs', 'topics', 'modes', 'years', 'hours', 'programs', 'certs', 'langs', 'theme', 'photoUrl', 'photoX', 'photoY', 'photoZ', 'noPhoto', 'cardSpecs', 'specsOther'];
   // تقسيم إجابات الحقول المخصصة: العامة تظهر في صفحة المدرب، والباقي في بياناته الإدارية
   const splitExtra = extra => { const pub = {}, priv = {}; Object.entries(extra || {}).forEach(([k, v]) => { (FormKit.isPublicExtra(k) ? pub : priv)[k] = v; }); return { pub, priv }; };
   const pick = (o, keys) => { const r = {}; keys.forEach(k => { if (o[k] !== undefined) r[k] = o[k]; }); return r; };
 
+  // يضيف تخصصاً جديداً إلى الكتالوج (يتطلب صلاحية الإدارة) أو يعيد المطابق له، ويعيد مفتاحه
+  function ensureSpecialty(name) {
+    name = String(name || '').trim();
+    if (!name) return '';
+    const hit = SPECIALTIES.find(s => normAr(s.name) === normAr(name));
+    if (hit) return hit.k;
+    const k = 'c' + Store.newId().slice(-8).replace(/[^a-z0-9]/g, '0');
+    const list = SPECIALTIES.map(x => ({ ...x })).filter(x => x.k !== 'other');
+    list.push({ k, name, icon: 'fa-shapes' }, { k: 'other', name: 'تخصصات أخرى', icon: 'fa-shapes' });
+    Store.set('content/specialties/list', list);
+    loadSpecialties();
+    return k;
+  }
   async function publishFromApplication(app) {
     const code = await nextCode();
     const id = code.toLowerCase();
@@ -89,6 +104,12 @@ const Data = (() => {
       ...pick(app, PUBLIC_FIELDS), id, code, status: 'active', featured: false,
       publishedAt: Date.now(), updatedAt: Date.now(), appId: app.id
     };
+    // تخصص جديد اقترحه المدرب عبر «أخرى»: يُضاف للقائمة ويُلحق بتخصصاته
+    if (app.specsOther) {
+      const nk = ensureSpecialty(app.specsOther);
+      if (nk) { t.specs = [...arr(t.specs).filter(k => k !== 'other'), nk].slice(0, 15); t.cardSpecs = arr(t.cardSpecs).includes(nk) || arr(t.cardSpecs).length >= 6 ? t.cardSpecs : [...arr(t.cardSpecs), nk]; }
+      delete t.specsOther;
+    }
     t.slug = makeSlug(t);
     const ex = splitExtra(app.extra);
     if (Object.keys(ex.pub).length) t.extra = ex.pub;
@@ -108,7 +129,7 @@ const Data = (() => {
     Store.transaction(`stats/${kind}/${id}`, c => (Number(c) || 0) + 1).catch(() => {});
   }
 
-  return { content, photo, specs, modes, topics, all, live, trainer, isLive, search, match, regionCounts, specCounts, views, clicks, nextCode, makeSlug, publishFromApplication, track, PUBLIC_FIELDS, pick, splitExtra };
+  return { content, photo, specs, cardSpecs, modes, topics, all, live, trainer, isLive, search, match, regionCounts, specCounts, views, clicks, nextCode, makeSlug, ensureSpecialty, publishFromApplication, track, PUBLIC_FIELDS, pick, splitExtra };
 })();
 
 /* الأتمتة (اختيارية): رابط Google Apps Script يرسل البريد من حساب المنصة وينشر في وسائل التواصل.

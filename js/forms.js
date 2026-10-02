@@ -3,7 +3,9 @@
  * الحقول الأساسية (core) مرتبطة بالبطاقة ولا تُحذف (تُخفى أو يُعدَّل نصها)، والحقول المخصصة تُضاف وتُحذف بحرية
  * وتُحفظ إجاباتها في extra/{key}. */
 
-const MAX_SPECS = 5;
+const MAX_SPECS = 15;   // أقصى عدد تخصصات يختارها المدرب
+const MAX_CARD_SPECS = 6; // أقصى ما يظهر منها في البطاقة التعريفية
+const LANG_OPTS = ['العربية', 'الإنجليزية'];
 
 // الحقول الأساسية: lock = لا تُخفى ولا يُلغى إلزامها، priv = بيانات إدارية لا تظهر لأحد، joinOnly = في طلب التسجيل فقط
 const CORE_FIELDS = {
@@ -15,7 +17,7 @@ const CORE_FIELDS = {
   phone: { label: 'الجوال', type: 'tel', req: true, lock: true, priv: true, hint: 'للتواصل الإداري فقط — لا يظهر لأحد في المنصة' },
   email: { label: 'البريد الإلكتروني', type: 'email', req: true, lock: true, priv: true, hint: 'تصلك عليه طلبات الجهات التدريبية' },
   title: { label: 'اللقب المهني (سطر تعريفي)', type: 'text', max: 80, req: true, ph: 'مثال: مدربة معتمدة في القيادة والتحول الرقمي', w: 'full' },
-  specs: { label: 'التخصصات التدريبية', type: 'specs', req: true, lock: true, hint: `حتى ${MAX_SPECS} تخصصات`, w: 'full' },
+  specs: { label: 'مجالات التدريب', type: 'specs', req: true, lock: true, hint: `اختر حتى ${MAX_SPECS} مجالاً`, w: 'full' },
   topics: { label: 'البرامج ومجالات الخبرة', type: 'textarea', max: 800, ph: 'اكتب كل برنامج في سطر أو افصل بفاصلة: إدارة الوقت، القيادة الفعالة، ...', w: 'full' },
   modes: { label: 'طريقة التقديم', type: 'modes', req: true, w: 'full' },
   years: { label: 'سنوات الخبرة التدريبية', type: 'number', max: 60 },
@@ -23,10 +25,10 @@ const CORE_FIELDS = {
   programs: { label: 'عدد البرامج والدورات', type: 'number', max: 10000 },
   certs: { label: 'الشهادات والاعتمادات', type: 'textarea', max: 800, ph: 'مثال: شهادة إعداد المدربين TOT', w: 'full' },
   bio: { label: 'نبذة تعريفية', type: 'textarea', max: 1200, req: true, ph: 'عرّف بنفسك وبخبرتك التدريبية وأبرز إنجازاتك', hint: 'لا تضع أرقام تواصل أو بريداً أو روابط؛ التواصل يتم عبر المنصة', w: 'full' },
-  langs: { label: 'لغات التدريب', type: 'text', max: 60, ph: 'العربية' },
+  langs: { label: 'لغة التدريب', type: 'langs', w: 'full' },
   photoUrl: { label: 'الصورة الشخصية (رابط Google Drive) — اختيارية', type: 'photo', w: 'full' },
   theme: { label: 'تصميم البطاقة', type: 'theme', w: 'full' },
-  tot: { label: 'حضرت دورة واحدة على الأقل في إعداد المدربين (TOT)', type: 'consent', req: true, joinOnly: true, w: 'full' },
+  tot: { label: 'شهادة تدريب المدربين (TOT)', type: 'tot', req: true, joinOnly: true, w: 'full' },
   cvUrl: { label: 'رابط الشهادات أو السيرة الذاتية', type: 'url', joinOnly: true, priv: true, ltr: true, ph: 'https://drive.google.com/...', hint: 'يطّلع عليه فريق المراجعة فقط', w: 'full' }
 };
 
@@ -50,7 +52,7 @@ function defaultForms() {
     join: { steps: [
       { id: 's1', title: 'البيانات', icon: 'fa-id-card', desc: 'بيانات التواصل الإداري لا تظهر لأحد في المنصة.', fields: f(['name', 'nameEn', 'gender', 'region', 'city', 'phone', 'email']) },
       { id: 's2', title: 'التخصص', icon: 'fa-layer-group', desc: 'اختر ما تمارس التدريب فيه فعلياً؛ تظهر بطاقتك في نتائج هذه التخصصات.', fields: f(['title', 'specs', 'topics', 'modes']) },
-      { id: 's3', title: 'الخبرة', icon: 'fa-award', desc: 'الأرقام تظهر في بطاقتك كمؤشرات بارزة.', fields: f(['tot', 'cvUrl', 'years', 'hours', 'programs', 'certs', 'bio', 'langs']) },
+      { id: 's3', title: 'الخبرة', icon: 'fa-award', desc: 'الأرقام تظهر في بطاقتك كمؤشرات بارزة.', fields: [{ k: 'tot' }, { k: 'cvUrl', hidden: true }, ...f(['years', 'hours', 'programs', 'certs', 'bio', 'langs'])] },
       { id: 's4', title: 'الصورة والتصميم', icon: 'fa-camera', desc: 'هذه الخطوة اختيارية: عند الرغبة في نشر صورتك أضف رابطها من Google Drive ونسّقها داخل الدائرة، أو أجّلها الآن وأضفها لاحقاً من لوحتك. واختر تصميم بطاقتك.', fields: f(['photoUrl', 'theme']) }
     ] },
     admin: { steps: [
@@ -104,7 +106,24 @@ const FormKit = (() => {
       case 'region': return `<select name="region" ${rq}><option value="">اختر المنطقة</option>${REGIONS.map(r => opt(r.k, r.name, v)).join('')}</select>`;
       case 'select': return `<select name="${name}" ${rq}><option value="">اختر</option>${arr(f.opts).map(o => opt(o, o, v)).join('')}</select>`;
       case 'multi': { const cur = String(v || '').split('|'); return `<div class="checks">${arr(f.opts).map(o => `<label class="chk"><input type="checkbox" name="${name}" data-multi value="${esc(o)}" ${cur.includes(o) ? 'checked' : ''}><span>${esc(o)}</span></label>`).join('')}</div>`; }
-      case 'specs': { const sp = Data.specs(d); return `<div class="checks" data-max="${MAX_SPECS}">${SPECIALTIES.map(s => `<label class="chk"><input type="checkbox" name="specs" data-multi value="${s.k}" ${sp.includes(s.k) ? 'checked' : ''}><span><i class="fa-solid ${s.icon}"></i>${s.name}</span></label>`).join('')}</div>`; }
+      case 'specs': {
+        const sp = Data.specs(d).filter(k => k !== 'other'), cs = arr(d.cardSpecs), other = String(d.specsOther || '');
+        return `<div class="specs-box">
+          <div class="checks" data-max="${MAX_SPECS}">${pickableSpecs().map(s => `<label class="chk"><input type="checkbox" name="specs" data-multi value="${s.k}" ${sp.includes(s.k) ? 'checked' : ''}><span><i class="fa-solid ${s.icon}"></i>${esc(s.name)}</span></label>`).join('')}
+            <label class="chk"><input type="checkbox" data-other-toggle ${other ? 'checked' : ''}><span><i class="fa-solid fa-plus"></i>أخرى</span></label></div>
+          <input type="text" class="spec-other ${other ? '' : 'hidden'}" name="specsOther" maxlength="60" placeholder="اكتب اسم التخصص الجديد ليُضاف إلى القائمة بعد اعتماد الإدارة" value="${esc(other)}">
+          <div class="card-specs"><b><i class="fa-solid fa-id-card"></i> ما يظهر في بطاقتك التعريفية <small>(حتى ${MAX_CARD_SPECS}، والباقي يظهر في صفحتك)</small></b>
+            <div class="checks" data-max="${MAX_CARD_SPECS}">${pickableSpecs().map(s => `<label class="chk cs ${sp.includes(s.k) ? '' : 'hidden'}" data-k="${s.k}"><input type="checkbox" name="cardSpecs" data-multi value="${s.k}" ${cs.includes(s.k) ? 'checked' : ''}><span>${esc(s.name)}</span></label>`).join('')}</div>
+            <small class="muted cs-empty ${sp.length ? 'hidden' : ''}">اختر مجالاتك أولاً ثم حدّد ما يظهر منها في البطاقة. وإن لم تحدد فتظهر أول ${MAX_CARD_SPECS} مجالات.</small></div></div>`;
+      }
+      case 'langs': {
+        const cur = splitList(d.langs ?? 'العربية'), others = cur.filter(x => !LANG_OPTS.includes(x)), other = others.join('، ');
+        return `<div class="checks">${LANG_OPTS.map(l => `<label class="chk"><input type="checkbox" name="langsSel" data-multi value="${l}" ${cur.includes(l) ? 'checked' : ''}><span><i class="fa-solid fa-language"></i>${l}</span></label>`).join('')}
+          <label class="chk"><input type="checkbox" data-lang-other ${other ? 'checked' : ''}><span><i class="fa-solid fa-plus"></i>أخرى</span></label></div>
+          <input type="text" class="lang-other ${other ? '' : 'hidden'}" name="langsOther" maxlength="30" placeholder="اكتب اللغة الأخرى" value="${esc(other)}">`;
+      }
+      case 'tot': return `<div class="tot-box"><label class="chk consent"><input type="radio" name="tot" value="1" ${d.tot === true ? 'checked' : ''}><span><i class="fa-solid fa-circle-check"></i>أؤكد أنني حصلت على شهادة تدريب المدربين (TOT)</span></label>
+          <label class="chk consent"><input type="radio" name="tot" value="0" ${d.tot === false ? 'checked' : ''}><span><i class="fa-solid fa-circle-minus"></i>لم أحصل على شهادة ToT حتى الآن</span></label></div>`;
       case 'modes': { const md = Data.modes(d); return `<div class="checks">${DELIVERY.map(x => `<label class="chk"><input type="checkbox" name="modes" data-multi value="${x.k}" ${md.includes(x.k) ? 'checked' : ''}><span><i class="fa-solid ${x.icon}"></i>${x.name}</span></label>`).join('')}</div>`; }
       case 'consent': return `<label class="chk consent"><input type="checkbox" name="${name}" ${v === true || v === 'نعم' ? 'checked' : ''}><span><i class="fa-solid fa-circle-check"></i>${esc(f.label)}${required(f) ? ' *' : ''}</span></label>`;
       case 'theme': return `<div class="themes">${CARD_THEMES.map(t => `<label title="${t.name}"><input type="radio" name="theme" value="${t.k}" ${(v || 'brand') === t.k ? 'checked' : ''}><span style="background:linear-gradient(135deg,${t.a},${t.c})${t.light ? ';box-shadow:inset 0 0 0 1px #c9d8c0' : ''}"></span><em>${t.name}</em></label>`).join('')}</div>`;
@@ -134,7 +153,7 @@ const FormKit = (() => {
   }
   function fieldHTML(f, d) {
     if (f.type === 'consent') return `<div class="field full req-box">${input(f, d)}${f.hint ? `<small>${esc(f.hint)}</small>` : ''}</div>`;
-    const group = ['specs', 'modes', 'multi', 'theme', 'photo'].includes(f.type);
+    const group = ['specs', 'modes', 'multi', 'theme', 'photo', 'langs', 'tot'].includes(f.type);
     const lab = `${esc(f.label)}${required(f) ? ' *' : ''}${f.type === 'specs' ? ` <small>(${esc(f.hint || '')})</small>` : ''}`;
     const hint = f.type !== 'specs' && f.hint ? `<small>${esc(f.hint)}</small>` : '';
     return group ? `<div class="field ${f.w === 'full' ? 'full' : ''}" data-f="${esc(f.k)}"><span>${lab}</span>${input(f, d)}${hint}</div>`
@@ -152,7 +171,14 @@ const FormKit = (() => {
     ['years', 'hours', 'programs'].forEach(k => { if (k in d) d[k] = Math.max(0, Number(toEnDigits(d[k])) || 0); });
     ['photoX', 'photoY', 'photoZ'].forEach(k => { if (k in d) d[k] = Number(d[k]); });
     d.noPhoto = d.noPhoto === '1' && d.gender === 'f'; // الصورة الرمزية للمدربات فقط
-    if (d.specs) d.specs = d.specs.slice(0, MAX_SPECS);
+    if ('tot' in d) { d.tot = d.tot === '1' ? true : d.tot === '0' ? false : undefined; if (d.tot === undefined) delete d.tot; }
+    if ('langsSel' in d || 'langsOther' in d) { d.langs = [...(d.langsSel || []), ...(d.langsOther ? [d.langsOther] : [])].join('، '); delete d.langsSel; delete d.langsOther; }
+    if (d.specs || 'specsOther' in d) {
+      d.specs = (d.specs || []).slice(0, MAX_SPECS);
+      d.specsOther = String(d.specsOther || '').trim();
+      if (!d.specs.length && d.specsOther) d.specs = ['other'];
+      d.cardSpecs = (d.cardSpecs || []).filter(k => d.specs.includes(k)).slice(0, MAX_CARD_SPECS);
+    }
     Object.keys(d.extra).forEach(k => { if (d.extra[k] === '' || d.extra[k] == null) delete d.extra[k]; });
     return d;
   }
@@ -163,13 +189,14 @@ const FormKit = (() => {
     const bad = (f, msg) => { const el = form.querySelector(`[data-f="${CSS.escape(f.k)}"]`) || form.querySelector(`[name="${f.custom ? 'x_' + f.k : f.k}"]`); el && el.classList.add('inv'); el && el.scrollIntoView({ behavior: 'smooth', block: 'center' }); return msg; };
     for (const f of fields) {
       const v = val(d, f);
-      const empty = v == null || v === '' || v === false || (Array.isArray(v) && !v.length) || (f.type === 'number' && !Number(v) && required(f));
-      if (required(f) && empty) return bad(f, f.type === 'consent' ? `يلزم الإقرار: ${f.label}` : `أكمل الحقل: ${f.label}`);
+      const empty = f.type === 'tot' ? v == null : (v == null || v === '' || v === false || (Array.isArray(v) && !v.length) || (f.type === 'number' && !Number(v) && required(f)));
+      if (required(f) && empty) return bad(f, f.type === 'consent' ? `يلزم الإقرار: ${f.label}` : f.type === 'tot' ? 'اختر: حصلت على شهادة TOT، أو لم أحصل عليها حتى الآن' : `أكمل الحقل: ${f.label}`);
       if (empty) continue;
       if (f.type === 'tel' && !validPhone(v)) return bad(f, 'رقم الجوال غير صحيح (مثال: 0501234567)');
       if (f.type === 'email' && !validEmail(v)) return bad(f, 'البريد الإلكتروني غير صحيح');
       if (f.type === 'url' && !safeUrl(v)) return bad(f, `الرابط غير صحيح: ${f.label}`);
       if (f.type === 'photo' && !d.noPhoto && !isDriveLink(v) && !String(v).startsWith('data:image/')) return bad(f, 'أضف رابط مشاركة الصورة من Google Drive');
+      if (f.type === 'specs' && d.specsOther) { const lk = leaksContact(d.specsOther); if (lk) return bad(f, `التخصص الجديد يحتوي ${lk}`); }
       if (['text', 'textarea'].includes(f.type) && !f.priv && f.k !== 'nameEn') { const leak = leaksContact(v); if (leak) return bad(f, `«${f.label}» يحتوي ${leak}. التواصل مع المدربين يتم عبر نموذج المنصة فقط`); }
     }
     return null;
@@ -181,6 +208,19 @@ const FormKit = (() => {
       const box = e.target.closest('[data-max]');
       if (box && $$('input:checked', box).length > Number(box.dataset.max)) { e.target.checked = false; toast(`يمكن اختيار ${box.dataset.max} تخصصات كحد أقصى`, 'error'); }
     });
+    // مجالات التدريب: تظهر في «ما يظهر في البطاقة» ما اختاره فقط، و«أخرى» تفتح حقل التخصص الجديد
+    const sb = $('.specs-box', form);
+    if (sb) {
+      const sync = () => {
+        const on = new Set($$('[name=specs]:checked', sb).map(i => i.value));
+        $$('.cs', sb).forEach(l => { const keep = on.has(l.dataset.k); l.classList.toggle('hidden', !keep); if (!keep) $('input', l).checked = false; });
+        $('.cs-empty', sb).classList.toggle('hidden', on.size > 0);
+      };
+      sb.addEventListener('change', e => { if (e.target.name === 'specs') sync(); });
+      $('[data-other-toggle]', sb).addEventListener('change', e => { const t = $('.spec-other', sb); t.classList.toggle('hidden', !e.target.checked); if (!e.target.checked) t.value = ''; else t.focus(); preview(); });
+    }
+    const lo = $('[data-lang-other]', form);
+    lo && lo.addEventListener('change', e => { const t = $('.lang-other', form); t.classList.toggle('hidden', !e.target.checked); if (!e.target.checked) t.value = ''; else t.focus(); preview(); });
     const pf = $('.photo-field', form);
     const photo = () => {
       if (!pf) return;

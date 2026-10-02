@@ -884,3 +884,13 @@ input[type=range] { accent-color: var(--g700); width: 100%; }
 .photo-field.np [name=photoUrl], .photo-field.np .pf-ranges, .photo-field.np .drive-help { opacity: .35; pointer-events: none; }
 .pf-circle.sym { box-shadow: 0 0 0 5px #fff, 0 0 0 7px var(--g300); }
 .photo-field.np .pf-np small { display: none; }
+
+/* التخصصات والإقرار */
+.specs-box { display: grid; gap: 12px; }
+.specs-box .checks { max-height: 260px; overflow: auto; padding: 4px; }
+.specs-box .hidden, .card-specs .hidden, .spec-other.hidden, .lang-other.hidden { display: none !important; }
+.card-specs { background: var(--cream, #EEF3E5); border-radius: 14px; padding: 12px; display: grid; gap: 8px; }
+.tot-box { display: grid; gap: 8px; }
+.ack-box { display: flex; gap: 10px; align-items: flex-start; background: var(--cream, #EEF3E5); border-radius: 12px; padding: 12px 14px; color: var(--ink2); font-size: .92rem; }
+.ack-box p { margin: 0; }
+.ack-note { margin: 18px 0 0; font-size: .8rem; color: var(--ink2); opacity: .75; display: flex; gap: 8px; align-items: flex-start; }

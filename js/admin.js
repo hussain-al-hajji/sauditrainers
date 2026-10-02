@@ -12,7 +12,7 @@ Pages.admin = {
     const all = [
       ['dash', 'fa-chart-pie', 'المؤشرات'], ['apps', 'fa-user-plus', 'طلبات التسجيل', apps.filter(a => a.status === 'new').length], ['trainers', 'fa-id-card', 'المدربون'],
       ['requests', 'fa-inbox', 'طلبات الجهات', newReq], ['social', 'fa-share-nodes', 'النشر الاجتماعي', Store.list('social').filter(p => p.status === 'failed').length],
-      ['home', 'fa-house', 'الصفحة الرئيسية'], ['forms', 'fa-rectangle-list', 'النماذج'], ['templates', 'fa-envelope-open-text', 'قوالب'], ['halls', 'fa-building-columns', 'القاعات', Store.list('hallReqs').filter(r => r.status === 'new').length],
+      ['home', 'fa-house', 'الصفحة الرئيسية'], ['forms', 'fa-rectangle-list', 'النماذج'], ['templates', 'fa-envelope-open-text', 'قوالب'], ['specs', 'fa-shapes', 'التخصصات'], ['halls', 'fa-building-columns', 'القاعات', Store.list('hallReqs').filter(r => r.status === 'new').length],
       ['content', 'fa-pen-ruler', 'المحتوى العام'], ['admins', 'fa-user-shield', 'المشرفون'], ['backup', 'fa-database', 'البيانات والسجل']
     ];
     const order = arr(Store.get('settings/adminMenu'));
@@ -74,10 +74,10 @@ Pages.admin = {
     $$('[data-menu-edit]', root).forEach(b => b.onclick = () => { this.menuEdit = !this.menuEdit; this.wireMenu(root); });
     $('[data-out]', root).onclick = () => Auth.logout();
     const main = $('#at', root);
-    ({ dash: aDash, apps: aApps, trainers: aTrainers, requests: aRequests, social: aSocial, home: aHome, forms: aForms, templates: aTemplates, halls: aHalls, content: aContent, admins: aAdmins, backup: aBackup })[this.tab](main);
+    ({ dash: aDash, apps: aApps, trainers: aTrainers, requests: aRequests, social: aSocial, home: aHome, forms: aForms, templates: aTemplates, specs: aSpecs, halls: aHalls, content: aContent, admins: aAdmins, backup: aBackup })[this.tab](main);
   },
   // تبويبات التحرير لا يُعاد رسمها تلقائياً حتى لا تضيع التعديلات غير المحفوظة، وكذلك أثناء ترتيب القائمة
-  get static() { return this.menuEdit || ['content', 'home', 'forms', 'templates'].includes(this.tab); }
+  get static() { return this.menuEdit || ['content', 'home', 'forms', 'templates', 'specs'].includes(this.tab); }
 };
 
 function adminLoginView() {
@@ -220,10 +220,10 @@ function appDetail(a) {
           <dt>رقم الطلب</dt><dd class="num">${esc(a.id)}</dd><dt>التاريخ</dt><dd>${fmtTs(a.ts)}</dd>
           <dt>الجوال</dt><dd><a class="num" href="${esc(waLink(a.phone))}" target="_blank">${esc(a.phone)}</a></dd><dt>البريد</dt><dd><a href="mailto:${esc(a.email)}">${esc(a.email)}</a>${a.receivedEmailAt ? ' ' + sentBadge(a.receivedEmailAt).replace('أُرسل', 'وصله تأكيد الاستلام') : ''}</dd>
           <dt>المنطقة</dt><dd>${esc(regionName(a.region))} ${esc(a.city || '')}</dd><dt>الجنس</dt><dd>${a.gender === 'f' ? 'مدربة' : 'مدرب'}</dd>
-          <dt>اللقب</dt><dd>${esc(a.title)}</dd><dt>التخصصات</dt><dd>${Data.specs(a).map(specName).join('، ')}</dd>
+          <dt>اللقب</dt><dd>${esc(a.title)}</dd><dt>التخصصات</dt><dd>${Data.specs(a).map(specName).join('، ')}${a.specsOther ? ` <span class="pill gold">مقترح: ${esc(a.specsOther)}</span>` : ''}</dd><dt>على البطاقة</dt><dd>${Data.cardSpecs(a).map(specName).join('، ') || '—'}</dd>
           <dt>البرامج</dt><dd>${esc(a.topics || '—')}</dd><dt>الخبرة</dt><dd><span class="num">${a.years || 0}</span> سنة · <span class="num">${a.hours || 0}</span> ساعة · <span class="num">${a.programs || 0}</span> برنامج</dd>
-          <dt>TOT</dt><dd>${a.tot ? '✅ أقرّ بحضورها' : '❌'}</dd><dt>الشهادات</dt><dd>${nl2br(a.certs || '—')}</dd>
-          <dt>المرفقات</dt><dd>${a.cvUrl ? `<a href="${esc(safeUrl(a.cvUrl))}" target="_blank" rel="noopener">فتح الرابط <i class="fa-solid fa-arrow-up-right-from-square"></i></a>` : '—'}</dd>
+          <dt>TOT</dt><dd>${a.tot === true ? '✅ حصل على الشهادة' : a.tot === false ? 'لم يحصل عليها بعد' : '—'}</dd><dt>الإقرار</dt><dd>${a.ack ? '✅ وافق على إقرار الفرص' : '—'}</dd><dt>الشهادات</dt><dd>${nl2br(a.certs || '—')}</dd>
+          ${a.cvUrl ? `<dt>المرفقات</dt><dd>${a.cvUrl ? `<a href="${esc(safeUrl(a.cvUrl))}" target="_blank" rel="noopener">فتح الرابط <i class="fa-solid fa-arrow-up-right-from-square"></i></a>` : '—'}</dd>` : ''}
           <dt>النبذة</dt><dd>${nl2br(a.bio)}</dd>
           ${FormKit.customDefs().filter((f, i, l) => a.extra?.[f.k] != null && l.findIndex(x => x.k === f.k) === i).map(f => `<dt>${esc(f.label)}</dt><dd>${esc(String(a.extra[f.k]).replace(/\|/g, '، '))}</dd>`).join('')}
         </dl>
@@ -400,6 +400,11 @@ function trainerEditor(t) {
     if (err) { toast(err, 'error'); return; }
     const ex = Data.splitExtra(d.extra);
     const rec = { ...Data.pick(d, Data.PUBLIC_FIELDS), status: d.status, updatedAt: Date.now(), extra: Object.keys(ex.pub).length ? ex.pub : null };
+    if (rec.specsOther) { // تخصص جديد: يدخل الكتالوج مباشرة بصلاحية الإدارة
+      const nk = Data.ensureSpecialty(rec.specsOther);
+      if (nk) { rec.specs = [...Data.specs(rec).filter(k => k !== 'other'), nk].filter((x, j, a) => a.indexOf(x) === j).slice(0, 15); }
+    }
+    rec.specsOther = null;
     rec.expiresAt = null; // الاشتراك مدى الحياة (يُزيل أي تاريخ انتهاء قديم)
     let id = t.id;
     if (isNew) {
@@ -620,7 +625,7 @@ function aContent(main) {
   const sec = (k, title, fields) => `<div class="pbox"><h3><i class="fa-solid fa-pen"></i>${title}</h3><div style="display:grid;gap:12px">${fields.map(([f, l, type, hint]) => field(l, type === 'area' ? `<textarea data-k="${k}.${f}">${esc(c[k][f])}</textarea>` : `<input type="${type || 'text'}" data-k="${k}.${f}" value="${esc(c[k][f])}">`, hint || '')).join('')}</div></div>`;
   main.innerHTML = `<div class="dash-h"><h2>المحتوى العام</h2><button class="btn primary" id="sv"><i class="fa-solid fa-floppy-disk"></i> حفظ كل التغييرات</button></div>
     <div class="banner info"><i class="fa-solid fa-house"></i>محتوى الصفحة الرئيسية وأقسامها يُعدَّل من تبويب «الصفحة الرئيسية»، وحقول نموذج التسجيل من «النماذج».</div>
-    ${sec('join', 'التسجيل والرسوم', [['fee', 'الرسوم (ريال)', 'number'], ['feeNote', 'وصف الرسوم'], ['period', 'مدة الاشتراك'], ['requirements', 'المتطلبات', 'area', 'كل متطلب في سطر'], ['benefits', 'المزايا', 'area', 'كل ميزة في سطر'], ['payment', 'تعليمات السداد', 'area']])}
+    ${sec('join', 'التسجيل والرسوم', [['fee', 'الرسوم (ريال)', 'number'], ['feeNote', 'وصف الرسوم'], ['period', 'مدة الاشتراك'], ['requirements', 'المتطلبات', 'area', 'كل متطلب في سطر'], ['benefits', 'المزايا', 'area', 'كل ميزة في سطر'], ['payment', 'تعليمات السداد', 'area'], ['disclaimer', 'إقرار الفرص التدريبية (آخر النموذج ولوحة المدرب)', 'area']])}
     ${sec('about', 'عن المنصة', [['intro', 'التعريف', 'area'], ['problem', 'المشكلة', 'area'], ['solution', 'الحل', 'area'], ['vision', 'الرؤية', 'area'], ['registered', 'سطر التسجيل الرسمي']])}
     ${sec('halls', 'القاعات', [['intro', 'النص التعريفي', 'area']])}
     ${sec('contact', 'تواصل المنصة (يظهر في التذييل)', [['email', 'البريد', 'email'], ['whatsapp', 'واتساب المنصة'], ['instagram', 'إنستقرام', 'url'], ['x', 'إكس', 'url'], ['linkedin', 'لينكدإن', 'url']])}`;
@@ -687,7 +692,7 @@ async function seedDemo() {
     ['أ. نورة القحطاني', 'Noura Alqahtani', 'f', 'eastern', 'الدمام', 'مدربة قيادة وتطوير مؤسسي', ['leadership', 'hr', 'quality'], 'القيادة التحويلية، بناء فرق العمل، إدارة التغيير، التخطيط الاستراتيجي', 14, 3600, 140, 'sage', ['onsite', 'hybrid']],
     ['د. عبدالله الحربي', 'Abdullah Alharbi', 'm', 'madinah', 'المدينة المنورة', 'مستشار ومدرب في ريادة الأعمال', ['entrepreneur', 'finance', 'projects'], 'من الفكرة إلى المشروع، دراسات الجدوى، نماذج العمل التجارية، التمويل للمشاريع الناشئة', 11, 2800, 96, 'cream', ['onsite', 'online']],
     ['أ. ريم الشهري', 'Reem Alshehri', 'f', 'asir', 'أبها', 'مدربة مهارات الاتصال وصناعة المحتوى', ['content', 'soft', 'marketing'], 'فن الإلقاء، صناعة المحتوى الرقمي، التسويق عبر وسائل التواصل، العلامة الشخصية', 7, 1500, 60, 'teal', ['online', 'hybrid']],
-    ['م. خالد العتيبي', 'Khalid Alotaibi', 'm', 'makkah', 'جدة', 'مدرب الأمن السيبراني والتحول الرقمي', ['cyber', 'it', 'digital'], 'أساسيات الأمن السيبراني، التوعية الأمنية للموظفين، حوكمة التقنية', 10, 1900, 70, 'olive', ['onsite', 'online']],
+    ['م. خالد العتيبي', 'Khalid Alotaibi', 'm', 'makkah', 'جدة', 'مدرب الأمن السيبراني والتحول الرقمي', ['cyber', 'programming', 'digital'], 'أساسيات الأمن السيبراني، التوعية الأمنية للموظفين، حوكمة التقنية', 10, 1900, 70, 'olive', ['onsite', 'online']],
     ['أ. سارة الدوسري', 'Sarah Aldosari', 'f', 'qassim', 'بريدة', 'مدربة إرشاد مهني ومهارات التوظيف', ['career', 'hr-dev', 'soft'], 'كتابة السيرة الذاتية، اجتياز المقابلات، التخطيط المهني، إدارة الوقت', 6, 1100, 48, 'brand', ['onsite', 'online']],
     ['أ. ماجد الشمري', 'Majed Alshammari', 'm', 'hail', 'حائل', 'مدرب تطوير الذات والتفكير الإبداعي', ['hr-dev', 'innovation', 'education'], 'التفكير الإبداعي، حل المشكلات، الذكاء العاطفي، تصميم الحقائب التدريبية', 12, 3000, 120, 'brand', ['onsite']],
     ['أ. هند المالكي', 'Hind Almalki', 'f', 'tabuk', 'تبوك', 'مدربة خدمة العملاء وتجربة المستفيد', ['customer', 'quality', 'soft'], 'تجربة العميل، التعامل مع العملاء الصعبين، معايير الجودة في الخدمة', 8, 1400, 55, 'sage', ['onsite', 'hybrid']]

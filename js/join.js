@@ -40,7 +40,8 @@ Pages.join = {
     body.innerHTML = steps.map((s, i) => `<div class="wiz-pane ${i ? '' : 'on'}" data-p="${i}"><h2>${esc(s.title)}</h2>${s.desc ? `<p class="muted">${esc(s.desc)}</p>` : ''}${FormKit.stepHTML(s, draft)}</div>`).join('')
       + `<div class="wiz-pane" data-p="${last}"><h2>المراجعة والإرسال</h2><div id="sum"></div>
         <div class="req-box"><b>السداد</b><p class="small" style="margin:.3em 0 0">${nl2br(c.join.payment)}</p></div>
-        <label class="chk consent"><input type="checkbox" name="agree"><span><i class="fa-solid fa-file-signature"></i> أقرّ بصحة البيانات، وأوافق على نشرها في المنصة وعلى رسوم التسجيل (<span class="num">${esc(c.join.fee)}</span> ريال) بعد القبول</span></label>
+        <div class="ack-box"><i class="fa-solid fa-circle-info"></i><p>${nl2br(c.join.disclaimer)}</p></div>
+        <label class="chk consent"><input type="checkbox" name="agree"><span><i class="fa-solid fa-file-signature"></i> أقرّ بصحة البيانات، وأوافق على نشرها في المنصة، وعلى رسوم الاشتراك (<span class="num">${esc(c.join.fee)}</span> ريال، ${esc(c.join.period)}) بعد القبول، وأطّلعت على الإقرار أعلاه</span></label>
       </div>`;
     const form = $('#wf', root);
     const panes = $$('.wiz-pane', root), stepsBtns = $$('#ws button', root);
@@ -69,9 +70,9 @@ Pages.join = {
       const d = FormKit.read(form);
       const show = f => {
         const v = f.custom ? d.extra[f.k] : d[f.k];
-        if (v == null || v === '' || f.type === 'theme' || f.type === 'photo') return '';
+        if ((v == null || v === '') && f.type !== 'tot' || f.type === 'theme' || f.type === 'photo' || (f.type === 'tot' && v == null)) return '';
         const txt = f.type === 'specs' ? Data.specs(d).map(specName).join('، ') : f.type === 'modes' ? Data.modes(d).map(m => DELIVERY.find(x => x.k === m)?.name).join('، ')
-          : f.type === 'region' ? regionName(v) : f.type === 'gender' ? (v === 'f' ? 'مدربة' : 'مدرب') : f.type === 'consent' ? '✓' : String(v).replace(/\|/g, '، ');
+          : f.type === 'region' ? regionName(v) : f.type === 'gender' ? (v === 'f' ? 'مدربة' : 'مدرب') : f.type === 'consent' ? '✓' : f.type === 'tot' ? (v ? 'حصلت على شهادة TOT' : 'لم أحصل على الشهادة حتى الآن') : String(v).replace(/\|/g, '، ');
         return `<dt>${esc(f.label)}</dt><dd>${esc(txt)}</dd>`;
       };
       $('#sum', root).innerHTML = `<dl class="dl">${steps.flatMap(s => s.fields).map(show).join('')}</dl>`;
@@ -87,6 +88,7 @@ Pages.join = {
       const rec = { ...Data.pick(d, Data.PUBLIC_FIELDS), phone: phoneDigits(d.phone), email: String(d.email || '').toLowerCase(), id, ts: Date.now(), status: 'new' };
       if (d.cvUrl) rec.cvUrl = d.cvUrl;
       if (d.tot != null) rec.tot = !!d.tot;
+      rec.ack = true;
       if (Object.keys(d.extra).length) rec.extra = d.extra;
       if (!rec.noPhoto) delete rec.noPhoto;
       $('#wn', root).disabled = true; $('#wn', root).innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ الإرسال';

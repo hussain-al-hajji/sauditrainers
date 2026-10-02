@@ -72,7 +72,8 @@ function portalHome(main, t) {
         <div class="pbox"><h3><i class="fa-solid fa-lock"></i>بيانات إدارية (لا تظهر للعامة)</h3><dl class="dl"><dt>الجوال</dt><dd class="num">${esc(priv.phone || '—')}</dd><dt>البريد</dt><dd>${esc(priv.email || '—')}</dd><dt>تاريخ الانضمام</dt><dd>${fmtDate(t.publishedAt)}</dd><dt>الاشتراك</dt><dd>مدى الحياة</dd></dl><p class="small muted">لتعديلها تواصل مع إدارة المنصة.</p></div>
       </div>
       <div class="preview">${Card.full(t)}</div>
-    </div>`;
+    </div>
+    <p class="ack-note"><i class="fa-solid fa-circle-info"></i>${esc(Data.content().join.disclaimer || '')}</p>`;
   countUp(main); tilt(main);
   $('#sh', main).onclick = () => Card.share(t);
   $('#cl', main).onclick = () => copyText(profileUrl(t), 'تم نسخ رابط صفحتك');
