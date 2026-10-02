@@ -15,7 +15,7 @@ const Card = (() => {
   const SYM_F = 'M50 10C34 10 24 21 24 36c0 9 3 16 8 21C20 62 12 72 10 100h80c-2-28-10-38-22-43 5-5 8-12 8-21C76 21 66 10 50 10z';
   const SYM_M_BODY = 'M14 100c2-24 16-36 36-36s34 12 36 36z';
   const symbol = g => (g === 'f'
-    ? `<svg viewBox="0 0 100 100" aria-hidden="true"><path d="${SYM_F}" fill="var(--acc,#EEF3E5)"/><ellipse cx="50" cy="37" rx="12" ry="15" fill="var(--a,#003A21)" fill-opacity=".5"/></svg>`
+    ? `<svg viewBox="0 0 100 100" aria-hidden="true"><path d="${SYM_F}" fill="var(--acc,#EEF3E5)"/></svg>`
     : `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="36" r="17" fill="var(--acc,#EEF3E5)"/><path d="${SYM_M_BODY}" fill="var(--acc,#EEF3E5)"/></svg>`);
   function avatar(t, cls = '') {
     if (t.noPhoto) return `<span class="${cls} avw sym" role="img" aria-label="${t.gender === 'f' ? 'صورة رمزية لمدربة' : 'صورة رمزية'}">${symbol(t.gender)}</span>`;
@@ -158,7 +158,7 @@ const Card = (() => {
       const pg = ctx.createLinearGradient(cx - D / 2, cy - D / 2, cx + D / 2, cy + D / 2); pg.addColorStop(0, th.c); pg.addColorStop(1, th.a);
       ctx.fillStyle = pg; ctx.fillRect(cx - D / 2, cy - D / 2, D, D);
       ctx.save(); ctx.translate(cx - D / 2, cy - D / 2); ctx.scale(D / 100, D / 100); ctx.fillStyle = th.accent;
-      if (t.gender === 'f') { ctx.fill(new Path2D(SYM_F)); ctx.fillStyle = hex(th.a, 0.5); ctx.beginPath(); ctx.ellipse(50, 37, 12, 15, 0, 0, Math.PI * 2); ctx.fill(); }
+      if (t.gender === 'f') ctx.fill(new Path2D(SYM_F));
       else { ctx.beginPath(); ctx.arc(50, 36, 17, 0, Math.PI * 2); ctx.fill(); ctx.fill(new Path2D(SYM_M_BODY)); }
       ctx.restore();
     } else if (photo) {
