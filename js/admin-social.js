@@ -105,12 +105,13 @@ function aSocial(main) {
   };
   main.innerHTML = `
     <div class="dash-h"><h2>النشر الاجتماعي</h2><div class="row">
+      <button class="btn sm" id="guide"><i class="fa-solid fa-book-open"></i> دليل الربط</button>
       <button class="btn sm" id="cfg"><i class="fa-solid fa-plug"></i> الربط والقوالب</button>
       <button class="btn sm" id="bulk"><i class="fa-solid fa-calendar-plus"></i> جدولة مجموعة</button>
       <button class="btn primary sm" id="new"><i class="fa-solid fa-plus"></i> منشور جديد</button></div></div>
     <div class="banner ${Automation.on ? 'ok' : 'info'}"><i class="fa-solid ${Automation.on ? 'fa-robot' : 'fa-hand-pointer'}"></i><span>${Automation.on
       ? `النشر الآلي مفعّل${auto.lastRun ? ` · آخر تشغيل ${ago(auto.lastRun)}` : ''}${auto.platforms ? ` · الحسابات المربوطة: ${PLATFORMS.filter(x => auto.platforms[x.k]).map(x => x.name).join('، ') || 'لا شيء بعد'}` : ''}. تُنشر المنشورات المجدولة تلقائياً في موعدها.`
-      : 'النشر الآن يدوي بضغطة: يجهّز النص والصورة ويفتح المنصة. لتفعيل النشر الآلي والجدولة اربط Google Apps Script وحسابات المنصات (التفاصيل في «الربط والقوالب»).'}</span></div>
+      : 'النشر الآن يدوي بضغطة: يجهّز النص والصورة ويفتح المنصة. لتفعيل النشر الآلي والجدولة اربط Google Apps Script وحسابات المنصات (الخطوات في <a href="#" data-guide="base">دليل الربط</a>).'}</span></div>
     <div class="cal">${days.map(d => { const n = dayCount(d); return `<div class="cal-d ${n ? 'has' : ''}"><small>${d.toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { weekday: 'short' })}</small><b class="num">${d.getDate()}</b>${n ? `<span class="num">${n}</span>` : ''}</div>`; }).join('')}</div>
     <h3 class="sp-h">المجدولة <span class="muted num">(${up.length})</span></h3>${up.map(row).join('') || '<p class="muted small">لا منشورات مجدولة.</p>'}
     ${drafts.length ? `<h3 class="sp-h">المسودات <span class="muted num">(${drafts.length})</span></h3>${drafts.map(row).join('')}` : ''}
@@ -118,6 +119,8 @@ function aSocial(main) {
   $('#new', main).onclick = () => postEditor({});
   $('#bulk', main).onclick = bulkScheduler;
   $('#cfg', main).onclick = socialSettings;
+  $('#guide', main).onclick = () => linkGuide();
+  $$('[data-guide]', main).forEach(b => b.onclick = () => linkGuide(b.dataset.guide));
   const get = id => Store.get(`social/${id}`);
   $$('[data-ed]', main).forEach(b => b.onclick = () => postEditor(get(b.dataset.ed)));
   $$('[data-dup]', main).forEach(b => b.onclick = () => { const p = get(b.dataset.dup); postEditor({ ...p, id: null, status: 'draft', results: null, scheduledAt: null }); });
@@ -265,7 +268,7 @@ function socialSettings() {
         <dt>آخر اتصال</dt><dd>${auto.lastPing ? fmtTs(auto.lastPing) : '—'}</dd>
         ${PLATFORMS.map(x => `<dt><i class="${x.icon}"></i> ${x.name}</dt><dd>${auto.platforms?.[x.k] ? '<span class="pill ok">مربوط</span>' : '<span class="pill gray">غير مربوط</span>'}</dd>`).join('')}
       </dl>
-      <p class="small muted">الربط يتم بإضافة مفاتيح كل منصة في خصائص Google Apps Script (لا تُحفظ في الموقع). الخطوات في <b>integrations/google-apps-script/README.md</b>.</p>
+      <p class="small muted">الربط يتم بإضافة مفاتيح كل منصة في خصائص Google Apps Script (لا تُحفظ في الموقع). الخطوات الكاملة في <a href="#" data-guide="base" id="g2">دليل الربط</a>.</p>
       ${Automation.on ? '<button class="btn sm" id="ping"><i class="fa-solid fa-satellite-dish"></i> اختبار الاتصال</button>' : ''}
     </div>
     <form id="ss" style="display:grid;gap:12px">
@@ -275,6 +278,7 @@ function socialSettings() {
       ${PLATFORMS.map(x => field(`قالب ${x.name}`, `<textarea name="t_${x.k}" style="min-height:${x.k === 'x' ? 110 : 150}px">${esc(s.tpl?.[x.k] || SOCIAL_TPL[x.k])}</textarea>`)).join('')}
       <button class="btn primary">حفظ</button>
     </form>`, { wide: true });
+  m.$('#g2') && (m.$('#g2').onclick = e => { e.preventDefault(); m.close(); linkGuide(); });
   m.$('#ping') && (m.$('#ping').onclick = async () => { await Automation.notify('ping'); toast('أُرسل طلب الاختبار — حدّث النافذة بعد لحظات'); });
   m.$('#ss').onsubmit = e => {
     e.preventDefault();
@@ -284,4 +288,82 @@ function socialSettings() {
     Store.set('settings/social', { handles, hashtags: d.hashtags, tpl });
     m.close(); toast('تم الحفظ');
   };
+}
+
+/* ===================== دليل الربط: خطوات ربط الأتمتة وكل منصة ===================== */
+function linkGuide(open = 'base') {
+  const auto = Store.get('settings/automation') || {};
+  const conn = auto.platforms || {};
+  const code = t => `<code class="cp" data-cp="${esc(t)}" title="انقر للنسخ">${esc(t)}</code>`;
+  const a = (href, txt) => `<a href="${href}" target="_blank" rel="noopener">${txt} <i class="fa-solid fa-arrow-up-right-from-square"></i></a>`;
+  const status = ok => `<span class="pill ${ok ? 'ok' : 'gray'}">${ok ? 'مربوط' : 'غير مربوط'}</span>`;
+  const steps = list => `<ol class="gd-steps">${list.map(x => `<li>${x}</li>`).join('')}</ol>`;
+  const props = list => `<div class="gd-props"><b>أضف في Script Properties:</b>${list.map(([k, d]) => `<div>${code(k)}<span>${d}</span></div>`).join('')}</div>`;
+  const sec = (k, icon, title, st, body) => `<details class="gd" ${open === k ? 'open' : ''}><summary><i class="${icon}"></i><b>${title}</b>${st || ''}</summary><div class="gd-body">${body}</div></details>`;
+  const m = modal(`<h3><i class="fa-solid fa-book-open"></i> دليل ربط النشر الاجتماعي</h3>
+    <div class="banner info"><i class="fa-solid fa-circle-info"></i><span>النشر <b>اليدوي بضغطة</b> يعمل من الآن دون أي ربط. أما <b>الجدولة والنشر الآلي</b> فتتطلب الخطوة الأولى (الأتمتة) ثم ربط كل منصة تريدها. مفاتيح المنصات تُحفظ في Google Apps Script فقط، ولا تُكتب في الموقع.</span></div>
+    ${sec('base', 'fa-solid fa-robot', '١) تفعيل الأتمتة (مطلوب لكل المنصات)', status(Automation.on), `
+      <p class="muted small">سكربت مجاني يعمل من حساب المنصة <b>trainers.sa3@gmail.com</b>، ويفحص المنشورات المجدولة كل 5 دقائق وينشرها. يتطلب أن تكون المنصة مفعّلة على Firebase.</p>
+      ${steps([
+        `في ${a('https://console.firebase.google.com/', 'Firebase Console')} ← ⚙️ Project settings ← Users and permissions ← Add member: أضف <b>trainers.sa3@gmail.com</b> بدور <b>Editor</b>.`,
+        `سجّل الدخول في المتصفح بحساب <b>trainers.sa3@gmail.com</b>، وافتح ${a('https://script.google.com', 'script.google.com')} ← <b>New project</b>.`,
+        `الصق محتوى ${code('integrations/google-apps-script/Code.gs')} من المستودع في ملف <b>Code.gs</b> (يحتوي رابط قاعدتك مسبقاً، وعدّل <b>SITE</b> برابط الموقع).`,
+        `⚙️ <b>Project Settings</b> ← فعّل «Show appsscript.json manifest file in editor» ← الصق محتوى ${code('appsscript.json')} من نفس المجلد.`,
+        `اختر الدالة <b>setupTriggers</b> واضغط <b>Run</b> ووافق على الصلاحيات. يجب أن يظهر في السجل «تم: مؤقّت النشر يعمل».`,
+        `<b>Deploy ← New deployment ← Web app</b>: Execute as: <b>Me</b>، Who has access: <b>Anyone</b>. انسخ الرابط الذي ينتهي بـ <code>/exec</code>.`,
+        `ضعه في ${code('js/config.js')} داخل <code>automationUrl: '...'</code> وارفع التعديل.`,
+        `ارجع هنا ← «الربط والقوالب» ← <b>اختبار الاتصال</b>؛ يظهر وقت آخر اتصال والمنصات المربوطة.`
+      ])}
+      <p class="small muted">عند تعديل الكود لاحقاً: Deploy ← Manage deployments ← ✏️ ← Version: New version ليبقى الرابط نفسه.</p>`)}
+    ${sec('x', 'fa-brands fa-x-twitter', '٢) إكس (X / تويتر)', status(conn.x), `
+      <p class="muted small">يُنشر عبر X API v2 بصلاحية الكتابة. الباقة المجانية محدودة بعدد قليل من المنشورات شهرياً وتتغير شروطها، فراجعها في بوابة المطورين.</p>
+      ${steps([
+        `سجّل بحساب المنصة في ${a('https://developer.x.com/en/portal/dashboard', 'بوابة مطوري X')} وأنشئ <b>Project</b> ثم <b>App</b>.`,
+        `من App ← <b>User authentication settings</b> ← Set up: اجعل App permissions: <b>Read and write</b>، ونوع التطبيق Web App أو Automated App، وضع رابط الموقع في Callback وWebsite.`,
+        `من <b>Keys and tokens</b>: ولّد <b>API Key و API Key Secret</b>.`,
+        `ثم ولّد <b>Access Token و Access Token Secret</b> (<b>بعد</b> ضبط صلاحية الكتابة، وإلا تُولَّد بصلاحية قراءة فقط ثم أعد توليدها). تأكد أنها مكتوب بجانبها «Read and Write».`,
+        `انسخ القيم الأربع إلى Script Properties في المشروع: <b>Project Settings ← Script Properties ← Add script property</b>.`
+      ])}
+      ${props([['X_API_KEY', 'API Key'], ['X_API_SECRET', 'API Key Secret'], ['X_ACCESS_TOKEN', 'Access Token'], ['X_ACCESS_SECRET', 'Access Token Secret']])}
+      <p class="small muted">إن رفضت X رفع الصورة يُنشر النص مع الرابط بلا صورة. في «اختبار الاتصال» تظهر إكس «مربوط» عند وجود المفاتيح الأربعة.</p>`)}
+    ${sec('linkedin', 'fa-brands fa-linkedin-in', '٣) لينكدإن', status(conn.linkedin), `
+      <p class="muted small">النشر عبر LinkedIn Posts API، إما باسم حساب شخصي أو باسم صفحة الشركة.</p>
+      ${steps([
+        `افتح ${a('https://www.linkedin.com/developers/apps', 'LinkedIn Developers')} ← <b>Create app</b> واربطه بصفحة المنصة على لينكدإن (مطلوب) وأضف شعار المنصة.`,
+        `من تبويب <b>Products</b>: اطلب <b>Share on LinkedIn</b> للنشر من حساب شخصي (<code>w_member_social</code>)، أو <b>Community Management API</b> للنشر باسم الصفحة (<code>w_organization_social</code>، يحتاج موافقة لينكدإن).`,
+        `من تبويب <b>Auth</b> أضف Redirect URL: <code>https://www.linkedin.com/developers/tools/oauth/redirect</code>.`,
+        `افتح ${a('https://www.linkedin.com/developers/tools/oauth', 'OAuth token generator')} واختر التطبيق والصلاحية ثم <b>Request access token</b> وانسخ <b>Access Token</b>.`,
+        `حدّد <b>LI_AUTHOR_URN</b>: للحساب الشخصي <code>urn:li:person:XXXX</code> (معرّف يظهر من طلب <code>/v2/userinfo</code> بحقل <b>sub</b>)، ولصفحة الشركة <code>urn:li:organization:رقم_الصفحة</code> (الرقم في رابط إدارة الصفحة).`,
+        `أضف القيم في Script Properties.`
+      ])}
+      ${props([['LI_ACCESS_TOKEN', 'التوكن (ينتهي بعد 60 يوماً ويُجدَّد بنفس الطريقة)'], ['LI_AUTHOR_URN', 'urn:li:person:... أو urn:li:organization:...'], ['LI_VERSION', 'اختياري: إصدار الواجهة بصيغة YYYYMM (الافتراضي 202501)']])}`)}
+    ${sec('instagram', 'fa-brands fa-instagram', '٤) إنستقرام', status(conn.instagram), `
+      <p class="muted small">النشر عبر Instagram Graph API، ويتطلب <b>حساباً احترافياً</b> (Business أو Creator) مرتبطاً بصفحة فيسبوك. الصورة مطلوبة دائماً، والسكربت يرفعها مؤقتاً إلى Drive ثم يحذفها بعد النشر.</p>
+      ${steps([
+        `في تطبيق إنستقرام: الإعدادات ← نوع الحساب والأدوات ← <b>التحويل إلى حساب احترافي</b>، ثم اربطه بصفحة فيسبوك للمنصة (الإعدادات ← الحسابات المرتبطة).`,
+        `افتح ${a('https://developers.facebook.com/apps/', 'Meta for Developers')} ← <b>Create app</b> بنوع Business، وأضف منتج <b>Instagram</b> (Instagram API with Facebook Login).`,
+        `من ${a('https://developers.facebook.com/tools/explorer/', 'Graph API Explorer')} اختر التطبيق وولّد توكن بالصلاحيات: <code>instagram_basic</code> و<code>instagram_content_publish</code> و<code>pages_show_list</code> و<code>pages_read_engagement</code>.`,
+        `حوّله إلى توكن طويل المدة: من ${a('https://developers.facebook.com/tools/debug/accesstoken/', 'Access Token Debugger')} ← <b>Extend Access Token</b> (يصبح صالحاً نحو 60 يوماً ويُجدَّد).`,
+        `اعرف <b>IG_USER_ID</b>: من Graph API Explorer نفّذ <code>me/accounts</code> لتعرف معرّف الصفحة، ثم <code>{page-id}?fields=instagram_business_account</code> وخذ قيمة <b>id</b>.`,
+        `إن كان التطبيق في وضع Development يعمل لحسابك كمدير للتطبيق. أما للإنتاج فيحتاج مراجعة التطبيق (App Review) لصلاحية النشر.`,
+        `أضف القيم في Script Properties.`
+      ])}
+      ${props([['IG_USER_ID', 'معرّف حساب إنستقرام الاحترافي'], ['IG_ACCESS_TOKEN', 'التوكن الطويل المدة'], ['IG_GRAPH_VERSION', 'اختياري: مثل v21.0']])}`)}
+    ${sec('manual', 'fa-solid fa-hand-pointer', '٥) النشر اليدوي (دون ربط)', '', `
+      <p class="muted small">يعمل فوراً من المتصفح على الحاسوب:</p>
+      ${steps([
+        `أنشئ منشوراً أو جدوله، ثم اضغط <b>نشر الآن</b> (عند عدم تفعيل الأتمتة تظهر نافذة النشر اليدوي).`,
+        `لكل منصة: <b>نسخ النص</b> و<b>الصورة</b> (تنزيل) ثم <b>فتح المنصة</b>: إكس ولينكدإن يفتحان نافذة كتابة بالنص جاهزاً، وإنستقرام يُرفع المنشور من الجوال أو من instagram.com بالصورة والنص المنسوخ.`,
+        `بعد النشر اضغط <b>تم</b> لتتحول حالة المنشور إلى «منشور».`
+      ])}`)}
+    ${sec('trouble', 'fa-solid fa-screwdriver-wrench', '٦) حل المشكلات', '', `
+      <ul class="gd-list">
+        <li><b>«الحساب غير مربوط»:</b> مفتاح من المفاتيح ناقص أو بغير الاسم الدقيق في Script Properties.</li>
+        <li><b>«حان موعده» ولم يُنشر:</b> تأكد أن المؤقت شغّال (شغّل <b>setupTriggers</b> مرة أخرى)، وأن «Who has access» للـ Web app هو Anyone.</li>
+        <li><b>خطأ 401/403 من المنصة:</b> انتهت صلاحية التوكن (لينكدإن وإنستقرام نحو 60 يوماً) أو ينقصه صلاحية؛ ولّده من جديد وحدّث القيمة.</li>
+        <li><b>إكس 403:</b> التوكن بصلاحية قراءة فقط؛ غيّر App permissions إلى Read and write ثم أعد توليد Access Token.</li>
+        <li><b>أين أرى سبب الفشل؟</b> في سجل المنشور بجانب أيقونة المنصة (مرّر المؤشر)، وفي سكربت Apps Script ← Executions.</li>
+        <li><b>بعد تعديل الكود لا يتغير السلوك:</b> انشر نسخة جديدة من الـ Deployment.</li>
+      </ul>`)}`, { wide: true });
+  $$('.cp', m.el).forEach(c => c.onclick = () => copyText(c.dataset.cp, 'تم النسخ'));
 }
