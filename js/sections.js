@@ -71,7 +71,7 @@ const SECTION_TYPES = (() => {
     render(sec) {
       const items = sec.tpl === 'regions' ? REGIONS.map(r => `<a href="#/trainers?region=${r.k}"><i class="fa-solid fa-location-dot"></i>${r.name}</a>`)
         : sec.tpl === 'words' ? splitList(sec.d.words).map(w => `<span class="mq-word"><i class="fa-solid fa-star-of-life"></i>${esc(w)}</span>`)
-          : SPECIALTIES.map(s => `<a href="#/trainers?spec=${s.k}"><i class="fa-solid ${s.icon}"></i>${s.name}</a>`);
+          : SPECIALTIES.map(s => `<a href="#/trainers?spec=${s.k}"><i class="fa-solid ${s.icon}"></i>${esc(s.name)}</a>`);
       return `<div class="marquee" aria-hidden="${sec.tpl === 'words'}"><div class="marquee-track">${[...items, ...items].join('')}</div></div>`;
     }
   };
@@ -126,8 +126,8 @@ const SECTION_TYPES = (() => {
     def: () => ({ eyebrow: 'ابحث بالتخصص', title: 'كل مجال تدريبي… له أهله' }),
     render(sec) {
       const sc = Data.specCounts();
-      const body = sec.tpl === 'chips' ? `<div class="spec-chips">${SPECIALTIES.map(s => `<a href="#/trainers?spec=${s.k}"><i class="fa-solid ${s.icon}"></i>${s.name}<b class="num">${sc[s.k] || 0}</b></a>`).join('')}</div>`
-        : `<div class="specs">${SPECIALTIES.map((s, i) => `<a class="spec reveal" style="--d:${(i % 8) * 40}ms" href="#/trainers?spec=${s.k}"><span class="ic"><i class="fa-solid ${s.icon}"></i></span><span><b>${s.name}</b><small><span class="num">${sc[s.k] || 0}</span> مدرب</small></span></a>`).join('')}</div>`;
+      const body = sec.tpl === 'chips' ? `<div class="spec-chips">${SPECIALTIES.map(s => `<a href="#/trainers?spec=${s.k}"><i class="fa-solid ${s.icon}"></i>${esc(s.name)}<b class="num">${sc[s.k] || 0}</b></a>`).join('')}</div>`
+        : `<div class="specs">${SPECIALTIES.map((s, i) => `<a class="spec reveal" style="--d:${(i % 8) * 40}ms" href="#/trainers?spec=${s.k}"><span class="ic"><i class="fa-solid ${s.icon}"></i></span><span><b>${esc(s.name)}</b><small><span class="num">${sc[s.k] || 0}</span> مدرب</small></span></a>`).join('')}</div>`;
       return `<div class="wrap">${head(sec.d)}${body}</div>`;
     }
   };

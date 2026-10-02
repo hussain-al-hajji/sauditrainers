@@ -239,6 +239,7 @@
           "id": {
             ".validate": "newData.isString() && newData.val().length <= 40"
           },
+          ".validate": "$id.matches(/^[A-Za-z0-9_-]{1,40}$/)",
           "$other": {
             ".validate": false
           }
@@ -304,6 +305,7 @@
           "id": {
             ".validate": "newData.isString() && newData.val().length <= 40"
           },
+          ".validate": "$id.matches(/^[A-Za-z0-9_-]{1,40}$/)",
           "$other": {
             ".validate": false
           }
@@ -345,6 +347,7 @@
           "id": {
             ".validate": "newData.isString() && newData.val().length <= 40"
           },
+          ".validate": "$id.matches(/^[A-Za-z0-9_-]{1,40}$/)",
           "$other": {
             ".validate": false
           }
@@ -485,6 +488,7 @@
           "id": {
             ".validate": "newData.isString() && newData.val().length <= 40"
           },
+          ".validate": "$id.matches(/^A[0-9A-Z]{7}$/)",
           "$other": {
             ".validate": false
           },
@@ -492,8 +496,7 @@
             "$k": {
               ".validate": "$k.matches(/^[a-z0-9_]{1,30}$/) && newData.isString() && newData.val().length <= 1000"
             }
-          },
-          ".validate": "$id.matches(/^A[0-9A-Z]{7}$/)"
+          }
         }
       },
       "appStatus": {

@@ -102,7 +102,7 @@ function mountAdminLogin(root) {
 
 /* ===================== المؤشرات ===================== */
 function aDash(main) {
-  const all = Data.all(), live = Data.live();
+  const live = Data.live();
   const apps = Store.list('applications');
   const views = Object.values(Store.get('stats/views') || {}).reduce((a, b) => a + Number(b || 0), 0);
   const clicks = Object.values(Store.get('stats/clicks') || {}).reduce((a, b) => a + Number(b || 0), 0);

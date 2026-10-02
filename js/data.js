@@ -56,11 +56,11 @@ const DEFAULT_SPECS = [
 // الكتالوج الفعّال: يُحدَّث في مكانه (نفس المصفوفة) من القاعدة، فتبقى المراجع إليه سليمة
 const SPECIALTIES = DEFAULT_SPECS.map(x => ({ ...x }));
 function loadSpecialties() {
-  const stored = (typeof Store !== 'undefined' ? arr(Store.get('content/specialties/list')) : []).filter(x => x && x.k && x.name);
+  const stored = (typeof Store !== 'undefined' ? arr(Store.get('content/specialties/list')) : []).filter(x => x && /^[a-z0-9_-]{1,20}$/.test(x.k) && x.name);
   const src = stored.length ? stored : DEFAULT_SPECS;
   if (!src.some(x => x.k === 'other')) src.push(DEFAULT_SPECS[DEFAULT_SPECS.length - 1]);
   SPECIALTIES.length = 0;
-  src.forEach(x => SPECIALTIES.push({ k: x.k, name: x.name, icon: /^fa-[a-z0-9-]{1,40}$/.test(x.icon || '') ? x.icon : 'fa-shapes' }));
+  src.forEach(x => SPECIALTIES.push({ k: x.k, name: String(x.name).slice(0, 60), icon: /^fa-[a-z0-9-]{1,40}$/.test(x.icon || '') ? x.icon : 'fa-shapes' }));
 }
 const specOf = k => SPECIALTIES.find(s => s.k === k);
 const specName = k => specOf(k)?.name || '';

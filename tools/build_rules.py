@@ -66,6 +66,7 @@ def public_form(required, spec):
     node['status'] = {'.validate': status_new.replace(admin, f"({admin} || newData.val() == 'done')")}
     node['ts'] = {'.validate': 'newData.isNumber() && newData.val() <= now + 60000'}
     node['id'] = {'.validate': S(40)}
+    node['.validate'] = '$id.matches(/^[A-Za-z0-9_-]{1,40}$/)'
     node['$other'] = {'.validate': False}
     return node
 

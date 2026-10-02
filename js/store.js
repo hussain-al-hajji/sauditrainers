@@ -114,7 +114,6 @@ const Store = (() => {
       await authApi.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {});
     }
     mode = 'firebase';
-    fbApp = app;
     // تنبيه قبل إغلاق الصفحة إذا وُجدت تعديلات لم تصل للقاعدة بعد
     window.addEventListener('beforeunload', e => {
       if (pending > 0) { e.preventDefault(); e.returnValue = ''; }
@@ -122,7 +121,6 @@ const Store = (() => {
   }
 
   /* ===== نطاقات القراءة: كل دور يستمع فقط للمسارات المسموح له بقراءتها ===== */
-  let fbApp = null;
   let authApi = null;
   let secondaryApp = null;
   const listeners = new Map();   // path -> ref

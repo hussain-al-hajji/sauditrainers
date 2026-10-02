@@ -15,7 +15,6 @@ function toEnDigits(s) {
     .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
     .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));
 }
-const num = n => `<span class="num">${esc(n)}</span>`;
 const fmtNum = n => Number(n || 0).toLocaleString('en-US');
 function fmtDate(ts) {
   if (!ts) return '—';
@@ -57,7 +56,7 @@ function driveImg(url, w = 800) {
   if (url.startsWith('data:image/')) return url; // للمعاينة والبيانات التجريبية فقط
   const id = driveId(url);
   if (id && /drive\.google|docs\.google|googleusercontent/.test(url)) return `https://lh3.googleusercontent.com/d/${id}=w${w}`;
-  return /^https:\/\/[^\s"'<>]+$/.test(url) ? url : '';
+  return /^https:\/\/lh3\.googleusercontent\.com\/[^\s"'<>]+$/.test(url) ? url : '';
 }
 const isDriveLink = url => !!driveId(url) && /drive\.google|docs\.google/.test(url);
 // كشف بيانات التواصل داخل النصوص العامة (جوال، بريد، روابط) لأن التواصل يتم عبر المنصة فقط
@@ -121,26 +120,6 @@ function download(name, data, type = 'application/octet-stream') {
 async function copyText(t, msg = 'تم النسخ') {
   try { await navigator.clipboard.writeText(t); toast(msg); }
   catch { const ta = document.createElement('textarea'); ta.value = t; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast(msg); }
-}
-
-// تصغير الصورة المرفوعة وقصّها مربعاً (تُحفظ في القاعدة مباشرة دون خدمة تخزين)
-function resizeImage(file, size = 420, quality = 0.84) {
-  return new Promise((res, rej) => {
-    if (!file || !/^image\//.test(file.type)) return rej(new Error('الملف ليس صورة'));
-    const img = new Image();
-    img.onload = () => {
-      const s = Math.min(img.width, img.height);
-      const cv = document.createElement('canvas'); cv.width = cv.height = size;
-      const ctx = cv.getContext('2d');
-      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, size, size);
-      // القص من المنتصف مع ميل للأعلى (الوجه عادة في الجزء العلوي)
-      ctx.drawImage(img, (img.width - s) / 2, Math.max(0, (img.height - s) * 0.3), s, s, 0, 0, size, size);
-      URL.revokeObjectURL(img.src);
-      res(cv.toDataURL('image/jpeg', quality));
-    };
-    img.onerror = () => rej(new Error('تعذّر قراءة الصورة'));
-    img.src = URL.createObjectURL(file);
-  });
 }
 
 /* ===== النماذج ===== */

@@ -32,7 +32,7 @@ const App = (() => {
     // الصفحة الحالية: مقطع المسار الأول من الرابط (والمدرب t يتبع «المدربون»)
     const seg = h => (String(h).replace(/^#\/?/, '').split(/[?/]/)[0]) || '';
     const cur = page === 'profile' ? 'trainers' : parse().seg;
-    const link = n => { const ext = /^https?:/i.test(n.href); return `<a href="${esc(n.href)}" class="${!ext && seg(n.href) === cur ? 'on' : ''}" ${ext ? 'target="_blank" rel="noopener"' : ''}>${esc(n.label)}</a>`; };
+    const link = n => { const h = safeHref(n.href); if (!h) return ''; const ext = /^https?:/i.test(h); return `<a href="${esc(h)}" class="${!ext && seg(n.href) === cur ? 'on' : ''}" ${ext ? 'target="_blank" rel="noopener"' : ''}>${esc(n.label)}</a>`; };
     return `${ticker()}<header class="topbar ${dark ? 'dark' : ''}" id="top"><div class="wrap">
       <a class="logo" href="#/" aria-label="مدرّبون سعوديّون — الرئيسية">${logoImg('green', 'on-light')}${logoImg('cream', 'on-dark')}</a>
       <nav class="nav" id="nav">

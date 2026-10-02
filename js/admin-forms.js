@@ -97,7 +97,7 @@ function aForms(main) {
 // يحفظ من الحقل الأساسي التعديلات فقط، ومن المخصص تعريفه كاملاً
 function strip(steps) {
   return steps.map(s => ({ id: s.id, title: s.title, icon: s.icon || '', desc: s.desc || '', fields: s.fields.map(f => {
-    if (f.custom) { const { core, lock, priv, joinOnly, ...rest } = f; return rest; }
+    if (f.custom) { const rest = { ...f }; ['core', 'lock', 'priv', 'joinOnly'].forEach(k => delete rest[k]); return rest; }
     const o = { k: f.k }; ['label', 'hint', 'ph', 'w'].forEach(k => { if (f[k] != null && f[k] !== CORE_FIELDS[f.k][k]) o[k] = f[k]; });
     if (!f.lock && !!f.req !== !!CORE_FIELDS[f.k].req) o.req = !!f.req;
     if (f.hidden && !f.lock) o.hidden = true;

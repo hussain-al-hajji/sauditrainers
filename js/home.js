@@ -83,7 +83,7 @@ function mountSuggest(input, box, { onPick } = {}) {
     const rg = REGIONS.filter(r => normAr(r.name).includes(nq)).slice(0, 2);
     if (!ts.length && !sp.length && !rg.length) { box.innerHTML = `<div class="s-h">لا نتائج مطابقة — جرّب «اطلب مدرباً» ونبحث لك</div>`; box.classList.add('open'); return; }
     box.innerHTML = `${ts.length ? '<div class="s-h">مدربون</div>' : ''}${ts.map(t => `<a href="#/t/${esc(encodeURIComponent(t.slug || t.id))}">${Card.avatar(t, 's-av')}<span><b>${esc(t.name)}</b><small>${esc(t.title || '')} · ${esc(regionName(t.region))}</small></span></a>`).join('')}
-      ${sp.length ? '<div class="s-h">تخصصات</div>' : ''}${sp.map(s => `<a href="#/trainers?spec=${s.k}"><span class="s-av"><i class="fa-solid ${s.icon}"></i></span><span><b>${s.name}</b><small>${Data.specCounts()[s.k] || 0} مدرب</small></span></a>`).join('')}
+      ${sp.length ? '<div class="s-h">تخصصات</div>' : ''}${sp.map(s => `<a href="#/trainers?spec=${s.k}"><span class="s-av"><i class="fa-solid ${s.icon}"></i></span><span><b>${esc(s.name)}</b><small>${Data.specCounts()[s.k] || 0} مدرب</small></span></a>`).join('')}
       ${rg.length ? '<div class="s-h">مناطق</div>' : ''}${rg.map(r => `<a href="#/trainers?region=${r.k}"><span class="s-av"><i class="fa-solid fa-location-dot"></i></span><span><b>منطقة ${r.name}</b><small>${Data.regionCounts()[r.k] || 0} مدرب</small></span></a>`).join('')}`;
     box.classList.add('open'); idx = -1;
   };
