@@ -181,33 +181,61 @@ function tilt(root = document) {
   });
 }
 
-/* مربع بحث تلقائي أول كل قائمة طويلة: القوائم المنسدلة وشبكات الاختيار (أكثر من 12 عنصراً)، أينما ظهرت */
+/* بحث داخل كل قائمة طويلة (أكثر من 12 عنصراً): القوائم المنسدلة تفتح لوحة فيها مربع بحث في أولها، وشبكات الاختيار فيها مربع بحث في أولها */
 const LONG_LIST = 12;
+let lsPanel = null;
+function closeListPanel() { if (lsPanel) { lsPanel.remove(); lsPanel = null; } }
+function openListPanel(sel) {
+  closeListPanel();
+  const r = sel.getBoundingClientRect(), p = document.createElement('div');
+  p.className = 'ls-panel'; p.setAttribute('role', 'listbox');
+  p.innerHTML = '<input type="search" class="list-search" placeholder="ابحث في القائمة..." aria-label="بحث في القائمة" autocomplete="off"><div class="ls-opts"></div>';
+  const box = p.querySelector('input'), opts = p.querySelector('.ls-opts');
+  const draw = () => {
+    const q = normAr(box.value);
+    opts.replaceChildren(...[...sel.options].filter(o => !q || normAr(o.textContent).includes(q)).map(o => {
+      const d = document.createElement('div'); d.className = 'ls-opt' + (o.value === sel.value ? ' on' : ''); d.textContent = o.textContent; d.setAttribute('role', 'option');
+      d.onclick = () => { sel.value = o.value; closeListPanel(); sel.dispatchEvent(new Event('input', { bubbles: true })); sel.dispatchEvent(new Event('change', { bubbles: true })); sel.focus(); };
+      return d;
+    }));
+    if (!opts.children.length) opts.innerHTML = '<div class="ls-none">لا نتائج</div>';
+  };
+  box.addEventListener('input', draw);
+  box.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeListPanel(); sel.focus(); }
+    if (e.key === 'Enter') { e.preventDefault(); opts.querySelector('.ls-opt')?.click(); }
+  });
+  draw();
+  document.body.appendChild(p); lsPanel = p;
+  const h = Math.min(320, window.innerHeight - 24), below = window.innerHeight - r.bottom;
+  p.style.minWidth = Math.max(r.width, 220) + 'px';
+  p.style.insetInlineStart = 'auto';
+  p.style.left = Math.min(Math.max(8, r.left), window.innerWidth - Math.max(r.width, 220) - 8) + 'px';
+  p.style.maxHeight = h + 'px';
+  p.style.top = (below > 260 || below > r.top ? r.bottom + 4 : Math.max(8, r.top - Math.min(h, 320) - 4)) + 'px';
+  box.focus(); opts.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
+}
+document.addEventListener('mousedown', e => { if (lsPanel && !lsPanel.contains(e.target) && !(e.target.dataset && e.target.dataset.ls)) closeListPanel(); }, true);
+window.addEventListener('scroll', e => { if (lsPanel && !lsPanel.contains(e.target)) closeListPanel(); }, true);
+window.addEventListener('resize', closeListPanel);
 function addListSearch(root = document) {
-  const mk = () => { const i = document.createElement('input'); i.type = 'search'; i.className = 'list-search'; i.placeholder = 'ابحث في القائمة...'; i.setAttribute('aria-label', 'بحث في القائمة'); i.autocomplete = 'off'; return i; };
   root.querySelectorAll('select:not([data-ls]):not([multiple])').forEach(sel => {
     if (sel.options.length <= LONG_LIST) return;
     sel.dataset.ls = '1';
-    const all = [...sel.options], box = mk();
-    box.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
-    box.addEventListener('input', () => {
-      const q = normAr(box.value), cur = sel.value;
-      const keep = all.filter((o, i) => !q || i === 0 && o.value === '' || o.value === cur || normAr(o.textContent).includes(q));
-      sel.replaceChildren(...keep); sel.value = cur;
-    });
-    sel.before(box);
+    sel.addEventListener('mousedown', e => { e.preventDefault(); sel.disabled || (lsPanel ? closeListPanel() : openListPanel(sel)); });
+    sel.addEventListener('keydown', e => { if (['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(e.key)) { e.preventDefault(); openListPanel(sel); } });
   });
   root.querySelectorAll('.checks:not([data-ls])').forEach(c => {
     const items = [...c.querySelectorAll(':scope > label.chk')];
     if (items.length <= LONG_LIST) return;
     c.dataset.ls = '1';
-    const box = mk();
+    const box = document.createElement('input'); box.type = 'search'; box.className = 'list-search ls-in'; box.placeholder = 'ابحث في القائمة...'; box.setAttribute('aria-label', 'بحث في القائمة'); box.autocomplete = 'off';
     box.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
     box.addEventListener('input', () => {
       const q = normAr(box.value);
       items.forEach(l => l.classList.toggle('ls-off', !!q && !normAr(l.textContent).includes(q) && !l.querySelector('input:checked')));
     });
-    c.before(box);
+    c.prepend(box);
   });
 }
 document.addEventListener('DOMContentLoaded', () => {
