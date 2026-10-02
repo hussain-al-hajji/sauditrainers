@@ -16,39 +16,80 @@ ${siteBase()}#/login
 
 Pages.admin = {
   tab: 'dash',
+  menuEdit: false,
+  // عناصر القائمة الجانبية بالترتيب المحفوظ (settings/adminMenu)، والعناصر الجديدة تُلحق في آخرها
+  tabs() {
+    const apps = Store.list('applications');
+    const newReq = Store.list('requests').filter(r => r.status === 'new').length + Store.list('leads').filter(r => r.status === 'new').length;
+    const all = [
+      ['dash', 'fa-chart-pie', 'المؤشرات'], ['apps', 'fa-user-plus', 'طلبات التسجيل', apps.filter(a => a.status === 'new').length], ['trainers', 'fa-id-card', 'المدربون'],
+      ['requests', 'fa-inbox', 'طلبات الجهات', newReq], ['social', 'fa-share-nodes', 'النشر الاجتماعي', Store.list('social').filter(p => p.status === 'failed').length],
+      ['home', 'fa-house', 'الصفحة الرئيسية'], ['forms', 'fa-rectangle-list', 'النماذج'], ['halls', 'fa-building-columns', 'القاعات', Store.list('hallReqs').filter(r => r.status === 'new').length],
+      ['content', 'fa-pen-ruler', 'المحتوى العام'], ['admins', 'fa-user-shield', 'المشرفون'], ['backup', 'fa-database', 'البيانات والسجل']
+    ];
+    const order = arr(Store.get('settings/adminMenu'));
+    const pos = k => { const i = order.indexOf(k); return i < 0 ? 1000 + all.findIndex(t => t[0] === k) : i; };
+    return all.sort((x, y) => pos(x[0]) - pos(y[0]));
+  },
+  menuHTML() {
+    const tabs = this.tabs(), ed = this.menuEdit;
+    return `${tabs.map(([k, i, l, b], n) => `<div class="side-item ${ed ? 'edit' : ''}" data-k="${k}" ${ed ? 'draggable="true"' : ''}>
+        <button data-tab="${k}" class="${this.tab === k ? 'on' : ''}">${ed ? '<i class="fa-solid fa-grip-vertical side-grip"></i>' : ''}<i class="fa-solid ${i}"></i>${l}${b && !ed ? `<span class="badge num">${b}</span>` : ''}</button>
+        ${ed ? `<span class="side-mv"><button data-mv="-1" title="تحريك للأعلى" ${n ? '' : 'disabled'}><i class="fa-solid fa-chevron-up"></i></button><button data-mv="1" title="تحريك للأسفل" ${n < tabs.length - 1 ? '' : 'disabled'}><i class="fa-solid fa-chevron-down"></i></button></span>` : ''}
+      </div>`).join('')}
+      ${ed ? '<div class="side-edit-bar"><button class="side-done" data-menu-done><i class="fa-solid fa-check"></i>تم</button><button data-menu-reset title="الترتيب الافتراضي"><i class="fa-solid fa-rotate-left"></i>الافتراضي</button></div>' : ''}`;
+  },
   render() {
     const s = Auth.current();
     if (s?.kind !== 'admin') return adminLoginView();
-    const apps = Store.list('applications');
-    const newApps = apps.filter(a => a.status === 'new').length;
-    const newReq = Store.list('requests').filter(r => r.status === 'new').length + Store.list('leads').filter(r => r.status === 'new').length;
-    const newHall = Store.list('hallReqs').filter(r => r.status === 'new').length;
-    const tabs = [
-      ['dash', 'fa-chart-pie', 'المؤشرات'], ['apps', 'fa-user-plus', 'طلبات التسجيل', newApps], ['trainers', 'fa-id-card', 'المدربون'],
-      ['requests', 'fa-inbox', 'طلبات الجهات', newReq], ['social', 'fa-share-nodes', 'النشر الاجتماعي', Store.list('social').filter(p => p.status === 'failed').length],
-      ['home', 'fa-house', 'الصفحة الرئيسية'], ['forms', 'fa-rectangle-list', 'النماذج'], ['halls', 'fa-building-columns', 'القاعات', newHall], ['content', 'fa-pen-ruler', 'المحتوى العام'],
-      ['admins', 'fa-user-shield', 'المشرفون'], ['backup', 'fa-database', 'البيانات والسجل']
-    ];
     const u = Security.currentUser();
     return `<div class="wrap dash">
-      <aside class="side">
-        <div class="who"><span class="av"><i class="fa-solid fa-shield-halved" style="color:var(--gold2)"></i></span><div><b>${esc(Security.adminName())}</b><small>${u ? esc(u.email) : 'الوضع المحلي'}</small></div></div>
-        ${tabs.map(([k, i, l, b]) => `<button data-tab="${k}" class="${this.tab === k ? 'on' : ''}"><i class="fa-solid ${i}"></i>${l}${b ? `<span class="badge num">${b}</span>` : ''}</button>`).join('')}
+      <aside class="side ${this.menuEdit ? 'editing' : ''}">
+        <div class="who"><span class="av"><i class="fa-solid fa-shield-halved" style="color:var(--gold2)"></i></span><div class="grow"><b>${esc(Security.adminName())}</b><small>${u ? esc(u.email) : 'الوضع المحلي'}</small></div>
+          <button class="side-sort ${this.menuEdit ? 'on' : ''}" data-menu-edit title="ترتيب القائمة"><i class="fa-solid fa-arrow-down-up-across-line"></i></button></div>
+        <div class="side-nav">${this.menuHTML()}</div>
+        <button class="side-sort-m" data-menu-edit title="ترتيب القائمة"><i class="fa-solid fa-arrow-down-up-across-line"></i>ترتيب</button>
         <hr style="border:0;border-top:1px solid rgba(255,255,255,.08)">
         <button data-out><i class="fa-solid fa-right-from-bracket"></i>خروج</button>
       </aside>
       <main id="at"></main>
     </div>`;
   },
+  // إعادة رسم القائمة وحدها حتى لا تضيع تعديلات التبويب المفتوح
+  wireMenu(root) {
+    const side = $('.side', root), nav = $('.side-nav', root);
+    nav.innerHTML = this.menuHTML();
+    side.classList.toggle('editing', this.menuEdit);
+    $$('[data-menu-edit]', root).forEach(b => b.classList.toggle('on', this.menuEdit));
+    const save = keys => { Store.set('settings/adminMenu', keys); };
+    const keys = () => $$('.side-item', nav).map(x => x.dataset.k);
+    $$('[data-tab]', nav).forEach(b => b.onclick = () => { if (this.menuEdit) return; this.tab = b.dataset.tab; App.render(); });
+    $$('[data-mv]', nav).forEach(b => b.onclick = () => {
+      const ks = keys(), i = ks.indexOf(b.closest('.side-item').dataset.k), j = i + Number(b.dataset.mv);
+      [ks[i], ks[j]] = [ks[j], ks[i]]; save(ks); this.wireMenu(root);
+      nav.querySelector(`.side-item[data-k="${ks[j]}"] [data-mv="${b.dataset.mv}"]:not([disabled])`)?.focus();
+    });
+    let drag = null;
+    $$('.side-item[draggable]', nav).forEach(it => {
+      it.ondragstart = e => { drag = it.dataset.k; it.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; };
+      it.ondragend = () => it.classList.remove('dragging');
+      it.ondragover = e => { e.preventDefault(); it.classList.add('drop'); };
+      it.ondragleave = () => it.classList.remove('drop');
+      it.ondrop = e => { e.preventDefault(); const ks = keys().filter(k => k !== drag); ks.splice(ks.indexOf(it.dataset.k), 0, drag); save(ks); this.wireMenu(root); };
+    });
+    $('[data-menu-done]', nav) && ($('[data-menu-done]', nav).onclick = () => { this.menuEdit = false; this.wireMenu(root); toast('تم حفظ ترتيب القائمة'); });
+    $('[data-menu-reset]', nav) && ($('[data-menu-reset]', nav).onclick = () => { Store.set('settings/adminMenu', null); this.wireMenu(root); });
+  },
   mount(root) {
     if (Auth.current()?.kind !== 'admin') return mountAdminLogin(root);
-    $$('[data-tab]', root).forEach(b => b.onclick = () => { this.tab = b.dataset.tab; App.render(); });
+    this.wireMenu(root);
+    $$('[data-menu-edit]', root).forEach(b => b.onclick = () => { this.menuEdit = !this.menuEdit; this.wireMenu(root); });
     $('[data-out]', root).onclick = () => Auth.logout();
     const main = $('#at', root);
     ({ dash: aDash, apps: aApps, trainers: aTrainers, requests: aRequests, social: aSocial, home: aHome, forms: aForms, halls: aHalls, content: aContent, admins: aAdmins, backup: aBackup })[this.tab](main);
   },
-  // تبويبات التحرير لا يُعاد رسمها تلقائياً حتى لا تضيع التعديلات غير المحفوظة
-  get static() { return ['content', 'home', 'forms'].includes(this.tab); }
+  // تبويبات التحرير لا يُعاد رسمها تلقائياً حتى لا تضيع التعديلات غير المحفوظة، وكذلك أثناء ترتيب القائمة
+  get static() { return this.menuEdit || ['content', 'home', 'forms'].includes(this.tab); }
 };
 
 function adminLoginView() {
@@ -77,7 +118,6 @@ function aDash(main) {
   const apps = Store.list('applications');
   const views = Object.values(Store.get('stats/views') || {}).reduce((a, b) => a + Number(b || 0), 0);
   const clicks = Object.values(Store.get('stats/clicks') || {}).reduce((a, b) => a + Number(b || 0), 0);
-  const soon = all.filter(t => t.expiresAt && t.expiresAt > Date.now() && t.expiresAt - Date.now() < 30 * 864e5);
   const rc = Data.regionCounts(), sc = Data.specCounts();
   const bars = (obj, name, max = 8) => {
     const rows = Object.entries(obj).sort((a, b) => b[1] - a[1]).slice(0, max); const m = Math.max(1, ...rows.map(r => r[1]));
@@ -94,7 +134,6 @@ function aDash(main) {
       <div class="kpi"><i class="fa-solid fa-hand-pointer"></i><b class="num" data-count="${clicks}">0</b><span>نقرة تواصل</span></div>
       <div class="kpi"><i class="fa-solid fa-inbox"></i><b class="num" data-count="${Store.list('requests').length + Store.list('leads').length}">0</b><span>طلب من الجهات</span></div>
     </div>
-    ${soon.length ? `<div class="banner warn"><i class="fa-solid fa-hourglass-half"></i><span><b class="num">${soon.length}</b> مدرب تنتهي مدة نشرهم خلال 30 يوماً: ${soon.slice(0, 5).map(t => esc(t.name)).join('، ')}</span></div>` : ''}
     <div class="grid2">
       <div class="pbox"><h3><i class="fa-solid fa-map-location-dot"></i>المدربون حسب المنطقة</h3><div class="bars">${bars(rc, regionName, 13)}</div></div>
       <div class="pbox"><h3><i class="fa-solid fa-layer-group"></i>أكثر التخصصات</h3><div class="bars">${bars(sc, specName, 10)}</div></div>
@@ -221,21 +260,21 @@ function aTrainers(main) {
   let list = Data.all();
   if (f.q) list = Data.search(list, { q: f.q });
   if (f.region) list = list.filter(t => t.region === f.region);
-  if (f.st === 'live') list = list.filter(Data.isLive); else if (f.st === 'hidden') list = list.filter(t => t.status !== 'active'); else if (f.st === 'expired') list = list.filter(Data.expired); else if (f.st === 'nocode') list = list.filter(t => !Store.get(`secrets/codes/${t.id}`));
+  if (f.st === 'live') list = list.filter(Data.isLive); else if (f.st === 'hidden') list = list.filter(t => t.status !== 'active'); else if (f.st === 'nocode') list = list.filter(t => !Store.get(`secrets/codes/${t.id}`));
   main.innerHTML = `
     <div class="dash-h"><h2>المدربون <span class="muted num" style="font-size:1rem">(${list.length})</span></h2><div class="row"><button class="btn sm" id="imp"><i class="fa-solid fa-file-import"></i> استيراد</button><button class="btn sm" id="exp"><i class="fa-solid fa-file-csv"></i> تصدير CSV</button><button class="btn primary sm" id="add"><i class="fa-solid fa-plus"></i> إضافة مدرب</button></div></div>
     <div class="toolbar">
       <input type="search" id="tq" placeholder="بحث..." value="${esc(f.q || '')}">
       <select id="tr"><option value="">كل المناطق</option>${REGIONS.map(r => opt(r.k, r.name, f.region)).join('')}</select>
-      <select id="ts"><option value="">كل الحالات</option>${opt('live', 'منشور', f.st)}${opt('hidden', 'مخفي', f.st)}${opt('expired', 'منتهي', f.st)}${opt('nocode', 'بلا رمز دخول', f.st)}</select>
+      <select id="ts"><option value="">كل الحالات</option>${opt('live', 'منشور', f.st)}${opt('hidden', 'مخفي', f.st)}${opt('nocode', 'بلا رمز دخول', f.st)}</select>
     </div>
-    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>المدرب</th><th>المنطقة</th><th>الحالة</th><th>المشاهدات</th><th>نهاية النشر</th><th></th></tr></thead><tbody>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>المدرب</th><th>المنطقة</th><th>الحالة</th><th>المشاهدات</th><th>تاريخ الانضمام</th><th></th></tr></thead><tbody>
       ${list.map(t => `<tr>
         <td><div class="who">${Card.avatar(t, 'av')}<div><b>${esc(t.name)} ${t.featured ? '<i class="fa-solid fa-star" style="color:var(--gold)"></i>' : ''}</b><small class="num">${esc(t.code)}</small> <small>· ${esc(t.title || '')}</small></div></div></td>
         <td>${esc(regionName(t.region))}</td>
-        <td>${Data.isLive(t) ? '<span class="pill ok">منشور</span>' : Data.expired(t) ? '<span class="pill warn">منتهي</span>' : '<span class="pill gray">مخفي</span>'} ${Store.get(`secrets/codes/${t.id}`) ? '' : '<span class="pill bad" title="لم يُصدر رمز دخول">بلا رمز</span>'}</td>
+        <td>${Data.isLive(t) ? '<span class="pill ok">منشور</span>' : '<span class="pill gray">مخفي</span>'} ${Store.get(`secrets/codes/${t.id}`) ? '' : '<span class="pill bad" title="لم يُصدر رمز دخول">بلا رمز</span>'}</td>
         <td class="num">${Data.views(t.id)}</td>
-        <td class="num">${fmtDate(t.expiresAt)}</td>
+        <td class="num">${fmtDate(t.publishedAt)}</td>
         <td><div class="acts">
           <button class="btn sm icon" data-a="edit" data-id="${esc(t.id)}" title="تعديل"><i class="fa-solid fa-pen"></i></button>
           <button class="btn sm icon" data-a="code" data-id="${esc(t.id)}" title="رمز الدخول"><i class="fa-solid fa-key"></i></button>
@@ -281,18 +320,14 @@ function trainerEditor(t) {
     <div class="editor"><form id="te" autocomplete="off" novalidate style="display:grid;gap:16px">
       ${steps.map(s => `<h4 class="form-sec"><i class="fa-solid ${esc(s.icon || 'fa-circle')}"></i> ${esc(s.title)}</h4>${FormKit.stepHTML(s, values)}`).join('')}
       <h4 class="form-sec"><i class="fa-solid fa-sliders"></i> النشر</h4>
-      <div class="grid2">
-        ${field('الحالة', `<select name="status">${opt('active', 'منشور', t.status)}${opt('hidden', 'مخفي', t.status)}</select>`)}
-        ${field('نهاية النشر', `<input type="text" name="exp" dir="ltr" value="${t.expiresAt ? new Date(t.expiresAt).toISOString().slice(0, 10) : isNew ? new Date(Date.now() + 365 * 864e5).toISOString().slice(0, 10) : ''}" placeholder="YYYY-MM-DD">`, 'اتركه فارغاً لنشر دون انتهاء')}
-      </div>
+      ${field('الحالة', `<select name="status">${opt('active', 'منشور', t.status)}${opt('hidden', 'مخفي', t.status)}</select>`)}
       ${field('رسالة للمدرب تظهر في لوحته', `<textarea name="note" maxlength="600" style="min-height:70px">${esc(Store.get(`notes/${t.id}`)?.text || '')}</textarea>`)}
-      <div class="row between"><div>${isNew ? '' : '<button type="button" class="btn ghost" id="dl" style="color:var(--bad)"><i class="fa-solid fa-trash"></i> حذف المدرب</button> <button type="button" class="btn ghost" id="ext"><i class="fa-solid fa-calendar-plus"></i> تمديد سنة</button>'}</div><button class="btn primary lg">حفظ</button></div>
+      <div class="row between"><div>${isNew ? '' : '<button type="button" class="btn ghost" id="dl" style="color:var(--bad)"><i class="fa-solid fa-trash"></i> حذف المدرب</button>'}</div><button class="btn primary lg">حفظ</button></div>
     </form><div class="preview" id="pvw"></div></div>`, { wide: true });
   const form = m.$('#te');
   const preview = () => previewCard(m.$('#pvw'), { ...FormKit.read(form), code: t.code });
   FormKit.wire(form, preview);
   preview();
-  m.$('#ext') && (m.$('#ext').onclick = () => { const base = Math.max(Date.now(), t.expiresAt || 0); form.exp.value = new Date(base + 365 * 864e5).toISOString().slice(0, 10); toast('اضغط «حفظ» لاعتماد التمديد'); });
   m.$('#dl') && (m.$('#dl').onclick = async () => {
     if (!await confirmBox(`حذف <b>${esc(t.name)}</b> نهائياً مع حساب دخوله؟`, { ok: 'حذف', danger: true })) return;
     await Security.deleteTrainerAccount(t);
@@ -307,7 +342,7 @@ function trainerEditor(t) {
     if (err) { toast(err, 'error'); return; }
     const ex = Data.splitExtra(d.extra);
     const rec = { ...Data.pick(d, Data.PUBLIC_FIELDS), status: d.status, updatedAt: Date.now(), extra: Object.keys(ex.pub).length ? ex.pub : null };
-    rec.expiresAt = /^\d{4}-\d{2}-\d{2}$/.test(d.exp) ? new Date(d.exp + 'T23:59:59').getTime() : null;
+    rec.expiresAt = null; // الاشتراك مدى الحياة (يُزيل أي تاريخ انتهاء قديم)
     let id = t.id;
     if (isNew) {
       const code = await Data.nextCode();
@@ -382,7 +417,7 @@ function importDialog() {
       for (const r of recs) {
         const code = await Data.nextCode(); const id = code.toLowerCase();
         const { _phone, _email, ...pub } = r;
-        const rec = { ...pub, id, code, status: 'active', featured: false, publishedAt: Date.now(), expiresAt: Date.now() + 365 * 864e5, updatedAt: Date.now() };
+        const rec = { ...pub, id, code, status: 'active', featured: false, publishedAt: Date.now(), updatedAt: Date.now() };
         rec.slug = Data.makeSlug(rec);
         Store.set(`trainers/${id}`, rec);
         Store.set(`private/${id}`, { phone: _phone ? phoneDigits(_phone) : '', email: _email });
@@ -393,9 +428,9 @@ function importDialog() {
   };
 }
 function exportCSV() {
-  const cols = ['code', 'name', 'title', 'region', 'city', 'phone', 'email', 'specs', 'topics', 'years', 'hours', 'status', 'expires', 'views', 'url'];
+  const cols = ['code', 'name', 'title', 'region', 'city', 'phone', 'email', 'specs', 'topics', 'years', 'hours', 'status', 'joined', 'views', 'url'];
   const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const rows = Data.all().map(t => { const p = Store.get(`private/${t.id}`) || {}; return [t.code, t.name, t.title, regionName(t.region), t.city, p.phone, p.email, Data.specs(t).map(specName).join('، '), t.topics, t.years, t.hours, Data.isLive(t) ? 'منشور' : 'مخفي', fmtDate(t.expiresAt), Data.views(t.id), profileUrl(t)].map(q).join(','); });
+  const rows = Data.all().map(t => { const p = Store.get(`private/${t.id}`) || {}; return [t.code, t.name, t.title, regionName(t.region), t.city, p.phone, p.email, Data.specs(t).map(specName).join('، '), t.topics, t.years, t.hours, Data.isLive(t) ? 'منشور' : 'مخفي', fmtDate(t.publishedAt), Data.views(t.id), profileUrl(t)].map(q).join(','); });
   download(`sauditrainers-${new Date().toISOString().slice(0, 10)}.csv`, '﻿' + [cols.join(','), ...rows].join('\n'), 'text/csv;charset=utf-8');
 }
 
@@ -527,7 +562,7 @@ function aContent(main) {
   const sec = (k, title, fields) => `<div class="pbox"><h3><i class="fa-solid fa-pen"></i>${title}</h3><div style="display:grid;gap:12px">${fields.map(([f, l, type, hint]) => field(l, type === 'area' ? `<textarea data-k="${k}.${f}">${esc(c[k][f])}</textarea>` : `<input type="${type || 'text'}" data-k="${k}.${f}" value="${esc(c[k][f])}">`, hint || '')).join('')}</div></div>`;
   main.innerHTML = `<div class="dash-h"><h2>المحتوى العام</h2><button class="btn primary" id="sv"><i class="fa-solid fa-floppy-disk"></i> حفظ كل التغييرات</button></div>
     <div class="banner info"><i class="fa-solid fa-house"></i>محتوى الصفحة الرئيسية وأقسامها يُعدَّل من تبويب «الصفحة الرئيسية»، وحقول نموذج التسجيل من «النماذج».</div>
-    ${sec('join', 'التسجيل والرسوم', [['fee', 'الرسوم (ريال)', 'number'], ['feeNote', 'وصف الرسوم'], ['period', 'مدة النشر'], ['requirements', 'المتطلبات', 'area', 'كل متطلب في سطر'], ['benefits', 'المزايا', 'area', 'كل ميزة في سطر'], ['payment', 'تعليمات السداد', 'area'], ['bank', 'بيانات الحساب البنكي (تُرسل في رسالة القبول فقط)', 'area']])}
+    ${sec('join', 'التسجيل والرسوم', [['fee', 'الرسوم (ريال)', 'number'], ['feeNote', 'وصف الرسوم'], ['period', 'مدة الاشتراك'], ['requirements', 'المتطلبات', 'area', 'كل متطلب في سطر'], ['benefits', 'المزايا', 'area', 'كل ميزة في سطر'], ['payment', 'تعليمات السداد', 'area'], ['bank', 'بيانات الحساب البنكي (تُرسل في رسالة القبول فقط)', 'area']])}
     ${sec('about', 'عن المنصة', [['intro', 'التعريف', 'area'], ['problem', 'المشكلة', 'area'], ['solution', 'الحل', 'area'], ['vision', 'الرؤية', 'area'], ['registered', 'سطر التسجيل الرسمي']])}
     ${sec('halls', 'القاعات', [['intro', 'النص التعريفي', 'area']])}
     ${sec('contact', 'تواصل المنصة (يظهر في التذييل)', [['email', 'البريد', 'email'], ['whatsapp', 'واتساب المنصة'], ['instagram', 'إنستقرام', 'url'], ['x', 'إكس', 'url'], ['linkedin', 'لينكدإن', 'url']])}`;
@@ -604,7 +639,7 @@ async function seedDemo() {
     const rec = { id, code, name, nameEn, gender, region, city, title, specs, topics, years, hours, programs, theme, modes, langs: 'العربية، الإنجليزية',
       bio: `${gender === 'f' ? 'مدربة' : 'مدرب'} سعودي${gender === 'f' ? 'ة' : ''} بخبرة ${years} سنة في التدريب والتطوير، ${gender === 'f' ? 'قدّمت' : 'قدّم'} أكثر من ${programs} برنامجاً تدريبياً لجهات حكومية وخاصة وغير ربحية. (بيانات تجريبية)`,
       certs: 'شهادة إعداد المدربين TOT', status: 'active', featured: years >= 10, demo: true,
-      publishedAt: Date.now(), expiresAt: Date.now() + 365 * 864e5, updatedAt: Date.now() };
+      publishedAt: Date.now(), updatedAt: Date.now() };
     rec.slug = Data.makeSlug(rec);
     Store.set(`trainers/${id}`, rec);
     Store.set(`private/${id}`, { phone: '966500000000', email: 'demo@example.com' });

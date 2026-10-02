@@ -40,18 +40,16 @@ Pages.me = {
 
 function portalHome(main, t) {
   const leads = Store.list('leads').filter(l => l.trainerId === t.id);
-  const days = t.expiresAt ? Math.ceil((t.expiresAt - Date.now()) / 864e5) : null;
   const priv = Store.get(`private/${t.id}`) || {};
   const note = Store.get(`notes/${t.id}`);
   main.innerHTML = `
     <div class="dash-h"><h2>أهلاً ${esc(t.name.split(' ').slice(0, 2).join(' '))} 👋</h2><div class="row"><button class="btn gold" id="sh"><i class="fa-solid fa-share-nodes"></i> مشاركة بطاقتي</button></div></div>
     ${t.status !== 'active' ? `<div class="banner warn"><i class="fa-solid fa-eye-slash"></i>بطاقتك غير ظاهرة للزوار حالياً. تواصل مع إدارة المنصة للاستفسار.</div>` : ''}
-    ${days != null && days <= 30 ? `<div class="banner ${days <= 0 ? 'warn' : 'info'}"><i class="fa-solid fa-hourglass-half"></i>${days <= 0 ? 'انتهت مدة نشر بطاقتك — تواصل مع الإدارة للتجديد.' : `تنتهي مدة نشر بطاقتك بعد <b class="num">${days}</b> يوماً.`}</div>` : ''}
     ${note?.text ? `<div class="banner ok"><i class="fa-solid fa-bullhorn"></i><div><b>رسالة من الإدارة</b><br>${nl2br(note.text)}</div></div>` : ''}
     <div class="kpis">
       <div class="kpi dark"><i class="fa-solid fa-eye"></i><b class="num" data-count="${Data.views(t.id)}">0</b><span>مشاهدة لبطاقتك</span></div>
       <div class="kpi"><i class="fa-solid fa-inbox"></i><b class="num" data-count="${leads.length}">0</b><span>طلب من جهات تدريبية</span></div>
-      <div class="kpi"><i class="fa-solid fa-calendar-check"></i><b class="num">${days != null ? Math.max(0, days) : '∞'}</b><span>يوماً متبقية للنشر</span></div>
+      <div class="kpi"><i class="fa-solid fa-infinity"></i><b>مدى الحياة</b><span>اشتراكك${t.publishedAt ? ' منذ ' + fmtDate(t.publishedAt) : ''}</span></div>
     </div>
     <div class="editor">
       <div>
@@ -71,7 +69,7 @@ function portalHome(main, t) {
             <li>شارك بطاقتك في لينكدإن وإكس — كل مشاهدة تُحتسب في لوحتك.</li>
           </ul>
         </div>
-        <div class="pbox"><h3><i class="fa-solid fa-lock"></i>بيانات إدارية (لا تظهر للعامة)</h3><dl class="dl"><dt>الجوال</dt><dd class="num">${esc(priv.phone || '—')}</dd><dt>البريد</dt><dd>${esc(priv.email || '—')}</dd><dt>تاريخ النشر</dt><dd>${fmtDate(t.publishedAt)}</dd><dt>نهاية النشر</dt><dd>${fmtDate(t.expiresAt)}</dd></dl><p class="small muted">لتعديلها تواصل مع إدارة المنصة.</p></div>
+        <div class="pbox"><h3><i class="fa-solid fa-lock"></i>بيانات إدارية (لا تظهر للعامة)</h3><dl class="dl"><dt>الجوال</dt><dd class="num">${esc(priv.phone || '—')}</dd><dt>البريد</dt><dd>${esc(priv.email || '—')}</dd><dt>تاريخ الانضمام</dt><dd>${fmtDate(t.publishedAt)}</dd><dt>الاشتراك</dt><dd>مدى الحياة</dd></dl><p class="small muted">لتعديلها تواصل مع إدارة المنصة.</p></div>
       </div>
       <div class="preview">${Card.full(t)}</div>
     </div>`;

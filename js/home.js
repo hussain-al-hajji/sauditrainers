@@ -179,7 +179,7 @@ Pages.profile = {
           <button class="btn" id="shr"><i class="fa-solid fa-share-nodes"></i> مشاركة</button>
           <button class="btn" id="sv"><i class="fa-solid fa-download"></i> حفظ البطاقة</button>
         </div>
-        ${!Data.isLive(t) ? `<div class="banner warn" style="margin-top:14px"><i class="fa-solid fa-eye-slash"></i>هذه البطاقة غير ظاهرة للزوار حالياً${Data.expired(t) ? ' (انتهت مدة النشر)' : ''}.</div>` : ''}
+        ${!Data.isLive(t) ? `<div class="banner warn" style="margin-top:14px"><i class="fa-solid fa-eye-slash"></i>هذه البطاقة غير ظاهرة للزوار حالياً.</div>` : ''}
       </aside>
       <div>
         <div class="p-intro">

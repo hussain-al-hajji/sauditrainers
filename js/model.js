@@ -5,6 +5,9 @@ const Data = (() => {
     const d = defaultContent(), c = Store.get('content') || {};
     const out = {};
     Object.keys(d).forEach(k => { out[k] = Array.isArray(d[k]) ? (Array.isArray(c[k]) ? c[k] : d[k]) : { ...d[k], ...(c[k] || {}) }; });
+    // نصوص قديمة محفوظة تتحدث عن اشتراك سنوي: يُستبدل بنص الاشتراك مدى الحياة
+    if (/سنة|سنوي|عام كامل/.test(out.join.period || '')) out.join.period = d.join.period;
+    if (/والنشر/.test(out.join.feeNote || '')) out.join.feeNote = d.join.feeNote;
     return out;
   };
 
@@ -13,8 +16,8 @@ const Data = (() => {
   const modes = t => (Array.isArray(t?.modes) ? t.modes : Object.values(t?.modes || {})).filter(Boolean);
   const topics = t => splitList(t?.topics);
 
-  const expired = t => !!t.expiresAt && t.expiresAt < Date.now();
-  const isLive = t => t && t.status === 'active' && !expired(t);
+  // الاشتراك مدى الحياة: لا تاريخ انتهاء، والظهور يتحكم به الحالة (منشور/مخفي) فقط
+  const isLive = t => !!t && t.status === 'active';
   const all = () => Store.list('trainers').sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0) || (b.publishedAt || 0) - (a.publishedAt || 0));
   const live = () => all().filter(isLive);
   const trainer = idOrSlug => Store.get(`trainers/${idOrSlug}`) || Store.list('trainers').find(t => t.slug === idOrSlug);
@@ -84,7 +87,7 @@ const Data = (() => {
     const id = code.toLowerCase();
     const t = {
       ...pick(app, PUBLIC_FIELDS), id, code, status: 'active', featured: false,
-      publishedAt: Date.now(), expiresAt: Date.now() + 365 * 864e5, updatedAt: Date.now(), appId: app.id
+      publishedAt: Date.now(), updatedAt: Date.now(), appId: app.id
     };
     t.slug = makeSlug(t);
     const ex = splitExtra(app.extra);
@@ -105,7 +108,7 @@ const Data = (() => {
     Store.transaction(`stats/${kind}/${id}`, c => (Number(c) || 0) + 1).catch(() => {});
   }
 
-  return { content, photo, specs, modes, topics, all, live, trainer, isLive, expired, search, match, regionCounts, specCounts, views, clicks, nextCode, makeSlug, publishFromApplication, track, PUBLIC_FIELDS, pick, splitExtra };
+  return { content, photo, specs, modes, topics, all, live, trainer, isLive, search, match, regionCounts, specCounts, views, clicks, nextCode, makeSlug, publishFromApplication, track, PUBLIC_FIELDS, pick, splitExtra };
 })();
 
 /* الأتمتة (اختيارية): رابط Google Apps Script يرسل البريد من حساب المنصة وينشر في وسائل التواصل.
