@@ -127,6 +127,28 @@ function sendOutbox(id) {
   db(`outbox/${id}`, 'patch', { sentAt: Date.now(), body: '(أُرسل — حُذف النص)', subject: o.subject });
 }
 
+
+/* ===================== شبكة أمان: تعالج أي طلب لم يصله إشعار (كل 5 دقائق) ===================== */
+// تضمن وصول الإشعارات حتى لو لم يصل نداء المتصفح للسكربت (مثلاً حاجب إعلانات أو انقطاع)
+function sweepPending() {
+  const recent = r => r && Date.now() - (r.ts || 0) <= 3 * 864e5;
+  const each = (kind, fn) => { const all = db(kind) || {}; Object.keys(all).forEach(k => { try { fn(k, all[k]); } catch (err) { console.error(kind, k, err); } }); };
+  each('leads', (id, r) => { if (recent(r) && !r.emailedAt) sendLeadEmail(id); });
+  each('requests', (id, r) => { if (recent(r) && !r.notifiedAt) notifyAdmin('requests', id); });
+  each('applications', (id, r) => { if (recent(r)) { if (!r.notifiedAt) notifyAdmin('applications', id); if (!r.receivedEmailAt && r.email) sendReceivedEmail(id); } });
+}
+
+// اختبار يدوي: يعالج آخر طلب تواصل ويُظهر أي خطأ في السجل (دون ابتلاعه)
+function testLastLead() {
+  const all = db('leads') || {};
+  const last = Object.keys(all).map(k => all[k]).sort((a, b) => (b.ts || 0) - (a.ts || 0))[0];
+  if (!last) { console.log('لا توجد طلبات تواصل في القاعدة'); return; }
+  console.log('آخر طلب: ' + last.id + ' | emailedAt=' + last.emailedAt);
+  if (last.emailedAt) { console.log('أُرسل إشعاره سابقاً'); return; }
+  sendLeadEmail(last.id);
+  console.log('تم الإرسال');
+}
+
 // 1) يرسل رسالة تجريبية لبريد الإدارة: يتأكد أن إرسال البريد مصرّح
 function testEmail() {
   plainMail(CFG.ADMIN_EMAIL, 'رسالة تجريبية — مدرّبون سعوديّون', 'السلام عليكم\n\nهذه رسالة تجريبية من أتمتة المنصة. إن وصلتك فإرسال البريد يعمل.\n\nمنصة مدرّبون سعوديّون');
@@ -136,4 +158,12 @@ function testEmail() {
 function testDb() {
   ping();
   console.log('الاتصال بقاعدة البيانات سليم: ' + JSON.stringify(db('settings/automation')));
+}
+
+// شغّلها مرة واحدة: تنشئ مؤقّتاً كل 5 دقائق يعالج أي طلب لم يصله إشعار
+function setupTriggers() {
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'sweepPending').forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('sweepPending').timeBased().everyMinutes(5).create();
+  ping();
+  console.log('تم: مؤقّت المعالجة يعمل');
 }
