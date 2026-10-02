@@ -186,19 +186,19 @@ function tilt(root = document) {
 
 /* بحث داخل كل قائمة طويلة (أكثر من 12 عنصراً): القوائم المنسدلة تفتح لوحة فيها مربع بحث في أولها، وشبكات الاختيار فيها مربع بحث في أولها */
 const LONG_LIST = 12;
-let lsPanel = null;
+let lsPanel = null, lsOpenedAt = 0;
 function closeListPanel() { if (lsPanel) { lsPanel.remove(); lsPanel = null; } }
 function openListPanel(sel) {
   closeListPanel();
   const r = sel.getBoundingClientRect(), p = document.createElement('div');
-  p.className = 'ls-panel'; p.setAttribute('role', 'listbox');
+  p.className = 'ls-panel'; p.setAttribute('role', 'listbox'); p.dataset.for = sel.dataset.id;
   p.innerHTML = '<input type="search" class="list-search" placeholder="ابحث في القائمة..." aria-label="بحث في القائمة" autocomplete="off"><div class="ls-opts"></div>';
   const box = p.querySelector('input'), opts = p.querySelector('.ls-opts');
   const draw = () => {
     const q = normAr(box.value);
     opts.replaceChildren(...[...sel.options].filter(o => !q || normAr(o.textContent).includes(q)).map(o => {
       const d = document.createElement('div'); d.className = 'ls-opt' + (o.value === sel.value ? ' on' : ''); d.textContent = o.textContent; d.setAttribute('role', 'option');
-      d.onclick = () => { sel.value = o.value; closeListPanel(); sel.dispatchEvent(new Event('input', { bubbles: true })); sel.dispatchEvent(new Event('change', { bubbles: true })); sel.focus(); };
+      d.onclick = () => { sel.value = o.value; closeListPanel(); sel.dispatchEvent(new Event('input', { bubbles: true })); sel.dispatchEvent(new Event('change', { bubbles: true })); sel.focus({ preventScroll: true }); };
       return d;
     }));
     if (!opts.children.length) opts.innerHTML = '<div class="ls-none">لا نتائج</div>';
@@ -216,16 +216,27 @@ function openListPanel(sel) {
   p.style.left = Math.min(Math.max(8, r.left), window.innerWidth - Math.max(r.width, 220) - 8) + 'px';
   p.style.maxHeight = h + 'px';
   p.style.top = (below > 260 || below > r.top ? r.bottom + 4 : Math.max(8, r.top - Math.min(h, 320) - 4)) + 'px';
-  box.focus(); opts.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
+  lsOpenedAt = Date.now();
+  box.focus({ preventScroll: true }); const on = opts.querySelector('.on'); if (on) opts.scrollTop = Math.max(0, on.offsetTop - 60);
 }
 document.addEventListener('mousedown', e => { if (lsPanel && !lsPanel.contains(e.target) && !(e.target.dataset && e.target.dataset.ls)) closeListPanel(); }, true);
-window.addEventListener('scroll', e => { if (lsPanel && !lsPanel.contains(e.target)) closeListPanel(); }, true);
-window.addEventListener('resize', closeListPanel);
+// يُغلق عند تمرير الصفحة (لا عند فتح اللوحة نفسها ولا عند ظهور لوحة مفاتيح الجوال)
+window.addEventListener('scroll', e => { if (lsPanel && Date.now() - lsOpenedAt > 500 && !lsPanel.contains(e.target)) closeListPanel(); }, true);
+window.addEventListener('resize', () => { if (lsPanel && !lsPanel.contains(document.activeElement)) closeListPanel(); });
 function addListSearch(root = document) {
   root.querySelectorAll('select:not([data-ls]):not([multiple])').forEach(sel => {
     if (sel.options.length <= LONG_LIST) return;
     sel.dataset.ls = '1';
-    sel.addEventListener('mousedown', e => { e.preventDefault(); sel.disabled || (lsPanel ? closeListPanel() : openListPanel(sel)); });
+    sel.dataset.id = 'ls' + Math.random().toString(36).slice(2, 8);
+    const toggle = () => { if (sel.disabled) return; if (lsPanel && lsPanel.dataset.for === sel.dataset.id) closeListPanel(); else openListPanel(sel); };
+    let touched = 0;
+    sel.addEventListener('mousedown', e => { e.preventDefault(); if (Date.now() - touched < 700) return; toggle(); });
+    // اللمس (iOS/أندرويد): نمنع منتقي النظام ونفتح لوحتنا مرة واحدة فقط
+    let moved = false;
+    sel.addEventListener('touchstart', () => { moved = false; }, { passive: true });
+    sel.addEventListener('touchmove', () => { moved = true; }, { passive: true });
+    sel.addEventListener('touchend', e => { if (moved || !e.cancelable) return; e.preventDefault(); touched = Date.now(); toggle(); });
+    sel.addEventListener('click', e => e.preventDefault());
     sel.addEventListener('keydown', e => { if (['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(e.key)) { e.preventDefault(); openListPanel(sel); } });
   });
   root.querySelectorAll('.checks:not([data-ls])').forEach(c => {
