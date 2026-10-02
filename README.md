@@ -85,6 +85,8 @@
 
 ## النشر
 
+الرابط الحالي: https://hussain-al-hajji.github.io/sauditrainers/ . عند إضافة الدومين الرسمي لاحقاً غيّر ثلاثة أشياء: `siteUrl` في `js/config.js`، و`SITE` في `integrations/google-apps-script/Code.gs` (ثم Deploy نسخة جديدة)، وسطري `og:image` و`og:url` في `index.html`؛ وأضف الدومين في Firebase ← Authentication ← Authorized domains. روابط المشاركة وQR تأخذ نطاق الصفحة المفتوحة تلقائياً.
+
 - **GitHub Pages:** الإعدادات ← Pages ← الفرع والمجلد `/ (root)`.
 - **النطاق sauditrainers.sa:** أضف ملف `CNAME` بالنطاق، ووجّه سجلات DNS إلى GitHub Pages بدلاً من Google Sites.
 - **محلياً:** `python3 -m http.server` ثم `http://localhost:8000`.

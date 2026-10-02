@@ -28,5 +28,6 @@ window.ST_CONFIG = {
   // رقم واتساب المنصة الذي تُرسل منه الرسائل (يُفتح منه واتساب ويب/التطبيق عند الضغط على زر الإرسال)
   platformWhatsapp: '966562391007',
   // رابط المنصة (يُستخدم في روابط المشاركة ورسائل معلومات الدخول)
-  siteUrl: 'https://www.sauditrainers.sa/'
+  // عند إضافة الدومين الرسمي غيّر هذا السطر (والسطر SITE في سكربت الأتمتة وmeta og في index.html)
+  siteUrl: 'https://hussain-al-hajji.github.io/sauditrainers/'
 };
