@@ -7,13 +7,15 @@ const logoImg = (variant = 'green', cls = '') => `<img class="brand-logo ${cls}"
 const Card = (() => {
   // إطار الصورة: موضع أفقي/رأسي (0-100) وتكبير (1-2.5) يحددها المدرب عند إضافة رابط الصورة
   const fit = t => ({ x: clampN(t.photoX, 0, 100, 50), y: clampN(t.photoY, 0, 100, 30), z: clampN(t.photoZ, 1, 2.5, 1) });
+  // أسلوب إطار الصورة: الموضع يحرّك الصورة حتى لو كانت مربعة (نقطة التكبير تتبع المؤشرين، فيظهر الجزء المطلوب منها)
+  const imgStyle = f => `object-position:${f.x}% ${f.y}%;transform-origin:${f.x}% ${f.y}%;transform:scale(${f.z})`;
   function clampN(v, a, b, d) { const n = Number(v); return Number.isFinite(n) && v !== '' && v != null ? Math.min(b, Math.max(a, n)) : d; }
 
   function avatar(t, cls = '') {
     const p = Data.photo(t), ini = initials(t.name);
     if (!p) return `<span class="${cls} avw ph">${ini}</span>`;
     const f = fit(t);
-    return `<span class="${cls} avw" data-i="${ini}"><img src="${esc(p)}" alt="${esc(t.name)}" loading="lazy" referrerpolicy="no-referrer" style="object-position:${f.x}% ${f.y}%;transform:scale(${f.z})" onerror="const s=this.parentNode;s.classList.add('ph');s.textContent=s.dataset.i"></span>`;
+    return `<span class="${cls} avw" data-i="${ini}"><img src="${esc(p)}" alt="${esc(t.name)}" loading="lazy" referrerpolicy="no-referrer" style="${imgStyle(f)}" onerror="const s=this.parentNode;s.classList.add('ph');s.textContent=s.dataset.i"></span>`;
   }
   const themeVars = t => {
     const th = themeOf(t.theme);
@@ -156,7 +158,8 @@ const Card = (() => {
     const photo = await loadImage(Data.photo(t));
     if (photo) {
       const f = fit(t), s = Math.max(D / photo.width, D / photo.height), iw = photo.width * s, ih = photo.height * s;
-      ctx.translate(cx, cy); ctx.scale(f.z, f.z); ctx.translate(-cx, -cy);
+      const ox = cx - D / 2 + D * f.x / 100, oy = cy - D / 2 + D * f.y / 100; // نقطة التكبير = نفس transform-origin في الصفحة
+      ctx.translate(ox, oy); ctx.scale(f.z, f.z); ctx.translate(-ox, -oy);
       ctx.drawImage(photo, cx - D / 2 + (D - iw) * f.x / 100, cy - D / 2 + (D - ih) * f.y / 100, iw, ih);
     } else {
       const pg = ctx.createLinearGradient(cx - D / 2, cy - D / 2, cx + D / 2, cy + D / 2); pg.addColorStop(0, th.c); pg.addColorStop(1, th.a);
@@ -271,5 +274,5 @@ const Card = (() => {
     m.el.querySelectorAll('[data-img]').forEach(b => { b.onclick = () => save(t, b.dataset.img); });
   }
 
-  return { full, mini, avatar, fit, save, share, shareSheet, render, toJPEG, themeVars };
+  return { full, mini, avatar, fit, imgStyle, save, share, shareSheet, render, toJPEG, themeVars };
 })();

@@ -24,7 +24,7 @@ const CORE_FIELDS = {
   certs: { label: 'الشهادات والاعتمادات', type: 'textarea', max: 800, ph: 'مثال: شهادة إعداد المدربين TOT', w: 'full' },
   bio: { label: 'نبذة تعريفية', type: 'textarea', max: 1200, req: true, ph: 'عرّف بنفسك وبخبرتك التدريبية وأبرز إنجازاتك', hint: 'لا تضع أرقام تواصل أو بريداً أو روابط؛ التواصل يتم عبر المنصة', w: 'full' },
   langs: { label: 'لغات التدريب', type: 'text', max: 60, ph: 'العربية' },
-  photoUrl: { label: 'الصورة الشخصية (رابط Google Drive)', type: 'photo', req: true, w: 'full' },
+  photoUrl: { label: 'الصورة الشخصية (رابط Google Drive) — اختيارية', type: 'photo', w: 'full' },
   theme: { label: 'تصميم البطاقة', type: 'theme', w: 'full' },
   tot: { label: 'حضرت دورة واحدة على الأقل في إعداد المدربين (TOT)', type: 'consent', req: true, joinOnly: true, w: 'full' },
   cvUrl: { label: 'رابط الشهادات أو السيرة الذاتية', type: 'url', joinOnly: true, priv: true, ltr: true, ph: 'https://drive.google.com/...', hint: 'يطّلع عليه فريق المراجعة فقط', w: 'full' }
@@ -51,7 +51,7 @@ function defaultForms() {
       { id: 's1', title: 'البيانات', icon: 'fa-id-card', desc: 'بيانات التواصل الإداري لا تظهر لأحد في المنصة.', fields: f(['name', 'nameEn', 'gender', 'region', 'city', 'phone', 'email']) },
       { id: 's2', title: 'التخصص', icon: 'fa-layer-group', desc: 'اختر ما تمارس التدريب فيه فعلياً؛ تظهر بطاقتك في نتائج هذه التخصصات.', fields: f(['title', 'specs', 'topics', 'modes']) },
       { id: 's3', title: 'الخبرة', icon: 'fa-award', desc: 'الأرقام تظهر في بطاقتك كمؤشرات بارزة.', fields: f(['tot', 'cvUrl', 'years', 'hours', 'programs', 'certs', 'bio', 'langs']) },
-      { id: 's4', title: 'الصورة والتصميم', icon: 'fa-camera', desc: 'أضف رابط صورتك من Google Drive ونسّقها داخل الإطار، واختر تصميم بطاقتك.', fields: f(['photoUrl', 'theme']) }
+      { id: 's4', title: 'الصورة والتصميم', icon: 'fa-camera', desc: 'هذه الخطوة اختيارية: عند الرغبة في نشر صورتك أضف رابطها من Google Drive ونسّقها داخل الدائرة، أو أجّلها الآن وأضفها لاحقاً من لوحتك. واختر تصميم بطاقتك.', fields: f(['photoUrl', 'theme']) }
     ] },
     admin: { steps: [
       { id: 'a1', title: 'البيانات الأساسية', icon: 'fa-id-card', fields: f(['name', 'nameEn', 'gender', 'region', 'city', 'phone', 'email']) },
@@ -113,18 +113,18 @@ const FormKit = (() => {
     }
   }
   function photoField(d) {
-    const f = Card.fit(d), src = Data.photo(d);
+    const f = Card.fit({ ...d, photoZ: d.photoZ ?? 1.2 }), src = Data.photo(d);
     return `<div class="photo-field">
       <input type="url" name="photoUrl" dir="ltr" maxlength="300" value="${esc(d.photoUrl)}" placeholder="https://drive.google.com/file/d/.../view">
       <div class="pf-row">
-        <span class="pf-circle avw ${src ? '' : 'ph'}" data-i="${initials(d.name || '؟')}">${src ? `<img src="${esc(src)}" alt="" referrerpolicy="no-referrer" style="object-position:${f.x}% ${f.y}%;transform:scale(${f.z})">` : '<i class="fa-solid fa-user"></i>'}</span>
+        <span class="pf-circle avw ${src ? '' : 'ph'}" data-i="${initials(d.name || '؟')}">${src ? `<img src="${esc(src)}" alt="" referrerpolicy="no-referrer" style="${Card.imgStyle(f)}">` : '<i class="fa-solid fa-user"></i>'}</span>
         <div class="pf-ranges">
           <label><span><i class="fa-solid fa-arrows-left-right"></i> الموضع الأفقي</span><input type="range" dir="ltr" name="photoX" min="0" max="100" value="${f.x}"></label>
           <label><span><i class="fa-solid fa-arrows-up-down"></i> الموضع الرأسي</span><input type="range" dir="ltr" name="photoY" min="0" max="100" value="${f.y}"></label>
           <label><span><i class="fa-solid fa-magnifying-glass-plus"></i> التكبير</span><input type="range" dir="ltr" name="photoZ" min="1" max="2.5" step="0.05" value="${f.z}"></label>
         </div>
       </div>
-      <p class="pf-msg small muted"></p>
+      <p class="pf-msg small muted">${src ? '' : 'اختيارية — يمكنك تأجيل هذه الخطوة الآن وإضافة صورتك لاحقاً من لوحتك عند الرغبة في نشرها.'}</p>
       <details class="drive-help"><summary><i class="fa-brands fa-google-drive"></i> كيف أضيف صورتي من Google Drive؟</summary>
         <ol><li>ارفع صورة شخصية واضحة إلى Google Drive.</li><li>اضغط على الصورة بالزر الأيمن ← مشاركة ← «أي شخص لديه الرابط» (عارض).</li><li>انسخ الرابط والصقه هنا، ثم نسّق الصورة داخل الدائرة.</li></ol></details>
     </div>`;
@@ -187,11 +187,11 @@ const FormKit = (() => {
       if (!img || img.dataset.src !== src) {
         c.classList.remove('ph'); c.innerHTML = `<img alt="" referrerpolicy="no-referrer" data-src="${esc(src)}">`; img = $('img', c);
         msg.textContent = 'جارٍ تحميل الصورة...';
-        img.onload = () => { msg.textContent = 'حرّك المؤشرات لتنسيق الصورة داخل الدائرة'; };
+        img.onload = () => { msg.textContent = 'كبّر الصورة قليلاً ثم حرّك الموضعين لضبط الإطار داخل الدائرة'; };
         img.onerror = () => { c.classList.add('ph'); c.textContent = c.dataset.i; msg.textContent = 'تعذّر قراءة الصورة — تأكد أن الملف مشارَك «لأي شخص لديه الرابط»'; };
         img.src = src;
       }
-      img.style.objectPosition = `${f.x}% ${f.y}%`; img.style.transform = `scale(${f.z})`;
+      img.style.cssText = Card.imgStyle(f);
     };
     form.addEventListener('input', e => { if (pf && pf.contains(e.target)) photo(); });
     form.addEventListener('input', debounce(preview, 140));
