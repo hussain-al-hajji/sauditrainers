@@ -63,12 +63,11 @@ function driveImg(url, w = 800) {
   // Dropbox: رابط المشاركة ← رابط مباشر
   if (/^https:\/\/(www\.)?dropbox\.com\//.test(url)) return url.replace(/^https:\/\/(www\.)?dropbox\.com/, 'https://dl.dropboxusercontent.com').replace(/([?&])dl=\d/, '$1raw=1');
   // OneDrive: رابط المشاركة ← محتوى الملف عبر واجهة المشاركة
-  if (/^https:\/\/(1drv\.ms|onedrive\.live\.com|[\w-]+\.sharepoint\.com)\//.test(url)) return 'https://api.onedrive.com/v1.0/shares/u!' + btoa(url).replace(/=+$/, '').replace(/\//g, '_').replace(/\+/g, '-') + '/root/content';
+  if (/^https:\/\/(1drv\.ms|onedrive\.live\.com|[\w-]+\.sharepoint\.com)\//.test(url)) return 'https://api.onedrive.com/v1.0/shares/u!' + btoa(encodeURI(url)).replace(/=+$/, '').replace(/\//g, '_').replace(/\+/g, '-') + '/root/content';
   return url; // رابط مباشر لصورة على أي مساحة تخزين
 }
 // أي رابط https لصورة (Google Drive أو Dropbox أو OneDrive أو رابط مباشر)، أو معاينة data:
 const isImageLink = url => !!driveImg(url, 100);
-const isDriveLink = isImageLink;
 // كشف بيانات التواصل داخل النصوص العامة (جوال، بريد، روابط) لأن التواصل يتم عبر المنصة فقط
 function leaksContact(text) {
   const t = toEnDigits(text);
