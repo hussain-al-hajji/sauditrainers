@@ -53,7 +53,7 @@ const App = (() => {
     return `<footer class="footer"><div class="wrap">
       <div class="foot-grid">
         <div><a class="logo" href="#/" aria-label="مدرّبون سعوديّون — الرئيسية">${logoImg('green', 'on-light')}${logoImg('cream', 'on-dark')}</a>
-          <p style="margin-top:12px">${esc(c.brand.tagline)} — ${esc(c.about.registered)}</p>
+          <p style="margin-top:12px">${esc(c.brand.tagline)}</p>
           <div class="socials">${so.map(([k, i]) => `<a href="${esc(safeUrl(c.contact[k]))}" target="_blank" rel="noopener" aria-label="${k}"><i class="fa-brands ${i}"></i></a>`).join('')}${c.contact.email ? `<a href="mailto:${esc(c.contact.email)}" aria-label="email"><i class="fa-solid fa-envelope"></i></a>` : ''}${c.contact.whatsapp ? `<a href="${esc(waLink(c.contact.whatsapp))}" target="_blank" rel="noopener" aria-label="whatsapp"><i class="fa-brands fa-whatsapp"></i></a>` : ''}</div>
         </div>
         <div><h4>للجهات التدريبية</h4><a href="#/trainers">دليل المدربين</a><a href="#/request">اطلب مدرباً</a><a href="#/halls">قاعات التدريب</a></div>

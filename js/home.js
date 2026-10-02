@@ -364,7 +364,7 @@ Pages.about = {
         <div class="icard reveal" style="--d:200ms"><div class="ic"><i class="fa-solid fa-eye"></i></div><h3>الرؤية</h3><p>${nl2br(c.about.vision)}</p></div>
       </div>
       <div class="cta-band reveal" style="margin-top:40px">
-        <div><h2>${esc(c.about.registered)}</h2><p>للتواصل: <a style="color:var(--gold2)" href="mailto:${esc(c.contact.email)}">${esc(c.contact.email)}</a></p></div>
+        <div><h2>${esc(c.brand.tagline)}</h2><p>للتواصل: <a style="color:var(--gold2)" href="mailto:${esc(c.contact.email)}">${esc(c.contact.email)}</a></p></div>
         <div class="row"><a class="btn gold lg" href="#/join">سجّل كمدرب</a><a class="btn glass lg" href="#/request">اطلب مدرباً</a></div>
       </div>
     </div>`;

@@ -61,11 +61,11 @@ textarea { min-height: 110px; resize: vertical; }
 .checks { display: flex; flex-wrap: wrap; gap: 8px; }
 .chk { position: relative; }
 .chk input { position: absolute; opacity: 0; pointer-events: none; }
-.chk span { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 999px; border: 1.5px solid var(--line); background: #fff; cursor: pointer; font-family: var(--f-ui); font-weight: 500; font-size: .88rem; transition: all .15s; }
-.chk span i { color: var(--g600); }
-.chk input:checked + span { background: var(--g800); color: #fff; border-color: var(--g800); box-shadow: 0 6px 16px -6px rgba(0,84,48,.6); }
-.chk input:checked + span i { color: var(--gold2); }
-.chk input:focus-visible + span { box-shadow: 0 0 0 4px rgba(26,154,99,.2); }
+.chk > span { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 999px; border: 1.5px solid var(--line); background: #fff; cursor: pointer; font-family: var(--f-ui); font-weight: 500; font-size: .88rem; transition: all .15s; }
+.chk > span i { color: var(--g600); }
+.chk > input:checked + span { background: var(--g800); color: #fff; border-color: var(--g800); box-shadow: 0 6px 16px -6px rgba(0,84,48,.6); }
+.chk > input:checked + span i { color: var(--gold2); }
+.chk > input:focus-visible + span { box-shadow: 0 0 0 4px rgba(26,154,99,.2); }
 
 /* ===== الشارات ===== */
 .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; font-family: var(--f-ui); font-size: .8rem; font-weight: 600; background: var(--g100); color: var(--g700); }
@@ -596,7 +596,7 @@ input[type=range] { accent-color: var(--g700); width: 100%; }
 .themes { display: flex; gap: 10px; flex-wrap: wrap; }
 .themes label { display: flex; flex-direction: column; align-items: center; gap: 4px; position: relative; }
 .themes em { font-style: normal; font-family: var(--f-ui); font-size: .72rem; color: var(--muted); }
-.chk.consent span { white-space: normal; border-radius: 14px; }
+.chk.consent > span { white-space: normal; border-radius: 14px; }
 .form-sec { display: flex; gap: 8px; align-items: center; margin: 6px 0 -4px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 1rem; color: var(--g800); }
 .form-sec:first-child { border: 0; padding-top: 0; }
 
