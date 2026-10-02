@@ -6,7 +6,7 @@ const SchemaForm = (() => {
     return `<div class="sf-level">${schema.map(f => {
       const val = v[f.k];
       if (f.t === 'list') return `<div class="sf-list-wrap" data-k="${f.k}"><div class="sf-lh"><b>${esc(f.label)}</b><button type="button" class="btn sm" data-add><i class="fa-solid fa-plus"></i> ${esc(f.add || 'عنصر')}</button></div><div class="sf-list">${arr(val).map(it => item(f, it)).join('')}</div><template>${item(f, {})}</template></div>`;
-      if (f.t === 'check') return `<label class="chk sf-field"><input type="checkbox" data-f="${f.k}" ${val !== false && val != null ? 'checked' : ''}><span><i class="fa-solid fa-check"></i>${esc(f.label)}</span></label>`;
+      if (f.t === 'check') return `<label class="chk sf-field"><input type="checkbox" data-f="${f.k}" ${val !== false ? 'checked' : ''}><span><i class="fa-solid fa-check"></i>${esc(f.label)}</span></label>`;
       const ctl = f.t === 'area' ? `<textarea data-f="${f.k}" style="min-height:80px">${esc(val ?? '')}</textarea>`
         : f.t === 'number' ? `<input type="number" data-f="${f.k}" min="0" value="${esc(val ?? '')}">`
           : f.t === 'select' ? `<select data-f="${f.k}">${f.opts.map(([k, l]) => opt(k, l, val)).join('')}</select>`
@@ -68,14 +68,58 @@ function tplThumb(type, tpl) {
   return `<svg viewBox="0 0 120 72" class="tpl-thumb">${map[k] || R(10, 10, 100, 52, 0.3)}</svg>`;
 }
 
+/* إعدادات أعلى الموقع: قائمة الصفحات وشريط الإعلانات (لوحتان مستقلتان بحفظ خاص، لا يُعاد رسمهما مع الأقسام) */
+const NAV_SCHEMA = [{ k: 'items', label: 'الصفحات', t: 'list', add: 'صفحة', sub: [{ k: 'label', label: 'العنوان الظاهر' }, { k: 'href', label: 'الرابط (مثل #/trainers أو https://...)' }, { k: 'vis', label: 'ظاهرة في القائمة', t: 'check' }] }];
+const TICKER_SCHEMA = [{ k: 'on', label: 'تفعيل شريط الإعلانات أعلى الموقع', t: 'check' },
+  { k: 'items', label: 'الإعلانات (تتعاقب في شريط متحرك)', t: 'list', add: 'إعلان', sub: [{ k: 'text', label: 'نص الإعلان' }, { k: 'href', label: 'رابط عند النقر (اختياري)' }] },
+  { k: 'style', label: 'اللون', t: 'select', opts: [['green', 'أخضر الهوية'], ['cream', 'كريمي'], ['dark', 'أخضر داكن']] },
+  { k: 'speed', label: 'زمن الدورة بالثواني (أكبر = أبطأ)', t: 'number' }, { k: 'closable', label: 'السماح للزائر بإغلاقه', t: 'check' }];
+
+function homeSettings(box) {
+  const nav = arr(Store.get('content/nav/list')).length ? arr(Store.get('content/nav/list')) : defaultNav();
+  const tk = { ...defaultTicker(), ...(Store.get('content/ticker') || {}) }; tk.items = arr(tk.items);
+  box.innerHTML = `
+    <details class="set-panel"><summary><i class="fa-solid fa-bars"></i>قائمة الصفحات في أعلى الموقع <span class="pill gray">${nav.filter(n => n.vis !== false).length} ظاهرة</span></summary>
+      <div class="set-body"><p class="muted small">أضف صفحات أو أخفِها أو غيّر عناوينها وترتيبها. الروابط الداخلية تبدأ بـ <code>#/</code>، والخارجية بـ <code>https://</code> وتُفتح في تبويب جديد.</p>
+        <div class="preset-row">إضافة سريعة: ${NAV_PRESETS.map(([h, l]) => `<button type="button" data-preset="${esc(h)}" data-l="${esc(l)}">${esc(l)}</button>`).join('')}</div>
+        <div id="navf">${SchemaForm.render(NAV_SCHEMA, { items: nav })}</div>
+        <div class="row"><button class="btn primary sm" id="navs"><i class="fa-solid fa-floppy-disk"></i> حفظ القائمة</button><button class="btn sm ghost" id="navr"><i class="fa-solid fa-rotate-left"></i> الافتراضية</button></div></div></details>
+    <details class="set-panel" ${tk.on ? 'open' : ''}><summary><i class="fa-solid fa-bullhorn"></i>شريط الإعلانات المتحرك ${tk.on ? '<span class="pill ok">مفعّل</span>' : '<span class="pill gray">متوقف</span>'}</summary>
+      <div class="set-body"><p class="muted small">شريط نصي متحرك يظهر أعلى كل صفحات الموقع عند تفعيله. توقف حركته عند مرور المؤشر.</p>
+        <div id="tkf">${SchemaForm.render(TICKER_SCHEMA, tk)}</div>
+        <div class="row"><button class="btn primary sm" id="tks"><i class="fa-solid fa-floppy-disk"></i> حفظ الشريط</button><a class="btn sm" href="#/" target="_blank"><i class="fa-solid fa-eye"></i> معاينة</a></div></div></details>`;
+  SchemaForm.wire($('#navf', box)); SchemaForm.wire($('#tkf', box));
+  $$('[data-preset]', box).forEach(b => b.onclick = () => {
+    const list = $('#navf .sf-list', box); list.insertAdjacentHTML('beforeend', $('#navf > .sf-level > .sf-list-wrap > template', box).innerHTML);
+    const it = list.lastElementChild; it.querySelector('[data-f=label]').value = b.dataset.l; it.querySelector('[data-f=href]').value = b.dataset.preset;
+  });
+  $('#navs', box).onclick = () => {
+    const d = SchemaForm.read($('#navf > .sf-level', box), NAV_SCHEMA);
+    const list = d.items.filter(i => i.label && i.href).map((i, n) => ({ id: 'n' + n + Store.newId().slice(-4), label: i.label, href: i.href.trim(), vis: i.vis !== false }));
+    if (list.some(i => !/^(#\/|https?:\/\/)/.test(i.href))) { toast('الرابط يبدأ بـ #/ أو https://', 'error'); return; }
+    if (!list.length) { toast('أضف صفحة واحدة على الأقل', 'error'); return; }
+    Store.set('content/nav', { list }); Security.log('تعديل قائمة الصفحات'); toast('تم حفظ القائمة'); homeSettings(box);
+  };
+  $('#navr', box).onclick = async () => { if (!await confirmBox('استعادة قائمة الصفحات الافتراضية؟', { ok: 'استعادة' })) return; Store.remove('content/nav'); homeSettings(box); };
+  $('#tks', box).onclick = () => {
+    const d = SchemaForm.read($('#tkf > .sf-level', box), TICKER_SCHEMA);
+    d.items = d.items.filter(i => i.text); d.speed = Math.min(300, Math.max(10, Number(d.speed) || 40));
+    if (d.items.some(i => i.href && !safeHref(i.href))) { toast('رابط إعلان غير صحيح', 'error'); return; }
+    if (d.on && !d.items.length) { toast('أضف إعلاناً واحداً على الأقل', 'error'); return; }
+    Store.set('content/ticker', d); Security.log('تعديل شريط الإعلانات', d.on ? 'مفعّل' : 'متوقف'); toast(d.on ? 'الشريط مفعّل ويظهر الآن' : 'حُفظ الشريط (متوقف)'); homeSettings(box);
+  };
+}
+
 function aHome(main) {
+  if (!main._init) { main.innerHTML = '<div id="hset"></div><div id="hsec"></div>'; main._init = true; homeSettings($('#hset', main)); }
+  const box = $('#hsec', main);
   if (!main._list) { main._list = JSON.parse(JSON.stringify(homeSections())); main._dirty = false; }
   const list = main._list;
   const dirty = () => { main._dirty = true; aHome(main); };
   const tplName = s => SECTION_TYPES[s.type]?.tpls.find(t => t[0] === s.tpl)?.[1] || s.tpl;
   const bgName = s => (SECTION_TYPES[s.type]?.fixedBg ? '' : BG_CHOICES.find(b => b[0] === (s.bg || 'light'))?.[1]);
-  main.innerHTML = `
-    <div class="dash-h"><h2>الصفحة الرئيسية</h2>
+  box.innerHTML = `
+    <div class="dash-h"><h2>أقسام الصفحة الرئيسية</h2>
       <div class="row"><button class="btn sm ghost" id="rst"><i class="fa-solid fa-rotate-left"></i> الافتراضي</button><a class="btn sm" href="#/" target="_blank"><i class="fa-solid fa-eye"></i> معاينة</a><button class="btn primary" id="sv" ${main._dirty ? '' : 'disabled'}><i class="fa-solid fa-floppy-disk"></i> حفظ ونشر</button></div></div>
     <p class="muted small">رتّب الأقسام بالأسهم أو بالسحب، وأظهرها أو أخفها، وعدّل محتوى كل قسم وقالبه. لا يظهر شيء للزوار قبل الضغط على «حفظ ونشر».</p>
     <div class="hb" id="hb">${list.map((s, i) => { const T = SECTION_TYPES[s.type] || {}; return `

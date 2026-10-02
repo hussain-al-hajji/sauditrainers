@@ -14,14 +14,29 @@ const App = (() => {
     return { page: ROUTES[seg] ? ROUTES[seg] : 'home', arg, params: new URLSearchParams(query), seg };
   }
 
+  // شريط الإعلانات النصي المتحرك أعلى الشاشة (يُفعَّل من الإدارة)
+  function ticker() {
+    const t = siteTicker();
+    if (!t.on || !t.items.length) return '';
+    try { if (t.closable && sessionStorage.getItem('st-ticker-x') === JSON.stringify(t.items)) return ''; } catch { /* ignore */ }
+    const one = t.items.map(i => { const h = safeHref(i.href); return h ? `<a href="${esc(h)}" ${/^https?:/.test(h) ? 'target="_blank" rel="noopener"' : ''}>${esc(i.text)}</a>` : `<span>${esc(i.text)}</span>`; }).join('<i class="fa-solid fa-star-of-life tk-sep"></i>');
+    let loop = one; while (loop.length < 1400) loop += `<i class="fa-solid fa-star-of-life tk-sep"></i>${one}`;
+    return `<div class="ticker ${['green', 'cream', 'dark'].includes(t.style) ? t.style : 'green'}" id="tk" role="region" aria-label="إعلانات">
+      <div class="tk-track" style="--dur:${Math.max(10, Number(t.speed) || 40)}s"><div class="tk-set">${loop}<i class="fa-solid fa-star-of-life tk-sep"></i></div><div class="tk-set" aria-hidden="true">${loop}<i class="fa-solid fa-star-of-life tk-sep"></i></div></div>
+      ${t.closable ? '<button class="tk-x" id="tkx" aria-label="إغلاق الإعلان"><i class="fa-solid fa-xmark"></i></button>' : ''}</div>`;
+  }
+
   function header(page) {
     const s = Auth.current();
     const dark = Pages[page]?.dark || ['trainers', 'profile', 'join', 'status', 'request', 'halls', 'about', 'login'].includes(page) || (page === 'admin' && s?.kind !== 'admin');
-    const link = (href, label, on) => `<a href="${href}" class="${on ? 'on' : ''}">${label}</a>`;
-    return `<header class="topbar ${dark ? 'dark' : ''}" id="top"><div class="wrap">
+    // الصفحة الحالية: مقطع المسار الأول من الرابط (والمدرب t يتبع «المدربون»)
+    const seg = h => (String(h).replace(/^#\/?/, '').split(/[?/]/)[0]) || '';
+    const cur = page === 'profile' ? 'trainers' : parse().seg;
+    const link = n => { const ext = /^https?:/i.test(n.href); return `<a href="${esc(n.href)}" class="${!ext && seg(n.href) === cur ? 'on' : ''}" ${ext ? 'target="_blank" rel="noopener"' : ''}>${esc(n.label)}</a>`; };
+    return `${ticker()}<header class="topbar ${dark ? 'dark' : ''}" id="top"><div class="wrap">
       <a class="logo" href="#/" aria-label="مدرّبون سعوديّون — الرئيسية">${logoImg('green', 'on-light')}${logoImg('cream', 'on-dark')}</a>
       <nav class="nav" id="nav">
-        ${link('#/', 'الرئيسية', page === 'home')}${link('#/trainers', 'المدربون', page === 'trainers' || page === 'profile')}${link('#/request', 'اطلب مدرباً', page === 'request')}${link('#/halls', 'القاعات', page === 'halls')}${link('#/about', 'عن المنصة', page === 'about')}
+        ${siteNav().map(link).join('')}
         <a href="${s?.kind === 'trainer' ? '#/me' : s?.kind === 'admin' ? '#/admin' : '#/login'}" class="mob-only">${s ? 'لوحتي' : 'دخول المدربين'}</a>
       </nav>
       <div class="nav-cta">
@@ -63,6 +78,7 @@ const App = (() => {
     P.mount && P.mount(view, params, arg);
     reveal(app); tilt(app);
     $('#bg').onclick = () => $('#nav').classList.toggle('open');
+    $('#tkx') && ($('#tkx').onclick = () => { try { sessionStorage.setItem('st-ticker-x', JSON.stringify(siteTicker().items)); } catch { /* ignore */ } $('#tk').remove(); });
     window.scrollTo({ top: y, behavior: 'instant' });
     onScroll();
   }
