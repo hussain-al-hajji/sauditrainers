@@ -351,7 +351,14 @@ textarea { min-height: 110px; resize: vertical; }
 .p-intro { color: #fff; padding-top: 30px; min-height: 250px; }
 .p-intro h1 { color: #fff; font-size: clamp(1.8rem, 3.5vw, 2.6rem); font-weight: 900; margin: 6px 0; }
 .p-intro .t { color: var(--gold2); font-weight: 600; font-size: 1.1rem; }
-@media (max-width: 960px) { .profile { grid-template-columns: 1fr; } .profile-side { position: static; } .p-intro { min-height: 0; padding-top: 0; } }
+@media (max-width: 960px) { .profile { grid-template-columns: 1fr; } .profile-side { position: static; } .p-intro { min-height: 0; padding-top: 0; }
+  /* على الجوال تأتي البطاقة أولاً فيقع العنوان على خلفية فاتحة: ألوان داكنة مقروءة */
+  .p-intro { color: var(--ink); margin: 8px 0 16px; }
+  .p-intro h1 { color: var(--g900); }
+  .p-intro .t { color: var(--g700); }
+  .p-intro .crumbs, .p-intro .crumbs a { color: var(--ink2); }
+  .p-intro .crumbs a:hover { color: var(--g700); }
+}
 
 /* ===== نموذج التسجيل (معالج بخطوات) ===== */
 .wizard { display: grid; grid-template-columns: 1fr 380px; gap: 30px; align-items: start; }
