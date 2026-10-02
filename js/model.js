@@ -73,7 +73,7 @@ const Data = (() => {
   // رابط مختصر للمدرب من اسمه اللاتيني إن وُجد وإلا الرقم
   function makeSlug(t) {
     const base = String(t.nameEn || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
-    const s = base || String(t.code || '').toLowerCase();
+    const s = base || 't-' + Math.random().toString(36).slice(2, 8);
     const taken = Store.list('trainers').some(x => x.slug === s && x.id !== t.id);
     return taken ? `${s}-${String(t.code || '').toLowerCase().replace(/\D/g, '')}` : s;
   }

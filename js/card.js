@@ -39,7 +39,7 @@ const Card = (() => {
       <div class="tc-glow"></div><div class="tc-holo"></div>
       <header class="tc-top">
         ${logoImg(th.light ? 'green' : 'cream', 'tc-logo')}
-        ${t.code ? `<span class="tc-code num">${esc(t.code)}</span>` : `<span class="tc-code">${preview ? 'معاينة' : ''}</span>`}
+        <span class="tc-code">${preview ? 'معاينة' : ''}</span>
       </header>
       <div class="tc-ring">${avatar(t, 'tc-photo')}<span class="tc-verified" title="مدرب موثّق"><i class="fa-solid fa-certificate"></i><i class="fa-solid fa-check"></i></span></div>
       <h2 class="tc-name">${esc(t.name || 'اسم المدرب')}</h2>
@@ -58,7 +58,7 @@ const Card = (() => {
   function mini(t, i = 0) {
     const sp = Data.cardSpecs(t), nAll = Data.specs(t).length;
     return `<a class="tmini reveal ${themeCls(t)}" href="#/t/${esc(encodeURIComponent(t.slug || t.id))}" style="${themeVars(t)};--d:${Math.min(i, 12) * 40}ms" data-tilt="6">
-      <div class="tm-head"><div class="tm-glow"></div>${t.featured ? '<span class="tm-star" title="مدرب مميز"><i class="fa-solid fa-star"></i></span>' : ''}<span class="tm-code num">${esc(t.code || '')}</span></div>
+      <div class="tm-head"><div class="tm-glow"></div>${t.featured ? '<span class="tm-star" title="مدرب مميز"><i class="fa-solid fa-star"></i></span>' : ''}</div>
       <div class="tm-ring">${avatar(t, 'tm-photo')}</div>
       <div class="tm-body">
         <h3>${esc(t.name)}<i class="fa-solid fa-circle-check tm-ok" title="موثّق"></i></h3>
@@ -143,19 +143,10 @@ const Card = (() => {
     ctx.strokeStyle = hex(th.accent, 0.8); ctx.lineWidth = 3; rr(ctx, M, M, W - 2 * M, H - 2 * M, 44); ctx.stroke();
     ctx.strokeStyle = hex(th.accent, 0.28); ctx.lineWidth = 1.5; rr(ctx, M + 14, M + 14, W - 2 * M - 28, H - 2 * M - 28, 34); ctx.stroke();
 
-    // الترويسة: الشعار الرسمي + رقم المدرب
+    // الترويسة: الشعار الرسمي (رقم المدرب لا يُعرض للزوار)
     const top = format === 'story' ? 150 : 100;
     const logo = await loadImage(light ? LOGO.green : LOGO.cream);
     if (logo) { const lh = 104, lw = lh * logo.width / logo.height; ctx.drawImage(logo, W - 96 - lw, top - 52, lw, lh); }
-    const code = t.code || '';
-    if (code) {
-      ctx.textAlign = 'left'; ctx.font = `700 28px ${UI}`;
-      const cw = ctx.measureText(code).width + 44;
-      rr(ctx, 96, top - 25, cw, 50, 25); ctx.strokeStyle = hex(th.accent, 0.9); ctx.lineWidth = 2; ctx.stroke();
-      ctx.fillStyle = th.accent; ctx.direction = 'ltr'; ctx.fillText(code, 118, top + 10); ctx.direction = 'rtl';
-      ctx.textAlign = 'center';
-    }
-
     // الصورة الدائرية
     const D = format === 'story' ? 470 : 400, cx = W / 2, cy = top + (format === 'story' ? 150 : 110) + D / 2;
     ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 18;
@@ -256,7 +247,7 @@ const Card = (() => {
   }
   async function save(t, format = 'post') {
     toast('جارٍ تجهيز البطاقة بدقة عالية...');
-    try { download(`sauditrainers-${(t.code || 'card').toLowerCase()}-${format}.png`, await toBlob(t, format)); toast('تم حفظ البطاقة'); }
+    try { download(`sauditrainers-${(t.slug || 'card')}-${format}.png`, await toBlob(t, format)); toast('تم حفظ البطاقة'); }
     catch (e) { console.error(e); toast('تعذّر إنشاء صورة البطاقة (تأكد أن رابط الصورة متاح للعامة)', 'error'); }
   }
   async function share(t) {
@@ -264,7 +255,7 @@ const Card = (() => {
     const text = `تعرّف على المدرب ${t.name}${t.title ? ' — ' + t.title : ''} عبر منصة مدرّبون سعوديّون`;
     try {
       const blob = await toBlob(t, 'post');
-      const file = new File([blob], `${(t.code || 'trainer').toLowerCase()}.png`, { type: 'image/png' });
+      const file = new File([blob], `${(t.slug || 'trainer')}.png`, { type: 'image/png' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: t.name, text: `${text}\n${url}` }); return; }
     } catch (e) { if (e && e.name === 'AbortError') return; }
     shareSheet(t);

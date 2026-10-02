@@ -11,7 +11,7 @@ const PLATFORMS = [
 const SOCIAL_TPL = {
   x: '🌟 تعرّف على {name}\n{title}\n📍 {region} · ⏳ خبرة {years} سنة\n\nللتواصل وطلب التدريب عبر منصة «مدرّبون سعوديّون» 👇\n{link}\n{hashtags}',
   linkedin: '🌟 من مدربي منصة «مدرّبون سعوديّون»: {name}\n{title}\n\n{bio}\n\n🎯 التخصصات: {specs}\n📍 المنطقة: {region}\n⏳ الخبرة التدريبية: {years} سنة\n\nللاطلاع على البطاقة التعريفية وطلب التدريب عبر المنصة:\n{link}\n\n{hashtags}',
-  instagram: '🌟 {name}\n{title}\n\n{bio}\n\n🎯 {specs}\n📍 {region} · ⏳ خبرة {years} سنة\n\nللتواصل وطلب التدريب: الرابط في البايو — رقم المدرب {code}\n\n{hashtags}'
+  instagram: '🌟 {name}\n{title}\n\n{bio}\n\n🎯 {specs}\n📍 {region} · ⏳ خبرة {years} سنة\n\nللتواصل وطلب التدريب: الرابط في البايو\n\n{hashtags}'
 };
 const SOCIAL_STATUS = {
   draft: ['مسودة', 'gray'], scheduled: ['مجدول', 'info'], published: ['منشور', 'ok'], partial: ['منشور جزئياً', 'warn'], failed: ['فشل النشر', 'bad']

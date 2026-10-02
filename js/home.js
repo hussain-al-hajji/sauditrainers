@@ -199,7 +199,6 @@ Pages.profile = {
             ${Number(t.years) ? `<div><small>سنوات الخبرة</small><b class="num">${esc(t.years)}</b></div>` : ''}
             ${Number(t.hours) ? `<div><small>الساعات التدريبية</small><b class="num">${fmtNum(t.hours)}</b></div>` : ''}
             ${t.langs ? `<div><small>لغات التدريب</small><b>${esc(t.langs)}</b></div>` : ''}
-            <div><small>رقم المدرب</small><b class="num">${esc(t.code)}</b></div>
           </div>
         </div>
         ${similar.length ? `<h3 style="margin-top:30px">مدربون في تخصصات مشابهة</h3><div class="tgrid">${similar.map((x, i) => Card.mini(x, i)).join('')}</div>` : ''}
