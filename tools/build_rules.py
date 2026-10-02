@@ -35,7 +35,7 @@ extra = {'$k': {'.validate': "$k.matches(/^[a-z0-9_]{1,30}$/) && newData.isStrin
 def fields(spec, write=None):
     out = {}
     for k, v in spec.items():
-        out[k] = {'.validate': v}
+        out[k] = dict(v) if isinstance(v, dict) else {'.validate': v}
         if write:
             out[k]['.write'] = write
     return out

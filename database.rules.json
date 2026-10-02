@@ -275,11 +275,9 @@
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
           },
           "matches": {
-            ".validate": {
-              ".validate": "newData.hasChildren()",
-              "$i": {
-                ".validate": "newData.isString() && newData.val().length <= 20"
-              }
+            ".validate": "newData.hasChildren()",
+            "$i": {
+              ".validate": "newData.isString() && newData.val().length <= 20"
             }
           },
           "status": {
