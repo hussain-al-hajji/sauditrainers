@@ -18,7 +18,7 @@ const CORE_FIELDS = {
   email: { label: 'البريد الإلكتروني', type: 'email', req: true, lock: true, priv: true, hint: 'تصلك عليه طلبات الجهات التدريبية' },
   title: { label: 'اللقب المهني (سطر تعريفي)', type: 'text', max: 80, req: true, ph: 'مثال: مدربة معتمدة في القيادة والتحول الرقمي', w: 'full' },
   specs: { label: 'مجالات التدريب', type: 'specs', req: true, lock: true, hint: `اختر حتى ${MAX_SPECS} مجالاً`, w: 'full' },
-  topics: { label: 'البرامج ومجالات الخبرة', type: 'textarea', max: 800, ph: 'اكتب كل برنامج في سطر أو افصل بفاصلة: إدارة الوقت، القيادة الفعالة، ...', w: 'full' },
+  topics: { label: 'عناوين دورات تم تقديمها سابقاً', type: 'textarea', max: 800, ph: 'اكتب عنوان كل دورة في سطر أو افصل بفاصلة: إدارة الوقت، القيادة الفعالة، ...', w: 'full' },
   modes: { label: 'طريقة التقديم', type: 'modes', req: true, w: 'full' },
   years: { label: 'سنوات الخبرة التدريبية', type: 'number', max: 60 },
   hours: { label: 'الساعات التدريبية المنفذة', type: 'number', max: 100000 },
@@ -26,7 +26,7 @@ const CORE_FIELDS = {
   certs: { label: 'الشهادات والاعتمادات', type: 'textarea', max: 800, ph: 'مثال: شهادة إعداد المدربين TOT', w: 'full' },
   bio: { label: 'نبذة تعريفية', type: 'textarea', max: 1200, req: true, ph: 'عرّف بنفسك وبخبرتك التدريبية وأبرز إنجازاتك', hint: 'لا تضع أرقام تواصل أو بريداً أو روابط؛ التواصل يتم عبر المنصة', w: 'full' },
   langs: { label: 'لغة التدريب', type: 'langs', w: 'full' },
-  photoUrl: { label: 'الصورة الشخصية (رابط مشاركة الصورة) — اختيارية', type: 'photo', w: 'full' },
+  photoUrl: { label: 'الصورة الشخصية (رابط مشاركة الصورة)', type: 'photo', w: 'full' },
   theme: { label: 'تصميم البطاقة', type: 'theme', w: 'full' },
   tot: { label: 'شهادة تدريب المدربين (TOT)', type: 'tot', req: true, joinOnly: true, w: 'full' },
   cvUrl: { label: 'رابط الشهادات أو السيرة الذاتية', type: 'url', joinOnly: true, priv: true, ltr: true, ph: 'https://drive.google.com/...', hint: 'يطّلع عليه فريق المراجعة فقط', w: 'full' }
@@ -57,8 +57,8 @@ function defaultForms() {
     ] },
     admin: { steps: [
       { id: 'a1', title: 'البيانات الأساسية', icon: 'fa-id-card', fields: f(['name', 'nameEn', 'gender', 'region', 'city', 'phone', 'email']) },
-      { id: 'a2', title: 'التخصص', icon: 'fa-layer-group', fields: f(['title', 'specs', 'topics', 'modes']) },
-      { id: 'a3', title: 'الخبرة', icon: 'fa-award', fields: f(['years', 'hours', 'programs', 'certs', 'bio', 'langs']) },
+      { id: 'a2', title: 'التخصص', icon: 'fa-layer-group', fields: f(['title', 'specs', 'bio', 'topics', 'modes']) },
+      { id: 'a3', title: 'الخبرة', icon: 'fa-award', fields: f(['years', 'hours', 'programs', 'certs', 'langs']) },
       { id: 'a4', title: 'الصورة والتصميم', icon: 'fa-camera', fields: f(['photoUrl', 'theme']) }
     ] }
   };
@@ -140,6 +140,7 @@ const FormKit = (() => {
     const f = Card.fit({ ...d, photoZ: d.photoZ ?? 1.2 }), src = Data.photo(d);
     return `<div class="photo-field">
       <input type="url" name="photoUrl" dir="ltr" maxlength="300" value="${esc(d.photoUrl)}" placeholder="https://drive.google.com/file/d/.../view">
+      <small class="muted"><i class="fa-solid fa-link"></i> ضع رابط مشاركة الصورة هنا (Google Drive أو أي مساحة تخزين سحابية).</small>
       <div class="pf-row">
         <span class="pf-circle avw ${d.noPhoto ? 'sym' : src ? '' : 'ph'}" data-i="${initials(d.name || '؟')}">${d.noPhoto ? Card.symbol(d.gender) : src ? `<img src="${esc(src)}" alt="" referrerpolicy="no-referrer" style="${Card.imgStyle(f)}">` : '<i class="fa-solid fa-user"></i>'}</span>
         <div class="pf-ranges">
@@ -156,15 +157,16 @@ const FormKit = (() => {
         <ol><li>ارفع صورة شخصية واضحة إلى Google Drive أو Dropbox أو OneDrive (أو أي مساحة تخزين تعطي رابطاً مباشراً للصورة).</li><li>اجعل المشاركة «أي شخص لديه الرابط» (عارض).</li><li>انسخ رابط المشاركة والصقه هنا، ثم نسّق الصورة داخل الدائرة. إن لم تظهر المعاينة فالرابط غير مباشر أو المشاركة مغلقة.</li></ol></details>
     </div>`;
   }
-  function fieldHTML(f, d) {
+  // reqKeys: عند تمريرها تحدد الحقول الإلزامية فعلياً (نموذج الإدارة)؛ وإلا فحسب إعداد الحقل
+  function fieldHTML(f, d, reqKeys) {
     if (f.type === 'consent') return `<div class="field full req-box">${input(f, d)}${f.hint ? `<small>${esc(f.hint)}</small>` : ''}</div>`;
     const group = ['specs', 'modes', 'multi', 'theme', 'photo', 'langs', 'tot'].includes(f.type);
-    const lab = `${esc(f.label)}${required(f) ? ' *' : ''}${f.type === 'specs' ? ` <small>(${esc(f.hint || '')})</small>` : ''}`;
+    const lab = `${esc(f.label)}${(reqKeys ? reqKeys.includes(f.k) : required(f)) ? ' *' : ' <em class="opt">(اختياري)</em>'}${f.type === 'specs' ? ` <small>(${esc(f.hint || '')})</small>` : ''}`;
     const hint = f.type !== 'specs' && f.hint ? `<small>${esc(f.hint)}</small>` : '';
     return group ? `<div class="field ${f.w === 'full' ? 'full' : ''}" data-f="${esc(f.k)}"><span>${lab}</span>${input(f, d)}${hint}</div>`
       : `<label class="field ${f.w === 'full' ? 'full' : ''}" data-f="${esc(f.k)}"><span>${lab}</span>${input(f, d)}${hint}</label>`;
   }
-  const stepHTML = (s, d) => `<div class="grid2">${s.fields.map(f => fieldHTML(f, d)).join('')}</div>`;
+  const stepHTML = (s, d, reqKeys) => `<div class="grid2">${s.fields.map(f => fieldHTML(f, d, reqKeys)).join('')}</div>`;
 
   /* ===== قراءة النموذج ===== */
   function read(form) {

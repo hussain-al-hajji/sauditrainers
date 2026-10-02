@@ -938,3 +938,5 @@ select[data-ls] { cursor: pointer; }
 .spec-hint i { color: var(--g600); margin-inline-end: 4px; }
 .spec-add .row { display: flex; gap: 8px; }
 .spec-add .row input { flex: 1; min-width: 0; }
+
+.field .opt { font-style: normal; font-weight: 500; font-size: .78rem; color: var(--muted); }

@@ -367,6 +367,8 @@ function aTrainers(main) {
   });
 }
 
+// في نموذج الإضافة من الإدارة: الاسم والمنطقة فقط إلزاميان
+const ADMIN_REQUIRED = ['name', 'region'];
 function trainerEditor(t) {
   const isNew = !t;
   t = t || { status: 'active', theme: 'brand', langs: 'العربية' };
@@ -376,7 +378,7 @@ function trainerEditor(t) {
   const m = modal(`<h3><i class="fa-solid fa-id-card"></i> ${isNew ? 'إضافة مدرب' : 'تعديل ' + esc(t.name)}</h3>
     <p class="muted small">حقول هذا النموذج تُعدَّل من تبويب «النماذج». بيانات التواصل لا تظهر في المنصة.</p>
     <div class="editor"><form id="te" autocomplete="off" novalidate style="display:grid;gap:16px">
-      ${steps.map(s => `<h4 class="form-sec"><i class="fa-solid ${esc(s.icon || 'fa-circle')}"></i> ${esc(s.title)}</h4>${FormKit.stepHTML(s, values)}`).join('')}
+      ${steps.map(s => `<h4 class="form-sec"><i class="fa-solid ${esc(s.icon || 'fa-circle')}"></i> ${esc(s.title)}</h4>${FormKit.stepHTML(s, values, ADMIN_REQUIRED)}`).join('')}
       <h4 class="form-sec"><i class="fa-solid fa-sliders"></i> النشر</h4>
       ${field('الحالة', `<select name="status">${opt('active', 'منشور', t.status)}${opt('hidden', 'مخفي', t.status)}</select>`)}
       ${field('رسالة للمدرب تظهر في لوحته', `<textarea name="note" maxlength="600" style="min-height:70px">${esc(Store.get(`notes/${t.id}`)?.text || '')}</textarea>`)}
@@ -396,7 +398,7 @@ function trainerEditor(t) {
     e.preventDefault();
     const d = FormKit.read(form);
     // الإدارة: الاسم والمنطقة فقط إلزامية، مع التحقق من صيغ بقية الحقول
-    const err = FormKit.validate(steps.flatMap(s => s.fields).map(f => ({ ...f, lock: false, req: ['name', 'region'].includes(f.k) })), d, form);
+    const err = FormKit.validate(steps.flatMap(s => s.fields).map(f => ({ ...f, lock: false, req: ADMIN_REQUIRED.includes(f.k) })), d, form);
     if (err) { toast(err, 'error'); return; }
     const ex = Data.splitExtra(d.extra);
     const rec = { ...Data.pick(d, Data.PUBLIC_FIELDS), status: d.status, updatedAt: Date.now(), extra: Object.keys(ex.pub).length ? ex.pub : null };
