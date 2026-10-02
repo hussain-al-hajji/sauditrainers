@@ -45,6 +45,8 @@ const normAr = s => toEnDigits(String(s || '').toLowerCase())
   .replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/ؤ/g, 'و').replace(/ئ/g, 'ي')
   .replace(/\s+/g, ' ').trim();
 
+// الكلمة الأولى من الاسم دون اللقب المختصر (أ. / م. / د.) أو الصفة
+const firstName = name => String(name || '').trim().replace(/^(?:(?:د|م|أ|ا)\.|دكتور|الدكتور|مهندس|المهندس|أستاذ|الأستاذ)\s*/, '').split(/\s+/)[0] || '';
 function initials(name) {
   const w = String(name || '').replace(/^(د|م|أ|ا)\.\s*/, '').split(/\s+/).filter(Boolean).map(x => x.replace(/^ال(?=..)/, ''));
   return esc((w[0]?.[0] || '') + (w.length > 1 ? ' ' + w[w.length - 1][0] : ''));

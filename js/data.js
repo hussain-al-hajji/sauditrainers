@@ -21,7 +21,31 @@ const regionName = k => regionOf(k)?.name || '';
 // مناطق المدرب: القائمة المختارة (regions) أو المنطقة الواحدة القديمة (region)؛ الأولى هي الرئيسية
 const regionsOf = t => { const l = (Array.isArray(t?.regions) ? t.regions : Object.values(t?.regions || {})).filter(k => regionOf(k)); const all = l.length ? l : (regionOf(t?.region) ? [t.region] : []); return all.filter((k, i) => all.indexOf(k) === i); };
 // نص المناطق: كاملاً، أو مختصراً للبطاقة (أول منطقتين و+n)
-const regionsLabel = (t, short = false) => { const n = regionsOf(t).map(regionName); return short && n.length > 2 ? `${n.slice(0, 2).join('، ')} +${n.length - 2}` : n.join('، '); };
+const regionsLabel = (t, short = false, max = 2) => { const n = regionsOf(t).map(regionName); return short ? n.slice(0, max).join(' | ') : n.join('، '); };
+
+/* قالب البطاقة التعريفية: محتواها وخصائصها وألوانها وخطوطها، تحرره الإدارة من تبويب «قوالب» ويُحفظ في content/cardTemplate */
+const CARD_FONTS = ['Cairo', 'Tajawal', 'Almarai', 'IBM Plex Sans Arabic', 'Noto Sans Arabic'];
+const CARD_TPL_DEFAULT = {
+  show: { logo: true, title: true, region: true, stats: true, specs: true, flag: true, pattern: true, footer: true },
+  text: { years: 'سنة خبرة', hours: 'ساعة تدريبية', programs: 'برنامج ودورة', footLead: 'لقراءة السيرة الذاتية وللتواصل تفضل بزيارة منصة', brand: 'مدرّبون سعوديّون', site: 'SaudiTrainers.sa', preview: 'معاينة' },
+  maxSpecs: 6, maxRegions: 2, nameScale: 100, patternOpacity: 100, radius: 30,
+  colors: { on: false, a: '#005430', b: '#0A7A45', c: '#1A9A63', accent: '#EEF3E5', fg: '#FFFFFF' },
+  fonts: { name: 'Cairo', body: 'IBM Plex Sans Arabic', brand: 'Cairo' }
+};
+// يدمج المحفوظ مع الافتراضي ويُنقّي كل قيمة (قوائم بيضاء وحدود) لأنها تدخل في أنماط الصفحة
+function cardTemplate(raw) {
+  raw = raw === undefined ? (typeof Store !== 'undefined' ? Store.get('content/cardTemplate') : null) : raw;
+  raw = raw || {}; const D = CARD_TPL_DEFAULT, o = JSON.parse(JSON.stringify(D));
+  const num = (v, a, b, d) => { const n = Number(v); return Number.isFinite(n) && v !== '' && v != null ? Math.min(b, Math.max(a, Math.round(n))) : d; };
+  Object.keys(D.show).forEach(k => { if (raw.show && typeof raw.show[k] === 'boolean') o.show[k] = raw.show[k]; });
+  Object.keys(D.text).forEach(k => { if (raw.text && typeof raw.text[k] === 'string') o.text[k] = raw.text[k].slice(0, 90); });
+  o.maxSpecs = num(raw.maxSpecs, 1, 6, D.maxSpecs); o.maxRegions = num(raw.maxRegions, 1, 3, D.maxRegions);
+  o.nameScale = num(raw.nameScale, 70, 130, D.nameScale); o.patternOpacity = num(raw.patternOpacity, 0, 100, D.patternOpacity); o.radius = num(raw.radius, 0, 48, D.radius);
+  const c = raw.colors || {}; o.colors.on = c.on === true;
+  ['a', 'b', 'c', 'accent', 'fg'].forEach(k => { if (/^#[0-9a-f]{6}$/i.test(c[k] || '')) o.colors[k] = c[k]; });
+  Object.keys(D.fonts).forEach(k => { if (raw.fonts && CARD_FONTS.includes(raw.fonts[k])) o.fonts[k] = raw.fonts[k]; });
+  return o;
+}
 
 // حدود المملكة مبسّطة (خط طول، خط عرض) للرسم الفني في الواجهة
 const KSA_OUTLINE = [

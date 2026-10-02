@@ -233,12 +233,12 @@ textarea { min-height: 110px; resize: vertical; }
 .region:hover::before { transform: scale(1.6); }
 
 /* ===== البطاقة التعريفية الكاملة ===== */
-.tcard { --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 30%; --fg: #fff; position: relative; isolation: isolate; width: 100%; max-width: 420px; margin-inline: auto; padding: 20px 24px 0; border-radius: 30px; color: var(--fg); text-align: center; overflow: hidden;
+.tcard { --rx: 0deg; --ry: 0deg; --mx: 50%; --my: 30%; --fg: #fff; position: relative; isolation: isolate; width: 100%; max-width: 420px; margin-inline: auto; padding: 20px 24px 0; border-radius: var(--cf-radius, 30px); color: var(--fg); text-align: center; overflow: hidden;
   background: radial-gradient(120% 70% at 50% 22%, color-mix(in srgb, var(--c) 70%, transparent), transparent 70%), linear-gradient(160deg, var(--a), var(--b) 55%, var(--a));
   box-shadow: 0 40px 80px -30px rgba(0,26,14,.55), inset 0 0 0 1.5px color-mix(in srgb, var(--acc) 55%, transparent), inset 0 0 0 9px color-mix(in srgb, var(--a) 60%, transparent), inset 0 0 0 10px color-mix(in srgb, var(--acc) 20%, transparent);
   transform: perspective(1000px) rotateX(var(--rx)) rotateY(var(--ry)); transition: transform .5s cubic-bezier(.2,.7,.2,1); transform-style: preserve-3d; }
 .tcard.tilting { transition: transform .08s linear; }
-.tcard::before { content: ''; position: absolute; inset: 0; background: var(--pat); background-size: 300px; z-index: -1; pointer-events: none; -webkit-mask: linear-gradient(to bottom, #000 0, #000 22%, rgba(0,0,0,.35) 50%, rgba(0,0,0,.18) 100%); mask: linear-gradient(to bottom, #000 0, #000 22%, rgba(0,0,0,.35) 50%, rgba(0,0,0,.18) 100%); }
+.tcard::before { content: ''; position: absolute; inset: 0; background: var(--pat); background-size: 300px; opacity: var(--cf-pat, 1); z-index: -1; pointer-events: none; -webkit-mask: linear-gradient(to bottom, #000 0, #000 22%, rgba(0,0,0,.35) 50%, rgba(0,0,0,.18) 100%); mask: linear-gradient(to bottom, #000 0, #000 22%, rgba(0,0,0,.35) 50%, rgba(0,0,0,.18) 100%); }
 .tc-holo { position: absolute; inset: 0; z-index: 2; pointer-events: none; mix-blend-mode: soft-light; opacity: 0; transition: opacity .3s;
   background: radial-gradient(circle at var(--mx) var(--my), rgba(255,255,255,.35), transparent 40%), linear-gradient(115deg, transparent 30%, rgba(238,243,229,.28) 45%, rgba(170,255,230,.18) 52%, transparent 65%); background-size: 100% 100%, 250% 250%; background-position: 0 0, var(--mx) var(--my); }
 .tcard.tilting .tc-holo { opacity: .9; }
@@ -251,21 +251,26 @@ textarea { min-height: 110px; resize: vertical; }
 .tc-photo { width: 100%; height: 100%; border-radius: 50%; border: 4px solid var(--b); background: linear-gradient(160deg, var(--c), var(--a)); font-family: var(--f-display); font-weight: 900; font-size: 3.2rem; color: var(--fg); }
 .avw { display: grid; place-content: center; overflow: hidden; position: relative; }
 .avw img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform-origin: center; }
-.tc-verified { position: absolute; bottom: 4%; inset-inline-start: 4%; width: 50px; height: 50px; display: grid; place-content: center; }
-.tc-verified i { grid-area: 1/1; } .tc-verified .fa-certificate { font-size: 50px; color: var(--acc); filter: drop-shadow(0 6px 10px rgba(0,0,0,.3)); } .tc-verified .fa-check { color: var(--b); font-size: 19px; text-align: center; }
-.tc-name { color: var(--fg); font-size: 1.75rem; font-weight: 900; margin: 16px 0 2px; transform: translateZ(30px); text-wrap: balance; }
-.tc-title { color: var(--acc); font-weight: 600; margin: 0 0 8px; font-size: 1rem; line-height: 1.6; text-wrap: balance; }
-.tc-meta { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 14px; font-family: var(--f-ui); font-size: .82rem; color: color-mix(in srgb, var(--fg) 80%, transparent); }
+.tc-verified { position: absolute; bottom: 2%; inset-inline-start: 0; width: 76px; display: block; transform-origin: 8% 80%; animation: flagSway 3.6s ease-in-out infinite; }
+.tc-flag { display: block; width: 100%; height: auto; filter: drop-shadow(0 8px 10px rgba(0,0,0,.4)); }
+@keyframes flagSway { 0%, 100% { transform: rotate(-3deg) skewY(1deg); } 50% { transform: rotate(2deg) skewY(-1.5deg); } }
+@media (prefers-reduced-motion: reduce) { .tc-verified { animation: none; } }
+.tc-name { color: var(--fg); font-family: var(--cf-name, var(--f-display)); font-size: calc(1.75rem * var(--cf-scale, 1)); font-weight: 900; margin: 16px 0 2px; transform: translateZ(30px); text-wrap: balance; }
+.tc-title { font-family: var(--cf-body, var(--f-body)); color: var(--acc); font-weight: 600; margin: 0 0 8px; font-size: 1rem; line-height: 1.6; text-wrap: balance; }
+.tc-meta { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px 14px; font-family: var(--cf-body, var(--f-ui)); font-size: .82rem; color: color-mix(in srgb, var(--fg) 80%, transparent); }
 .tc-meta i { color: var(--acc); margin-inline-end: 5px; }
 .tc-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 8px; margin: 18px 0 4px; }
 .tc-stat { padding: 10px 4px; border-radius: 16px; background: color-mix(in srgb, var(--fg) 8%, transparent); border: 1px solid color-mix(in srgb, var(--acc) 30%, transparent); }
 .tc-stat b { display: block; font-family: var(--f-display); font-size: 1.45rem; font-weight: 900; line-height: 1.1; }
-.tc-stat span { font-family: var(--f-ui); font-size: .72rem; color: color-mix(in srgb, var(--fg) 72%, transparent); }
+.tc-stat span { font-family: var(--cf-body, var(--f-ui)); font-size: .72rem; color: color-mix(in srgb, var(--fg) 72%, transparent); }
 .tc-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin: 14px 0 4px; }
-.tc-chips span { display: inline-flex; align-items: center; gap: 6px; font-family: var(--f-ui); font-size: .78rem; font-weight: 600; padding: 5px 12px; border-radius: 999px; background: color-mix(in srgb, var(--acc) 14%, transparent); border: 1px solid color-mix(in srgb, var(--acc) 45%, transparent); }
+.tc-chips span { display: inline-flex; align-items: center; gap: 6px; font-family: var(--cf-body, var(--f-ui)); font-size: .78rem; font-weight: 600; padding: 5px 12px; border-radius: 999px; background: color-mix(in srgb, var(--acc) 14%, transparent); border: 1px solid color-mix(in srgb, var(--acc) 45%, transparent); }
 .tc-chips i { color: var(--acc); font-size: .75rem; }
-.tc-foot { display: grid; justify-items: center; gap: 2px; margin: 18px -24px 0; padding: 14px 24px; background: color-mix(in srgb, #000 20%, transparent); font-family: var(--f-ui); font-size: .8rem; line-height: 1.7; color: color-mix(in srgb, var(--fg) 78%, transparent); text-align: center; }
-.tc-foot b { font-family: var(--f-head); font-size: 1.02rem; font-weight: 800; color: var(--acc); }
+.tc-foot { display: grid; justify-items: center; gap: 2px; margin: 18px -24px 0; padding: 14px 24px; background: color-mix(in srgb, #000 20%, transparent); font-family: var(--cf-body, var(--f-ui)); font-size: .8rem; line-height: 1.7; color: color-mix(in srgb, var(--fg) 78%, transparent); text-align: center; }
+.tc-foot b { font-family: var(--cf-brand, var(--f-display)); font-size: 1.05rem; font-weight: 900; color: var(--acc); }
+.tc-brandline { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }
+.tc-brandline i { font-style: normal; opacity: .55; font-size: 1.1rem; }
+.tc-brandline em { font-style: normal; font-family: var(--cf-brand, var(--f-display)); font-weight: 700; font-size: .95rem; letter-spacing: .02em; color: color-mix(in srgb, var(--fg) 85%, transparent); }
 .tcard.light .tc-foot { background: color-mix(in srgb, var(--acc) 7%, transparent); }
 .tcard.light { box-shadow: 0 40px 80px -30px rgba(0,46,26,.35), inset 0 0 0 1.5px color-mix(in srgb, var(--acc) 40%, transparent), inset 0 0 0 10px color-mix(in srgb, var(--acc) 8%, transparent); }
 
@@ -940,3 +945,7 @@ select[data-ls] { cursor: pointer; }
 .spec-add .row input { flex: 1; min-width: 0; }
 
 .field .opt { font-style: normal; font-weight: 500; font-size: .78rem; color: var(--muted); }
+
+.cdot { display: block; width: 26px; height: 26px; border-radius: 50%; cursor: pointer; box-shadow: 0 0 0 2px #fff, 0 0 0 3px var(--line); }
+input:checked + .cdot { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--g600); }
+.cpick input[type=color] { width: 100%; height: 40px; padding: 2px; border-radius: 10px; cursor: pointer; }

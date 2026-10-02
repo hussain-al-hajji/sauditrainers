@@ -24,32 +24,59 @@ const Card = (() => {
     const f = fit(t);
     return `<span class="${cls} avw" data-i="${ini}"><img src="${esc(p)}" alt="${esc(t.name)}" loading="lazy" referrerpolicy="no-referrer" style="${imgStyle(f)}" onerror="const s=this.parentNode;s.classList.add('ph');s.textContent=s.dataset.i"></span>`;
   }
-  const themeVars = t => {
-    const th = themeOf(t.theme);
-    return `--a:${th.a};--b:${th.b};--c:${th.c};--acc:${th.accent};--fg:${th.fg};--pat:${Pattern.css(th.light ? '#005430' : th.accent, th.light ? 0.06 : 0.07)}`;
+  // ألوان البطاقة: ثيم المدرب، أو ألوان القالب إن فعّلتها الإدارة
+  const lum = h => { const n = parseInt(h.slice(1), 16); return (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255; };
+  const themed = (t, tp = cardTemplate()) => { const th = themeOf(t.theme), c = tp.colors; return c.on ? { ...th, a: c.a, b: c.b, c: c.c, accent: c.accent, fg: c.fg, light: lum(c.a) > 0.62 } : th; };
+  const fontCss = n => `'${n}', 'Noto Sans Arabic', sans-serif`;
+  const themeVars = (t, tp = cardTemplate()) => {
+    const th = themed(t, tp);
+    return `--a:${th.a};--b:${th.b};--c:${th.c};--acc:${th.accent};--fg:${th.fg};--pat:${Pattern.css(th.light ? '#005430' : th.accent, th.light ? 0.06 : 0.07)};--cf-name:${fontCss(tp.fonts.name)};--cf-body:${fontCss(tp.fonts.body)};--cf-brand:${fontCss(tp.fonts.brand)};--cf-scale:${tp.nameScale / 100};--cf-pat:${tp.show.pattern ? tp.patternOpacity / 100 : 0};--cf-radius:${tp.radius}px`;
   };
-  const themeCls = t => (themeOf(t.theme).light ? 'light' : '');
+  const themeCls = (t, tp = cardTemplate()) => (themed(t, tp).light ? 'light' : '');
   const stat = (v, l) => (Number(v) ? `<div class="tc-stat"><b class="num">${fmtNum(v)}+</b><span>${l}</span></div>` : '');
 
+  /* علم المملكة المتموج: يُرسم على لوحة (شريحة عمودية بإزاحة جيبية وتظليل) فيظهر بُعدياً ويرفرف قليلاً بـCSS، وتُستخدم اللوحة نفسها في صورة المشاركة */
+  let flagC = null, flagDrawnEarly = false, fontsOk = false;
+  function flagCanvas() {
+    if (flagC) return flagC;
+    if (!fontsOk) flagDrawnEarly = true;
+    const w = 240, h = 160, A = 9, S = 2, f = document.createElement('canvas'); f.width = w; f.height = h;
+    const g = f.getContext('2d'), gr = g.createLinearGradient(0, 0, w, h);
+    gr.addColorStop(0, '#118F4A'); gr.addColorStop(1, '#055B2D'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.direction = 'rtl';
+    g.font = "900 21px 'Cairo','Noto Sans Arabic',sans-serif"; g.fillText('لا إله إلا الله محمد رسول الله', w / 2, h * 0.29, w * 0.84);
+    g.beginPath(); g.moveTo(w * 0.80, h * 0.60); g.quadraticCurveTo(w * 0.5, h * 0.575, w * 0.15, h * 0.645); g.quadraticCurveTo(w * 0.5, h * 0.645, w * 0.80, h * 0.665); g.closePath(); g.fill();
+    g.fillRect(w * 0.80, h * 0.555, w * 0.022, h * 0.15); g.fillRect(w * 0.822, h * 0.605, w * 0.075, h * 0.05);
+    g.beginPath(); g.arc(w * 0.905, h * 0.63, h * 0.032, 0, Math.PI * 2); g.fill();
+    const c = document.createElement('canvas'); c.width = w; c.height = h + 2 * A; const o = c.getContext('2d');
+    for (let x = 0; x < w; x += S) {
+      const ph = x / w * Math.PI * 2.4 + 0.6, dy = A * Math.sin(ph), sl = Math.cos(ph);
+      o.drawImage(f, x, 0, S, h, x, A + dy, S, h);
+      o.fillStyle = sl > 0 ? `rgba(0,0,0,${0.24 * sl})` : `rgba(255,255,255,${0.2 * -sl})`; o.fillRect(x, A + dy, S, h);
+    }
+    return (flagC = c);
+  }
+  const flagURL = () => flagCanvas().toDataURL('image/png');
+  // أعد رسم العلم بعد تحميل الخط إن رُسم قبله
+  if (typeof document !== 'undefined' && document.fonts) document.fonts.load("900 21px 'Cairo'", 'لا إله').then(() => { fontsOk = true; if (flagDrawnEarly) { flagC = null; const u = flagURL(); document.querySelectorAll('.tc-flag').forEach(i => { i.src = u; }); } }, () => {});
+
   // البطاقة الكاملة (صفحة المدرب والمعاينة ولوحة المدرب)
-  function full(t, { preview = false } = {}) {
-    const sp = Data.cardSpecs(t), th = themeOf(t.theme);
-    const stats = [stat(t.years, 'سنة خبرة'), stat(t.hours, 'ساعة تدريبية'), stat(t.programs, 'برنامج ودورة')].filter(Boolean);
-    return `<article class="tcard full ${themeCls(t)}" data-tilt="8" style="${themeVars(t)}">
+  function full(t, { preview = false, tpl } = {}) {
+    const tp = tpl || cardTemplate(), sp = Data.cardSpecs(t).slice(0, tp.maxSpecs), th = themed(t, tp), x = tp.text;
+    const stats = [stat(t.years, x.years), stat(t.hours, x.hours), stat(t.programs, x.programs)].filter(Boolean);
+    return `<article class="tcard full ${themeCls(t, tp)}" data-tilt="8" style="${themeVars(t, tp)}">
       <div class="tc-glow"></div><div class="tc-holo"></div>
       <header class="tc-top">
-        ${logoImg(th.light ? 'green' : 'cream', 'tc-logo')}
-        <span class="tc-code">${preview ? 'معاينة' : ''}</span>
+        ${tp.show.logo ? logoImg(th.light ? 'green' : 'cream', 'tc-logo') : '<span></span>'}
+        <span class="tc-code">${preview ? esc(x.preview) : ''}</span>
       </header>
-      <div class="tc-ring">${avatar(t, 'tc-photo')}<span class="tc-verified" title="مدرب موثّق"><i class="fa-solid fa-certificate"></i><i class="fa-solid fa-check"></i></span></div>
+      <div class="tc-ring">${avatar(t, 'tc-photo')}${tp.show.flag ? `<span class="tc-verified" title="المملكة العربية السعودية"><img class="tc-flag" alt="" src="${flagURL()}"></span>` : ''}</div>
       <h2 class="tc-name">${esc(t.name || 'اسم المدرب')}</h2>
-      ${t.title ? `<p class="tc-title">${esc(t.title)}</p>` : ''}
-      <div class="tc-meta">
-        ${regionsOf(t).length ? `<span><i class="fa-solid fa-location-dot"></i>${esc(regionsLabel(t, true))}${t.city && regionsOf(t).length === 1 ? ' · ' + esc(t.city) : ''}</span>` : ''}
-      </div>
-      ${stats.length ? `<div class="tc-stats">${stats.join('')}</div>` : ''}
-      ${sp.length ? `<div class="tc-chips">${sp.slice(0, 6).map(s => `<span><i class="fa-solid ${specOf(s)?.icon || 'fa-shapes'}"></i>${esc(specName(s))}</span>`).join('')}</div>` : ''}
-      <footer class="tc-foot"><span>لقراءة السيرة الذاتية وللتواصل تفضل بزيارة منصة</span><b>مدرّبون سعوديّون</b></footer>
+      ${tp.show.title && t.title ? `<p class="tc-title">${esc(t.title)}</p>` : ''}
+      ${tp.show.region && regionsOf(t).length ? `<div class="tc-meta"><span><i class="fa-solid fa-location-dot"></i>${esc(regionsLabel(t, true, tp.maxRegions))}</span></div>` : ''}
+      ${tp.show.stats && stats.length ? `<div class="tc-stats">${stats.join('')}</div>` : ''}
+      ${tp.show.specs && sp.length ? `<div class="tc-chips">${sp.slice(0, 6).map(s => `<span><i class="fa-solid ${specOf(s)?.icon || 'fa-shapes'}"></i>${esc(specName(s))}</span>`).join('')}</div>` : ''}
+      ${tp.show.footer ? `<footer class="tc-foot"><span>${esc(x.footLead)}</span><div class="tc-brandline"><b>${esc(x.brand)}</b><i>|</i><em dir="ltr">${esc(x.site)}</em></div></footer>` : ''}
     </article>`;
   }
 
@@ -62,7 +89,7 @@ const Card = (() => {
       <div class="tm-body">
         <h3>${esc(t.name)}<i class="fa-solid fa-circle-check tm-ok" title="موثّق"></i></h3>
         <p class="tm-title">${esc(t.title || '')}</p>
-        <div class="tm-meta">${regionsOf(t).length ? `<span><i class="fa-solid fa-location-dot"></i>${esc(regionsLabel(t, true))}</span>` : ''}${Number(t.years) ? `<span><i class="fa-solid fa-hourglass-half"></i><b class="num">${esc(t.years)}</b> سنة</span>` : ''}</div>
+        <div class="tm-meta">${regionsOf(t).length ? `<span><i class="fa-solid fa-location-dot"></i>${esc(regionsLabel(t, true, cardTemplate().maxRegions))}</span>` : ''}${Number(t.years) ? `<span><i class="fa-solid fa-hourglass-half"></i><b class="num">${esc(t.years)}</b> سنة</span>` : ''}</div>
         <div class="tm-chips">${sp.slice(0, 3).map(s => `<span>${esc(specName(s))}</span>`).join('')}${nAll > 3 ? `<span class="more num">+${nAll - 3}</span>` : ''}</div>
       </div>
       <span class="tm-go">عرض البطاقة <i class="fa-solid fa-arrow-left"></i></span>
@@ -91,9 +118,10 @@ const Card = (() => {
     if (window.qrcode) return true;
     return Promise.race([loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'), new Promise(r => setTimeout(() => r(false), 5000))]).then(() => !!window.qrcode);
   }
-  async function ensureFonts() {
+  async function ensureFonts(tp = cardTemplate()) {
     try {
-      await Promise.all([`900 60px ${HEAD}`, `800 40px ${HEAD}`, `600 26px ${UI}`, `700 26px ${UI}`, `400 26px ${BODY}`, `600 30px ${BODY}`].map(f => document.fonts.load(f, 'مدرب')));
+      const names = [...new Set(Object.values(tp.fonts))];
+      await Promise.all(names.flatMap(n => [`900 60px '${n}'`, `700 30px '${n}'`, `400 26px '${n}'`, `600 26px '${n}'`].map(f => document.fonts.load(f, 'مدرب Aa'))));
       await document.fonts.ready;
     } catch { /* ignore */ }
   }
@@ -118,10 +146,12 @@ const Card = (() => {
   }
   const hex = (h, a) => { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; };
 
-  async function render(t, format = 'post') {
-    await ensureFonts();
+  async function render(t, format = 'post', tpl) {
+    const tp = tpl || cardTemplate(), x0 = tp.text;
+    const HEAD = fontCss(tp.fonts.name), BODY = fontCss(tp.fonts.body), UI = BODY, BRAND = fontCss(tp.fonts.brand);
+    await ensureFonts(tp);
     const hasQR = await ensureQR();
-    const th = themeOf(t.theme), light = !!th.light, fg = th.fg;
+    const th = themed(t, tp), light = !!th.light, fg = th.fg;
     const W = 1080, H = format === 'story' ? 1920 : 1350;
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const ctx = cv.getContext('2d');
@@ -134,7 +164,7 @@ const Card = (() => {
     const glow = ctx.createRadialGradient(W * 0.5, H * 0.3, 20, W * 0.5, H * 0.3, W * 0.8);
     glow.addColorStop(0, hex(th.c, light ? 0.35 : 0.55)); glow.addColorStop(1, hex(th.c, 0));
     ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
-    const tile = await loadImage(Pattern.url(light ? '#005430' : th.accent, light ? 0.1 : 0.11));
+    const tile = !tp.show.pattern || !tp.patternOpacity ? null : await loadImage(Pattern.url(light ? '#005430' : th.accent, light ? 0.1 : 0.11));
     if (tile) { ctx.save(); ctx.fillStyle = ctx.createPattern(tile, 'repeat'); ctx.fillRect(0, 0, W, H); ctx.restore(); }
 
     // إطار مزدوج بلون الهوية
@@ -144,8 +174,8 @@ const Card = (() => {
 
     // الترويسة: الشعار الرسمي (رقم المدرب لا يُعرض للزوار)
     const top = format === 'story' ? 150 : 100;
-    const logo = await loadImage(light ? LOGO.green : LOGO.cream);
-    if (logo) { const lh = 104, lw = lh * logo.width / logo.height; ctx.drawImage(logo, W - 96 - lw, top - 52, lw, lh); }
+    const logo = tp.show.logo ? await loadImage(light ? LOGO.green : LOGO.cream) : null;
+    if (logo && tp.show.logo) { const lh = 104, lw = lh * logo.width / logo.height; ctx.drawImage(logo, W - 96 - lw, top - 52, lw, lh); }
     // الصورة الدائرية
     const D = format === 'story' ? 470 : 400, cx = W / 2, cy = top + (format === 'story' ? 150 : 110) + D / 2;
     ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 18;
@@ -172,23 +202,20 @@ const Card = (() => {
       ctx.fillStyle = fg; ctx.font = `900 140px ${HEAD}`; ctx.textBaseline = 'middle'; ctx.fillText(tmp.textContent, cx, cy + 6); ctx.textBaseline = 'alphabetic';
     }
     ctx.restore();
-    // شارة التوثيق
-    const bx = cx + D * 0.36, by = cy + D * 0.36;
-    ctx.fillStyle = th.accent; seal(ctx, bx, by, 44); ctx.fill();
-    ctx.strokeStyle = light ? '#FFFFFF' : th.b; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.beginPath(); ctx.moveTo(bx - 13, by + 1); ctx.lineTo(bx - 3, by + 11); ctx.lineTo(bx + 15, by - 10); ctx.stroke();
+    // علم المملكة على الصورة
+    if (tp.show.flag) { const fc = flagCanvas(), fw = 190, fh = fw * fc.height / fc.width; ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 10; ctx.drawImage(fc, cx + D * 0.5 - fw * 0.78, cy + D * 0.5 - fh * 0.78, fw, fh); ctx.restore(); }
 
     // الاسم واللقب
     let y = cy + D / 2 + 100;
-    ctx.fillStyle = fg; ctx.font = `900 ${String(t.name || '').length > 22 ? 56 : 66}px ${HEAD}`;
+    ctx.fillStyle = fg; ctx.font = `900 ${Math.round((String(t.name || '').length > 22 ? 56 : 66) * tp.nameScale / 100)}px ${HEAD}`;
     ctx.fillText(t.name || '', W / 2, y);
     ctx.font = `600 32px ${BODY}`; ctx.fillStyle = th.accent;
-    wrap(ctx, t.title, W - 260, 2).forEach(l => { y += 54; ctx.fillText(l, W / 2, y); });
-    const meta = regionsLabel(t, true);
+    if (tp.show.title) wrap(ctx, t.title, W - 260, 2).forEach(l => { y += 54; ctx.fillText(l, W / 2, y); });
+    const meta = tp.show.region ? regionsLabel(t, true, tp.maxRegions) : '';
     if (meta) { y += 52; ctx.font = `500 27px ${UI}`; ctx.fillStyle = hex(fg, 0.8); ctx.fillText(meta, W / 2, y); }
 
     // الإحصاءات
-    const stats = [[t.years, 'سنة خبرة'], [t.hours, 'ساعة تدريبية'], [t.programs, 'برنامج ودورة']].filter(s => Number(s[0]));
+    const stats = !tp.show.stats ? [] : [[t.years, x0.years], [t.hours, x0.hours], [t.programs, x0.programs]].filter(s => Number(s[0]));
     if (stats.length) {
       y += 46; const bw = 250, gap = 24, total = stats.length * bw + (stats.length - 1) * gap;
       let x = W / 2 + total / 2;
@@ -202,7 +229,7 @@ const Card = (() => {
     }
 
     // التخصصات
-    const sp = Data.cardSpecs(t).slice(0, format === 'story' ? 6 : 4).map(specName);
+    const sp = !tp.show.specs ? [] : Data.cardSpecs(t).slice(0, Math.min(tp.maxSpecs, format === 'story' ? 6 : 4)).map(specName);
     if (sp.length) {
       y += 36; ctx.font = `600 26px ${UI}`;
       const rows = []; let row = [], rw = 0; const maxW = W - 220;
@@ -217,6 +244,7 @@ const Card = (() => {
 
     // التذييل: رمز QR + الرابط (التواصل عبر المنصة)
     const fy = H - M - 14 - 150;
+    if (tp.show.footer) {
     ctx.fillStyle = light ? 'rgba(0,84,48,.07)' : 'rgba(0,0,0,.22)'; rr(ctx, M + 14, fy, W - 2 * M - 28, 150, 30); ctx.fill();
     if (hasQR) {
       try {
@@ -228,11 +256,13 @@ const Card = (() => {
       } catch { /* ignore */ }
     }
     ctx.textAlign = 'right'; ctx.fillStyle = hex(fg, 0.85); ctx.font = `600 27px ${UI}`;
-    ctx.fillText('لقراءة السيرة الذاتية وللتواصل تفضل بزيارة منصة', W - 110, fy + 52);
-    ctx.fillStyle = th.accent; ctx.font = `900 40px ${HEAD}`;
-    ctx.fillText('مدرّبون سعوديّون', W - 110, fy + 100);
-    ctx.fillStyle = hex(fg, 0.7); ctx.font = `600 24px ${UI}`; ctx.direction = 'ltr';
-    ctx.fillText('sauditrainers.sa', W - 110, fy + 136);
+    ctx.fillText(x0.footLead, W - 110, fy + 56);
+    // اسم المنصة | الرابط في سطر واحد
+    let bxr = W - 110; ctx.fillStyle = th.accent; ctx.font = `900 40px ${BRAND}`;
+    ctx.fillText(x0.brand, bxr, fy + 108); bxr -= ctx.measureText(x0.brand).width + 20;
+    ctx.fillStyle = hex(fg, 0.5); ctx.font = `400 38px ${UI}`; ctx.fillText('|', bxr, fy + 106); bxr -= ctx.measureText('|').width + 20;
+    ctx.fillStyle = hex(fg, 0.85); ctx.font = `700 32px ${BRAND}`; ctx.direction = 'ltr'; ctx.fillText(x0.site, bxr, fy + 106);
+    }
     cv.photoFailed = !t.noPhoto && !!t.photoUrl && !photo;
     return cv;
   }
@@ -280,5 +310,5 @@ const Card = (() => {
     m.el.querySelectorAll('[data-img]').forEach(b => { b.onclick = () => save(t, b.dataset.img); });
   }
 
-  return { full, mini, avatar, symbol, fit, imgStyle, save, share, shareSheet, render, toJPEG, themeVars };
+  return { full, mini, avatar, symbol, fit, imgStyle, save, share, shareSheet, render, toJPEG, themeVars, flagURL };
 })();

@@ -43,7 +43,7 @@ function portalHome(main, t) {
   const priv = Store.get(`private/${t.id}`) || {};
   const note = Store.get(`notes/${t.id}`);
   main.innerHTML = `
-    <div class="dash-h"><h2>أهلاً ${esc(t.name.split(' ').slice(0, 2).join(' '))} 👋</h2><div class="row"><button class="btn gold" id="sh"><i class="fa-solid fa-share-nodes"></i> مشاركة بطاقتي</button></div></div>
+    <div class="dash-h"><h2>أهلاً ${esc(firstName(t.name))} 👋</h2><div class="row"><button class="btn gold" id="sh"><i class="fa-solid fa-share-nodes"></i> مشاركة بطاقتي</button></div></div>
     ${t.status !== 'active' ? `<div class="banner warn"><i class="fa-solid fa-eye-slash"></i>بطاقتك غير ظاهرة للزوار حالياً. تواصل مع إدارة المنصة للاستفسار.</div>` : ''}
     ${note?.text ? `<div class="banner ok"><i class="fa-solid fa-bullhorn"></i><div><b>رسالة من الإدارة</b><br>${nl2br(note.text)}</div></div>` : ''}
     <div class="kpis">
@@ -60,6 +60,10 @@ function portalHome(main, t) {
             <button class="sh st" data-img="story"><i class="fa-solid fa-mobile-screen"></i>قصة 9:16</button>
             <button class="sh cp" id="cl"><i class="fa-solid fa-link"></i>نسخ رابط صفحتي</button>
           </div>
+        </div>
+        <div class="pbox"><h3><i class="fa-solid fa-palette"></i>لون بطاقتي</h3>
+          ${cardTemplate().colors.on ? '<p class="muted small">تعتمد المنصة لوناً موحداً لكل البطاقات حالياً.</p>' : `<p class="muted small">اختر لون بطاقتك التعريفية من الألوان المتاحة، ويُحفظ اختيارك فوراً.</p>
+          <div class="themes" id="thm">${CARD_THEMES.map(x => `<label title="${x.name}"><input type="radio" name="theme" value="${x.k}" ${(t.theme || 'brand') === x.k ? 'checked' : ''}><span style="background:linear-gradient(135deg,${x.a},${x.c})${x.light ? ';box-shadow:inset 0 0 0 1px #c9d8c0' : ''}"></span><em>${x.name}</em></label>`).join('')}</div>`}
         </div>
         <div class="pbox"><h3><i class="fa-solid fa-lightbulb"></i>نصائح لبطاقة أقوى</h3>
           <ul style="margin:0;padding-inline-start:18px;color:var(--ink2)">
@@ -88,6 +92,10 @@ function portalHome(main, t) {
     Store.update(`private/${t.id}`, { phone: phone ? phoneDigits(phone) : '', email });
     toast('تم حفظ بيانات التواصل');
   };
+  $$('#thm input', main).forEach(i => i.onchange = () => {
+    Store.update(`trainers/${t.id}`, { theme: i.value, updatedAt: Date.now() });
+    $('.preview', main).innerHTML = Card.full({ ...t, theme: i.value }); tilt(main); toast('تم تغيير لون بطاقتك');
+  });
   $('#sh', main).onclick = () => Card.share(t);
   $('#cl', main).onclick = () => copyText(profileUrl(t), 'تم نسخ رابط صفحتك');
   $$('[data-img]', main).forEach(b => b.onclick = () => Card.save(t, b.dataset.img));
