@@ -16,9 +16,10 @@ Pages.join = {
     <div class="wrap" style="margin-top:-30px;position:relative">
       <div class="cards3" style="margin-bottom:26px">
         <div class="icard reveal"><div class="ic"><i class="fa-solid fa-list-check"></i></div><h3>المتطلبات</h3><ul style="margin:0;padding-inline-start:18px;color:var(--ink2)">${lines(c.join.requirements).map(r => `<li>${esc(r)}</li>`).join('')}</ul></div>
-        <div class="icard reveal" style="--d:80ms"><div class="ic"><i class="fa-solid fa-gift"></i></div><h3>ماذا تحصل؟</h3><ul style="margin:0;padding-inline-start:18px;color:var(--ink2)">${lines(c.join.benefits).slice(0, 4).map(r => `<li>${esc(r)}</li>`).join('')}</ul></div>
         <div class="icard reveal" style="--d:160ms"><div class="ic"><i class="fa-solid fa-receipt"></i></div><h3><span class="num">${esc(c.join.fee)}</span> ريال</h3><p><b>${esc(c.join.feeNote)}</b> — ${esc(c.join.period)}.<br><span class="small muted">لا يُطلب السداد إلا بعد قبول الطلب.</span></p></div>
       </div>
+      <section class="perks reveal"><div class="perks-h"><span class="eyebrow">لماذا تنضم؟</span><h2>مزايا الانضمام إلى المنصة</h2><p>خبرتك تستحق منصة تعرّف بها، وتوصلها إلى من يبحث عنها.</p></div>
+        <div class="perks-grid">${benefitList(c.join.benefits).map((b, i) => `<article class="perk"><span class="perk-n num">${i + 1}</span><div class="perk-ic"><i class="fa-solid ${BENEFIT_ICONS[i % BENEFIT_ICONS.length]}"></i></div><h3>${esc(b.t)}</h3>${b.d ? `<p>${esc(b.d)}</p>` : ''}</article>`).join('')}</div></section>
       <div class="wizard">
         <div class="wiz-main">
           <div class="wiz-steps" id="ws">${nav.map(([i, l], n) => `<button type="button" data-s="${n}" class="${n ? '' : 'on'}"><i class="fa-solid ${esc(i)}"></i>${esc(l)}</button>`).join('')}</div>

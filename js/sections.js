@@ -176,7 +176,7 @@ const SECTION_TYPES = (() => {
     render(sec) {
       const c = Data.content(), d = sec.d;
       const price = `<div class="price"><span class="ribbon">${esc(c.join.period)}</span><div class="amt num">${esc(c.join.fee)}<small>ريال</small></div><div class="price-note">${esc(c.join.feeNote)}</div>
-        <ul>${lines(c.join.benefits).slice(0, 5).map(b => `<li><i class="fa-solid fa-circle-check"></i>${esc(b)}</li>`).join('')}</ul>
+        <ul>${benefitList(c.join.benefits).slice(0, 5).map(b => `<li><i class="fa-solid fa-circle-check"></i>${esc(b.t)}</li>`).join('')}</ul>
         <div class="row"><a class="btn gold lg" href="#/join">سجّل كمدرب الآن <i class="fa-solid fa-arrow-left"></i></a><a class="btn glass" href="#/status">متابعة طلب</a></div></div>`;
       if (sec.tpl === 'compact') return `<div class="wrap"><div class="cta-band reveal"><div><span class="eyebrow">${esc(d.eyebrow)}</span><h2>${esc(d.title)}</h2><p>${esc(d.text)}</p></div><div class="row"><span class="amt-inline"><b class="num">${esc(c.join.fee)}</b> ريال · ${esc(c.join.period)}</span><a class="btn gold lg" href="#/join">سجّل الآن</a></div></div></div>`;
       const samples = [

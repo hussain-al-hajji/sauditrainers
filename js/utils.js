@@ -5,6 +5,9 @@ const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const nl2br = s => esc(s).replace(/\n/g, '<br>');
 const lines = s => String(s || '').split('\n').map(x => x.trim()).filter(Boolean);
+// المزايا: كل سطر «العنوان | الوصف» (الوصف اختياري)
+const benefitList = s => lines(s).map(l => { const i = l.indexOf('|'); return i < 0 ? { t: l, d: '' } : { t: l.slice(0, i).trim(), d: l.slice(i + 1).trim() }; });
+const BENEFIT_ICONS = ['fa-location-dot', 'fa-bullhorn', 'fa-handshake', 'fa-hand-holding-dollar', 'fa-medal', 'fa-star', 'fa-gem'];
 const splitList = s => (Array.isArray(s) ? s : String(s || '').split(/[،,\n]/)).map(x => String(x).trim()).filter(Boolean);
 const debounce = (fn, ms = 200) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 const pad = n => String(n).padStart(2, '0');
