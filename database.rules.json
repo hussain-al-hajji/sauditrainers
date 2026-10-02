@@ -4,7 +4,24 @@
       ".read": "((auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com')) || (auth != null && root.child('sauditrainers/admins/' + auth.uid).exists()))",
       ".write": "((auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com')) || (auth != null && root.child('sauditrainers/admins/' + auth.uid).exists()))",
       "content": {
-        ".read": true
+        ".read": true,
+        "specialties": {
+          "added": {
+            "$k": {
+              ".write": "!data.exists() && newData.exists()",
+              ".validate": "$k.matches(/^u[a-z0-9]{1,18}$/) && newData.hasChildren(['name'])",
+              "name": {
+                ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 60"
+              },
+              "icon": {
+                ".validate": "newData.isString() && newData.val() == 'fa-shapes'"
+              },
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        }
       },
       "meta": {
         ".read": true
@@ -78,10 +95,6 @@
           },
           "noPhoto": {
             ".validate": "newData.isBoolean()",
-            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
-          },
-          "specsOther": {
-            ".validate": "newData.isString() && newData.val().length <= 60",
             ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
           },
           "cardSpecs": {
@@ -419,9 +432,6 @@
           },
           "noPhoto": {
             ".validate": "newData.isBoolean()"
-          },
-          "specsOther": {
-            ".validate": "newData.isString() && newData.val().length <= 60"
           },
           "cardSpecs": {
             ".validate": "newData.hasChildren()",

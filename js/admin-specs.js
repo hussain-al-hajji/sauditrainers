@@ -1,26 +1,21 @@
-/* لوحة الإدارة ← التخصصات: إدارة كتالوج مجالات التدريب (إضافة وتعديل وحذف) واعتماد اقتراحات المدربين
+/* لوحة الإدارة ← التخصصات: إدارة كتالوج مجالات التدريب (إضافة وتعديل وحذف)
  * يُحفظ في content/specialties/list ويقرؤه الموقع كله (نماذج التسجيل والبحث والبطاقات). */
 
 function aSpecs(main) {
   const list = SPECIALTIES.filter(s => s.k !== 'other').map(s => ({ ...s }));
   const counts = Data.specCounts ? Data.specCounts() : {};
   const trainers = Data.all();
-  const pend = [
-    ...trainers.filter(t => t.specsOther).map(t => ({ kind: 't', id: t.id, who: t.name, name: t.specsOther })),
-    ...Store.list('applications').filter(a => a.specsOther && !['published', 'rejected'].includes(a.status)).map(a => ({ kind: 'a', id: a.id, who: a.name + ' (طلب تسجيل)', name: a.specsOther }))
-  ];
   const save = async next => {
     const out = next.filter(x => x.k !== 'other');
     out.push({ k: 'other', name: 'تخصصات أخرى', icon: 'fa-shapes' });
     await Store.set('content/specialties/list', out);
+    await Store.set('content/specialties/added', null); // ما أضافه الزوار صار جزءاً من القائمة
     loadSpecialties(); Security.log('تعديل التخصصات', out.length - 1 + ' تخصصاً');
     aSpecs(main);
   };
   main.innerHTML = `
     <div class="dash-h"><h2>التخصصات ومجالات التدريب</h2><div class="row"><button class="btn primary" id="add"><i class="fa-solid fa-plus"></i> إضافة تخصص</button></div></div>
-    <p class="muted small">يختار المدرب حتى 15 مجالاً من هذه القائمة، ويظهر منها 6 في بطاقته. التعديل يسري على النماذج والبحث فوراً. حذف تخصص يُزيله من اختيارات المدربين.</p>
-    ${pend.length ? `<div class="pbox"><h3><i class="fa-solid fa-lightbulb"></i>اقتراحات المدربين (${pend.length})</h3>
-      <div class="tbl-wrap"><table class="tbl"><tbody>${pend.map((p, i) => `<tr><td>${esc(p.name)}</td><td class="muted">${esc(p.who)}</td><td><button class="btn sm primary" data-ok="${i}">اعتماد وإضافة</button> <button class="btn sm ghost" data-no="${i}">تجاهل</button></td></tr>`).join('')}</tbody></table></div></div>` : ''}
+    <p class="muted small">يختار المدرب حتى 15 مجالاً من هذه القائمة، ويظهر منها 6 في بطاقته، ويستطيع إضافة تخصص جديد بزر «أخرى» فيدخل القائمة فوراً ويظهر هنا لتحذفه إن لم يصلح. التعديل يسري على النماذج والبحث فوراً، وحذف تخصص يُزيله من اختيارات المدربين.</p>
     <input type="search" class="list-search" id="sq" placeholder="ابحث في التخصصات...">
     <div class="tbl-wrap"><table class="tbl"><thead><tr><th></th><th>الاسم</th><th>الأيقونة</th><th>المدربون</th><th></th></tr></thead><tbody>
       ${list.map((s, i) => `<tr><td><i class="fa-solid ${esc(s.icon)}"></i></td><td>${esc(s.name)}</td><td class="muted num" dir="ltr">${esc(s.icon)}</td><td class="num">${counts[s.k] || 0}</td>
@@ -53,17 +48,6 @@ function aSpecs(main) {
       Store.update(`trainers/${t.id}`, { specs: arrFix(Data.specs(t).filter(k => k !== s.k)), cardSpecs: Data.cardSpecs(t).filter(k => k !== s.k) });
     });
     save(list.filter(x => x.k !== s.k));
-  });
-  $$('[data-ok]', main).forEach(b => b.onclick = () => {
-    const p = pend[+b.dataset.ok], k = Data.ensureSpecialty(p.name);
-    const rec = Store.get(`${p.kind === 't' ? 'trainers' : 'applications'}/${p.id}`) || {};
-    const specs = [...Data.specs(rec).filter(x => x !== 'other'), k].filter((x, j, a) => a.indexOf(x) === j).slice(0, 15);
-    Store.update(`${p.kind === 't' ? 'trainers' : 'applications'}/${p.id}`, { specs, specsOther: null });
-    toast('أُضيف التخصص'); aSpecs(main);
-  });
-  $$('[data-no]', main).forEach(b => b.onclick = () => {
-    const p = pend[+b.dataset.no];
-    Store.update(`${p.kind === 't' ? 'trainers' : 'applications'}/${p.id}`, { specsOther: null }); aSpecs(main);
   });
 }
 // القاعدة تشترط أن تكون القائمة غير فارغة؛ نبقي «other» دائماً

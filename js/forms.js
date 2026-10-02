@@ -107,13 +107,16 @@ const FormKit = (() => {
       case 'select': return `<select name="${name}" ${rq}><option value="">اختر</option>${arr(f.opts).map(o => opt(o, o, v)).join('')}</select>`;
       case 'multi': { const cur = String(v || '').split('|'); return `<div class="checks">${arr(f.opts).map(o => `<label class="chk"><input type="checkbox" name="${name}" data-multi value="${esc(o)}" ${cur.includes(o) ? 'checked' : ''}><span>${esc(o)}</span></label>`).join('')}</div>`; }
       case 'specs': {
-        const sp = Data.specs(d).filter(k => k !== 'other'), cs = arr(d.cardSpecs), other = String(d.specsOther || '');
+        const sp = Data.specs(d).filter(k => k !== 'other'), cs = arr(d.cardSpecs);
         return `<div class="specs-box">
-          <div class="checks" data-max="${MAX_SPECS}">${pickableSpecs().map(s => `<label class="chk"><input type="checkbox" name="specs" data-multi value="${s.k}" ${sp.includes(s.k) ? 'checked' : ''}><span><i class="fa-solid ${s.icon}"></i>${esc(s.name)}</span></label>`).join('')}
-            <label class="chk"><input type="checkbox" data-other-toggle ${other ? 'checked' : ''}><span><i class="fa-solid fa-plus"></i>أخرى</span></label></div>
-          <input type="text" class="spec-other ${other ? '' : 'hidden'}" name="specsOther" maxlength="60" placeholder="اكتب اسم التخصص الجديد ليُضاف إلى القائمة بعد اعتماد الإدارة" value="${esc(other)}">
+          <div class="checks" data-max="${MAX_SPECS}">${pickableSpecs().map(s => specLabel(s, sp.includes(s.k))).join('')}
+            <label class="chk"><input type="checkbox" data-other-toggle><span><i class="fa-solid fa-plus"></i>أخرى</span></label></div>
+          <div class="spec-add hidden">
+            <p class="spec-hint"><i class="fa-solid fa-circle-info"></i> اكتب تخصصاً واحداً فقط ثم اضغط (إضافة - Enter)، ثم اضغط «أخرى» من جديد لتكتب تخصصاً آخر عند الحاجة. تجنّب كتابة عدة تخصصات في سطر واحد.</p>
+            <div class="row"><input type="text" maxlength="60" placeholder="اسم التخصص الجديد"><button type="button" class="btn sm primary" data-spec-add>إضافة - Enter</button></div>
+          </div>
           <div class="card-specs"><b><i class="fa-solid fa-id-card"></i> ما يظهر في بطاقتك التعريفية <small>(حتى ${MAX_CARD_SPECS}، والباقي يظهر في صفحتك)</small></b>
-            <div class="checks" data-max="${MAX_CARD_SPECS}">${pickableSpecs().map(s => `<label class="chk cs ${sp.includes(s.k) ? '' : 'hidden'}" data-k="${s.k}"><input type="checkbox" name="cardSpecs" data-multi value="${s.k}" ${cs.includes(s.k) ? 'checked' : ''}><span>${esc(s.name)}</span></label>`).join('')}</div>
+            <div class="checks" data-max="${MAX_CARD_SPECS}">${pickableSpecs().map(s => cardSpecLabel(s, sp.includes(s.k), cs.includes(s.k))).join('')}</div>
             <small class="muted cs-empty ${sp.length ? 'hidden' : ''}">اختر مجالاتك أولاً ثم حدّد ما يظهر منها في البطاقة. وإن لم تحدد فتظهر أول ${MAX_CARD_SPECS} مجالات.</small></div></div>`;
       }
       case 'langs': {
@@ -131,6 +134,8 @@ const FormKit = (() => {
       default: return `<input type="${['tel', 'email', 'url', 'date'].includes(f.type) ? f.type : 'text'}" name="${name}" ${rq} ${ph} ${mx} ${f.ltr || ['email', 'url', 'tel'].includes(f.type) ? 'dir="ltr"' : ''} value="${esc(v ?? '')}">`;
     }
   }
+  const specLabel = (s, on) => `<label class="chk"><input type="checkbox" name="specs" data-multi value="${esc(s.k)}" ${on ? 'checked' : ''}><span><i class="fa-solid ${esc(s.icon)}"></i>${esc(s.name)}</span></label>`;
+  const cardSpecLabel = (s, shown, on) => `<label class="chk cs ${shown ? '' : 'hidden'}" data-k="${esc(s.k)}"><input type="checkbox" name="cardSpecs" data-multi value="${esc(s.k)}" ${on ? 'checked' : ''}><span>${esc(s.name)}</span></label>`;
   function photoField(d) {
     const f = Card.fit({ ...d, photoZ: d.photoZ ?? 1.2 }), src = Data.photo(d);
     return `<div class="photo-field">
@@ -173,10 +178,8 @@ const FormKit = (() => {
     d.noPhoto = d.noPhoto === '1' && d.gender === 'f'; // الصورة الرمزية للمدربات فقط
     if ('tot' in d) { d.tot = d.tot === '1' ? true : d.tot === '0' ? false : undefined; if (d.tot === undefined) delete d.tot; }
     if ('langsSel' in d || 'langsOther' in d) { d.langs = [...(d.langsSel || []), ...(d.langsOther ? [d.langsOther] : [])].join('، '); delete d.langsSel; delete d.langsOther; }
-    if (d.specs || 'specsOther' in d) {
-      d.specs = (d.specs || []).slice(0, MAX_SPECS);
-      d.specsOther = String(d.specsOther || '').trim();
-      if (!d.specs.length && d.specsOther) d.specs = ['other'];
+    if (d.specs) {
+      d.specs = d.specs.slice(0, MAX_SPECS);
       d.cardSpecs = (d.cardSpecs || []).filter(k => d.specs.includes(k)).slice(0, MAX_CARD_SPECS);
     }
     Object.keys(d.extra).forEach(k => { if (d.extra[k] === '' || d.extra[k] == null) delete d.extra[k]; });
@@ -196,7 +199,6 @@ const FormKit = (() => {
       if (f.type === 'email' && !validEmail(v)) return bad(f, 'البريد الإلكتروني غير صحيح');
       if (f.type === 'url' && !safeUrl(v)) return bad(f, `الرابط غير صحيح: ${f.label}`);
       if (f.type === 'photo' && !d.noPhoto && !isImageLink(v)) return bad(f, 'أضف رابط مشاركة الصورة من Google Drive أو أي مساحة تخزين سحابية (https)');
-      if (f.type === 'specs' && d.specsOther) { const lk = leaksContact(d.specsOther); if (lk) return bad(f, `التخصص الجديد يحتوي ${lk}`); }
       if (['text', 'textarea'].includes(f.type) && !f.priv && f.k !== 'nameEn') { const leak = leaksContact(v); if (leak) return bad(f, `«${f.label}» يحتوي ${leak}. التواصل مع المدربين يتم عبر نموذج المنصة فقط`); }
     }
     return null;
@@ -217,7 +219,32 @@ const FormKit = (() => {
         $('.cs-empty', sb).classList.toggle('hidden', on.size > 0);
       };
       sb.addEventListener('change', e => { if (e.target.name === 'specs') sync(); });
-      $('[data-other-toggle]', sb).addEventListener('change', e => { const t = $('.spec-other', sb); t.classList.toggle('hidden', !e.target.checked); if (!e.target.checked) t.value = ''; else t.focus(); preview(); });
+      // «أخرى»: تظهر خانة كتابة تخصص واحد؛ Enter أو زر الإضافة يضيفه إلى قائمة المنصة ويختاره
+      const box = $('.spec-add', sb), inp = $('input', box), tg = $('[data-other-toggle]', sb);
+      tg.addEventListener('change', () => { box.classList.toggle('hidden', !tg.checked); if (tg.checked) inp.focus(); });
+      const addSpec = () => {
+        const name = inp.value.trim();
+        if (!name) return;
+        if (name.length < 2) { toast('اكتب اسم التخصص كاملاً', 'error'); return; }
+        const lk = leaksContact(name); if (lk) { toast(`لا تكتب ${lk} في اسم التخصص`, 'error'); return; }
+        if (/[،,;؛\n]/.test(name)) { toast('اكتب تخصصاً واحداً فقط في كل مرة', 'error'); return; }
+        const k = Data.addSpecialty(name); if (!k) return;
+        let lab = $(`[name=specs][value="${CSS.escape(k)}"]`, sb);
+        if (!lab) {
+          const s = specOf(k);
+          $('[data-other-toggle]', sb).closest('label').insertAdjacentHTML('beforebegin', specLabel(s, false));
+          $('.card-specs .checks', sb).insertAdjacentHTML('beforeend', cardSpecLabel(s, false, false));
+          lab = $(`[name=specs][value="${CSS.escape(k)}"]`, sb);
+        }
+        if (!lab.checked) {
+          if ($$('[name=specs]:checked', sb).length >= MAX_SPECS) { toast(`يمكن اختيار ${MAX_SPECS} تخصصاً كحد أقصى`, 'error'); return; }
+          lab.checked = true; lab.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        inp.value = ''; tg.checked = false; box.classList.add('hidden'); preview();
+        toast(`أُضيف «${name}» إلى قائمة التخصصات واخترته`);
+      };
+      inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); addSpec(); } });
+      $('[data-spec-add]', sb).addEventListener('click', addSpec);
     }
     const lo = $('[data-lang-other]', form);
     lo && lo.addEventListener('change', e => { const t = $('.lang-other', form); t.classList.toggle('hidden', !e.target.checked); if (!e.target.checked) t.value = ''; else t.focus(); preview(); });

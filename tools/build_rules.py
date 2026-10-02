@@ -28,8 +28,6 @@ PUBLIC = {
     'years': N(60), 'hours': N(100000), 'programs': N(10000),
     # إطار الصورة الدائرية: الموضع والتكبير
     'noPhoto': 'newData.isBoolean()',
-    # تخصص جديد يقترحه المدرب (يعتمده المشرف ليدخل الكتالوج)
-    'specsOther': S(60),
     'cardSpecs': str_list(6, 20),
     'photoX': N(100), 'photoY': N(100), 'photoZ': 'newData.isNumber() && newData.val() >= 1 && newData.val() <= 3',
 }
@@ -92,7 +90,17 @@ rules = {
         ROOT: {
             '.read': admin,
             '.write': admin,
-            'content': {'.read': True},
+            'content': {
+                '.read': True,
+                # تخصصات يضيفها الزوار عبر «أخرى»: إنشاء فقط (لا تعديل ولا حذف إلا للإدارة)
+                'specialties': {'added': {'$k': {
+                    '.write': '!data.exists() && newData.exists()',
+                    '.validate': "$k.matches(/^u[a-z0-9]{1,18}$/) && newData.hasChildren(['name'])",
+                    'name': {'.validate': 'newData.isString() && newData.val().length >= 2 && newData.val().length <= 60'},
+                    'icon': {'.validate': "newData.isString() && newData.val() == 'fa-shapes'"},
+                    '$other': {'.validate': False},
+                }}},
+            },
             'meta': {'.read': True},
             'halls': {'.read': True},
             'trainers': {'.read': True, '$id': {'.validate': "newData.hasChildren(['name', 'code'])", **trainer_fields}},

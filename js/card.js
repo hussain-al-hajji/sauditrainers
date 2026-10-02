@@ -33,7 +33,7 @@ const Card = (() => {
 
   // البطاقة الكاملة (صفحة المدرب والمعاينة ولوحة المدرب)
   function full(t, { preview = false } = {}) {
-    const sp = Data.cardSpecs(t), md = Data.modes(t), th = themeOf(t.theme);
+    const sp = Data.cardSpecs(t), th = themeOf(t.theme);
     const stats = [stat(t.years, 'سنة خبرة'), stat(t.hours, 'ساعة تدريبية'), stat(t.programs, 'برنامج ودورة')].filter(Boolean);
     return `<article class="tcard full ${themeCls(t)}" data-tilt="8" style="${themeVars(t)}">
       <div class="tc-glow"></div><div class="tc-holo"></div>
@@ -46,11 +46,10 @@ const Card = (() => {
       ${t.title ? `<p class="tc-title">${esc(t.title)}</p>` : ''}
       <div class="tc-meta">
         ${t.region ? `<span><i class="fa-solid fa-location-dot"></i>${esc(regionName(t.region))}${t.city ? ' · ' + esc(t.city) : ''}</span>` : ''}
-        ${md.map(m => DELIVERY.find(d => d.k === m)).filter(Boolean).map(d => `<span><i class="fa-solid ${d.icon}"></i>${d.name}</span>`).join('')}
       </div>
       ${stats.length ? `<div class="tc-stats">${stats.join('')}</div>` : ''}
       ${sp.length ? `<div class="tc-chips">${sp.slice(0, 6).map(s => `<span><i class="fa-solid ${specOf(s)?.icon || 'fa-shapes'}"></i>${esc(specName(s))}</span>`).join('')}</div>` : ''}
-      <footer class="tc-foot"><span>sauditrainers.sa</span><span class="tc-bar"></span></footer>
+      <footer class="tc-foot"><span>لقراءة السيرة الذاتية وللتواصل تفضل بزيارة منصة</span><b>مدرّبون سعوديّون</b></footer>
     </article>`;
   }
 
@@ -185,7 +184,7 @@ const Card = (() => {
     ctx.fillText(t.name || '', W / 2, y);
     ctx.font = `600 32px ${BODY}`; ctx.fillStyle = th.accent;
     wrap(ctx, t.title, W - 260, 2).forEach(l => { y += 54; ctx.fillText(l, W / 2, y); });
-    const meta = [regionName(t.region), ...Data.modes(t).map(m => DELIVERY.find(d => d.k === m)?.name).filter(Boolean)].filter(Boolean).join('  ·  ');
+    const meta = regionName(t.region);
     if (meta) { y += 52; ctx.font = `500 27px ${UI}`; ctx.fillStyle = hex(fg, 0.8); ctx.fillText(meta, W / 2, y); }
 
     // الإحصاءات
@@ -228,10 +227,12 @@ const Card = (() => {
         for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) ctx.fillRect(qx + c * cell, qy + r * cell, Math.ceil(cell), Math.ceil(cell));
       } catch { /* ignore */ }
     }
-    ctx.textAlign = 'right'; ctx.fillStyle = fg; ctx.font = `800 34px ${HEAD}`;
-    ctx.fillText('للتواصل وطلب التدريب عبر المنصة', W - 110, fy + 64);
-    ctx.fillStyle = th.accent; ctx.font = `600 28px ${UI}`; ctx.direction = 'ltr';
-    ctx.fillText('sauditrainers.sa', W - 110, fy + 110);
+    ctx.textAlign = 'right'; ctx.fillStyle = hex(fg, 0.85); ctx.font = `600 27px ${UI}`;
+    ctx.fillText('لقراءة السيرة الذاتية وللتواصل تفضل بزيارة منصة', W - 110, fy + 52);
+    ctx.fillStyle = th.accent; ctx.font = `900 40px ${HEAD}`;
+    ctx.fillText('مدرّبون سعوديّون', W - 110, fy + 100);
+    ctx.fillStyle = hex(fg, 0.7); ctx.font = `600 24px ${UI}`; ctx.direction = 'ltr';
+    ctx.fillText('sauditrainers.sa', W - 110, fy + 136);
     cv.photoFailed = !t.noPhoto && !!t.photoUrl && !photo;
     return cv;
   }

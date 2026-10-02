@@ -239,14 +239,13 @@ function addListSearch(root = document) {
     sel.addEventListener('keydown', e => { if (['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(e.key)) { e.preventDefault(); openListPanel(sel); } });
   });
   root.querySelectorAll('.checks:not([data-ls])').forEach(c => {
-    const items = [...c.querySelectorAll(':scope > label.chk')];
-    if (items.length <= LONG_LIST) return;
+    if (c.querySelectorAll(':scope > label.chk').length <= LONG_LIST) return;
     c.dataset.ls = '1';
     const box = document.createElement('input'); box.type = 'search'; box.className = 'list-search ls-in'; box.placeholder = 'ابحث في القائمة...'; box.setAttribute('aria-label', 'بحث في القائمة'); box.autocomplete = 'off';
     box.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
     box.addEventListener('input', () => {
       const q = normAr(box.value);
-      items.forEach(l => l.classList.toggle('ls-off', !!q && !normAr(l.textContent).includes(q) && !l.querySelector('input:checked')));
+      c.querySelectorAll(':scope > label.chk').forEach(l => l.classList.toggle('ls-off', !!q && !normAr(l.textContent).includes(q) && !l.querySelector('input:checked')));
     });
     c.prepend(box);
   });

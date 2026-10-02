@@ -79,21 +79,20 @@ const Data = (() => {
   }
 
   // الحقول العامة للمدرب (المسموح بتعديلها من صفحته — تطابق القواعد)
-  const PUBLIC_FIELDS = ['name', 'nameEn', 'title', 'gender', 'region', 'city', 'bio', 'specs', 'topics', 'modes', 'years', 'hours', 'programs', 'certs', 'langs', 'theme', 'photoUrl', 'photoX', 'photoY', 'photoZ', 'noPhoto', 'cardSpecs', 'specsOther'];
+  const PUBLIC_FIELDS = ['name', 'nameEn', 'title', 'gender', 'region', 'city', 'bio', 'specs', 'topics', 'modes', 'years', 'hours', 'programs', 'certs', 'langs', 'theme', 'photoUrl', 'photoX', 'photoY', 'photoZ', 'noPhoto', 'cardSpecs'];
   // تقسيم إجابات الحقول المخصصة: العامة تظهر في صفحة المدرب، والباقي في بياناته الإدارية
   const splitExtra = extra => { const pub = {}, priv = {}; Object.entries(extra || {}).forEach(([k, v]) => { (FormKit.isPublicExtra(k) ? pub : priv)[k] = v; }); return { pub, priv }; };
   const pick = (o, keys) => { const r = {}; keys.forEach(k => { if (o[k] !== undefined) r[k] = o[k]; }); return r; };
 
-  // يضيف تخصصاً جديداً إلى الكتالوج (يتطلب صلاحية الإدارة) أو يعيد المطابق له، ويعيد مفتاحه
-  function ensureSpecialty(name) {
-    name = String(name || '').trim();
-    if (!name) return '';
-    const hit = SPECIALTIES.find(s => normAr(s.name) === normAr(name));
+  // يضيف تخصصاً جديداً إلى الكتالوج (متاح لأي زائر؛ الإدارة تحذف ما لا يصلح) أو يعيد المطابق له، ويعيد مفتاحه
+  function addSpecialty(name) {
+    name = String(name || '').trim().slice(0, 60);
+    if (name.length < 2) return '';
+    const norm = normAr(name), hit = SPECIALTIES.find(s => normAr(s.name) === norm);
     if (hit) return hit.k;
-    const k = 'c' + Store.newId().slice(-8).replace(/[^a-z0-9]/g, '0');
-    const list = SPECIALTIES.map(x => ({ ...x })).filter(x => x.k !== 'other');
-    list.push({ k, name, icon: 'fa-shapes' }, { k: 'other', name: 'تخصصات أخرى', icon: 'fa-shapes' });
-    Store.set('content/specialties/list', list);
+    let h = 5381; for (const ch of norm) h = ((h << 5) + h + ch.codePointAt(0)) >>> 0;
+    const k = 'u' + h.toString(36);
+    Store.set(`content/specialties/added/${k}`, { name, icon: 'fa-shapes' });
     loadSpecialties();
     return k;
   }
@@ -104,12 +103,6 @@ const Data = (() => {
       ...pick(app, PUBLIC_FIELDS), id, code, status: 'active', featured: false,
       publishedAt: Date.now(), updatedAt: Date.now(), appId: app.id
     };
-    // تخصص جديد اقترحه المدرب عبر «أخرى»: يُضاف للقائمة ويُلحق بتخصصاته
-    if (app.specsOther) {
-      const nk = ensureSpecialty(app.specsOther);
-      if (nk) { t.specs = [...arr(t.specs).filter(k => k !== 'other'), nk].slice(0, 15); t.cardSpecs = arr(t.cardSpecs).includes(nk) || arr(t.cardSpecs).length >= 6 ? t.cardSpecs : [...arr(t.cardSpecs), nk]; }
-      delete t.specsOther;
-    }
     t.slug = makeSlug(t);
     const ex = splitExtra(app.extra);
     if (Object.keys(ex.pub).length) t.extra = ex.pub;
@@ -129,7 +122,7 @@ const Data = (() => {
     Store.transaction(`stats/${kind}/${id}`, c => (Number(c) || 0) + 1).catch(() => {});
   }
 
-  return { content, photo, specs, cardSpecs, modes, topics, all, live, trainer, isLive, search, match, regionCounts, specCounts, views, clicks, nextCode, makeSlug, ensureSpecialty, publishFromApplication, track, PUBLIC_FIELDS, pick, splitExtra };
+  return { content, photo, specs, cardSpecs, modes, topics, all, live, trainer, isLive, search, match, regionCounts, specCounts, views, clicks, nextCode, makeSlug, addSpecialty, publishFromApplication, track, PUBLIC_FIELDS, pick, splitExtra };
 })();
 
 /* الأتمتة (اختيارية): رابط Google Apps Script يرسل البريد من حساب المنصة وينشر في وسائل التواصل.

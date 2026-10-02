@@ -220,7 +220,7 @@ function appDetail(a) {
           <dt>رقم الطلب</dt><dd class="num">${esc(a.id)}</dd><dt>التاريخ</dt><dd>${fmtTs(a.ts)}</dd>
           <dt>الجوال</dt><dd><a class="num" href="${esc(waLink(a.phone))}" target="_blank">${esc(a.phone)}</a></dd><dt>البريد</dt><dd><a href="mailto:${esc(a.email)}">${esc(a.email)}</a>${a.receivedEmailAt ? ' ' + sentBadge(a.receivedEmailAt).replace('أُرسل', 'وصله تأكيد الاستلام') : ''}</dd>
           <dt>المنطقة</dt><dd>${esc(regionName(a.region))} ${esc(a.city || '')}</dd><dt>الجنس</dt><dd>${a.gender === 'f' ? 'مدربة' : 'مدرب'}</dd>
-          <dt>اللقب</dt><dd>${esc(a.title)}</dd><dt>التخصصات</dt><dd>${Data.specs(a).map(specName).join('، ')}${a.specsOther ? ` <span class="pill gold">مقترح: ${esc(a.specsOther)}</span>` : ''}</dd><dt>على البطاقة</dt><dd>${Data.cardSpecs(a).map(specName).join('، ') || '—'}</dd>
+          <dt>اللقب</dt><dd>${esc(a.title)}</dd><dt>التخصصات</dt><dd>${Data.specs(a).map(specName).join('، ')}</dd><dt>على البطاقة</dt><dd>${Data.cardSpecs(a).map(specName).join('، ') || '—'}</dd>
           <dt>البرامج</dt><dd>${esc(a.topics || '—')}</dd><dt>الخبرة</dt><dd><span class="num">${a.years || 0}</span> سنة · <span class="num">${a.hours || 0}</span> ساعة · <span class="num">${a.programs || 0}</span> برنامج</dd>
           <dt>TOT</dt><dd>${a.tot === true ? '✅ حصل على الشهادة' : a.tot === false ? 'لم يحصل عليها بعد' : '—'}</dd><dt>الإقرار</dt><dd>${a.ack ? '✅ وافق على إقرار الفرص' : '—'}</dd><dt>الشهادات</dt><dd>${nl2br(a.certs || '—')}</dd>
           ${a.cvUrl ? `<dt>المرفقات</dt><dd>${a.cvUrl ? `<a href="${esc(safeUrl(a.cvUrl))}" target="_blank" rel="noopener">فتح الرابط <i class="fa-solid fa-arrow-up-right-from-square"></i></a>` : '—'}</dd>` : ''}
@@ -400,11 +400,6 @@ function trainerEditor(t) {
     if (err) { toast(err, 'error'); return; }
     const ex = Data.splitExtra(d.extra);
     const rec = { ...Data.pick(d, Data.PUBLIC_FIELDS), status: d.status, updatedAt: Date.now(), extra: Object.keys(ex.pub).length ? ex.pub : null };
-    if (rec.specsOther) { // تخصص جديد: يدخل الكتالوج مباشرة بصلاحية الإدارة
-      const nk = Data.ensureSpecialty(rec.specsOther);
-      if (nk) { rec.specs = [...Data.specs(rec).filter(k => k !== 'other'), nk].filter((x, j, a) => a.indexOf(x) === j).slice(0, 15); }
-    }
-    rec.specsOther = null;
     rec.expiresAt = null; // الاشتراك مدى الحياة (يُزيل أي تاريخ انتهاء قديم)
     let id = t.id;
     if (isNew) {

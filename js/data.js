@@ -57,7 +57,9 @@ const DEFAULT_SPECS = [
 const SPECIALTIES = DEFAULT_SPECS.map(x => ({ ...x }));
 function loadSpecialties() {
   const stored = (typeof Store !== 'undefined' ? arr(Store.get('content/specialties/list')) : []).filter(x => x && /^[a-z0-9_-]{1,20}$/.test(x.k) && x.name);
-  const src = stored.length ? stored : DEFAULT_SPECS;
+  const added = typeof Store !== 'undefined' ? Object.entries(Store.get('content/specialties/added') || {}).map(([k, v]) => ({ k, name: v && v.name, icon: v && v.icon })) : [];
+  const src = [...(stored.length ? stored : DEFAULT_SPECS)];
+  added.forEach(a => { if (a.name && !src.some(x => x.k === a.k)) src.splice(src.findIndex(x => x.k === 'other') < 0 ? src.length : src.findIndex(x => x.k === 'other'), 0, a); });
   if (!src.some(x => x.k === 'other')) src.push(DEFAULT_SPECS[DEFAULT_SPECS.length - 1]);
   SPECIALTIES.length = 0;
   src.forEach(x => SPECIALTIES.push({ k: x.k, name: String(x.name).slice(0, 60), icon: /^fa-[a-z0-9-]{1,40}$/.test(x.icon || '') ? x.icon : 'fa-shapes' }));
