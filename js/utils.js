@@ -73,8 +73,8 @@ const phoneDigits = p => { let d = toEnDigits(p).replace(/\D/g, ''); if (d.start
 const waLink = (p, text = '') => { const d = phoneDigits(p); return d ? `https://wa.me/${d}${text ? '?text=' + encodeURIComponent(text) : ''}` : ''; };
 const validPhone = p => /^9665\d{8}$/.test(phoneDigits(p));
 const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(e || '').trim());
-// رابط المنصة: الصفحة الحالية عند تشغيلها من نطاق حقيقي، وإلا رابط الموقع الرسمي من الإعدادات
-const siteBase = () => (/^https?:$/.test(location.protocol) && !/^(localhost|127\.|\[::1\]|0\.0\.0\.0)/.test(location.hostname) ? location.href.split('#')[0] : (window.ST_CONFIG.siteUrl || location.href.split('#')[0]));
+// رابط المنصة الذي يراه المستخدمون: الدومين الرسمي دائماً (siteUrl)، إلا عند تفعيل useCurrentOrigin للاختبار على الرابط المؤقت
+const siteBase = () => { const c = window.ST_CONFIG; return c.useCurrentOrigin && /^https?:$/.test(location.protocol) && !/^(localhost|127\.|\[::1\]|0\.0\.0\.0)/.test(location.hostname) ? location.href.split('#')[0] : (c.siteUrl || location.href.split('#')[0]); };
 const profileUrl = t => `${siteBase()}#/t/${encodeURIComponent(t.slug || t.id)}`;
 
 /* ===== التنبيهات ===== */

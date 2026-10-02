@@ -85,7 +85,9 @@
 
 ## النشر
 
-الرابط الحالي: https://hussain-al-hajji.github.io/sauditrainers/ . عند إضافة الدومين الرسمي لاحقاً غيّر ثلاثة أشياء: `siteUrl` في `js/config.js`، و`SITE` في `integrations/google-apps-script/Code.gs` (ثم Deploy نسخة جديدة)، وسطري `og:image` و`og:url` في `index.html`؛ وأضف الدومين في Firebase ← Authentication ← Authorized domains. روابط المشاركة وQR تأخذ نطاق الصفحة المفتوحة تلقائياً.
+الرابط الرسمي الذي يظهر للمستخدمين في الروابط والبطاقات وQR والرسائل هو **https://sauditrainers.sa/** (`siteUrl` في `js/config.js`). رابط GitHub Pages (https://hussain-al-hajji.github.io/sauditrainers/) مؤقت للتجربة قبل ربط الدومين، وعليه تعمل المنصة كاملة لكن الروابط المعروضة تشير للدومين الرسمي؛ ولاختبارها على الرابط المؤقت اجعل `useCurrentOrigin: true` مؤقتاً.
+
+**عند ربط الدومين:** GitHub ← Settings ← Pages ← Custom domain: `sauditrainers.sa` (يُنشئ ملف CNAME؛ لا تضفه قبل أن يشير الدومين لـ GitHub حتى لا ينقطع الرابط المؤقت)، وسجلات DNS لدى مزود الدومين، ثم أضف الدومين في Firebase ← Authentication ← Authorized domains، واجعل `ASSETS` في `Code.gs` مثل `SITE`. ملف `404.html` يحوّل روابط الموقع القديم تلقائياً.
 
 - **GitHub Pages:** الإعدادات ← Pages ← الفرع والمجلد `/ (root)`.
 - **النطاق sauditrainers.sa:** أضف ملف `CNAME` بالنطاق، ووجّه سجلات DNS إلى GitHub Pages بدلاً من Google Sites.

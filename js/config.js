@@ -27,7 +27,9 @@ window.ST_CONFIG = {
   automationUrl: '',
   // رقم واتساب المنصة الذي تُرسل منه الرسائل (يُفتح منه واتساب ويب/التطبيق عند الضغط على زر الإرسال)
   platformWhatsapp: '966562391007',
-  // رابط المنصة (يُستخدم في روابط المشاركة ورسائل معلومات الدخول)
-  // عند إضافة الدومين الرسمي غيّر هذا السطر (والسطر SITE في سكربت الأتمتة وmeta og في index.html)
-  siteUrl: 'https://hussain-al-hajji.github.io/sauditrainers/'
+  // الرابط الرسمي: يظهر للمستخدمين في الروابط والبطاقات وQR ورسائل البريد والواتساب ومنشورات التواصل
+  siteUrl: 'https://sauditrainers.sa/',
+  // للتجربة قبل ربط الدومين: رابط GitHub Pages المؤقت. اجعلها true لتُبنى الروابط من عنوان الصفحة المفتوحة (للاختبار فقط)
+  useCurrentOrigin: false,
+  testUrl: 'https://hussain-al-hajji.github.io/sauditrainers/'
 };

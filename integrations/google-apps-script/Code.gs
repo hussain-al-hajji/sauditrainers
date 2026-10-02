@@ -13,7 +13,8 @@
 const CFG = {
   DB_URL: 'https://sauditrainers-6c989-default-rtdb.firebaseio.com', // databaseURL من js/config.js
   ROOT: 'sauditrainers',                                       // dbRoot
-  SITE: 'https://hussain-al-hajji.github.io/sauditrainers/',                       // رابط المنصة
+  SITE: 'https://sauditrainers.sa/',                       // الرابط الرسمي الذي يراه المستلمون في الرسائل
+  ASSETS: 'https://hussain-al-hajji.github.io/sauditrainers/',                      // مصدر صورة الشعار في البريد: الرابط المؤقت إلى أن يُربط الدومين، ثم اجعله مثل SITE
   ADMIN_EMAIL: 'trainers.sa3@gmail.com',                       // بريد الإدارة (نسخة من كل طلب)
   FROM_NAME: 'منصة مدرّبون سعوديّون',
   PLATFORM_WHATSAPP: '966562391007'
@@ -61,7 +62,7 @@ const MODES = { onsite: 'حضوري', online: 'عن بُعد', hybrid: 'مدمج
 function emailHtml(title, intro, rows, cta) {
   return `<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;background:#F7F9F3;padding:24px">
     <div style="max-width:560px;margin:auto;background:#fff;border-radius:18px;overflow:hidden;border:1px solid #E1E8DC">
-      <div style="background:#005430;padding:22px;text-align:center"><img src="${CFG.SITE}assets/logo-cream.png" alt="مدرّبون سعوديّون" height="56"></div>
+      <div style="background:#005430;padding:22px;text-align:center"><img src="${CFG.ASSETS}assets/logo-cream.png" alt="مدرّبون سعوديّون" height="56"></div>
       <div style="padding:24px;color:#0D2418;line-height:1.8">
         <h2 style="margin:0 0 8px;color:#005430;font-size:20px">${esc(title)}</h2>
         <p style="margin:0 0 16px">${intro}</p>
