@@ -812,3 +812,23 @@ input[type=range] { accent-color: var(--g700); width: 100%; }
 .side-mv { flex-direction: column; gap: 2px; padding-inline-end: 6px; }
 .side .side-mv button { width: 30px; height: 18px; border-radius: 6px; font-size: .7rem; }
 @media (max-width: 900px) { .side-mv { flex-direction: row; } .side .side-mv button { height: 28px; } }
+
+/* مراحل طلب التسجيل والقوالب */
+.stagebar { display: flex; gap: 8px; margin: 4px 0 16px; }
+.stagebar span { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 8px; border-radius: 12px; background: var(--paper); border: 1px solid var(--line); font-family: var(--f-ui); font-size: .85rem; color: var(--muted); }
+.stagebar span.done { background: var(--g100); color: var(--g700); border-color: transparent; }
+.stagebar span.cur { background: var(--g800); color: #fff; border-color: var(--g800); }
+.stagebar.rej span.cur { background: var(--bad); border-color: var(--bad); }
+.stage-actions { display: grid; gap: 8px; margin-top: 14px; }
+.notice-box { padding: 12px; border-radius: 16px; background: var(--g50); border: 1px solid var(--g100); display: grid; gap: 8px; font-family: var(--f-ui); }
+.notice-btns { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tvars { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.tvar { display: inline-flex; flex-direction: column; align-items: flex-start; padding: 4px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--paper); cursor: pointer; font-family: monospace; font-size: .8rem; direction: ltr; color: var(--g700); }
+.tvar small { font-family: var(--f-ui); font-size: .68rem; color: var(--muted); direction: rtl; }
+.tvar:hover { background: var(--g800); color: #fff; } .tvar:hover small { color: var(--gold2); }
+.tpl-box .field { margin-bottom: 10px; }
+.tpl-box textarea { font-size: .92rem; line-height: 1.8; }
+.pv-mail, .pv-wa { border: 1px solid var(--line); border-radius: 16px; padding: 14px; margin-bottom: 12px; background: #fff; }
+.pv-wa { background: #E7F6E9; }
+.pv-mail pre, .pv-wa pre { white-space: pre-wrap; font-family: var(--f-body); margin: 8px 0 0; line-height: 1.9; }
+@media (max-width: 640px) { .stagebar span { font-size: .72rem; padding: 6px 2px; flex-direction: column; gap: 2px; } }

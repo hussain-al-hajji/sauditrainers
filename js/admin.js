@@ -2,18 +2,6 @@
 
 const googleIcon = '<svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>';
 
-const loginMessage = (t, secret) => `مرحباً ${t.name} 🌟
-تم نشر بطاقتك التعريفية في منصة «مدرّبون سعوديّون».
-
-🔗 رابط بطاقتك للمشاركة:
-${profileUrl(t)}
-
-🔐 لتعديل بياناتك ومتابعة الطلبات الواردة:
-${siteBase()}#/login
-رمز الدخول: ${secret}
-
-(احتفظ بالرمز ولا تشاركه مع أحد)`;
-
 Pages.admin = {
   tab: 'dash',
   menuEdit: false,
@@ -24,7 +12,7 @@ Pages.admin = {
     const all = [
       ['dash', 'fa-chart-pie', 'المؤشرات'], ['apps', 'fa-user-plus', 'طلبات التسجيل', apps.filter(a => a.status === 'new').length], ['trainers', 'fa-id-card', 'المدربون'],
       ['requests', 'fa-inbox', 'طلبات الجهات', newReq], ['social', 'fa-share-nodes', 'النشر الاجتماعي', Store.list('social').filter(p => p.status === 'failed').length],
-      ['home', 'fa-house', 'الصفحة الرئيسية'], ['forms', 'fa-rectangle-list', 'النماذج'], ['halls', 'fa-building-columns', 'القاعات', Store.list('hallReqs').filter(r => r.status === 'new').length],
+      ['home', 'fa-house', 'الصفحة الرئيسية'], ['forms', 'fa-rectangle-list', 'النماذج'], ['templates', 'fa-envelope-open-text', 'قوالب'], ['halls', 'fa-building-columns', 'القاعات', Store.list('hallReqs').filter(r => r.status === 'new').length],
       ['content', 'fa-pen-ruler', 'المحتوى العام'], ['admins', 'fa-user-shield', 'المشرفون'], ['backup', 'fa-database', 'البيانات والسجل']
     ];
     const order = arr(Store.get('settings/adminMenu'));
@@ -86,10 +74,10 @@ Pages.admin = {
     $$('[data-menu-edit]', root).forEach(b => b.onclick = () => { this.menuEdit = !this.menuEdit; this.wireMenu(root); });
     $('[data-out]', root).onclick = () => Auth.logout();
     const main = $('#at', root);
-    ({ dash: aDash, apps: aApps, trainers: aTrainers, requests: aRequests, social: aSocial, home: aHome, forms: aForms, halls: aHalls, content: aContent, admins: aAdmins, backup: aBackup })[this.tab](main);
+    ({ dash: aDash, apps: aApps, trainers: aTrainers, requests: aRequests, social: aSocial, home: aHome, forms: aForms, templates: aTemplates, halls: aHalls, content: aContent, admins: aAdmins, backup: aBackup })[this.tab](main);
   },
   // تبويبات التحرير لا يُعاد رسمها تلقائياً حتى لا تضيع التعديلات غير المحفوظة، وكذلك أثناء ترتيب القائمة
-  get static() { return this.menuEdit || ['content', 'home', 'forms'].includes(this.tab); }
+  get static() { return this.menuEdit || ['content', 'home', 'forms', 'templates'].includes(this.tab); }
 };
 
 function adminLoginView() {
@@ -183,17 +171,54 @@ function setAppStatus(a, status, note) {
   Security.log('تغيير حالة طلب', a.name, APP_STATUS[status].name);
 }
 
+/* إرسال إشعار للمتقدم/المدرب: بالبريد (آلياً من بريد المنصة عند تفعيل الأتمتة، وإلا يُفتح البريد برسالة جاهزة) أو بالواتساب */
+// نافذة كتابة Gmail في المتصفح (تعمل على الحاسوب دون تطبيق بريد)، والرسالة جاهزة
+const gmailCompose = (to, su, body, cc = '') => `https://mail.google.com/mail/?view=cm&fs=1&authuser=0&to=${encodeURIComponent(to)}${cc ? '&cc=' + encodeURIComponent(cc) : ''}&su=${encodeURIComponent(su)}&body=${encodeURIComponent(body)}`;
+async function sendMailNotice(to, msg, applog) {
+  if (!to) { toast('لا يوجد بريد إلكتروني لهذا المسجّل', 'error'); return false; }
+  if (Automation.on) {
+    const id = Store.push('outbox', { to, subject: msg.subject, body: msg.body, ts: Date.now() });
+    await Automation.notify('outbox', id);
+    toast('أُرسل الإشعار من بريد المنصة');
+  } else {
+    window.open(gmailCompose(to, msg.subject, msg.body), '_blank');
+    toast('فُتح Gmail في المتصفح برسالة جاهزة — سجّل الدخول ببريد المنصة واضغط إرسال');
+  }
+  applog && Store.update(`applications/${applog.id}`, { [applog.key]: Date.now() });
+  return true;
+}
+function sendWaNotice(phone, text, applog) {
+  if (!phone) { toast('لا يوجد رقم جوال', 'error'); return false; }
+  window.open(waLink(phone, text), '_blank');
+  toast(`افتح المحادثة من واتساب المنصة (${window.ST_CONFIG.platformWhatsapp}) ثم اضغط إرسال`);
+  applog && Store.update(`applications/${applog.id}`, { [applog.key]: Date.now() });
+  return true;
+}
+const sentBadge = ts => (ts ? `<span class="pill ok" title="${fmtTs(ts)}"><i class="fa-solid fa-check"></i> أُرسل ${ago(ts)}</span>` : '');
+
+// أزرار إشعارات مرحلة (initial / final): بريد وواتساب مع علامة الإرسال
+function noticeButtons(a, stage, ctx) {
+  const k = stage === 'initial' ? 'Initial' : 'Final';
+  return `<div class="notice-box"><b>${stage === 'initial' ? 'إشعار القبول المبدئي والسداد' : 'إشعار القبول النهائي وبيانات الدخول'}</b>
+    <div class="notice-btns"><button class="btn sm primary" data-mail="${stage}"><i class="fa-solid fa-envelope"></i> بريد</button>${sentBadge(a['notice' + k + 'Mail'])}
+    <button class="btn sm primary" data-wa="${stage}"><i class="fa-brands fa-whatsapp"></i> واتساب</button>${sentBadge(a['notice' + k + 'Wa'])}</div></div>`;
+}
+
 function appDetail(a) {
   if (!a) return;
-  const c = Data.content();
-  const acceptMsg = `مرحباً ${a.name} 🌟\nيسعدنا إبلاغك بقبول طلب تسجيلك في منصة «مدرّبون سعوديّون» (رقم الطلب ${a.id}).\n\nرسوم التسجيل: ${c.join.fee} ريال — ${c.join.period}.\n${c.join.payment}${c.join.bank ? '\n\n' + c.join.bank : ''}\n\nبعد السداد تُنشر بطاقتك ويصلك رمز الدخول.`;
   const st = Store.get(`appStatus/${a.id}`) || {};
+  const trainer = a.trainerId ? Store.get(`trainers/${a.trainerId}`) : null;
+  const secret = a.trainerId ? Store.get(`secrets/codes/${a.trainerId}`) : '';
+  const early = ['new', 'review', 'interview'].includes(a.status);
+  const stages = [['new', 'استلام'], ['accepted', 'قبول مبدئي'], ['published', 'قبول نهائي']];
+  const at = a.status === 'published' ? 2 : a.status === 'accepted' ? 1 : 0;
   const m = modal(`<h3><i class="fa-solid fa-user-plus"></i> طلب ${esc(a.name)} <span class="pill ${APP_STATUS[a.status]?.tone}">${APP_STATUS[a.status]?.name}</span></h3>
+    <div class="stagebar ${a.status === 'rejected' ? 'rej' : ''}">${stages.map(([k, l], i) => `<span class="${i < at ? 'done' : i === at ? 'cur' : ''}"><i class="fa-solid ${i < at ? 'fa-check' : ['fa-inbox', 'fa-circle-check', 'fa-certificate'][i]}"></i>${l}</span>`).join('')}</div>
     <div class="detail-grid">
       <div>
         <dl class="dl">
           <dt>رقم الطلب</dt><dd class="num">${esc(a.id)}</dd><dt>التاريخ</dt><dd>${fmtTs(a.ts)}</dd>
-          <dt>الجوال</dt><dd><a class="num" href="${esc(waLink(a.phone))}" target="_blank">${esc(a.phone)}</a></dd><dt>البريد</dt><dd><a href="mailto:${esc(a.email)}">${esc(a.email)}</a></dd>
+          <dt>الجوال</dt><dd><a class="num" href="${esc(waLink(a.phone))}" target="_blank">${esc(a.phone)}</a></dd><dt>البريد</dt><dd><a href="mailto:${esc(a.email)}">${esc(a.email)}</a>${a.receivedEmailAt ? ' ' + sentBadge(a.receivedEmailAt).replace('أُرسل', 'وصله تأكيد الاستلام') : ''}</dd>
           <dt>المنطقة</dt><dd>${esc(regionName(a.region))} ${esc(a.city || '')}</dd><dt>الجنس</dt><dd>${a.gender === 'f' ? 'مدربة' : 'مدرب'}</dd>
           <dt>اللقب</dt><dd>${esc(a.title)}</dd><dt>التخصصات</dt><dd>${Data.specs(a).map(specName).join('، ')}</dd>
           <dt>البرامج</dt><dd>${esc(a.topics || '—')}</dd><dt>الخبرة</dt><dd><span class="num">${a.years || 0}</span> سنة · <span class="num">${a.hours || 0}</span> ساعة · <span class="num">${a.programs || 0}</span> برنامج</dd>
@@ -210,25 +235,53 @@ function appDetail(a) {
       </div>
       <div>
         <div style="transform:scale(.8);transform-origin:top center;margin-bottom:-110px">${Card.full({ ...a, id: '__app' }, { preview: true })}</div>
-        <div style="display:grid;gap:8px;margin-top:14px">
-          ${a.status !== 'published' ? `<button class="btn gold" id="pub"><i class="fa-solid fa-certificate"></i> نشر البطاقة وإصدار رمز الدخول</button>` : ''}
-          <a class="btn primary" target="_blank" rel="noopener" href="${esc(waLink(a.phone, acceptMsg))}" id="acc"><i class="fa-brands fa-whatsapp"></i> رسالة القبول وبيانات السداد</a>
-          <a class="btn" href="mailto:${esc(a.email)}?subject=${encodeURIComponent('قبول طلب التسجيل — مدرّبون سعوديّون')}&body=${encodeURIComponent(acceptMsg)}"><i class="fa-solid fa-envelope"></i> إرسالها بالبريد</a>
+        <div class="stage-actions">
+          ${early ? `<p class="small muted">راجع بيانات الطلب، فإن كان مستوفياً اضغط القبول المبدئي لتنتقل لمرحلة السداد.</p>
+            <button class="btn primary" data-act="initial"><i class="fa-solid fa-circle-check"></i> قبول مبدئي</button>
+            <button class="btn ghost" data-act="reject" style="color:var(--bad)"><i class="fa-solid fa-circle-xmark"></i> رفض الطلب</button>` : ''}
+          ${a.status === 'accepted' ? `<div class="banner info"><i class="fa-solid fa-sack-dollar"></i>بانتظار تحويل <b class="num">${esc(Data.content().join.fee)}</b> ريال</div>
+            ${noticeButtons(a, 'initial')}
+            <p class="small muted">بعد التأكد من وصول التحويل اضغط القبول النهائي ليُنشأ حساب المدرب وبطاقته ورمز دخوله.</p>
+            <button class="btn gold" data-act="final"><i class="fa-solid fa-certificate"></i> قبول نهائي (تم تأكيد التحويل)</button>` : ''}
+          ${a.status === 'published' ? `<div class="banner ok"><i class="fa-solid fa-certificate"></i>تم القبول النهائي${trainer ? ` — رقم العضوية <b class="num">${esc(trainer.code)}</b>` : ''}</div>
+            ${secret ? noticeButtons(a, 'final') : '<p class="small muted">لا يتوفر رمز محفوظ؛ جدّد الرمز من تبويب المدربين.</p>'}
+            ${trainer ? `<a class="btn" href="#/t/${esc(trainer.slug || trainer.id)}" target="_blank"><i class="fa-solid fa-id-card"></i> فتح بطاقته</a>` : ''}` : ''}
+          ${a.status === 'rejected' ? '<div class="banner warn"><i class="fa-solid fa-circle-xmark"></i>الطلب غير مقبول. يمكنك إعادته للمراجعة من القائمة.</div>' : ''}
           <button class="btn ghost" id="del" style="color:var(--bad)"><i class="fa-solid fa-trash"></i> حذف الطلب</button>
         </div>
       </div>
     </div>`, { wide: true });
+  const reopen = () => { m.close(); setTimeout(() => appDetail(Store.get(`applications/${a.id}`)), 260); };
   m.$('#sv').onclick = () => {
     const ns = m.$('#ns').value, note = m.$('#pn').value.trim();
     if (ns !== a.status) setAppStatus(a, ns, note); else Store.update(`appStatus/${a.id}`, { note, ts: Date.now() });
     toast('تم الحفظ'); m.close();
   };
-  m.$('#acc').addEventListener('click', () => { if (['new', 'review', 'interview'].includes(a.status)) setAppStatus(a, 'accepted'); });
-  m.$('#pub') && (m.$('#pub').onclick = async () => {
-    if (!await confirmBox(`نشر بطاقة <b>${esc(a.name)}</b> الآن وإصدار رمز دخول له؟ (تأكد من استلام السداد)`, { ok: 'نشر' })) return;
-    m.close();
-    try { const { trainer, secret } = await Data.publishFromApplication(a); showSecret(trainer, secret, true); }
-    catch (e) { toast(e.message, 'error'); }
+  m.el.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => {
+    const act = b.dataset.act;
+    if (act === 'initial') {
+      if (!await confirmBox(`قبول طلب <b>${esc(a.name)}</b> مبدئياً؟ ينتقل لمرحلة السداد وتظهر أزرار إرسال إشعار القبول والسداد.`, { ok: 'قبول مبدئي' })) return;
+      setAppStatus(a, 'accepted'); Store.update(`applications/${a.id}`, { initialAt: Date.now() }); reopen();
+    }
+    if (act === 'reject') {
+      if (!await confirmBox('رفض هذا الطلب؟ يظهر للمتقدم في صفحة المتابعة أنه غير مقبول.', { ok: 'رفض', danger: true })) return;
+      setAppStatus(a, 'rejected', m.$('#pn').value.trim()); reopen();
+    }
+    if (act === 'final') {
+      if (!await confirmBox(`تأكدت من وصول تحويل <b>${esc(a.name)}</b>؟ يُنشأ الآن حسابه وبطاقته ورقم عضويته ورمز دخوله.`, { ok: 'قبول نهائي' })) return;
+      try { const { trainer: t, secret: sc } = await Data.publishFromApplication(a); Store.update(`applications/${a.id}`, { finalAt: Date.now() }); m.close(); showSecret(t, sc, true); }
+      catch (e) { toast(e.message, 'error'); }
+    }
+  });
+  m.el.querySelectorAll('[data-mail]').forEach(b => b.onclick = () => {
+    const stage = b.dataset.mail, cur = Store.get(`applications/${a.id}`);
+    if (stage === 'initial') { sendMailNotice(a.email, Tpl.mail('initial', { a }), { id: a.id, key: 'noticeInitialMail' }); }
+    else { const priv = Store.get(`private/${a.trainerId}`) || {}; sendMailNotice(priv.email || a.email, Tpl.mail('final', { a: cur, t: trainer, secret }), { id: a.id, key: 'noticeFinalMail' }); }
+  });
+  m.el.querySelectorAll('[data-wa]').forEach(b => b.onclick = () => {
+    const stage = b.dataset.wa;
+    if (stage === 'initial') sendWaNotice(a.phone, Tpl.wa('initial', { a }), { id: a.id, key: 'noticeInitialWa' });
+    else sendWaNotice((Store.get(`private/${a.trainerId}`) || {}).phone || a.phone, Tpl.wa('final', { a, t: trainer, secret }), { id: a.id, key: 'noticeFinalWa' });
   });
   m.$('#del').onclick = async () => {
     if (!await confirmBox('حذف هذا الطلب نهائياً؟', { ok: 'حذف', danger: true })) return;
@@ -237,20 +290,25 @@ function appDetail(a) {
 }
 
 function showSecret(t, secret, isNew) {
-  const msg = loginMessage(t, secret);
   const priv = Store.get(`private/${t.id}`) || {};
-  const phone = priv.phone;
-  const m = modal(`<h3><i class="fa-solid fa-key"></i> ${isNew ? 'تم النشر 🎉' : 'رمز الدخول'}</h3>
-    <p class="muted">رمز دخول <b>${esc(t.name)}</b>. أرسله له الآن — لن يظهر المدرب في النتائج دون نشر، ويستطيع تعديل بطاقته بهذا الرمز.</p>
-    <div class="secret"><span>${esc(secret)}</span><button class="btn sm glass" id="cs"><i class="fa-solid fa-copy"></i></button></div>
+  const app = t.appId ? Store.get(`applications/${t.appId}`) || { id: t.appId } : {};
+  const ctx = { a: app, t, secret };
+  const log = key => (t.appId ? { id: t.appId, key } : null);
+  const m = modal(`<h3><i class="fa-solid fa-certificate"></i> ${isNew ? 'تم القبول النهائي 🎉' : 'رمز الدخول'}</h3>
+    <p class="muted">أُنشئت بطاقة <b>${esc(t.name)}</b> برقم العضوية <b class="num">${esc(t.code)}</b>. أرسل له الآن إشعار القبول مع رمز الدخول (يُحرَّر القالب من تبويب «قوالب»).</p>
+    <div class="secret"><span>${esc(secret)}</span><button class="btn sm glass" id="cs" title="نسخ الرمز"><i class="fa-solid fa-copy"></i></button></div>
+    <div class="banner warn" style="margin-top:12px"><i class="fa-solid fa-triangle-exclamation"></i>الرمز خاص بالمدرب، ولا يُنشر ولا يُرسل إلا له.</div>
     <div class="share-grid" style="margin-top:14px">
-      ${phone ? `<a class="sh wa" target="_blank" rel="noopener" href="${esc(waLink(phone, msg))}"><i class="fa-brands fa-whatsapp"></i>إرسال واتساب</a>` : ''}
-      ${priv.email ? `<a class="sh li" href="mailto:${esc(priv.email)}?subject=${encodeURIComponent('بيانات الدخول — مدرّبون سعوديّون')}&body=${encodeURIComponent(msg)}"><i class="fa-solid fa-envelope"></i>إرسال بريد</a>` : ''}
+      <button class="sh li" id="sm"><i class="fa-solid fa-envelope"></i>إرسال بالبريد</button>
+      <button class="sh wa" id="sw"><i class="fa-brands fa-whatsapp"></i>إرسال واتساب</button>
       <button class="sh cp" id="cm"><i class="fa-solid fa-copy"></i>نسخ الرسالة</button>
       <button class="sh im" id="ci"><i class="fa-solid fa-image"></i>صورة البطاقة</button>
-    </div>`);
+    </div>
+    ${priv.email || priv.phone ? '' : '<p class="small muted">لا توجد بيانات تواصل محفوظة لهذا المدرب؛ انسخ الرسالة وأرسلها له.</p>'}`);
   m.$('#cs').onclick = () => copyText(secret, 'تم نسخ الرمز');
-  m.$('#cm').onclick = () => copyText(msg, 'تم نسخ الرسالة');
+  m.$('#sm').onclick = () => sendMailNotice(priv.email, Tpl.mail('final', ctx), log('noticeFinalMail'));
+  m.$('#sw').onclick = () => sendWaNotice(priv.phone, Tpl.wa('final', ctx), log('noticeFinalWa'));
+  m.$('#cm').onclick = () => copyText(Tpl.wa('final', ctx), 'تم نسخ الرسالة');
   m.$('#ci').onclick = () => Card.save(t, 'post');
 }
 
@@ -474,7 +532,7 @@ function aRequests(main) {
       </div>
       <div class="acts" style="flex-direction:column">
         ${r.kind === 'lead' ? `<a class="btn sm primary" target="_blank" rel="noopener" data-wa="${esc(r.id)}" href="${esc(tp?.phone ? waLink(tp.phone, leadDraft(r, t)) : '#')}" title="فتح محادثة المدرب مع مسودة الرسالة"><i class="fa-brands fa-whatsapp"></i> للمدرب</a>
-        ${tp?.email ? `<a class="btn sm" href="mailto:${esc(tp.email)}?subject=${encodeURIComponent('طلب تواصل جديد — ' + r.topic)}&body=${encodeURIComponent(leadDraft(r, t))}" title="بريد للمدرب"><i class="fa-solid fa-envelope"></i> للمدرب</a>` : ''}
+        ${tp?.email ? `<a class="btn sm" target="_blank" rel="noopener" href="${esc(gmailCompose(tp.email, 'طلب تواصل جديد — ' + r.topic, leadDraft(r, t), ''))}" title="بريد للمدرب (Gmail)"><i class="fa-solid fa-envelope"></i> للمدرب</a>` : ''}
         ${Automation.on ? `<button class="btn sm" data-mail="${esc(r.id)}" title="إعادة إرسال البريد الآلي"><i class="fa-solid fa-rotate"></i> البريد</button>` : ''}` : ''}
         <a class="btn sm" target="_blank" rel="noopener" href="${esc(waLink(r.phone, `السلام عليكم ${r.person}، معك فريق منصة مدرّبون سعوديّون بخصوص طلبكم: ${r.topic}`))}" title="واتساب الجهة"><i class="fa-brands fa-whatsapp"></i> للجهة</a>
         <button class="btn sm" data-show="${r.kind}" data-id="${esc(r.id)}" title="عرض في «من طلبات هذا الشهر»"><i class="fa-solid fa-table-cells-large"></i></button>
@@ -562,7 +620,7 @@ function aContent(main) {
   const sec = (k, title, fields) => `<div class="pbox"><h3><i class="fa-solid fa-pen"></i>${title}</h3><div style="display:grid;gap:12px">${fields.map(([f, l, type, hint]) => field(l, type === 'area' ? `<textarea data-k="${k}.${f}">${esc(c[k][f])}</textarea>` : `<input type="${type || 'text'}" data-k="${k}.${f}" value="${esc(c[k][f])}">`, hint || '')).join('')}</div></div>`;
   main.innerHTML = `<div class="dash-h"><h2>المحتوى العام</h2><button class="btn primary" id="sv"><i class="fa-solid fa-floppy-disk"></i> حفظ كل التغييرات</button></div>
     <div class="banner info"><i class="fa-solid fa-house"></i>محتوى الصفحة الرئيسية وأقسامها يُعدَّل من تبويب «الصفحة الرئيسية»، وحقول نموذج التسجيل من «النماذج».</div>
-    ${sec('join', 'التسجيل والرسوم', [['fee', 'الرسوم (ريال)', 'number'], ['feeNote', 'وصف الرسوم'], ['period', 'مدة الاشتراك'], ['requirements', 'المتطلبات', 'area', 'كل متطلب في سطر'], ['benefits', 'المزايا', 'area', 'كل ميزة في سطر'], ['payment', 'تعليمات السداد', 'area'], ['bank', 'بيانات الحساب البنكي (تُرسل في رسالة القبول فقط)', 'area']])}
+    ${sec('join', 'التسجيل والرسوم', [['fee', 'الرسوم (ريال)', 'number'], ['feeNote', 'وصف الرسوم'], ['period', 'مدة الاشتراك'], ['requirements', 'المتطلبات', 'area', 'كل متطلب في سطر'], ['benefits', 'المزايا', 'area', 'كل ميزة في سطر'], ['payment', 'تعليمات السداد', 'area']])}
     ${sec('about', 'عن المنصة', [['intro', 'التعريف', 'area'], ['problem', 'المشكلة', 'area'], ['solution', 'الحل', 'area'], ['vision', 'الرؤية', 'area'], ['registered', 'سطر التسجيل الرسمي']])}
     ${sec('halls', 'القاعات', [['intro', 'النص التعريفي', 'area']])}
     ${sec('contact', 'تواصل المنصة (يظهر في التذييل)', [['email', 'البريد', 'email'], ['whatsapp', 'واتساب المنصة'], ['instagram', 'إنستقرام', 'url'], ['x', 'إكس', 'url'], ['linkedin', 'لينكدإن', 'url']])}`;

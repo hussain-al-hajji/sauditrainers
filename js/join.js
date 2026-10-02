@@ -131,10 +131,10 @@ Pages.status = {
       const idx = st.status === 'interview' ? 1 : order.indexOf(st.status);
       const rej = st.status === 'rejected';
       const items = [
-        ['fa-inbox', 'استلام الطلب', 'تم استلام طلبك بنجاح'],
+        ['fa-inbox', 'استلام الطلب', 'تم استلام طلبك بنجاح، وهو تحت الدراسة'],
         ['fa-magnifying-glass', 'المراجعة', st.status === 'interview' ? 'نحتاج استيضاحاً منك، سنتواصل معك' : 'يراجع الفريق بياناتك ومؤهلاتك'],
-        ['fa-circle-check', 'القبول والسداد', 'تم قبول طلبك — بانتظار سداد الرسوم وإرسال الإيصال'],
-        ['fa-certificate', 'النشر', 'بطاقتك منشورة وتصلك بيانات الدخول']
+        ['fa-circle-check', 'القبول المبدئي والسداد', 'تم قبول طلبك مبدئياً — بانتظار تحويل رسوم الاشتراك وإرسال الإيصال'],
+        ['fa-certificate', 'القبول النهائي', 'تم تأكيد التحويل وتفعيل حسابك وبطاقتك، وتصلك بيانات الدخول']
       ];
       $('#so', root).innerHTML = `<div class="timeline">${items.map((it, i) => {
         const cls = rej && i === 1 ? 'bad' : i < idx || (i === idx && st.status === 'published') ? 'done' : i === idx ? 'cur' : '';

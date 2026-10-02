@@ -122,3 +122,21 @@ const Automation = {
       .then(() => true, () => false);
   }
 };
+
+/* قوالب رسائل مراحل التسجيل */
+const Tpl = {
+  get(key) { return { ...defaultTemplates()[key], ...(Store.get(`settings/templates/${key}`) || {}) }; },
+  render(text, vars) {
+    return String(text || '').replace(/\{(\w+)\}/g, (_, k) => (vars[k] == null ? '' : String(vars[k]))).replace(/\*\*(.+?)\*\*/g, '$1').replace(/\n{3,}/g, '\n\n').trim();
+  },
+  // متغيرات الرسالة: من الطلب (a) والمدرب المنشور (t) والرمز السري
+  vars({ a = {}, t = null, secret = '' } = {}) {
+    const c = Data.content(), name = (t?.name || a.name || '').trim();
+    return { name, first: name.replace(/^(د|م|أ)\.\s*/, '').split(/\s+/)[0] || name, appId: a.id || t?.appId || '', fee: c.join.fee, period: c.join.period,
+      payment: c.join.payment, bank: Store.get('settings/payment/bank') || '(أضف بيانات الحساب البنكي في الإدارة ← قوالب)', memberCode: t?.code || '', secret,
+      loginUrl: `${siteBase()}#/login`, profileUrl: t ? profileUrl(t) : '', statusUrl: `${siteBase()}#/status?id=${a.id || ''}` };
+  },
+  // الواتساب يستخدم *نص عريض* بدل ** في البريد
+  mail(key, ctx) { const t = this.get(key); return { subject: this.render(t.subject, this.vars(ctx)), body: this.render(t.body, this.vars(ctx)) }; },
+  wa(key, ctx) { const t = this.get(key); return String(t.wa || '').replace(/\{(\w+)\}/g, (_, k) => (this.vars(ctx)[k] ?? '')).trim(); }
+};

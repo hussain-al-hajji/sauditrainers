@@ -425,6 +425,27 @@
           "trainerId": {
             ".validate": "newData.isString() && newData.val().length <= 20"
           },
+          "receivedEmailAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "initialAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "finalAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "noticeInitialMail": {
+            ".validate": "newData.isNumber()"
+          },
+          "noticeInitialWa": {
+            ".validate": "newData.isNumber()"
+          },
+          "noticeFinalMail": {
+            ".validate": "newData.isNumber()"
+          },
+          "noticeFinalWa": {
+            ".validate": "newData.isNumber()"
+          },
           "status": {
             ".validate": "newData.val() == 'new' || (((auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com')) || (auth != null && root.child('sauditrainers/admins/' + auth.uid).exists())) || newData.val() == 'done')"
           },

@@ -30,7 +30,8 @@ function doPost(e) {
   try {
     if (body.action === 'lead' && id) sendLeadEmail(id);
     else if (body.action === 'request' && id) notifyAdmin('requests', id);
-    else if (body.action === 'application' && id) notifyAdmin('applications', id);
+    else if (body.action === 'application' && id) { notifyAdmin('applications', id); sendReceivedEmail(id); }
+    else if (body.action === 'outbox' && id) sendOutbox(id);
     else if (body.action === 'publish' && id) publishPost(id);
     else if (body.action === 'ping') ping();
   } catch (err) {
@@ -96,6 +97,33 @@ function notifyAdmin(kind, id) {
   MailApp.sendEmail({ to: CFG.ADMIN_EMAIL, subject: isApp ? `طلب تسجيل مدرب جديد: ${r.name}` : `طلب مدرب جديد: ${r.topic}`, name: CFG.FROM_NAME,
     htmlBody: emailHtml(isApp ? 'طلب تسجيل جديد' : 'طلب جديد من جهة تدريبية', 'التفاصيل في لوحة الإدارة.', rows, ['فتح لوحة الإدارة', `${CFG.SITE}#/admin`]) });
   db(`${kind}/${id}`, 'patch', { notifiedAt: Date.now() });
+}
+
+/* ===================== رسائل مراحل طلب التسجيل ===================== */
+// نص الاستلام الافتراضي (يطابق قالب «استلام الطلب» في js/data.js)، ويُستبدل بقالب الإدارة المحفوظ في settings/templates/received
+const DEFAULT_RECEIVED = {
+  subject: 'تأكيد استلام طلب تسجيلك — مدرّبون سعوديّون',
+  body: 'السلام عليكم ورحمة الله وبركاته\n\n{name}،\n\nنشكر لك اهتمامك بالانضمام إلى منصة «مدرّبون سعوديّون».\nنؤكد استلام طلب تسجيلك برقم الطلب: {appId}، وهو الآن تحت الدراسة من فريق المنصة، وسنوافيك بالمستجدات على بريدك وجوالك.\n\nيمكنك متابعة حالة طلبك في أي وقت:\n{statusUrl}\n\nمع التحية،\nمنصة مدرّبون سعوديّون'
+};
+function fillTpl(text, vars) { return String(text || '').replace(/\{(\w+)\}/g, (m, k) => (vars[k] == null ? '' : String(vars[k]))).replace(/\*\*(.+?)\*\*/g, '$1').replace(/\n{3,}/g, '\n\n').trim(); }
+function plainMail(to, subject, body, cc) {
+  MailApp.sendEmail({ to, cc: cc || '', subject, name: CFG.FROM_NAME, replyTo: CFG.ADMIN_EMAIL, body, htmlBody: emailHtml(subject, '', [], null).replace(/<p style="margin:0 0 16px"><\/p>/, `<div style="white-space:pre-wrap;margin:0 0 16px">${esc(body)}</div>`) });
+}
+// إشعار تلقائي للمسجّل فور تعبئة النموذج: تأكيد الاستلام وأن الطلب تحت الدراسة
+function sendReceivedEmail(id) {
+  const a = db(`applications/${id}`);
+  if (!a || a.receivedEmailAt || !a.email || Date.now() - (a.ts || 0) > 3 * 864e5) return;
+  const t = Object.assign({}, DEFAULT_RECEIVED, db('settings/templates/received') || {});
+  const vars = { name: a.name, first: String(a.name || '').replace(/^(د|م|أ)\.\s*/, '').split(/\s+/)[0], appId: a.id, statusUrl: `${CFG.SITE}#/status?id=${a.id}` };
+  plainMail(a.email, fillTpl(t.subject, vars), fillTpl(t.body, vars));
+  db(`applications/${id}`, 'patch', { receivedEmailAt: Date.now() });
+}
+// بريد مُعدّ من لوحة الإدارة (القبول المبدئي والنهائي): يُكتب في outbox ثم يُرسل ويُمسح نصه (قد يحوي رمز الدخول)
+function sendOutbox(id) {
+  const o = db(`outbox/${id}`);
+  if (!o || o.sentAt || !o.to || Date.now() - (o.ts || 0) > 864e5) return;
+  plainMail(o.to, o.subject, o.body, CFG.ADMIN_EMAIL);
+  db(`outbox/${id}`, 'patch', { sentAt: Date.now(), body: '(أُرسل — حُذف النص)', subject: o.subject });
 }
 
 /* ===================== النشر في وسائل التواصل ===================== */
