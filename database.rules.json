@@ -76,6 +76,10 @@
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000",
             ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
           },
+          "noPhoto": {
+            ".validate": "newData.isBoolean()",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
           "photoX": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100",
             ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
@@ -382,6 +386,9 @@
           },
           "programs": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000"
+          },
+          "noPhoto": {
+            ".validate": "newData.isBoolean()"
           },
           "photoX": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"

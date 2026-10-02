@@ -27,6 +27,7 @@ PUBLIC = {
     'bio': S(1200), 'topics': S(800), 'certs': S(800), 'langs': S(60), 'theme': S(20), 'photoUrl': S(300),
     'years': N(60), 'hours': N(100000), 'programs': N(10000),
     # إطار الصورة الدائرية: الموضع والتكبير
+    'noPhoto': 'newData.isBoolean()',
     'photoX': N(100), 'photoY': N(100), 'photoZ': 'newData.isNumber() && newData.val() >= 1 && newData.val() <= 3',
 }
 # إجابات الحقول المخصصة في النماذج (تُدار من لوحة الإدارة ← النماذج)

@@ -117,13 +117,16 @@ const FormKit = (() => {
     return `<div class="photo-field">
       <input type="url" name="photoUrl" dir="ltr" maxlength="300" value="${esc(d.photoUrl)}" placeholder="https://drive.google.com/file/d/.../view">
       <div class="pf-row">
-        <span class="pf-circle avw ${src ? '' : 'ph'}" data-i="${initials(d.name || '؟')}">${src ? `<img src="${esc(src)}" alt="" referrerpolicy="no-referrer" style="${Card.imgStyle(f)}">` : '<i class="fa-solid fa-user"></i>'}</span>
+        <span class="pf-circle avw ${d.noPhoto ? 'sym' : src ? '' : 'ph'}" data-i="${initials(d.name || '؟')}">${d.noPhoto ? Card.symbol(d.gender) : src ? `<img src="${esc(src)}" alt="" referrerpolicy="no-referrer" style="${Card.imgStyle(f)}">` : '<i class="fa-solid fa-user"></i>'}</span>
         <div class="pf-ranges">
           <label><span><i class="fa-solid fa-arrows-left-right"></i> الموضع الأفقي</span><input type="range" dir="ltr" name="photoX" min="0" max="100" value="${f.x}"></label>
           <label><span><i class="fa-solid fa-arrows-up-down"></i> الموضع الرأسي</span><input type="range" dir="ltr" name="photoY" min="0" max="100" value="${f.y}"></label>
           <label><span><i class="fa-solid fa-magnifying-glass-plus"></i> التكبير</span><input type="range" dir="ltr" name="photoZ" min="1" max="2.5" step="0.05" value="${f.z}"></label>
         </div>
       </div>
+      <div class="pf-np ${d.gender === 'f' ? '' : 'hidden'}"><input type="hidden" name="noPhoto" value="${d.noPhoto ? '1' : ''}">
+        <button type="button" class="btn sm ${d.noPhoto ? 'primary' : 'ghost'}" data-nophoto><i class="fa-solid fa-user-slash"></i> <span>${d.noPhoto ? 'ستظهر بطاقتي بصورة رمزية — اضغط للتراجع وإضافة صورة' : 'لا أرغب بنشر الصورة الشخصية مطلقاً'}</span></button>
+        <small class="muted">تظهر في بطاقتك صورة رمزية بلا ملامح تشير إلى أن صاحبة البطاقة مدربة.</small></div>
       <p class="pf-msg small muted">${src ? '' : 'اختيارية — يمكنك تأجيل هذه الخطوة الآن وإضافة صورتك لاحقاً من لوحتك عند الرغبة في نشرها.'}</p>
       <details class="drive-help"><summary><i class="fa-brands fa-google-drive"></i> كيف أضيف صورتي من Google Drive؟</summary>
         <ol><li>ارفع صورة شخصية واضحة إلى Google Drive.</li><li>اضغط على الصورة بالزر الأيمن ← مشاركة ← «أي شخص لديه الرابط» (عارض).</li><li>انسخ الرابط والصقه هنا، ثم نسّق الصورة داخل الدائرة.</li></ol></details>
@@ -148,6 +151,7 @@ const FormKit = (() => {
     });
     ['years', 'hours', 'programs'].forEach(k => { if (k in d) d[k] = Math.max(0, Number(toEnDigits(d[k])) || 0); });
     ['photoX', 'photoY', 'photoZ'].forEach(k => { if (k in d) d[k] = Number(d[k]); });
+    d.noPhoto = d.noPhoto === '1' && d.gender === 'f'; // الصورة الرمزية للمدربات فقط
     if (d.specs) d.specs = d.specs.slice(0, MAX_SPECS);
     Object.keys(d.extra).forEach(k => { if (d.extra[k] === '' || d.extra[k] == null) delete d.extra[k]; });
     return d;
@@ -165,7 +169,7 @@ const FormKit = (() => {
       if (f.type === 'tel' && !validPhone(v)) return bad(f, 'رقم الجوال غير صحيح (مثال: 0501234567)');
       if (f.type === 'email' && !validEmail(v)) return bad(f, 'البريد الإلكتروني غير صحيح');
       if (f.type === 'url' && !safeUrl(v)) return bad(f, `الرابط غير صحيح: ${f.label}`);
-      if (f.type === 'photo' && !isDriveLink(v) && !String(v).startsWith('data:image/')) return bad(f, 'أضف رابط مشاركة الصورة من Google Drive');
+      if (f.type === 'photo' && !d.noPhoto && !isDriveLink(v) && !String(v).startsWith('data:image/')) return bad(f, 'أضف رابط مشاركة الصورة من Google Drive');
       if (['text', 'textarea'].includes(f.type) && !f.priv && f.k !== 'nameEn') { const leak = leaksContact(v); if (leak) return bad(f, `«${f.label}» يحتوي ${leak}. التواصل مع المدربين يتم عبر نموذج المنصة فقط`); }
     }
     return null;
@@ -181,6 +185,12 @@ const FormKit = (() => {
     const photo = () => {
       if (!pf) return;
       const d = read(form), c = $('.pf-circle', pf), msg = $('.pf-msg', pf), src = Data.photo(d), f = Card.fit(d);
+      pf.classList.toggle('np', !!d.noPhoto);
+      $('.pf-np', pf).classList.toggle('hidden', d.gender !== 'f');
+      const npb = $('[data-nophoto]', pf); npb.classList.toggle('primary', !!d.noPhoto); npb.classList.toggle('ghost', !d.noPhoto);
+      $('span', npb).textContent = d.noPhoto ? 'ستظهر بطاقتي بصورة رمزية — اضغط للتراجع وإضافة صورة' : 'لا أرغب بنشر الصورة الشخصية مطلقاً';
+      if (d.noPhoto) { c.className = 'pf-circle avw sym'; c.innerHTML = Card.symbol('f'); msg.textContent = 'ستظهر في بطاقتك صورة رمزية بلا ملامح تشير إلى أن صاحبتها مدربة.'; return; }
+      c.classList.remove('sym');
       if (!d.photoUrl) { c.classList.add('ph'); c.innerHTML = '<i class="fa-solid fa-user"></i>'; msg.textContent = ''; return; }
       if (!isDriveLink(d.photoUrl) && !d.photoUrl.startsWith('data:image/')) { msg.textContent = 'الصق رابط مشاركة من Google Drive'; return; }
       let img = $('img', c);
@@ -194,6 +204,12 @@ const FormKit = (() => {
       img.style.cssText = Card.imgStyle(f);
     };
     form.addEventListener('input', e => { if (pf && pf.contains(e.target)) photo(); });
+    if (pf) {
+      $('[data-nophoto]', pf).onclick = () => { const h = pf.querySelector('[name=noPhoto]'); h.value = h.value ? '' : '1'; photo(); preview(); };
+      // تغيير الجنس: يظهر الزر للمدربات فقط، ويُلغى خيار الصورة الرمزية عند اختيار «مدرب»
+      const g = form.querySelector('[name=gender]');
+      g && g.addEventListener('change', () => { if (g.value !== 'f') pf.querySelector('[name=noPhoto]').value = ''; photo(); });
+    }
     form.addEventListener('input', debounce(preview, 140));
     form.addEventListener('change', preview);
   }

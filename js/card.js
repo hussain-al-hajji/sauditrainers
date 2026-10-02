@@ -11,7 +11,14 @@ const Card = (() => {
   const imgStyle = f => `object-position:${f.x}% ${f.y}%;transform-origin:${f.x}% ${f.y}%;transform:scale(${f.z})`;
   function clampN(v, a, b, d) { const n = Number(v); return Number.isFinite(n) && v !== '' && v != null ? Math.min(b, Math.max(a, n)) : d; }
 
+  // صورة رمزية بلا ملامح لمن لا ترغب بنشر صورتها: مدربة (حجاب وجه فارغ) أو مدرب (رأس وكتفان)
+  const SYM_F = 'M50 10C34 10 24 21 24 36c0 9 3 16 8 21C20 62 12 72 10 100h80c-2-28-10-38-22-43 5-5 8-12 8-21C76 21 66 10 50 10z';
+  const SYM_M_BODY = 'M14 100c2-24 16-36 36-36s34 12 36 36z';
+  const symbol = g => (g === 'f'
+    ? `<svg viewBox="0 0 100 100" aria-hidden="true"><path d="${SYM_F}" fill="var(--acc,#EEF3E5)"/><ellipse cx="50" cy="37" rx="12" ry="15" fill="var(--a,#003A21)" fill-opacity=".5"/></svg>`
+    : `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="36" r="17" fill="var(--acc,#EEF3E5)"/><path d="${SYM_M_BODY}" fill="var(--acc,#EEF3E5)"/></svg>`);
   function avatar(t, cls = '') {
+    if (t.noPhoto) return `<span class="${cls} avw sym" role="img" aria-label="${t.gender === 'f' ? 'صورة رمزية لمدربة' : 'صورة رمزية'}">${symbol(t.gender)}</span>`;
     const p = Data.photo(t), ini = initials(t.name);
     if (!p) return `<span class="${cls} avw ph">${ini}</span>`;
     const f = fit(t);
@@ -155,8 +162,15 @@ const Card = (() => {
     ctx.beginPath(); ctx.arc(cx, cy, D / 2 + 16, 0, Math.PI * 2); ctx.fillStyle = th.accent; ctx.fill(); ctx.restore();
     ctx.beginPath(); ctx.arc(cx, cy, D / 2 + 6, 0, Math.PI * 2); ctx.fillStyle = th.b; ctx.fill();
     ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, D / 2, 0, Math.PI * 2); ctx.clip();
-    const photo = await loadImage(Data.photo(t));
-    if (photo) {
+    const photo = t.noPhoto ? null : await loadImage(Data.photo(t));
+    if (t.noPhoto) {
+      const pg = ctx.createLinearGradient(cx - D / 2, cy - D / 2, cx + D / 2, cy + D / 2); pg.addColorStop(0, th.c); pg.addColorStop(1, th.a);
+      ctx.fillStyle = pg; ctx.fillRect(cx - D / 2, cy - D / 2, D, D);
+      ctx.save(); ctx.translate(cx - D / 2, cy - D / 2); ctx.scale(D / 100, D / 100); ctx.fillStyle = th.accent;
+      if (t.gender === 'f') { ctx.fill(new Path2D(SYM_F)); ctx.fillStyle = hex(th.a, 0.5); ctx.beginPath(); ctx.ellipse(50, 37, 12, 15, 0, 0, Math.PI * 2); ctx.fill(); }
+      else { ctx.beginPath(); ctx.arc(50, 36, 17, 0, Math.PI * 2); ctx.fill(); ctx.fill(new Path2D(SYM_M_BODY)); }
+      ctx.restore();
+    } else if (photo) {
       const f = fit(t), s = Math.max(D / photo.width, D / photo.height), iw = photo.width * s, ih = photo.height * s;
       const ox = cx - D / 2 + D * f.x / 100, oy = cy - D / 2 + D * f.y / 100; // نقطة التكبير = نفس transform-origin في الصفحة
       ctx.translate(ox, oy); ctx.scale(f.z, f.z); ctx.translate(-ox, -oy);
@@ -227,7 +241,7 @@ const Card = (() => {
     ctx.fillText('للتواصل وطلب التدريب عبر المنصة', W - 110, fy + 64);
     ctx.fillStyle = th.accent; ctx.font = `600 28px ${UI}`; ctx.direction = 'ltr';
     ctx.fillText('sauditrainers.sa', W - 110, fy + 110);
-    cv.photoFailed = !!t.photoUrl && !photo;
+    cv.photoFailed = !t.noPhoto && !!t.photoUrl && !photo;
     return cv;
   }
 
@@ -274,5 +288,5 @@ const Card = (() => {
     m.el.querySelectorAll('[data-img]').forEach(b => { b.onclick = () => save(t, b.dataset.img); });
   }
 
-  return { full, mini, avatar, fit, imgStyle, save, share, shareSheet, render, toJPEG, themeVars };
+  return { full, mini, avatar, symbol, fit, imgStyle, save, share, shareSheet, render, toJPEG, themeVars };
 })();

@@ -11,7 +11,7 @@ const Data = (() => {
     return out;
   };
 
-  const photo = t => (t && driveImg(t.photoUrl)) || '';
+  const photo = t => (t && !t.noPhoto && driveImg(t.photoUrl)) || '';
   const specs = t => (Array.isArray(t?.specs) ? t.specs : Object.values(t?.specs || {})).filter(Boolean);
   const modes = t => (Array.isArray(t?.modes) ? t.modes : Object.values(t?.modes || {})).filter(Boolean);
   const topics = t => splitList(t?.topics);
@@ -77,7 +77,7 @@ const Data = (() => {
   }
 
   // الحقول العامة للمدرب (المسموح بتعديلها من صفحته — تطابق القواعد)
-  const PUBLIC_FIELDS = ['name', 'nameEn', 'title', 'gender', 'region', 'city', 'bio', 'specs', 'topics', 'modes', 'years', 'hours', 'programs', 'certs', 'langs', 'theme', 'photoUrl', 'photoX', 'photoY', 'photoZ'];
+  const PUBLIC_FIELDS = ['name', 'nameEn', 'title', 'gender', 'region', 'city', 'bio', 'specs', 'topics', 'modes', 'years', 'hours', 'programs', 'certs', 'langs', 'theme', 'photoUrl', 'photoX', 'photoY', 'photoZ', 'noPhoto'];
   // تقسيم إجابات الحقول المخصصة: العامة تظهر في صفحة المدرب، والباقي في بياناته الإدارية
   const splitExtra = extra => { const pub = {}, priv = {}; Object.entries(extra || {}).forEach(([k, v]) => { (FormKit.isPublicExtra(k) ? pub : priv)[k] = v; }); return { pub, priv }; };
   const pick = (o, keys) => { const r = {}; keys.forEach(k => { if (o[k] !== undefined) r[k] = o[k]; }); return r; };

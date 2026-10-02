@@ -63,7 +63,7 @@ function portalHome(main, t) {
         </div>
         <div class="pbox"><h3><i class="fa-solid fa-lightbulb"></i>نصائح لبطاقة أقوى</h3>
           <ul style="margin:0;padding-inline-start:18px;color:var(--ink2)">
-            ${!Data.photo(t) ? '<li>أضف صورة شخصية واضحة — البطاقات ذات الصور تحصل على مشاهدات أكثر.</li>' : ''}
+            ${!Data.photo(t) && !t.noPhoto ? '<li>أضف صورة شخصية واضحة — البطاقات ذات الصور تحصل على مشاهدات أكثر.</li>' : ''}
             ${Data.topics(t).length < 3 ? '<li>أضف برامجك التدريبية في «البرامج ومجالات الخبرة» لتظهر في نتائج البحث.</li>' : ''}
             ${!Number(t.hours) ? '<li>أضف عدد ساعاتك التدريبية لتظهر كمؤشر بارز في بطاقتك.</li>' : ''}
             <li>شارك بطاقتك في لينكدإن وإكس — كل مشاهدة تُحتسب في لوحتك.</li>
