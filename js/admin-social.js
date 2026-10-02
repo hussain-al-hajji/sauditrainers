@@ -5,7 +5,7 @@
 
 const PLATFORMS = [
   { k: 'x', name: 'إكس', icon: 'fa-brands fa-x-twitter', max: 280 },
-  { k: 'linkedin', name: 'لينكدإن', icon: 'fa-brands fa-linkedin-in', max: 3000 },
+  { k: 'linkedin', name: 'لينكدإن (الصفحة)', icon: 'fa-brands fa-linkedin-in', max: 3000 },
   { k: 'instagram', name: 'إنستقرام', icon: 'fa-brands fa-instagram', max: 2200 }
 ];
 const SOCIAL_TPL = {
@@ -272,7 +272,7 @@ function socialSettings() {
       ${Automation.on ? '<button class="btn sm" id="ping"><i class="fa-solid fa-satellite-dish"></i> اختبار الاتصال</button>' : ''}
     </div>
     <form id="ss" style="display:grid;gap:12px">
-      <div class="grid3">${PLATFORMS.map(x => field(`حساب ${x.name}`, `<input type="text" name="h_${x.k}" dir="ltr" value="${esc(s.handles?.[x.k] || '')}" placeholder="@account">`)).join('')}</div>
+      <div class="grid3">${PLATFORMS.map(x => field(x.k === 'linkedin' ? 'صفحة لينكدإن' : `حساب ${x.name}`, `<input type="text" name="h_${x.k}" dir="ltr" value="${esc(s.handles?.[x.k] || '')}" placeholder="${x.k === 'linkedin' ? 'saudi-trainers-sa' : '@account'}">`)).join('')}</div>
       ${field('الوسوم (هاشتاق)', `<input type="text" name="hashtags" value="${esc(s.hashtags)}">`)}
       <p class="small muted">المتغيرات: {name} {title} {region} {city} {specs} {spec1} {years} {hours} {bio} {link} {code} {hashtags} {handle}. يُحذف تلقائياً الجزء الذي متغيره فارغ.</p>
       ${PLATFORMS.map(x => field(`قالب ${x.name}`, `<textarea name="t_${x.k}" style="min-height:${x.k === 'x' ? 110 : 150}px">${esc(s.tpl?.[x.k] || SOCIAL_TPL[x.k])}</textarea>`)).join('')}
@@ -326,17 +326,19 @@ function linkGuide(open = 'base') {
       ])}
       ${props([['X_API_KEY', 'API Key'], ['X_API_SECRET', 'API Key Secret'], ['X_ACCESS_TOKEN', 'Access Token'], ['X_ACCESS_SECRET', 'Access Token Secret']])}
       <p class="small muted">إن رفضت X رفع الصورة يُنشر النص مع الرابط بلا صورة. في «اختبار الاتصال» تظهر إكس «مربوط» عند وجود المفاتيح الأربعة.</p>`)}
-    ${sec('linkedin', 'fa-brands fa-linkedin-in', '٣) لينكدإن', status(conn.linkedin), `
-      <p class="muted small">النشر عبر LinkedIn Posts API، إما باسم حساب شخصي أو باسم صفحة الشركة.</p>
+    ${sec('linkedin', 'fa-brands fa-linkedin-in', '٣) لينكدإن (صفحة الشركة Page)', status(conn.linkedin), `
+      <p class="muted small">النشر يتم باسم <b>صفحة المنصة</b> ${a('https://sa.linkedin.com/company/saudi-trainers-sa', 'saudi-trainers-sa')} وليس حساباً شخصياً، عبر LinkedIn Posts API وصلاحية <code>w_organization_social</code>.</p>
       ${steps([
-        `افتح ${a('https://www.linkedin.com/developers/apps', 'LinkedIn Developers')} ← <b>Create app</b> واربطه بصفحة المنصة على لينكدإن (مطلوب) وأضف شعار المنصة.`,
-        `من تبويب <b>Products</b>: اطلب <b>Share on LinkedIn</b> للنشر من حساب شخصي (<code>w_member_social</code>)، أو <b>Community Management API</b> للنشر باسم الصفحة (<code>w_organization_social</code>، يحتاج موافقة لينكدإن).`,
+        `يلزم أن يكون صاحب التوكن <b>مشرفاً (Super admin أو Content admin)</b> على الصفحة. تحقق من: صفحة المنصة ← <b>Admin tools</b> ← Manage admins.`,
+        `افتح ${a('https://www.linkedin.com/developers/apps', 'LinkedIn Developers')} ← <b>Create app</b>: اسم التطبيق، وفي حقل <b>LinkedIn Page</b> اختر صفحة المنصة (الربط بالصفحة إلزامي)، وأضف الشعار ورابط سياسة الخصوصية. ثم أرسل رابط التحقق للأدمن ليوافق على ربط التطبيق بالصفحة (Verify).`,
+        `من تبويب <b>Products</b> اطلب <b>Community Management API</b> (هي التي تمنح النشر باسم الصفحة، وتحتاج موافقة لينكدإن بعد نموذج استخدام قصير). منتج «Share on LinkedIn» وحده لا يكفي لأنه للحسابات الشخصية فقط.`,
         `من تبويب <b>Auth</b> أضف Redirect URL: <code>https://www.linkedin.com/developers/tools/oauth/redirect</code>.`,
-        `افتح ${a('https://www.linkedin.com/developers/tools/oauth', 'OAuth token generator')} واختر التطبيق والصلاحية ثم <b>Request access token</b> وانسخ <b>Access Token</b>.`,
-        `حدّد <b>LI_AUTHOR_URN</b>: للحساب الشخصي <code>urn:li:person:XXXX</code> (معرّف يظهر من طلب <code>/v2/userinfo</code> بحقل <b>sub</b>)، ولصفحة الشركة <code>urn:li:organization:رقم_الصفحة</code> (الرقم في رابط إدارة الصفحة).`,
-        `أضف القيم في Script Properties.`
+        `بعد الموافقة افتح ${a('https://www.linkedin.com/developers/tools/oauth', 'OAuth token generator')}، اختر التطبيق، وفعّل الصلاحية <code>w_organization_social</code> (ومعها <code>r_organization_social</code> إن طُلبت)، ثم <b>Request access token</b> بحساب مشرف الصفحة وانسخ <b>Access Token</b>.`,
+        `<b>معرّف الصفحة (رقمي):</b> افتح الصفحة كمشرف؛ الرقم يظهر في رابط لوحة الإدارة <code>linkedin.com/company/<b>12345678</b>/admin</code>. إن ظهر الرابط بالاسم فاضغط «Admin tools» أو انظر رقم الصفحة في رابط تحليلاتها. القيمة المطلوبة: <code>urn:li:organization:12345678</code>.`,
+        `أضف القيم في Script Properties، ثم اضغط «اختبار الاتصال».`
       ])}
-      ${props([['LI_ACCESS_TOKEN', 'التوكن (ينتهي بعد 60 يوماً ويُجدَّد بنفس الطريقة)'], ['LI_AUTHOR_URN', 'urn:li:person:... أو urn:li:organization:...'], ['LI_VERSION', 'اختياري: إصدار الواجهة بصيغة YYYYMM (الافتراضي 202501)']])}`)}
+      ${props([['LI_ACCESS_TOKEN', 'التوكن (ينتهي بعد 60 يوماً ويُجدَّد بنفس الطريقة)'], ['LI_AUTHOR_URN', 'urn:li:organization:رقم_الصفحة (يجب أن يكون organization لا person)'], ['LI_VERSION', 'اختياري: إصدار الواجهة بصيغة YYYYMM (الافتراضي 202501)']])}
+      <p class="small muted">المنشور يظهر باسم الصفحة وشعارها. وإن وصل خطأ 403 فغالباً التوكن ليس لمشرف الصفحة أو لم يُوافَق على Community Management API بعد.</p>`)}
     ${sec('instagram', 'fa-brands fa-instagram', '٤) إنستقرام', status(conn.instagram), `
       <p class="muted small">النشر عبر Instagram Graph API، ويتطلب <b>حساباً احترافياً</b> (Business أو Creator) مرتبطاً بصفحة فيسبوك. الصورة مطلوبة دائماً، والسكربت يرفعها مؤقتاً إلى Drive ثم يحذفها بعد النشر.</p>
       ${steps([
@@ -360,7 +362,7 @@ function linkGuide(open = 'base') {
       <ul class="gd-list">
         <li><b>«الحساب غير مربوط»:</b> مفتاح من المفاتيح ناقص أو بغير الاسم الدقيق في Script Properties.</li>
         <li><b>«حان موعده» ولم يُنشر:</b> تأكد أن المؤقت شغّال (شغّل <b>setupTriggers</b> مرة أخرى)، وأن «Who has access» للـ Web app هو Anyone.</li>
-        <li><b>خطأ 401/403 من المنصة:</b> انتهت صلاحية التوكن (لينكدإن وإنستقرام نحو 60 يوماً) أو ينقصه صلاحية؛ ولّده من جديد وحدّث القيمة.</li>
+        <li><b>خطأ 401/403 من المنصة:</b> انتهت صلاحية التوكن (لينكدإن وإنستقرام نحو 60 يوماً) أو ينقصه صلاحية؛ ولّده من جديد وحدّث القيمة. في لينكدإن تأكد أيضاً أن صاحب التوكن مشرف على الصفحة.</li>
         <li><b>إكس 403:</b> التوكن بصلاحية قراءة فقط؛ غيّر App permissions إلى Read and write ثم أعد توليد Access Token.</li>
         <li><b>أين أرى سبب الفشل؟</b> في سجل المنشور بجانب أيقونة المنصة (مرّر المؤشر)، وفي سكربت Apps Script ← Executions.</li>
         <li><b>بعد تعديل الكود لا يتغير السلوك:</b> انشر نسخة جديدة من الـ Deployment.</li>

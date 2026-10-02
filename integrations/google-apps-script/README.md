@@ -8,7 +8,7 @@
 | بريد تأكيد استلام الطلب للمسجّل (تحت الدراسة) | تلقائياً فور تعبئة نموذج التسجيل |
 | بريد القبول المبدئي (السداد) والقبول النهائي (الدخول والرمز) | عند الضغط على زر «بريد» في طلب التسجيل بلوحة الإدارة |
 | تنبيه الإدارة بالبريد | عند طلب تسجيل مدرب جديد، أو «اطلب مدرباً» |
-| نشر بطاقات المدربين في إكس ولينكدإن وإنستقرام | في الموعد المجدول (يفحص كل 5 دقائق) أو فوراً بزر «نشر الآن» |
+| نشر بطاقات المدربين في إكس وصفحة لينكدإن وإنستقرام | في الموعد المجدول (يفحص كل 5 دقائق) أو فوراً بزر «نشر الآن» |
 
 حدود الاستخدام المجانية لحساب Gmail عادي: نحو 100 رسالة بريد يومياً، وتشغيل المؤقت كل 5 دقائق ضمن الحصة المجانية.
 
@@ -47,12 +47,20 @@
 
 الباقة المجانية في X API محدودة بعدد قليل من المنشورات شهرياً، وتتغير شروطها من وقت لآخر، فراجعها في بوابة المطورين. رفع الصورة يتم عبر واجهة رفع الوسائط؛ إن رفضتها X يُنشر النص مع الرابط دون صورة.
 
-### لينكدإن
-1. [linkedin.com/developers](https://www.linkedin.com/developers/apps) ← Create app واربطه بصفحة المنصة.
-2. أضف منتج **Share on LinkedIn** (للنشر من حساب شخصي: `w_member_social`)، أو **Community Management API** (للنشر باسم صفحة الشركة: `w_organization_social`).
-3. أنشئ Access Token من OAuth 2.0 tools بالصلاحية المناسبة.
-4. أضف: `LI_ACCESS_TOKEN`، و`LI_AUTHOR_URN`. قيمته `urn:li:person:XXXX` للحساب الشخصي، أو `urn:li:organization:12345` لصفحة الشركة.
-5. التوكن صالح 60 يوماً، ويُجدَّد قبل انتهائه.
+### لينكدإن (صفحة الشركة Page)
+
+النشر باسم صفحة المنصة [saudi-trainers-sa](https://sa.linkedin.com/company/saudi-trainers-sa) وليس حساباً شخصياً.
+
+1. يلزم أن يكون صاحب التوكن **مشرفاً** على الصفحة (Admin tools ← Manage admins).
+2. [linkedin.com/developers](https://www.linkedin.com/developers/apps) ← Create app، واختر في **LinkedIn Page** صفحة المنصة (إلزامي) ثم أرسل رابط التحقق لمشرف الصفحة ليوافق.
+3. من تبويب **Products** اطلب **Community Management API** (تمنح النشر باسم الصفحة، وتحتاج موافقة لينكدإن). منتج «Share on LinkedIn» للحسابات الشخصية فقط ولا يكفي.
+4. من Auth أضف Redirect URL: `https://www.linkedin.com/developers/tools/oauth/redirect`.
+5. من [OAuth token generator](https://www.linkedin.com/developers/tools/oauth) ولّد Access Token بالصلاحية `w_organization_social` (مع `r_organization_social` إن طُلبت)، وبحساب مشرف الصفحة.
+6. رقم الصفحة يظهر في رابط لوحة إدارتها: `linkedin.com/company/12345678/admin`.
+7. أضف في Script Properties:
+   - `LI_ACCESS_TOKEN`: التوكن، ينتهي بعد 60 يوماً ويُجدَّد.
+   - `LI_AUTHOR_URN`: `urn:li:organization:12345678`، ويرفض السكربت أي قيمة ليست `organization`.
+   - `LI_VERSION`: اختياري، بصيغة `YYYYMM`.
 
 ### إنستقرام
 1. حوّل حساب المنصة إلى **حساب احترافي** واربطه بصفحة فيسبوك.

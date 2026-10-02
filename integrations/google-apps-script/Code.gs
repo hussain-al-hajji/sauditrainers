@@ -196,9 +196,11 @@ function postX(text, blob) {
   return `https://x.com/i/web/status/${JSON.parse(r.getContentText()).data.id}`;
 }
 
-/* ---------- لينكدإن (Posts API) ----------
- * Script Properties: LI_ACCESS_TOKEN (صلاحية w_member_social أو w_organization_social)، LI_AUTHOR_URN (urn:li:person:... أو urn:li:organization:...)
- * اختياري: LI_VERSION بصيغة YYYYMM (الافتراضي 202501). التوكن ينتهي بعد 60 يوماً ويُجدَّد. */
+/* ---------- لينكدإن: النشر باسم صفحة الشركة (Page) عبر Posts API ----------
+ * صفحة المنصة: https://sa.linkedin.com/company/saudi-trainers-sa
+ * Script Properties: LI_ACCESS_TOKEN (صلاحية w_organization_social من مشرف الصفحة، ويتطلب منتج Community Management API)،
+ * LI_AUTHOR_URN بصيغة urn:li:organization:رقم_الصفحة (رقم الصفحة يظهر في رابط لوحة إدارتها). اختياري: LI_VERSION بصيغة YYYYMM (الافتراضي 202501).
+ * التوكن ينتهي بعد 60 يوماً ويُجدَّد. */
 function liText(s) {
   // صيغة little text: تُهرَّب الرموز المحجوزة، والوسوم تُكتب بصيغة hashtag
   const escd = String(s).replace(/[\\|{}@\[\]()<>*_~]/g, m => '\\' + m);
@@ -206,6 +208,7 @@ function liText(s) {
 }
 function postLinkedIn(text, blob) {
   const tok = PROPS.getProperty('LI_ACCESS_TOKEN'), author = PROPS.getProperty('LI_AUTHOR_URN');
+  if (!/^urn:li:organization:\d+$/.test(author || '')) throw new Error('LI_AUTHOR_URN يجب أن يكون صفحة الشركة: urn:li:organization:رقم_الصفحة');
   const H = { Authorization: `Bearer ${tok}`, 'LinkedIn-Version': PROPS.getProperty('LI_VERSION') || '202501', 'X-Restli-Protocol-Version': '2.0.0' };
   let image = null;
   if (blob) {
