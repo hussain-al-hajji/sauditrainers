@@ -367,8 +367,8 @@ function aTrainers(main) {
   });
 }
 
-// في نموذج الإضافة من الإدارة: الاسم والمنطقة فقط إلزاميان
-const ADMIN_REQUIRED = ['name', 'region'];
+// الحقول الإلزامية في نموذج الإضافة من الإدارة (نفس إلزامية تعديل المدرب لبطاقته)
+const ADMIN_REQUIRED = ['name', 'gender', 'region', 'city', 'phone', 'email', 'title', 'specs', 'bio', 'modes', 'langs'];
 function trainerEditor(t) {
   const isNew = !t;
   t = t || { status: 'active', theme: 'brand', langs: 'العربية' };
@@ -397,7 +397,7 @@ function trainerEditor(t) {
   form.onsubmit = async e => {
     e.preventDefault();
     const d = FormKit.read(form);
-    // الإدارة: الاسم والمنطقة فقط إلزامية، مع التحقق من صيغ بقية الحقول
+    // الإدارة: الحقول الإلزامية ADMIN_REQUIRED، مع التحقق من صيغ بقية الحقول
     const err = FormKit.validate(steps.flatMap(s => s.fields).map(f => ({ ...f, lock: false, req: ADMIN_REQUIRED.includes(f.k) })), d, form);
     if (err) { toast(err, 'error'); return; }
     const ex = Data.splitExtra(d.extra);
@@ -686,13 +686,13 @@ function aBackup(main) {
 async function seedDemo() {
   const D = [
     ['م. فيصل الغامدي', 'Faisal Alghamdi', 'm', 'riyadh', 'الرياض', 'مدرب معتمد في الذكاء الاصطناعي وتحليل البيانات', ['ai-data', 'programming', 'digital'], 'تعلم الآلة للمبتدئين، تحليل البيانات بـ Python، الذكاء الاصطناعي التوليدي في بيئة العمل', 9, 2100, 85, 'deep', ['onsite', 'online']],
-    ['أ. نورة القحطاني', 'Noura Alqahtani', 'f', 'eastern', 'الدمام', 'مدربة قيادة وتطوير مؤسسي', ['leadership', 'hr', 'quality'], 'القيادة التحويلية، بناء فرق العمل، إدارة التغيير، التخطيط الاستراتيجي', 14, 3600, 140, 'sage', ['onsite', 'hybrid']],
+    ['أ. نورة القحطاني', 'Noura Alqahtani', 'f', 'eastern', 'الدمام', 'مدربة قيادة وتطوير مؤسسي', ['leadership', 'hr', 'quality'], 'القيادة التحويلية، بناء فرق العمل، إدارة التغيير، التخطيط الاستراتيجي', 14, 3600, 140, 'sage', ['onsite']],
     ['د. عبدالله الحربي', 'Abdullah Alharbi', 'm', 'madinah', 'المدينة المنورة', 'مستشار ومدرب في ريادة الأعمال', ['entrepreneur', 'finance', 'projects'], 'من الفكرة إلى المشروع، دراسات الجدوى، نماذج العمل التجارية، التمويل للمشاريع الناشئة', 11, 2800, 96, 'cream', ['onsite', 'online']],
-    ['أ. ريم الشهري', 'Reem Alshehri', 'f', 'asir', 'أبها', 'مدربة مهارات الاتصال وصناعة المحتوى', ['content', 'soft', 'marketing'], 'فن الإلقاء، صناعة المحتوى الرقمي، التسويق عبر وسائل التواصل، العلامة الشخصية', 7, 1500, 60, 'teal', ['online', 'hybrid']],
+    ['أ. ريم الشهري', 'Reem Alshehri', 'f', 'asir', 'أبها', 'مدربة مهارات الاتصال وصناعة المحتوى', ['content', 'soft', 'marketing'], 'فن الإلقاء، صناعة المحتوى الرقمي، التسويق عبر وسائل التواصل، العلامة الشخصية', 7, 1500, 60, 'teal', ['online']],
     ['م. خالد العتيبي', 'Khalid Alotaibi', 'm', 'makkah', 'جدة', 'مدرب الأمن السيبراني والتحول الرقمي', ['cyber', 'programming', 'digital'], 'أساسيات الأمن السيبراني، التوعية الأمنية للموظفين، حوكمة التقنية', 10, 1900, 70, 'olive', ['onsite', 'online']],
     ['أ. سارة الدوسري', 'Sarah Aldosari', 'f', 'qassim', 'بريدة', 'مدربة إرشاد مهني ومهارات التوظيف', ['career', 'hr-dev', 'soft'], 'كتابة السيرة الذاتية، اجتياز المقابلات، التخطيط المهني، إدارة الوقت', 6, 1100, 48, 'brand', ['onsite', 'online']],
     ['أ. ماجد الشمري', 'Majed Alshammari', 'm', 'hail', 'حائل', 'مدرب تطوير الذات والتفكير الإبداعي', ['hr-dev', 'innovation', 'education'], 'التفكير الإبداعي، حل المشكلات، الذكاء العاطفي، تصميم الحقائب التدريبية', 12, 3000, 120, 'brand', ['onsite']],
-    ['أ. هند المالكي', 'Hind Almalki', 'f', 'tabuk', 'تبوك', 'مدربة خدمة العملاء وتجربة المستفيد', ['customer', 'quality', 'soft'], 'تجربة العميل، التعامل مع العملاء الصعبين، معايير الجودة في الخدمة', 8, 1400, 55, 'sage', ['onsite', 'hybrid']]
+    ['أ. هند المالكي', 'Hind Almalki', 'f', 'tabuk', 'تبوك', 'مدربة خدمة العملاء وتجربة المستفيد', ['customer', 'quality', 'soft'], 'تجربة العميل، التعامل مع العملاء الصعبين، معايير الجودة في الخدمة', 8, 1400, 55, 'sage', ['onsite']]
   ];
   for (const [name, nameEn, gender, region, city, title, specs, topics, years, hours, programs, theme, modes] of D) {
     const code = await Data.nextCode(); const id = code.toLowerCase();

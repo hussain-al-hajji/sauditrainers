@@ -84,8 +84,7 @@ const arr = x => (Array.isArray(x) ? x.filter(v => v != null) : x && typeof x ==
 
 const DELIVERY = [
   { k: 'onsite', name: 'حضوري', icon: 'fa-people-roof' },
-  { k: 'online', name: 'عن بُعد', icon: 'fa-laptop' },
-  { k: 'hybrid', name: 'مدمج', icon: 'fa-shuffle' }
+  { k: 'online', name: 'عن بُعد', icon: 'fa-laptop' }
 ];
 
 const APP_STATUS = {
