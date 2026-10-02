@@ -238,7 +238,7 @@ textarea { min-height: 110px; resize: vertical; }
   box-shadow: 0 40px 80px -30px rgba(0,26,14,.55), inset 0 0 0 1.5px color-mix(in srgb, var(--acc) 55%, transparent), inset 0 0 0 9px color-mix(in srgb, var(--a) 60%, transparent), inset 0 0 0 10px color-mix(in srgb, var(--acc) 20%, transparent);
   transform: perspective(1000px) rotateX(var(--rx)) rotateY(var(--ry)); transition: transform .5s cubic-bezier(.2,.7,.2,1); transform-style: preserve-3d; }
 .tcard.tilting { transition: transform .08s linear; }
-.tcard::before { content: ''; position: absolute; inset: 0; background: var(--pat); background-size: 300px; z-index: -1; }
+.tcard::before { content: ''; position: absolute; inset: 0; background: var(--pat); background-size: 300px; z-index: -1; pointer-events: none; -webkit-mask: linear-gradient(to bottom, #000 0, #000 22%, rgba(0,0,0,.35) 50%, rgba(0,0,0,.18) 100%); mask: linear-gradient(to bottom, #000 0, #000 22%, rgba(0,0,0,.35) 50%, rgba(0,0,0,.18) 100%); }
 .tc-holo { position: absolute; inset: 0; z-index: 2; pointer-events: none; mix-blend-mode: soft-light; opacity: 0; transition: opacity .3s;
   background: radial-gradient(circle at var(--mx) var(--my), rgba(255,255,255,.35), transparent 40%), linear-gradient(115deg, transparent 30%, rgba(238,243,229,.28) 45%, rgba(170,255,230,.18) 52%, transparent 65%); background-size: 100% 100%, 250% 250%; background-position: 0 0, var(--mx) var(--my); }
 .tcard.tilting .tc-holo { opacity: .9; }

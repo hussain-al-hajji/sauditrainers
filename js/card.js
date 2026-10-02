@@ -26,7 +26,7 @@ const Card = (() => {
   }
   const themeVars = t => {
     const th = themeOf(t.theme);
-    return `--a:${th.a};--b:${th.b};--c:${th.c};--acc:${th.accent};--fg:${th.fg};--pat:${Pattern.css(th.light ? '#005430' : th.accent, th.light ? 0.12 : 0.14)}`;
+    return `--a:${th.a};--b:${th.b};--c:${th.c};--acc:${th.accent};--fg:${th.fg};--pat:${Pattern.css(th.light ? '#005430' : th.accent, th.light ? 0.06 : 0.07)}`;
   };
   const themeCls = t => (themeOf(t.theme).light ? 'light' : '');
   const stat = (v, l) => (Number(v) ? `<div class="tc-stat"><b class="num">${fmtNum(v)}+</b><span>${l}</span></div>` : '');
