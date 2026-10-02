@@ -35,31 +35,6 @@ const Card = (() => {
   const themeCls = (t, tp = cardTemplate()) => (themed(t, tp).light ? 'light' : '');
   const stat = (v, l) => (Number(v) ? `<div class="tc-stat"><b class="num">${fmtNum(v)}+</b><span>${l}</span></div>` : '');
 
-  /* علم المملكة المتموج: يُرسم على لوحة (شريحة عمودية بإزاحة جيبية وتظليل) فيظهر بُعدياً ويرفرف قليلاً بـCSS، وتُستخدم اللوحة نفسها في صورة المشاركة */
-  let flagC = null, flagDrawnEarly = false, fontsOk = false;
-  function flagCanvas() {
-    if (flagC) return flagC;
-    if (!fontsOk) flagDrawnEarly = true;
-    const w = 240, h = 160, A = 9, S = 2, f = document.createElement('canvas'); f.width = w; f.height = h;
-    const g = f.getContext('2d'), gr = g.createLinearGradient(0, 0, w, h);
-    gr.addColorStop(0, '#118F4A'); gr.addColorStop(1, '#055B2D'); g.fillStyle = gr; g.fillRect(0, 0, w, h);
-    g.fillStyle = '#fff'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.direction = 'rtl';
-    g.font = "900 21px 'Cairo','Noto Sans Arabic',sans-serif"; g.fillText('لا إله إلا الله محمد رسول الله', w / 2, h * 0.29, w * 0.84);
-    g.beginPath(); g.moveTo(w * 0.80, h * 0.60); g.quadraticCurveTo(w * 0.5, h * 0.575, w * 0.15, h * 0.645); g.quadraticCurveTo(w * 0.5, h * 0.645, w * 0.80, h * 0.665); g.closePath(); g.fill();
-    g.fillRect(w * 0.80, h * 0.555, w * 0.022, h * 0.15); g.fillRect(w * 0.822, h * 0.605, w * 0.075, h * 0.05);
-    g.beginPath(); g.arc(w * 0.905, h * 0.63, h * 0.032, 0, Math.PI * 2); g.fill();
-    const c = document.createElement('canvas'); c.width = w; c.height = h + 2 * A; const o = c.getContext('2d');
-    for (let x = 0; x < w; x += S) {
-      const ph = x / w * Math.PI * 2.4 + 0.6, dy = A * Math.sin(ph), sl = Math.cos(ph);
-      o.drawImage(f, x, 0, S, h, x, A + dy, S, h);
-      o.fillStyle = sl > 0 ? `rgba(0,0,0,${0.24 * sl})` : `rgba(255,255,255,${0.2 * -sl})`; o.fillRect(x, A + dy, S, h);
-    }
-    return (flagC = c);
-  }
-  const flagURL = () => flagCanvas().toDataURL('image/png');
-  // أعد رسم العلم بعد تحميل الخط إن رُسم قبله
-  if (typeof document !== 'undefined' && document.fonts) document.fonts.load("900 21px 'Cairo'", 'لا إله').then(() => { fontsOk = true; if (flagDrawnEarly) { flagC = null; const u = flagURL(); document.querySelectorAll('.tc-flag').forEach(i => { i.src = u; }); } }, () => {});
-
   // البطاقة الكاملة (صفحة المدرب والمعاينة ولوحة المدرب)
   function full(t, { preview = false, tpl } = {}) {
     const tp = tpl || cardTemplate(), sp = Data.cardSpecs(t).slice(0, tp.maxSpecs), th = themed(t, tp), x = tp.text;
@@ -70,7 +45,7 @@ const Card = (() => {
         ${tp.show.logo ? logoImg(th.light ? 'green' : 'cream', 'tc-logo') : '<span></span>'}
         <span class="tc-code">${preview ? esc(x.preview) : ''}</span>
       </header>
-      <div class="tc-ring">${avatar(t, 'tc-photo')}${tp.show.flag ? `<span class="tc-verified" title="المملكة العربية السعودية"><img class="tc-flag" alt="" src="${flagURL()}"></span>` : ''}</div>
+      <div class="tc-ring">${avatar(t, 'tc-photo')}${tp.show.badge ? '<span class="tc-verified" title="مدرب موثّق"><i class="fa-solid fa-certificate"></i><i class="fa-solid fa-check"></i></span>' : ''}</div>
       <h2 class="tc-name">${esc(t.name || 'اسم المدرب')}</h2>
       ${tp.show.title && t.title ? `<p class="tc-title">${esc(t.title)}</p>` : ''}
       ${tp.show.region && regionsOf(t).length ? `<div class="tc-meta"><span><i class="fa-solid fa-location-dot"></i>${esc(regionsLabel(t, true, tp.maxRegions))}</span></div>` : ''}
@@ -146,13 +121,22 @@ const Card = (() => {
   }
   const hex = (h, a) => { const n = parseInt(h.slice(1), 16); return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`; };
 
+  // أيقونة الموقع (دبوس) على لوحة الرسم
+  function pin(ctx, x, y, k, color) {
+    ctx.save(); ctx.translate(x, y); ctx.scale(k, k); ctx.fillStyle = color; ctx.beginPath();
+    ctx.moveTo(0, 16); ctx.bezierCurveTo(-20, -4, -15, -24, 0, -24); ctx.bezierCurveTo(15, -24, 20, -4, 0, 16);
+    ctx.moveTo(6.5, -9); ctx.arc(0, -9, 6.5, 0, Math.PI * 2, true); ctx.fill('evenodd'); ctx.restore();
+  }
+  // أبعاد صور المشاركة: منشور 4:5، قصة 9:16، وعرضي 16:9
+  const SIZES = { post: [1080, 1350], story: [1080, 1920], wide: [1600, 900] };
+
   async function render(t, format = 'post', tpl) {
     const tp = tpl || cardTemplate(), x0 = tp.text;
     const HEAD = fontCss(tp.fonts.name), BODY = fontCss(tp.fonts.body), UI = BODY, BRAND = fontCss(tp.fonts.brand);
     await ensureFonts(tp);
     const hasQR = await ensureQR();
     const th = themed(t, tp), light = !!th.light, fg = th.fg;
-    const W = 1080, H = format === 'story' ? 1920 : 1350;
+    const wide = format === 'wide', [W, H] = SIZES[format] || SIZES.post;
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const ctx = cv.getContext('2d');
     ctx.direction = 'rtl'; ctx.textAlign = 'center';
@@ -161,7 +145,8 @@ const Card = (() => {
     const g = ctx.createLinearGradient(0, 0, W, H);
     g.addColorStop(0, th.a); g.addColorStop(0.55, th.b); g.addColorStop(1, th.a);
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    const glow = ctx.createRadialGradient(W * 0.5, H * 0.3, 20, W * 0.5, H * 0.3, W * 0.8);
+    const gx = wide ? W * 0.8 : W * 0.5, gy = wide ? H * 0.4 : H * 0.3;
+    const glow = ctx.createRadialGradient(gx, gy, 20, gx, gy, W * 0.8);
     glow.addColorStop(0, hex(th.c, light ? 0.35 : 0.55)); glow.addColorStop(1, hex(th.c, 0));
     ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
     const tile = !tp.show.pattern || !tp.patternOpacity ? null : await loadImage(Pattern.url(light ? '#005430' : th.accent, light ? 0.1 : 0.11));
@@ -175,9 +160,11 @@ const Card = (() => {
     // الترويسة: الشعار الرسمي (رقم المدرب لا يُعرض للزوار)
     const top = format === 'story' ? 150 : 100;
     const logo = tp.show.logo ? await loadImage(light ? LOGO.green : LOGO.cream) : null;
-    if (logo && tp.show.logo) { const lh = 104, lw = lh * logo.width / logo.height; ctx.drawImage(logo, W - 96 - lw, top - 52, lw, lh); }
+    if (logo) { const lh = 104, lw = lh * logo.width / logo.height; ctx.drawImage(logo, wide ? 96 : W - 96 - lw, top - 52, lw, lh); }
+
     // الصورة الدائرية
-    const D = format === 'story' ? 470 : 400, cx = W / 2, cy = top + (format === 'story' ? 150 : 110) + D / 2;
+    const D = wide ? 380 : format === 'story' ? 470 : 360;
+    const cx = wide ? W - 100 - 16 - D / 2 : W / 2, cy = wide ? 66 + (H - M - 14 - 130 - 66) / 2 + 6 : top + (format === 'story' ? 150 : 96) + D / 2;
     ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 18;
     ctx.beginPath(); ctx.arc(cx, cy, D / 2 + 16, 0, Math.PI * 2); ctx.fillStyle = th.accent; ctx.fill(); ctx.restore();
     ctx.beginPath(); ctx.arc(cx, cy, D / 2 + 6, 0, Math.PI * 2); ctx.fillStyle = th.b; ctx.fill();
@@ -202,66 +189,85 @@ const Card = (() => {
       ctx.fillStyle = fg; ctx.font = `900 140px ${HEAD}`; ctx.textBaseline = 'middle'; ctx.fillText(tmp.textContent, cx, cy + 6); ctx.textBaseline = 'alphabetic';
     }
     ctx.restore();
-    // علم المملكة على الصورة
-    if (tp.show.flag) { const fc = flagCanvas(), fw = 190, fh = fw * fc.height / fc.width; ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 24; ctx.shadowOffsetY = 10; ctx.drawImage(fc, cx + D * 0.5 - fw * 0.78, cy + D * 0.5 - fh * 0.78, fw, fh); ctx.restore(); }
-
-    // الاسم واللقب
-    let y = cy + D / 2 + 100;
-    ctx.fillStyle = fg; ctx.font = `900 ${Math.round((String(t.name || '').length > 22 ? 56 : 66) * tp.nameScale / 100)}px ${HEAD}`;
-    ctx.fillText(t.name || '', W / 2, y);
-    ctx.font = `600 32px ${BODY}`; ctx.fillStyle = th.accent;
-    if (tp.show.title) wrap(ctx, t.title, W - 260, 2).forEach(l => { y += 54; ctx.fillText(l, W / 2, y); });
-    const meta = tp.show.region ? regionsLabel(t, true, tp.maxRegions) : '';
-    if (meta) { y += 52; ctx.font = `500 27px ${UI}`; ctx.fillStyle = hex(fg, 0.8); ctx.fillText(meta, W / 2, y); }
-
-    // الإحصاءات
-    const stats = !tp.show.stats ? [] : [[t.years, x0.years], [t.hours, x0.hours], [t.programs, x0.programs]].filter(s => Number(s[0]));
-    if (stats.length) {
-      y += 46; const bw = 250, gap = 24, total = stats.length * bw + (stats.length - 1) * gap;
-      let x = W / 2 + total / 2;
-      stats.forEach(([v, l]) => {
-        rr(ctx, x - bw, y, bw, 124, 24); ctx.fillStyle = hex(fg, 0.08); ctx.fill(); ctx.strokeStyle = hex(th.accent, 0.4); ctx.lineWidth = 1.5; ctx.stroke();
-        ctx.fillStyle = fg; ctx.font = `900 50px ${HEAD}`; ctx.direction = 'ltr'; ctx.fillText(`${fmtNum(v)}+`, x - bw / 2, y + 62); ctx.direction = 'rtl';
-        ctx.fillStyle = hex(fg, 0.72); ctx.font = `500 24px ${UI}`; ctx.fillText(l, x - bw / 2, y + 102);
-        x -= bw + gap;
-      });
-      y += 124;
+    // شارة التوثيق
+    if (tp.show.badge) {
+      const bx = cx + D * 0.36, by = cy + D * 0.36;
+      ctx.fillStyle = th.accent; seal(ctx, bx, by, 44); ctx.fill();
+      ctx.strokeStyle = light ? '#FFFFFF' : th.b; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.beginPath(); ctx.moveTo(bx - 13, by + 1); ctx.lineTo(bx - 3, by + 11); ctx.lineTo(bx + 15, by - 10); ctx.stroke();
     }
 
-    // التخصصات
+    // الاسم والسطر التعريفي والمنطقة والإحصاءات والتخصصات (تتوسط في العمودي، وتحاذي يمين العمود في العرضي)
+    const ax = wide ? cx - D / 2 - 70 : W / 2, colW = wide ? ax - 96 : W - 260;
+    ctx.textAlign = wide ? 'right' : 'center';
+    let y = wide ? 238 : cy + D / 2 + 104;
+    let ns = Math.round((wide ? 76 : String(t.name || '').length > 22 ? 56 : 66) * tp.nameScale / 100);
+    ctx.fillStyle = fg; ctx.font = `900 ${ns}px ${HEAD}`;
+    while (ns > 36 && ctx.measureText(t.name || '').width > colW) { ns -= 4; ctx.font = `900 ${ns}px ${HEAD}`; }
+    ctx.fillText(t.name || '', ax, y);
+    if (tp.show.title && t.title) {
+      ctx.font = `600 ${wide ? 34 : 32}px ${BODY}`; ctx.fillStyle = th.accent;
+      wrap(ctx, t.title, colW, 2).forEach((l, i) => { y += i ? 52 : 66; ctx.fillText(l, ax, y); });
+    }
+    const meta = tp.show.region ? regionsLabel(t, true, tp.maxRegions) : '';
+    if (meta) {
+      y += wide ? 76 : 72; ctx.font = `700 ${wide ? 36 : 38}px ${UI}`; ctx.fillStyle = hex(fg, 0.92);
+      const mw = ctx.measureText(meta).width, pr = ax + (wide ? 0 : mw / 2 + 40);
+      ctx.textAlign = 'right'; ctx.fillText(meta, wide ? ax - 48 : W / 2 + mw / 2, y);
+      pin(ctx, wide ? ax - 17 : pr - 8, y - 10, 1.15, th.accent);
+      ctx.textAlign = wide ? 'right' : 'center';
+    }
+
+    const stats = !tp.show.stats ? [] : [[t.years, x0.years], [t.hours, x0.hours], [t.programs, x0.programs]].filter(s => Number(s[0]));
+    if (stats.length) {
+      y += wide ? 40 : 44;
+      const bw = wide ? 210 : 250, bh = wide ? 112 : 112, gap = wide ? 20 : 24, total = stats.length * bw + (stats.length - 1) * gap;
+      let x = wide ? ax : W / 2 + total / 2;
+      ctx.textAlign = 'center';
+      stats.forEach(([v, l]) => {
+        rr(ctx, x - bw, y, bw, bh, 24); ctx.fillStyle = hex(fg, 0.08); ctx.fill(); ctx.strokeStyle = hex(th.accent, 0.4); ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.fillStyle = fg; ctx.font = `900 ${wide ? 44 : 50}px ${HEAD}`; ctx.direction = 'ltr'; ctx.fillText(`${fmtNum(v)}+`, x - bw / 2, y + bh * 0.5); ctx.direction = 'rtl';
+        ctx.fillStyle = hex(fg, 0.72); ctx.font = `500 ${wide ? 22 : 24}px ${UI}`; ctx.fillText(l, x - bw / 2, y + bh - 20);
+        x -= bw + gap;
+      });
+      y += bh;
+    }
+
     const sp = !tp.show.specs ? [] : Data.cardSpecs(t).slice(0, Math.min(tp.maxSpecs, format === 'story' ? 6 : 4)).map(specName);
     if (sp.length) {
-      y += 36; ctx.font = `600 26px ${UI}`;
-      const rows = []; let row = [], rw = 0; const maxW = W - 220;
+      y += wide ? 34 : 40; ctx.font = `600 ${wide ? 25 : 26}px ${UI}`; ctx.textAlign = 'center';
+      const rows = []; let row = [], rw = 0; const maxW = wide ? colW : W - 220;
       sp.forEach(s => { const w = ctx.measureText(s).width + 48; if (row.length && rw + 14 + w > maxW) { rows.push({ row, rw }); row = []; rw = 0; } rw += (row.length ? 14 : 0) + w; row.push({ s, w }); });
       if (row.length) rows.push({ row, rw });
-      rows.slice(0, 3).forEach(r => {
-        let x = W / 2 + r.rw / 2;
-        r.row.forEach(it => { rr(ctx, x - it.w, y, it.w, 56, 28); ctx.fillStyle = hex(th.accent, light ? 0.1 : 0.14); ctx.fill(); ctx.strokeStyle = hex(th.accent, 0.5); ctx.lineWidth = 1.5; ctx.stroke(); ctx.fillStyle = fg; ctx.fillText(it.s, x - it.w / 2, y + 37); x -= it.w + 14; });
-        y += 70;
+      const limitY = tp.show.footer ? H - M - 14 - (wide ? 130 : 150) - 24 : H - M - 40, rowH = wide ? 64 : 70;
+      rows.slice(0, wide ? 2 : 3).filter((_, i) => y + (i + 1) * rowH - 14 <= limitY).forEach(r => {
+        let x = wide ? ax : W / 2 + r.rw / 2;
+        r.row.forEach(it => { rr(ctx, x - it.w, y, it.w, wide ? 52 : 56, 28); ctx.fillStyle = hex(th.accent, light ? 0.1 : 0.14); ctx.fill(); ctx.strokeStyle = hex(th.accent, 0.5); ctx.lineWidth = 1.5; ctx.stroke(); ctx.fillStyle = fg; ctx.fillText(it.s, x - it.w / 2, y + (wide ? 35 : 37)); x -= it.w + 14; });
+        y += wide ? 64 : 70;
       });
     }
 
     // التذييل: رمز QR + الرابط (التواصل عبر المنصة)
-    const fy = H - M - 14 - 150;
     if (tp.show.footer) {
-    ctx.fillStyle = light ? 'rgba(0,84,48,.07)' : 'rgba(0,0,0,.22)'; rr(ctx, M + 14, fy, W - 2 * M - 28, 150, 30); ctx.fill();
-    if (hasQR) {
-      try {
-        const qr = window.qrcode(0, 'M'); qr.addData(profileUrl(t)); qr.make();
-        const n = qr.getModuleCount(), size = 116, cell = size / n, qx = 104, qy = fy + 17;
-        ctx.fillStyle = '#fff'; rr(ctx, qx - 8, qy - 8, size + 16, size + 16, 12); ctx.fill();
-        ctx.fillStyle = '#00331D';
-        for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) ctx.fillRect(qx + c * cell, qy + r * cell, Math.ceil(cell), Math.ceil(cell));
-      } catch { /* ignore */ }
-    }
-    ctx.textAlign = 'right'; ctx.fillStyle = hex(fg, 0.85); ctx.font = `600 27px ${UI}`;
-    ctx.fillText(x0.footLead, W - 110, fy + 56);
-    // اسم المنصة | الرابط في سطر واحد
-    let bxr = W - 110; ctx.fillStyle = th.accent; ctx.font = `900 40px ${BRAND}`;
-    ctx.fillText(x0.brand, bxr, fy + 108); bxr -= ctx.measureText(x0.brand).width + 20;
-    ctx.fillStyle = hex(fg, 0.5); ctx.font = `400 38px ${UI}`; ctx.fillText('|', bxr, fy + 106); bxr -= ctx.measureText('|').width + 20;
-    ctx.fillStyle = hex(fg, 0.85); ctx.font = `700 32px ${BRAND}`; ctx.direction = 'ltr'; ctx.fillText(x0.site, bxr, fy + 106);
+      const fh = wide ? 130 : 150, fy = H - M - 14 - fh;
+      ctx.fillStyle = light ? 'rgba(0,84,48,.07)' : 'rgba(0,0,0,.22)'; rr(ctx, M + 14, fy, W - 2 * M - 28, fh, 30); ctx.fill();
+      if (hasQR) {
+        try {
+          const qr = window.qrcode(0, 'M'); qr.addData(profileUrl(t)); qr.make();
+          const n = qr.getModuleCount(), size = wide ? 94 : 116, cell = size / n, qx = 104, qy = fy + (fh - size) / 2;
+          ctx.fillStyle = '#fff'; rr(ctx, qx - 8, qy - 8, size + 16, size + 16, 12); ctx.fill();
+          ctx.fillStyle = '#00331D';
+          for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) ctx.fillRect(qx + c * cell, qy + r * cell, Math.ceil(cell), Math.ceil(cell));
+        } catch { /* ignore */ }
+      }
+      const r0 = W - 110, y1 = fy + (wide ? 50 : 56), y2 = fy + (wide ? 104 : 108);
+      ctx.textAlign = 'right'; ctx.fillStyle = hex(fg, 0.85); ctx.font = `600 ${wide ? 26 : 27}px ${UI}`;
+      ctx.fillText(x0.footLead, r0, y1);
+      // اسم المنصة | الرابط في سطر واحد
+      let bxr = r0; ctx.fillStyle = th.accent; ctx.font = `900 ${wide ? 38 : 40}px ${BRAND}`;
+      ctx.fillText(x0.brand, bxr, y2); bxr -= ctx.measureText(x0.brand).width + 20;
+      ctx.fillStyle = hex(fg, 0.5); ctx.font = `400 38px ${UI}`; ctx.fillText('|', bxr, y2 - 2); bxr -= ctx.measureText('|').width + 20;
+      ctx.fillStyle = hex(fg, 0.85); ctx.font = `700 ${wide ? 30 : 32}px ${BRAND}`; ctx.direction = 'ltr'; ctx.fillText(x0.site, bxr, y2 - 2);
     }
     cv.photoFailed = !t.noPhoto && !!t.photoUrl && !photo;
     return cv;
@@ -304,11 +310,12 @@ const Card = (() => {
         <button class="sh cp" data-copy><i class="fa-solid fa-link"></i>نسخ الرابط</button>
         <button class="sh im" data-img="post"><i class="fa-solid fa-image"></i>صورة منشور</button>
         <button class="sh st" data-img="story"><i class="fa-solid fa-mobile-screen"></i>صورة قصة</button>
+        <button class="sh wd" data-img="wide"><i class="fa-solid fa-panorama"></i>صورة عرضية</button>
       </div>
       <p class="muted small">صور المنشور (4:5) والقصة (9:16) مناسبة لإنستقرام وسناب ولينكدإن، وفيها رمز QR يفتح صفحة المدرب مباشرة.</p>`);
     m.$('[data-copy]').onclick = () => copyText(url, 'تم نسخ رابط البطاقة');
     m.el.querySelectorAll('[data-img]').forEach(b => { b.onclick = () => save(t, b.dataset.img); });
   }
 
-  return { full, mini, avatar, symbol, fit, imgStyle, save, share, shareSheet, render, toJPEG, themeVars, flagURL };
+  return { full, mini, avatar, symbol, fit, imgStyle, save, share, shareSheet, render, toJPEG, themeVars };
 })();

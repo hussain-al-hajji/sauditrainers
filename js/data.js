@@ -26,7 +26,7 @@ const regionsLabel = (t, short = false, max = 2) => { const n = regionsOf(t).map
 /* قالب البطاقة التعريفية: محتواها وخصائصها وألوانها وخطوطها، تحرره الإدارة من تبويب «قوالب» ويُحفظ في content/cardTemplate */
 const CARD_FONTS = ['Cairo', 'Tajawal', 'Almarai', 'IBM Plex Sans Arabic', 'Noto Sans Arabic'];
 const CARD_TPL_DEFAULT = {
-  show: { logo: true, title: true, region: true, stats: true, specs: true, flag: true, pattern: true, footer: true },
+  show: { logo: true, title: true, region: true, stats: true, specs: true, badge: true, pattern: true, footer: true },
   text: { years: 'سنة خبرة', hours: 'ساعة تدريبية', programs: 'برنامج ودورة', footLead: 'لقراءة السيرة الذاتية وللتواصل تفضل بزيارة منصة', brand: 'مدرّبون سعوديّون', site: 'SaudiTrainers.sa', preview: 'معاينة' },
   maxSpecs: 6, maxRegions: 2, nameScale: 100, patternOpacity: 100, radius: 30,
   colors: { on: false, a: '#005430', b: '#0A7A45', c: '#1A9A63', accent: '#EEF3E5', fg: '#FFFFFF' },

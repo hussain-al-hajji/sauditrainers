@@ -58,6 +58,7 @@ function portalHome(main, t) {
           <div class="share-grid">
             <button class="sh im" data-img="post"><i class="fa-solid fa-image"></i>منشور 4:5</button>
             <button class="sh st" data-img="story"><i class="fa-solid fa-mobile-screen"></i>قصة 9:16</button>
+            <button class="sh wd" data-img="wide"><i class="fa-solid fa-panorama"></i>عرضي 16:9</button>
             <button class="sh cp" id="cl"><i class="fa-solid fa-link"></i>نسخ رابط صفحتي</button>
           </div>
         </div>

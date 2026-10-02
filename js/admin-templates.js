@@ -65,13 +65,13 @@ function cardTemplateBox(host) {
     host.innerHTML = `<div class="pbox"><h3><i class="fa-solid fa-id-card"></i>قالب البطاقة التعريفية ${Store.get('content/cardTemplate') ? '<span class="pill gold">معدَّل</span>' : ''}</h3>
       <p class="muted small">يسري على بطاقات كل المدربين في الموقع وصور المشاركة (المنشور والقصة). تُعاين التعديلات فوراً قبل الحفظ.</p>
       <div class="editor"><div style="display:grid;gap:14px">
-        <div class="field"><span>العناصر الظاهرة</span><div class="checks">${chk('show.logo', 'الشعار')}${chk('show.title', 'السطر التعريفي')}${chk('show.region', 'المنطقة')}${chk('show.stats', 'الإحصاءات')}${chk('show.specs', 'التخصصات')}${chk('show.flag', 'علم المملكة')}${chk('show.pattern', 'نقش القرطاسية')}${chk('show.footer', 'التذييل')}</div></div>
+        <div class="field"><span>العناصر الظاهرة</span><div class="checks">${chk('show.logo', 'الشعار')}${chk('show.title', 'السطر التعريفي')}${chk('show.region', 'المنطقة')}${chk('show.stats', 'الإحصاءات')}${chk('show.specs', 'التخصصات')}${chk('show.badge', 'شارة التوثيق (النجمة)')}${chk('show.pattern', 'نقش القرطاسية')}${chk('show.footer', 'التذييل')}</div></div>
         <div class="grid2">${rng('maxSpecs', 'عدد التخصصات في البطاقة', 1, 6)}${rng('maxRegions', 'عدد المناطق المعروضة', 1, 3)}${rng('nameScale', 'حجم الاسم %', 70, 130)}${rng('patternOpacity', 'وضوح النقش %', 0, 100)}${rng('radius', 'استدارة الحواف', 0, 48)}</div>
         <div class="grid2">${txt('text.years', 'نص: سنوات الخبرة')}${txt('text.hours', 'نص: الساعات التدريبية')}${txt('text.programs', 'نص: البرامج والدورات')}${txt('text.preview', 'كلمة المعاينة')}${txt('text.footLead', 'عبارة التذييل')}${txt('text.brand', 'اسم المنصة في التذييل')}${txt('text.site', 'الرابط في التذييل')}</div>
         <div class="grid2">${fnt('fonts.name', 'خط الاسم')}${fnt('fonts.body', 'خط النصوص')}${fnt('fonts.brand', 'خط اسم المنصة والرابط')}</div>
         <div class="field"><span>الألوان</span><div class="checks">${chk('colors.on', 'استخدام ألوان القالب بدل ثيم كل مدرب')}</div>
           <div class="grid2" ${draft.colors.on ? '' : 'style="opacity:.45"'}>${col('colors.a', 'الخلفية (داكن)')}${col('colors.b', 'الخلفية (متوسط)')}${col('colors.c', 'التوهج')}${col('colors.accent', 'لون التمييز')}${col('colors.fg', 'لون النص')}</div></div>
-        <div class="row"><button class="btn primary" id="ct-save"><i class="fa-solid fa-floppy-disk"></i> حفظ القالب</button><button class="btn sm" id="ct-img"><i class="fa-solid fa-image"></i> معاينة صورة المنشور</button><button class="btn sm ghost" id="ct-reset" ${Store.get('content/cardTemplate') ? '' : 'disabled'}><i class="fa-solid fa-rotate-left"></i> القالب الافتراضي</button></div>
+        <div class="row"><button class="btn primary" id="ct-save"><i class="fa-solid fa-floppy-disk"></i> حفظ القالب</button><button class="btn sm" id="ct-img"><i class="fa-solid fa-image"></i> معاينة صورة المنشور</button><button class="btn sm" id="ct-wide"><i class="fa-solid fa-panorama"></i> معاينة الصورة العرضية</button><button class="btn sm ghost" id="ct-reset" ${Store.get('content/cardTemplate') ? '' : 'disabled'}><i class="fa-solid fa-rotate-left"></i> القالب الافتراضي</button></div>
       </div><div class="preview"><div id="ct-pv"></div>
         <div class="checks" style="justify-content:center;margin-top:10px">${CARD_THEMES.map(t => `<label title="${t.name}"><input type="radio" name="ctheme" value="${t.k}" ${t.k === theme ? 'checked' : ''}><span class="cdot" style="background:linear-gradient(135deg,${t.a},${t.c})"></span></label>`).join('')}</div></div></div></div>`;
     preview();
@@ -89,7 +89,7 @@ function cardTemplateBox(host) {
     const b = e.target.closest('button'); if (!b) return;
     if (b.id === 'ct-save') { await Store.set('content/cardTemplate', cardTemplate(draft)); Security.log('تعديل قالب البطاقة', ''); toast('حُفظ قالب البطاقة'); draw(); }
     if (b.id === 'ct-reset') { if (!await confirmBox('العودة إلى القالب الافتراضي؟', { ok: 'استعادة' })) return; await Store.set('content/cardTemplate', null); draft = cardTemplate(null); toast('استُعيد القالب الافتراضي'); draw(); }
-    if (b.id === 'ct-img') { const cv = await Card.render(sample(), fmt, cardTemplate(draft)); cv.style.width = '100%'; cv.style.borderRadius = '14px'; const m = modal('<h3><i class="fa-solid fa-image"></i> صورة المنشور</h3><div id="ctv"></div>'); m.$('#ctv').appendChild(cv); }
+    if (b.id === 'ct-img' || b.id === 'ct-wide') { const cv = await Card.render(sample(), b.id === 'ct-wide' ? 'wide' : fmt, cardTemplate(draft)); cv.style.width = '100%'; cv.style.borderRadius = '14px'; const m = modal('<h3><i class="fa-solid fa-image"></i> صورة المنشور</h3><div id="ctv"></div>'); m.$('#ctv').appendChild(cv); }
   });
   draw();
 }

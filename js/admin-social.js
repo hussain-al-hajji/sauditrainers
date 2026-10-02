@@ -93,7 +93,7 @@ function aSocial(main) {
     return `<div class="sp-row">
       ${Card.avatar(t, 'av')}
       <div class="grow"><b>${esc(t.name || '')}</b> <span class="pill ${tone}">${sn}</span>${overdue ? ` <span class="pill warn" title="${Automation.on ? 'لم يُنشر بعد — تحقق من الربط' : 'الربط الآلي غير مفعّل — انشره يدوياً'}"><i class="fa-solid fa-clock"></i> حان موعده</span>` : ''}<br>
-        <small class="muted">${p.scheduledAt ? `<i class="fa-regular fa-calendar"></i> ${fmtTs(p.scheduledAt)}` : 'دون موعد'} · ${p.format === 'story' ? 'قصة 9:16' : 'منشور 4:5'}</small>
+        <small class="muted">${p.scheduledAt ? `<i class="fa-regular fa-calendar"></i> ${fmtTs(p.scheduledAt)}` : 'دون موعد'} · ${{ story: 'قصة 9:16', wide: 'عرضي 16:9' }[p.format] || 'منشور 4:5'}</small>
         <div class="sp-plats">${PLATFORMS.filter(x => p.platforms?.[x.k]).map(x => { const r = p.results?.[x.k]; return `<span class="sp-pl ${r?.ok ? 'ok' : r?.err ? 'bad' : ''}" title="${r?.err ? esc(r.err) : r?.ok ? (r.manual ? 'نُشر يدوياً' : 'نُشر آلياً') : 'لم يُنشر'}"><i class="${x.icon}"></i>${r?.url ? `<a href="${esc(safeUrl(r.url))}" target="_blank" rel="noopener">عرض</a>` : ''}</span>`; }).join('')}</div>
       </div>
       <div class="acts">
@@ -170,7 +170,7 @@ function postEditor(post) {
       <div class="pe-main">
         <div class="grid2">
           ${field('المدرب *', `<select name="trainerId" required><option value="">اختر المدرب</option>${live.map(x => opt(x.id, `${x.name} — ${x.code}`, t?.id)).join('')}</select>`)}
-          ${field('شكل الصورة', `<select name="format">${opt('post', 'منشور 4:5 (إنستقرام ولينكدإن وإكس)', post.format)}${opt('story', 'قصة 9:16', post.format)}</select>`)}
+          ${field('شكل الصورة', `<select name="format">${opt('post', 'منشور 4:5 (إنستقرام ولينكدإن وإكس)', post.format)}${opt('story', 'قصة 9:16', post.format)}${opt('wide', 'عرضي 16:9 (لينكدإن وإكس)', post.format)}</select>`)}
         </div>
         <div class="field"><span>المنصات</span><div class="checks">${PLATFORMS.map(x => `<label class="chk"><input type="checkbox" name="pl_${x.k}" ${plats[x.k] ? 'checked' : ''}><span><i class="${x.icon}"></i>${x.name}</span></label>`).join('')}</div></div>
         ${PLATFORMS.map(x => `<label class="field pe-cap" data-p="${x.k}"><span><i class="${x.icon}"></i> نص ${x.name} <em class="cnt num"></em> <button type="button" class="btn sm ghost" data-regen="${x.k}"><i class="fa-solid fa-rotate"></i> توليد</button></span><textarea name="tx_${x.k}" style="min-height:${x.k === 'x' ? 120 : 170}px">${esc(post.text?.[x.k] || '')}</textarea></label>`).join('')}
@@ -231,7 +231,7 @@ function bulkScheduler() {
       <div class="grid3">
         ${field('أول موعد', `<input type="datetime-local" name="start" value="${Social.localDT(start)}">`)}
         ${field('الفاصل بين المنشورات', `<select name="gap">${opt(24, 'يوم', 24)}${opt(12, '12 ساعة')}${opt(48, 'يومان')}${opt(72, '3 أيام')}${opt(168, 'أسبوع')}</select>`)}
-        ${field('شكل الصورة', `<select name="format">${opt('post', 'منشور 4:5')}${opt('story', 'قصة 9:16')}</select>`)}
+        ${field('شكل الصورة', `<select name="format">${opt('post', 'منشور 4:5')}${opt('story', 'قصة 9:16')}${opt('wide', 'عرضي 16:9')}</select>`)}
       </div>
       <button class="btn primary lg" id="bgo"><i class="fa-solid fa-calendar-check"></i> إنشاء الجدول</button>
     </form>`, { wide: true });
