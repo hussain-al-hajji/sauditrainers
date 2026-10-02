@@ -24,7 +24,7 @@ window.ST_CONFIG = {
   adminIdleHours: 72,
   // رابط Google Apps Script للأتمتة (بريد المدربين من حساب المنصة + النشر المجدول). اتركه فارغاً لتعطيلها.
   // طريقة الإعداد في integrations/google-apps-script/README.md
-  automationUrl: '',
+  automationUrl: 'https://script.google.com/macros/s/AKfycby3JIzlHHTEUk2dRdDw-V9GWvqNNFPTS1a_K5t0evOTgGN5qD2lKmWZeI5Nrn25YQtN/exec',
   // رقم واتساب المنصة الذي تُرسل منه الرسائل (يُفتح منه واتساب ويب/التطبيق عند الضغط على زر الإرسال)
   platformWhatsapp: '966562391007',
   // الرابط الرسمي: يظهر للمستخدمين في الروابط والبطاقات وQR ورسائل البريد والواتساب ومنشورات التواصل
