@@ -894,3 +894,8 @@ input[type=range] { accent-color: var(--g700); width: 100%; }
 .ack-box { display: flex; gap: 10px; align-items: flex-start; background: var(--cream, #EEF3E5); border-radius: 12px; padding: 12px 14px; color: var(--ink2); font-size: .92rem; }
 .ack-box p { margin: 0; }
 .ack-note { margin: 18px 0 0; font-size: .8rem; color: var(--ink2); opacity: .75; display: flex; gap: 8px; align-items: flex-start; }
+
+/* بحث القوائم الطويلة */
+.list-search { width: 100%; margin-bottom: 8px; padding: 9px 14px; border: 1.5px solid var(--line); border-radius: 12px; background: #fff; font: inherit; font-size: .88rem; }
+.list-search:focus { outline: none; border-color: var(--g600); box-shadow: 0 0 0 4px rgba(26,154,99,.15); }
+.ls-off { display: none !important; }

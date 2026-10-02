@@ -21,6 +21,7 @@ function aSpecs(main) {
     <p class="muted small">يختار المدرب حتى 15 مجالاً من هذه القائمة، ويظهر منها 6 في بطاقته. التعديل يسري على النماذج والبحث فوراً. حذف تخصص يُزيله من اختيارات المدربين.</p>
     ${pend.length ? `<div class="pbox"><h3><i class="fa-solid fa-lightbulb"></i>اقتراحات المدربين (${pend.length})</h3>
       <div class="tbl-wrap"><table class="tbl"><tbody>${pend.map((p, i) => `<tr><td>${esc(p.name)}</td><td class="muted">${esc(p.who)}</td><td><button class="btn sm primary" data-ok="${i}">اعتماد وإضافة</button> <button class="btn sm ghost" data-no="${i}">تجاهل</button></td></tr>`).join('')}</tbody></table></div></div>` : ''}
+    <input type="search" class="list-search" id="sq" placeholder="ابحث في التخصصات...">
     <div class="tbl-wrap"><table class="tbl"><thead><tr><th></th><th>الاسم</th><th>الأيقونة</th><th>المدربون</th><th></th></tr></thead><tbody>
       ${list.map((s, i) => `<tr><td><i class="fa-solid ${esc(s.icon)}"></i></td><td>${esc(s.name)}</td><td class="muted num" dir="ltr">${esc(s.icon)}</td><td class="num">${counts[s.k] || 0}</td>
         <td><button class="btn sm" data-ed="${i}"><i class="fa-solid fa-pen"></i></button> <button class="btn sm ghost" data-del="${i}" style="color:var(--bad)"><i class="fa-solid fa-trash"></i></button></td></tr>`).join('')}
@@ -42,6 +43,7 @@ function aSpecs(main) {
       m.close(); save(next);
     };
   };
+  $('#sq', main).oninput = e => { const q = normAr(e.target.value); $$('.tbl tbody tr', $('.tbl-wrap:last-of-type', main)).forEach(r => r.classList.toggle('ls-off', !!q && !normAr(r.children[1].textContent).includes(q))); };
   $('#add', main).onclick = () => editor(null);
   $$('[data-ed]', main).forEach(b => b.onclick = () => editor(list[+b.dataset.ed], +b.dataset.ed));
   $$('[data-del]', main).forEach(b => b.onclick = async () => {

@@ -180,3 +180,38 @@ function tilt(root = document) {
     el.addEventListener('pointerleave', () => { el.style.setProperty('--rx', '0deg'); el.style.setProperty('--ry', '0deg'); el.classList.remove('tilting'); });
   });
 }
+
+/* مربع بحث تلقائي أول كل قائمة طويلة: القوائم المنسدلة وشبكات الاختيار (أكثر من 12 عنصراً)، أينما ظهرت */
+const LONG_LIST = 12;
+function addListSearch(root = document) {
+  const mk = () => { const i = document.createElement('input'); i.type = 'search'; i.className = 'list-search'; i.placeholder = 'ابحث في القائمة...'; i.setAttribute('aria-label', 'بحث في القائمة'); i.autocomplete = 'off'; return i; };
+  root.querySelectorAll('select:not([data-ls]):not([multiple])').forEach(sel => {
+    if (sel.options.length <= LONG_LIST) return;
+    sel.dataset.ls = '1';
+    const all = [...sel.options], box = mk();
+    box.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+    box.addEventListener('input', () => {
+      const q = normAr(box.value), cur = sel.value;
+      const keep = all.filter((o, i) => !q || i === 0 && o.value === '' || o.value === cur || normAr(o.textContent).includes(q));
+      sel.replaceChildren(...keep); sel.value = cur;
+    });
+    sel.before(box);
+  });
+  root.querySelectorAll('.checks:not([data-ls])').forEach(c => {
+    const items = [...c.querySelectorAll(':scope > label.chk')];
+    if (items.length <= LONG_LIST) return;
+    c.dataset.ls = '1';
+    const box = mk();
+    box.addEventListener('keydown', e => { if (e.key === 'Enter') e.preventDefault(); });
+    box.addEventListener('input', () => {
+      const q = normAr(box.value);
+      items.forEach(l => l.classList.toggle('ls-off', !!q && !normAr(l.textContent).includes(q) && !l.querySelector('input:checked')));
+    });
+    c.before(box);
+  });
+}
+document.addEventListener('DOMContentLoaded', () => {
+  let t = 0;
+  new MutationObserver(() => { cancelAnimationFrame(t); t = requestAnimationFrame(() => addListSearch()); }).observe(document.body, { childList: true, subtree: true });
+  addListSearch();
+});
