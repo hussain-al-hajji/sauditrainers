@@ -23,7 +23,7 @@ const SECTION_TYPES = (() => {
       const d = sec.d, ls = live(), counts = Data.regionCounts(), sc = Data.specCounts();
       const words = splitList(d.words);
       const intro = `
-          <span class="kicker reveal"><b>جديد</b>${esc(d.kicker)}</span>
+          <span class="kicker reveal">${esc(d.kicker)}</span>
           <h1 class="reveal" style="--d:80ms">${esc(d.title)}<span class="acc">${esc(d.titleAccent)}</span></h1>
           <p class="sub reveal" style="--d:160ms">${words.length ? `مدربون سعوديون ممارسون في <span class="rotator">${words.map((w, i) => `<span class="${i ? '' : 'on'}">${esc(w)}</span>`).join('')}</span><br>` : ''}${esc(d.sub)}</p>
           <div class="hsearch reveal" style="--d:240ms">
