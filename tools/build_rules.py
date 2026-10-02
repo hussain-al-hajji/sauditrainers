@@ -20,14 +20,17 @@ self_trainer = f"(auth != null && {me} == $id)"
 S = lambda n: f"newData.isString() && newData.val().length <= {n}"
 N = lambda n: f"newData.isNumber() && newData.val() >= 0 && newData.val() <= {n}"
 str_list = lambda n, each=80: {'.validate': 'newData.hasChildren()', '$i': {'.validate': S(each)}}
-links = {'$k': {'.validate': "$k.matches(/^(whatsapp|email|linkedin|x|instagram|youtube|website)$/) && " + S(200)}}
 
 # الحقول العامة للمدرب (تطابق Data.PUBLIC_FIELDS)
 PUBLIC = {
     'name': S(60), 'nameEn': S(60), 'title': S(80), 'gender': "newData.val() == 'm' || newData.val() == 'f'", 'region': S(20), 'city': S(40),
     'bio': S(1200), 'topics': S(800), 'certs': S(800), 'langs': S(60), 'theme': S(20), 'photoUrl': S(300),
     'years': N(60), 'hours': N(100000), 'programs': N(10000),
+    # إطار الصورة الدائرية: الموضع والتكبير
+    'photoX': N(100), 'photoY': N(100), 'photoZ': 'newData.isNumber() && newData.val() >= 1 && newData.val() <= 3',
 }
+# إجابات الحقول المخصصة في النماذج (تُدار من لوحة الإدارة ← النماذج)
+extra = {'$k': {'.validate': "$k.matches(/^[a-z0-9_]{1,30}$/) && newData.isString() && newData.val().length <= 1000"}}
 
 def fields(spec, write=None):
     out = {}
@@ -40,7 +43,7 @@ def fields(spec, write=None):
 trainer_fields = fields(PUBLIC, self_trainer)
 trainer_fields['specs'] = {**str_list(6, 20), '.write': self_trainer}
 trainer_fields['modes'] = {**str_list(3, 10), '.write': self_trainer}
-trainer_fields['links'] = {**links, '.write': self_trainer}
+trainer_fields['extra'] = {**extra, '.write': self_trainer}
 trainer_fields['updatedAt'] = {'.validate': 'newData.isNumber()', '.write': self_trainer}
 for k in ['id', 'code', 'slug', 'status', 'appId', 'uid']:
     trainer_fields[k] = {'.validate': S(80)}
@@ -62,19 +65,20 @@ def public_form(required, spec):
     node['$other'] = {'.validate': False}
     return node
 
-lead_spec = {'org': S(120), 'person': S(80), 'phone': phone, 'email': S(120), 'topic': S(160), 'when': S(120), 'mode': S(10), 'msg': S(2000), 'trainerId': S(20), 'trainerName': S(80)}
+lead_spec = {'org': S(120), 'person': S(80), 'phone': phone, 'email': S(120), 'topic': S(160), 'when': S(120), 'mode': S(10), 'msg': S(2000), 'trainerId': S(20), 'trainerName': S(80),
+             'emailedAt': 'newData.isNumber()', 'waSentAt': 'newData.isNumber()', 'notifiedAt': 'newData.isNumber()'}
 req_spec = {**{k: v for k, v in lead_spec.items() if k not in ('trainerId', 'trainerName')}, 'spec': S(20), 'region': S(20), 'size': N(100000), 'matches': str_list(6, 20)}
 hall_spec = {'type': "newData.val() == 'book' || newData.val() == 'list'", 'name': S(120), 'phone': phone, 'region': S(20), 'city': S(80), 'capacity': N(5000), 'when': S(120), 'desc': S(2000)}
-app_spec = {**PUBLIC, 'specs': 'newData.hasChildren()', 'modes': 'newData.hasChildren()', 'phone': phone, 'email': S(120), 'cvUrl': S(300), 'tot': 'newData.val() == true',
-            'photo': "newData.isString() && newData.val().beginsWith('data:image/') && newData.val().length < 250000", 'decidedAt': 'newData.isNumber()', 'trainerId': S(20)}
+app_spec = {**PUBLIC, 'specs': 'newData.hasChildren()', 'modes': 'newData.hasChildren()', 'phone': phone, 'email': S(120), 'cvUrl': S(300), 'tot': 'newData.isBoolean()',
+            'decidedAt': 'newData.isNumber()', 'notifiedAt': 'newData.isNumber()', 'trainerId': S(20)}
 
 lead = public_form(['trainerId', 'org', 'person', 'phone', 'topic', 'ts', 'status'], lead_spec)
 # المدرب يحدّث حالة الطلب الموجه له فقط
 lead['status']['.write'] = f"auth != null && data.parent().child('trainerId').val() == {me} && (newData.val() == 'done' || newData.val() == 'new')"
-app = public_form(['name', 'phone', 'email', 'region', 'specs', 'tot', 'ts', 'status'], app_spec)
+app = public_form(['name', 'phone', 'email', 'region', 'specs', 'ts', 'status'], app_spec)
 app['specs'] = {**str_list(6, 20)}
 app['modes'] = {**str_list(3, 10)}
-app['links'] = links
+app['extra'] = extra
 
 rules = {
     'rules': {
@@ -85,7 +89,9 @@ rules = {
             'meta': {'.read': True},
             'halls': {'.read': True},
             'trainers': {'.read': True, '$id': {'.validate': "newData.hasChildren(['name', 'code'])", **trainer_fields}},
-            'photos': {'.read': True, '$id': {'.write': self_trainer, '.validate': "newData.isString() && newData.val().beginsWith('data:image/') && newData.val().length < 250000"}},
+            # بطاقات «من طلبات هذا الشهر» في الرئيسية (دون بيانات تواصل)
+            'showcase': {'.read': True},
+            # منشورات التواصل الاجتماعي وصورها وإعدادات الأتمتة: للإدارة فقط (القاعدة العامة أعلاه)
             'stats': {'.read': True, '$kind': {'$id': {
                 '.write': "$kind.matches(/^(views|clicks)$/) && newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
             }}},

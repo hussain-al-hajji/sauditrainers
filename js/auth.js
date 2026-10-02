@@ -5,7 +5,7 @@
  * - الوضع المحلي (بدون Firebase): للتجربة والمعاينة فقط، والبيانات في متصفح الجهاز.
  */
 
-const PUBLIC_PATHS = ['content', 'trainers', 'photos', 'stats', 'meta', 'halls'];
+const PUBLIC_PATHS = ['content', 'trainers', 'showcase', 'stats', 'meta', 'halls'];
 const trainerPaths = id => [...PUBLIC_PATHS, `private/${id}`, `notes/${id}`, { path: 'leads', child: 'trainerId', equalTo: id }];
 
 const Auth = {

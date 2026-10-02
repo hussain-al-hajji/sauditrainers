@@ -101,151 +101,12 @@ function mountSuggest(input, box, { onPick } = {}) {
   document.addEventListener('click', e => { if (!box.contains(e.target) && e.target !== input) box.classList.remove('open'); });
 }
 
-/* ===================== الرئيسية ===================== */
+/* ===================== الرئيسية (من أقسام قابلة للتعديل: js/sections.js) ===================== */
 Pages.home = {
-  dark: true,
-  render() {
-    const c = Data.content();
-    const live = Data.live();
-    const counts = Data.regionCounts(), sc = Data.specCounts();
-    const featured = [...live.filter(t => t.featured), ...live.filter(t => !t.featured)].slice(0, 8);
-    const words = splitList(c.hero.words);
-    const regionsWith = Object.keys(counts).length;
-    const specsWith = Object.keys(sc).length;
-    const samples = featured.length >= 3 ? featured.slice(0, 3) : [
-      { name: 'اسمك هنا', title: 'مدرب معتمد في القيادة والتطوير', region: 'riyadh', theme: 'night', specs: ['leadership'], years: 8, hours: 1200, code: 'ST0000' },
-      { name: 'بطاقتك الاحترافية', title: 'مدربة في التحول الرقمي', region: 'eastern', theme: 'rose', specs: ['digital'], years: 6, hours: 900, code: 'ST0000' },
-      { name: 'مدرّب سعودي', title: 'خبرة تدريبية تستحق الظهور', region: 'makkah', theme: 'emerald', specs: ['hr-dev', 'soft'], years: 10, hours: 2400, programs: 60, code: 'ST0000', modes: ['onsite', 'online'] }
-    ];
-    return `
-    <section class="hero">
-      <div class="wrap hero-grid">
-        <div>
-          <span class="kicker reveal"><b>جديد</b>${esc(c.hero.kicker)}</span>
-          <h1 class="reveal" style="--d:80ms">${esc(c.hero.title)}<span class="acc">${esc(c.hero.titleAccent)}</span></h1>
-          <p class="sub reveal" style="--d:160ms">مدربون سعوديون ممارسون في <span class="rotator" id="rot">${words.map((w, i) => `<span class="${i ? '' : 'on'}">${esc(w)}</span>`).join('')}</span><br>${esc(c.hero.sub)}</p>
-          <div class="hsearch reveal" style="--d:240ms">
-            <form id="hs" autocomplete="off">
-              <i class="fa-solid fa-magnifying-glass"></i>
-              <input type="search" id="hq" placeholder="ابحث باسم مدرب، موضوع، أو تخصص..." aria-label="بحث">
-              <select id="hr" aria-label="المنطقة"><option value="">كل المناطق</option>${REGIONS.map(r => opt(r.k, r.name)).join('')}</select>
-              <button class="btn gold">بحث</button>
-            </form>
-            <div class="suggest" id="hsug"></div>
-          </div>
-          <div class="quick reveal" style="--d:300ms">الأكثر طلباً: ${['leadership', 'ai-data', 'entrepreneur', 'marketing', 'hr-dev'].map(k => `<a href="#/trainers?spec=${k}">${specName(k)}</a>`).join('')}</div>
-          <div class="hstats reveal" style="--d:380ms">
-            <div><b data-count="${live.length}">0</b><span>مدرب ومدربة</span></div>
-            <div><b data-count="${Math.max(regionsWith, 0)}">0</b><span>منطقة إدارية</span></div>
-            <div><b data-count="${specsWith}">0</b><span>تخصصاً تدريبياً</span></div>
-          </div>
-        </div>
-        <div class="mapbox reveal" style="--d:200ms" id="map">
-          ${KSAMap.svg(counts)}
-          <div class="map-tip"></div>
-          <div class="floaty f1"><i class="fa-solid fa-bolt"></i><span><b>ترشيح فوري</b>مطابقة ذكية لاحتياجك</span></div>
-          <div class="floaty f2"><i class="fa-solid fa-id-card"></i><span><b>بطاقات موثّقة</b>قابلة للمشاركة</span></div>
-          <div class="map-legend"><i></i>اضغط على منطقة لعرض مدربيها</div>
-        </div>
-      </div>
-    </section>
-
-    <div class="marquee" aria-label="التخصصات"><div class="marquee-track">${[...SPECIALTIES, ...SPECIALTIES].map(s => `<a href="#/trainers?spec=${s.k}"><i class="fa-solid ${s.icon}"></i>${s.name}</a>`).join('')}</div></div>
-
-    ${featured.length ? `<section class="sec">
-      <div class="wrap">
-        <div class="sec-h reveal"><span class="eyebrow">نخبة المدربين</span><h2>كفاءات سعودية جاهزة لبرنامجك القادم</h2><p>بطاقات تعريفية موثّقة تختصر عليك السيرة الذاتية: التخصص، والخبرة، والمنطقة، وطريقة التواصل.</p></div>
-        <div class="tgrid">${featured.map((t, i) => Card.mini(t, i)).join('')}</div>
-        <div class="center" style="margin-top:30px"><a class="btn primary lg" href="#/trainers">تصفّح جميع المدربين <i class="fa-solid fa-arrow-left"></i></a></div>
-      </div>
-    </section>` : ''}
-
-    <section class="sec pattern">
-      <div class="wrap">
-        <div class="sec-h reveal"><span class="eyebrow">كيف تعمل المنصة</span><h2>طريقان يلتقيان عند التدريب المتميز</h2></div>
-        <div class="tracks reveal" id="tracks"><button class="on" data-t="org"><i class="fa-solid fa-building"></i> للجهات التدريبية</button><button data-t="tr"><i class="fa-solid fa-person-chalkboard"></i> للمدربين</button></div>
-        <div class="steps" data-track="org">
-          <div class="step reveal"><div class="ic"><i class="fa-solid fa-magnifying-glass-location"></i></div><h3>ابحث أو اطلب</h3><p>ابحث بالتخصص والمنطقة، أو صِف احتياجك في «اطلب مدرباً».</p></div>
-          <div class="step reveal" style="--d:100ms"><div class="ic"><i class="fa-solid fa-wand-magic-sparkles"></i></div><h3>ترشيح ذكي</h3><p>يقترح النظام أنسب المدربين فوراً، ويتابع فريقنا طلبك للترشيح الأدق.</p></div>
-          <div class="step reveal" style="--d:200ms"><div class="ic"><i class="fa-solid fa-handshake"></i></div><h3>تواصل مباشر</h3><p>تواصل مع المدرب مباشرة من بطاقته دون وسيط ودون رسوم.</p></div>
-        </div>
-        <div class="steps hidden" data-track="tr">
-          <div class="step"><div class="ic"><i class="fa-solid fa-file-signature"></i></div><h3>سجّل بياناتك</h3><p>نموذج تسجيل ذكي بخطوات، وترى بطاقتك تتشكّل أمامك لحظة بلحظة.</p></div>
-          <div class="step"><div class="ic"><i class="fa-solid fa-user-check"></i></div><h3>المراجعة والقبول</h3><p>نراجع طلبك ونتحقق من المتطلبات، وتتابع حالته برقم الطلب.</p></div>
-          <div class="step"><div class="ic"><i class="fa-solid fa-rocket"></i></div><h3>انطلق وتألّق</h3><p>تُنشر بطاقتك، وتصلك بيانات الدخول لتعديلها ومشاركتها ومتابعة المهتمين.</p></div>
-        </div>
-      </div>
-    </section>
-
-    <section class="sec" style="padding-top:20px">
-      <div class="wrap">
-        <div class="sec-h reveal"><span class="eyebrow">ابحث بالتخصص</span><h2>كل مجال تدريبي… له أهله</h2></div>
-        <div class="specs">${SPECIALTIES.map((s, i) => `<a class="spec reveal" style="--d:${(i % 8) * 40}ms" href="#/trainers?spec=${s.k}"><span class="ic"><i class="fa-solid ${s.icon}"></i></span><span><b>${s.name}</b><small><span class="num">${sc[s.k] || 0}</span> مدرب</small></span></a>`).join('')}</div>
-      </div>
-    </section>
-
-    <section class="sec dark">
-      <div class="wrap">
-        <div class="sec-h reveal"><span class="eyebrow">ابحث بالمنطقة</span><h2>من تبوك إلى جازان… ومن جدة إلى الأحساء</h2><p>مدربون في مناطق المملكة الثلاث عشرة، حضورياً أو عن بُعد.</p></div>
-        <div class="regions">${REGIONS.map((r, i) => `<a class="region reveal" style="--d:${i * 40}ms" href="#/trainers?region=${r.k}"><b>${r.name}</b><small>${r.city}</small><span class="cnt num">${counts[r.k] || 0}</span></a>`).join('')}</div>
-      </div>
-    </section>
-
-    <section class="sec dark" style="padding-top:30px">
-      <div class="wrap join-grid">
-        <div class="reveal">
-          <span class="eyebrow">للمدربين السعوديين</span>
-          <h2 style="font-size:clamp(1.8rem,3.6vw,2.7rem);font-weight:900">خبرتك تستحق بطاقة<br>تليق بها</h2>
-          <p style="color:rgba(255,255,255,.7)">انضم إلى المنصة واحصل على بطاقة تعريفية احترافية، وصفحة خاصة قابلة للمشاركة، وفريق تسويق يرشّحك للجهات التدريبية.</p>
-          <div class="price">
-            <span class="ribbon">${esc(c.join.period)}</span>
-            <div class="amt num">${esc(c.join.fee)}<small>ريال</small></div>
-            <div style="color:rgba(255,255,255,.6);font-family:var(--f-ui)">${esc(c.join.feeNote)}</div>
-            <ul>${lines(c.join.benefits).slice(0, 5).map(b => `<li><i class="fa-solid fa-circle-check"></i>${esc(b)}</li>`).join('')}</ul>
-            <div class="row"><a class="btn gold lg" href="#/join">سجّل كمدرب الآن <i class="fa-solid fa-arrow-left"></i></a><a class="btn glass" href="#/status">متابعة طلب</a></div>
-          </div>
-        </div>
-        <div class="join-cards reveal" style="--d:150ms">${samples.map(t => Card.full(t, { preview: true })).join('')}</div>
-      </div>
-    </section>
-
-    <section class="sec">
-      <div class="wrap cards3">
-        <a class="icard reveal" href="#/request" style="color:inherit"><div class="ic"><i class="fa-solid fa-wand-magic-sparkles"></i></div><h3>اطلب مدرباً</h3><p>صِف برنامجك واحتياجك، وسنقترح عليك أنسب المدربين فوراً ونتابع طلبك.</p></a>
-        <a class="icard reveal" style="--d:100ms;color:inherit" href="#/halls"><div class="ic"><i class="fa-solid fa-building-columns"></i></div><h3>قاعات التدريب</h3><p>${esc(c.halls.intro)}</p></a>
-        <a class="icard reveal" style="--d:200ms;color:inherit" href="#/status"><div class="ic"><i class="fa-solid fa-list-check"></i></div><h3>متابعة طلب التسجيل</h3><p>اعرف حالة طلبك خطوة بخطوة برقم الطلب.</p></a>
-      </div>
-    </section>
-
-    <section class="sec" style="padding-top:10px">
-      <div class="wrap">
-        <div class="sec-h reveal"><span class="eyebrow">أسئلة شائعة</span><h2>كل ما تحتاج معرفته</h2></div>
-        <div class="faq">${c.faq.map(f => `<details class="reveal"><summary>${esc(f.q)}</summary><p>${nl2br(f.a)}</p></details>`).join('')}</div>
-      </div>
-    </section>`;
-  },
-  mount(root) {
-    KSAMap.mount($('#map', root));
-    mountSuggest($('#hq', root), $('#hsug', root));
-    $('#hs', root).onsubmit = e => {
-      e.preventDefault();
-      const q = $('#hq', root).value.trim(), r = $('#hr', root).value;
-      const p = new URLSearchParams(); if (q) p.set('q', q); if (r) p.set('region', r);
-      location.hash = `#/trainers${p.toString() ? '?' + p : ''}`;
-    };
-    $$('#tracks button', root).forEach(b => b.onclick = () => {
-      $$('#tracks button', root).forEach(x => x.classList.toggle('on', x === b));
-      $$('[data-track]', root).forEach(s => s.classList.toggle('hidden', s.dataset.track !== b.dataset.t));
-    });
-    // تبديل الكلمات
-    const rot = $('#rot', root); const spans = $$('span', rot); let i = 0;
-    if (spans.length > 1) App.interval(() => {
-      spans[i].classList.remove('on'); spans[i].classList.add('off');
-      const prev = spans[i]; setTimeout(() => prev.classList.remove('off'), 500);
-      i = (i + 1) % spans.length; spans[i].classList.add('on');
-    }, 2400);
-    countUp(root);
-  }
+  // الترويسة الشفافة الداكنة فقط عندما يبدأ المحتوى بالواجهة الرئيسية
+  get dark() { return homeSections().find(s => s.vis !== false)?.type === 'hero'; },
+  render() { return homeSections().filter(s => s.vis !== false).map(renderSection).join(''); },
+  mount(root) { mountSections(root); }
 };
 
 /* ===================== دليل المدربين ===================== */
@@ -306,15 +167,15 @@ Pages.profile = {
     if (!t || (!Data.isLive(t) && !own)) return `<section class="page-head"><div class="wrap"><h1>البطاقة غير متاحة</h1><p>قد تكون البطاقة غير منشورة حالياً أو الرابط غير صحيح.</p></div></section><div class="wrap empty"><a class="btn primary" href="#/trainers">تصفّح المدربين</a></div>`;
     const sp = Data.specs(t), tp = Data.topics(t), md = Data.modes(t);
     const similar = Data.live().filter(x => x.id !== t.id && Data.specs(x).some(k => sp.includes(k))).slice(0, 4);
-    const wa = t.links?.whatsapp ? waLink(t.links.whatsapp, `السلام عليكم أ. ${t.name}، تواصلت معك عبر منصة مدرّبون سعوديّون بخصوص برنامج تدريبي.`) : '';
+    const extras = FormKit.customDefs().filter((f, i, l) => f.pub && t.extra?.[f.k] && l.findIndex(x => x.k === f.k) === i);
     return `
     <div style="position:relative"><div class="profile-hero-bg"></div>
     <div class="wrap profile">
       <aside class="profile-side">
         ${Card.full(t)}
         <div class="profile-actions">
-          ${wa ? `<a class="btn primary wide" href="${esc(wa)}" target="_blank" rel="noopener" data-click="${esc(t.id)}"><i class="fa-brands fa-whatsapp"></i> تواصل عبر واتساب</a>` : ''}
-          <button class="btn gold wide" id="ask"><i class="fa-solid fa-paper-plane"></i> اطلب هذا المدرب لبرنامجك</button>
+          <button class="btn primary wide lg" id="ask"><i class="fa-solid fa-paper-plane"></i> تواصل مع المدرب</button>
+          <p class="wide small muted center" style="margin:0"><i class="fa-solid fa-lock"></i> يصل طلبك للمدرب عبر المنصة، وبيانات تواصله لا تُعرض حفاظاً على خصوصيته</p>
           <button class="btn" id="shr"><i class="fa-solid fa-share-nodes"></i> مشاركة</button>
           <button class="btn" id="sv"><i class="fa-solid fa-download"></i> حفظ البطاقة</button>
         </div>
@@ -330,6 +191,7 @@ Pages.profile = {
         ${sp.length ? `<div class="pbox reveal"><h3><i class="fa-solid fa-layer-group"></i>التخصصات التدريبية</h3><div class="checks">${sp.map(k => `<a class="chk" href="#/trainers?spec=${k}"><span><i class="fa-solid ${specOf(k)?.icon || 'fa-shapes'}"></i>${esc(specName(k))}</span></a>`).join('')}</div></div>` : ''}
         ${tp.length ? `<div class="pbox reveal"><h3><i class="fa-solid fa-chalkboard"></i>البرامج ومجالات الخبرة</h3><div class="topics">${tp.map(x => `<span>${esc(x)}</span>`).join('')}</div></div>` : ''}
         ${t.certs ? `<div class="pbox reveal"><h3><i class="fa-solid fa-award"></i>الشهادات والاعتمادات</h3><p>${nl2br(t.certs)}</p></div>` : ''}
+        ${extras.length ? `<div class="pbox reveal"><h3><i class="fa-solid fa-list"></i>معلومات إضافية</h3><dl class="dl">${extras.map(f => `<dt>${esc(f.label)}</dt><dd>${esc(String(t.extra[f.k]).replace(/\|/g, '، '))}</dd>`).join('')}</dl></div>` : ''}
         <div class="pbox reveal"><h3><i class="fa-solid fa-circle-info"></i>معلومات سريعة</h3>
           <div class="kv">
             <div><small>المنطقة</small><b>${esc(regionName(t.region) || '—')}${t.city ? ' · ' + esc(t.city) : ''}</b></div>
@@ -349,7 +211,6 @@ Pages.profile = {
     if (!t) return;
     document.title = `${t.name} | مدرّبون سعوديّون`;
     if (!Auth.current()) Data.track('views', t.id);
-    $$('[data-click]', root).forEach(a => a.addEventListener('click', () => Data.track('clicks', t.id)));
     $('#shr', root) && ($('#shr', root).onclick = () => Card.share(t));
     $('#sv', root) && ($('#sv', root).onclick = () => Card.shareSheet(t));
     $('#ask', root) && ($('#ask', root).onclick = () => leadForm(t));
@@ -357,14 +218,14 @@ Pages.profile = {
 };
 
 function leadForm(t) {
-  const m = modal(`<h3><i class="fa-solid fa-paper-plane"></i> طلب المدرب ${esc(t.name)}</h3>
-    <p class="muted small">يصل طلبك إلى المدرب في لوحته الخاصة وإلى فريق المنصة.</p>
-    <form id="lf">
+  const m = modal(`<h3><i class="fa-solid fa-paper-plane"></i> التواصل مع ${esc(t.name)}</h3>
+    <p class="muted small">يصل طلبك إلى المدرب في لوحته وبريده، وإلى فريق المنصة، ويتواصل معك المدرب على بياناتك.</p>
+    <form id="lf" novalidate>
       <div class="grid2">
         ${field('اسم الجهة *', '<input type="text" name="org" required maxlength="120">')}
         ${field('اسم المسؤول *', '<input type="text" name="person" required maxlength="80">')}
-        ${field('الجوال *', '<input type="tel" name="phone" required placeholder="05xxxxxxxx" maxlength="20">')}
-        ${field('البريد الإلكتروني', '<input type="email" name="email" maxlength="120">')}
+        ${field('الجوال *', '<input type="tel" name="phone" required placeholder="05xxxxxxxx" maxlength="20" dir="ltr">')}
+        ${field('البريد الإلكتروني', '<input type="email" name="email" maxlength="120" dir="ltr">')}
       </div>
       ${field('موضوع البرنامج *', '<input type="text" name="topic" required maxlength="160">')}
       <div class="grid2">
@@ -377,10 +238,13 @@ function leadForm(t) {
   m.$('#lf').onsubmit = e => {
     e.preventDefault();
     const d = formData(e.target);
+    if (!d.org || !d.person || !d.topic) { toast('أكمل الحقول المطلوبة', 'error'); return; }
     if (!validPhone(d.phone)) { toast('رقم الجوال غير صحيح', 'error'); return; }
-    Store.push('leads', { ...d, phone: phoneDigits(d.phone), trainerId: t.id, trainerName: t.name, ts: Date.now(), status: 'new' });
+    if (d.email && !validEmail(d.email)) { toast('البريد الإلكتروني غير صحيح', 'error'); return; }
+    const id = Store.push('leads', { ...d, phone: phoneDigits(d.phone), trainerId: t.id, trainerName: t.name, ts: Date.now(), status: 'new' });
+    Automation.notify('lead', id);
     m.close();
-    modal(`<div class="done-card"><div class="big"><i class="fa-solid fa-check"></i></div><h3 style="justify-content:center">تم إرسال طلبك</h3><p class="muted">سيتواصل معك المدرب أو فريق المنصة قريباً بإذن الله.</p><button class="btn primary" data-close>حسناً</button></div>`);
+    modal(`<div class="done-card"><div class="big"><i class="fa-solid fa-check"></i></div><h3 style="justify-content:center">تم إرسال طلبك</h3><p class="muted">وصل طلبك إلى ${esc(t.name)} وإلى فريق المنصة، وسيتواصل معك قريباً بإذن الله.</p><button class="btn primary" data-close>حسناً</button></div>`);
   };
 }
 
@@ -432,7 +296,8 @@ Pages.request = {
       const d = formData(form);
       if (!validPhone(d.phone)) { toast('رقم الجوال غير صحيح', 'error'); return; }
       const matches = Data.match(d).map(x => x.t.id);
-      Store.push('requests', { ...d, phone: phoneDigits(d.phone), size: Number(d.size) || 0, matches, ts: Date.now(), status: 'new' });
+      const rid = Store.push('requests', { ...d, phone: phoneDigits(d.phone), size: Number(d.size) || 0, matches, ts: Date.now(), status: 'new' });
+      Automation.notify('request', rid);
       form.innerHTML = `<div class="done-card"><div class="big"><i class="fa-solid fa-check"></i></div><h2>تم استلام طلبك</h2><p class="muted">سيتواصل معك فريق المنصة بالترشيحات المناسبة قريباً. يمكنك أيضاً التواصل مباشرة مع المدربين المقترحين.</p><a class="btn primary" href="#/trainers">تصفّح المدربين</a></div>`;
     };
   }
@@ -509,7 +374,7 @@ Pages.login = {
   static: true,
   render() {
     return `<div class="auth-wrap"><div class="auth-card">
-      ${Card.brandMark(66)}
+      ${logoImg('green', 'auth-logo')}
       <h2>دخول المدربين</h2>
       <p class="muted">أدخل رمز الدخول الذي وصلك بعد قبول طلبك لتعديل بطاقتك ومتابعة المهتمين.</p>
       <form id="lg">

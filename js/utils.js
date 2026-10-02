@@ -49,19 +49,32 @@ function initials(name) {
 }
 
 /* روابط */
-function driveImg(url) {
+// رابط صورة Google Drive بصيغة تُعرض مباشرة وتُرسم على اللوحة (يتطلب مشاركة الملف «لأي شخص لديه الرابط»)
+const driveId = url => { const m = String(url || '').match(/\/d\/([\w-]{10,})/) || String(url || '').match(/[?&]id=([\w-]{10,})/); return m ? m[1] : ''; };
+function driveImg(url, w = 800) {
   url = String(url || '').trim();
-  if (!url || url.startsWith('data:image/')) return url;
-  const m = url.match(/\/d\/([\w-]{10,})/) || url.match(/[?&]id=([\w-]{10,})/);
-  if (m && /drive\.google|docs\.google|googleusercontent/.test(url)) return `https://lh3.googleusercontent.com/d/${m[1]}=w600`;
-  return /^https:\/\//.test(url) ? url : '';
+  if (!url) return '';
+  if (url.startsWith('data:image/')) return url; // للمعاينة والبيانات التجريبية فقط
+  const id = driveId(url);
+  if (id && /drive\.google|docs\.google|googleusercontent/.test(url)) return `https://lh3.googleusercontent.com/d/${id}=w${w}`;
+  return /^https:\/\/[^\s"'<>]+$/.test(url) ? url : '';
+}
+const isDriveLink = url => !!driveId(url) && /drive\.google|docs\.google/.test(url);
+// كشف بيانات التواصل داخل النصوص العامة (جوال، بريد، روابط) لأن التواصل يتم عبر المنصة فقط
+function leaksContact(text) {
+  const t = toEnDigits(text);
+  if (/[^\s@]+@[^\s@]+\.[a-z]{2,}/i.test(t)) return 'بريد إلكتروني';
+  if (/(?:\+?966|00966|\b0)?5\d[\s-]?\d{3}[\s-]?\d{4}/.test(t) || /\d[\d\s-]{8,}\d/.test(t)) return 'رقم جوال';
+  if (/https?:\/\/|www\.|wa\.me|t\.me\//i.test(t)) return 'رابط';
+  return '';
 }
 const safeUrl = u => { u = String(u || '').trim(); if (!u) return ''; if (!/^https?:\/\//i.test(u)) u = 'https://' + u; return /^https?:\/\/[^\s"'<>]+$/i.test(u) ? u : ''; };
 const phoneDigits = p => { let d = toEnDigits(p).replace(/\D/g, ''); if (d.startsWith('00')) d = d.slice(2); if (d.startsWith('05')) d = '966' + d.slice(1); else if (d.startsWith('5') && d.length === 9) d = '966' + d; return d; };
 const waLink = (p, text = '') => { const d = phoneDigits(p); return d ? `https://wa.me/${d}${text ? '?text=' + encodeURIComponent(text) : ''}` : ''; };
 const validPhone = p => /^9665\d{8}$/.test(phoneDigits(p));
 const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(e || '').trim());
-const siteBase = () => location.href.split('#')[0];
+// رابط المنصة: الصفحة الحالية عند تشغيلها من نطاق حقيقي، وإلا رابط الموقع الرسمي من الإعدادات
+const siteBase = () => (/^https?:$/.test(location.protocol) && !/^(localhost|127\.|\[::1\]|0\.0\.0\.0)/.test(location.hostname) ? location.href.split('#')[0] : (window.ST_CONFIG.siteUrl || location.href.split('#')[0]));
 const profileUrl = t => `${siteBase()}#/t/${encodeURIComponent(t.slug || t.id)}`;
 
 /* ===== التنبيهات ===== */

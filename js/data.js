@@ -60,16 +60,18 @@ const SPECIALTIES = [
 const specOf = k => SPECIALTIES.find(s => s.k === k);
 const specName = k => specOf(k)?.name || k;
 
-// ثيمات البطاقة التعريفية: يختار المدرب ما يناسبه
+// ثيمات البطاقة التعريفية: مشتقة من لونَي الشعار (الأخضر #005430 والكريمي #EEF3E5) بدرجات متقاربة
 const CARD_THEMES = [
-  { k: 'emerald', name: 'زمرّدي', a: '#063D2A', b: '#0E6B45', c: '#1FA36A', accent: '#E3C27A', ink: '#FFFFFF' },
-  { k: 'night', name: 'ليلي', a: '#0B1430', b: '#1C2F66', c: '#3A5BB8', accent: '#9EC9FF', ink: '#FFFFFF' },
-  { k: 'sand', name: 'رملي', a: '#6B4A1E', b: '#A57A3C', c: '#D9B374', accent: '#FFF3D6', ink: '#FFFFFF' },
-  { k: 'rose', name: 'وردي صحراوي', a: '#4A1730', b: '#8A2F55', c: '#D0708F', accent: '#FFD6E2', ink: '#FFFFFF' },
-  { k: 'teal', name: 'فيروزي', a: '#053B42', b: '#0C6E78', c: '#1FB3B0', accent: '#B8FFF4', ink: '#FFFFFF' },
-  { k: 'graphite', name: 'جرافيت', a: '#111315', b: '#2A2E33', c: '#50575F', accent: '#E3C27A', ink: '#FFFFFF' }
+  { k: 'brand', name: 'الأخضر الرسمي', a: '#003A21', b: '#005430', c: '#1D8E5B', accent: '#EEF3E5', fg: '#FFFFFF' },
+  { k: 'deep', name: 'أخضر عميق', a: '#00140B', b: '#002E1A', c: '#0B6A3E', accent: '#C9DAB4', fg: '#FFFFFF' },
+  { k: 'cream', name: 'كريمي', a: '#F7FAF1', b: '#EEF3E5', c: '#D3E2C1', accent: '#005430', fg: '#00331D', light: true },
+  { k: 'sage', name: 'ريحاني', a: '#1C2E23', b: '#33503E', c: '#5F8A6E', accent: '#EEF3E5', fg: '#FFFFFF' },
+  { k: 'olive', name: 'زيتوني', a: '#1E2C10', b: '#3B5420', c: '#6E9142', accent: '#EEF3E5', fg: '#FFFFFF' },
+  { k: 'teal', name: 'أخضر مزرق', a: '#002E2A', b: '#004F46', c: '#13887A', accent: '#E3F2EC', fg: '#FFFFFF' }
 ];
 const themeOf = k => CARD_THEMES.find(t => t.k === k) || CARD_THEMES[0];
+// تحويل القوائم المخزنة (قد تعود من القاعدة كائناً) إلى مصفوفة
+const arr = x => (Array.isArray(x) ? x.filter(v => v != null) : x && typeof x === 'object' ? Object.values(x) : []);
 
 const DELIVERY = [
   { k: 'onsite', name: 'حضوري', icon: 'fa-people-roof' },
@@ -118,7 +120,7 @@ function defaultContent() {
     },
     contact: {
       email: 'trainers.sa3@gmail.com',
-      whatsapp: '',
+      whatsapp: '966562391007',
       instagram: 'https://www.instagram.com/sauditrainers.sa/',
       x: 'https://x.com/Sauditrainers',
       linkedin: 'https://sa.linkedin.com/company/saudi-trainers-sa'

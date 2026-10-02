@@ -22,6 +22,11 @@ window.ST_CONFIG = {
   ownerEmails: ['g.hussainalhajji@gmail.com', 'trainers.sa3@gmail.com'],
   // يبقى المشرف مسجلاً على جهازه، ويُطلب منه الدخول من جديد بعد هذه المدة دون أي نشاط
   adminIdleHours: 72,
+  // رابط Google Apps Script للأتمتة (بريد المدربين من حساب المنصة + النشر المجدول). اتركه فارغاً لتعطيلها.
+  // طريقة الإعداد في integrations/google-apps-script/README.md
+  automationUrl: '',
+  // رقم واتساب المنصة الذي تُرسل منه الرسائل (يُفتح منه واتساب ويب/التطبيق عند الضغط على زر الإرسال)
+  platformWhatsapp: '966562391007',
   // رابط المنصة (يُستخدم في روابط المشاركة ورسائل معلومات الدخول)
   siteUrl: 'https://www.sauditrainers.sa/'
 };

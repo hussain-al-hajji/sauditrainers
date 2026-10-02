@@ -19,7 +19,7 @@ const App = (() => {
     const dark = Pages[page]?.dark || ['trainers', 'profile', 'join', 'status', 'request', 'halls', 'about', 'login'].includes(page) || (page === 'admin' && s?.kind !== 'admin');
     const link = (href, label, on) => `<a href="${href}" class="${on ? 'on' : ''}">${label}</a>`;
     return `<header class="topbar ${dark ? 'dark' : ''}" id="top"><div class="wrap">
-      <a class="logo" href="#/">${Card.brandMark(38)}<span>مدرّبون سعوديّون<small>Saudi Trainers</small></span></a>
+      <a class="logo" href="#/" aria-label="مدرّبون سعوديّون — الرئيسية">${logoImg('green', 'on-light')}${logoImg('cream', 'on-dark')}</a>
       <nav class="nav" id="nav">
         ${link('#/', 'الرئيسية', page === 'home')}${link('#/trainers', 'المدربون', page === 'trainers' || page === 'profile')}${link('#/request', 'اطلب مدرباً', page === 'request')}${link('#/halls', 'القاعات', page === 'halls')}${link('#/about', 'عن المنصة', page === 'about')}
         <a href="${s?.kind === 'trainer' ? '#/me' : s?.kind === 'admin' ? '#/admin' : '#/login'}" class="mob-only">${s ? 'لوحتي' : 'دخول المدربين'}</a>
@@ -37,7 +37,7 @@ const App = (() => {
     const so = [['instagram', 'fa-instagram'], ['x', 'fa-x-twitter'], ['linkedin', 'fa-linkedin-in']].filter(([k]) => safeUrl(c.contact[k]));
     return `<footer class="footer"><div class="wrap">
       <div class="foot-grid">
-        <div><a class="logo" href="#/">${Card.brandMark(38)}<span>مدرّبون سعوديّون<small>Saudi Trainers</small></span></a>
+        <div><a class="logo" href="#/" aria-label="مدرّبون سعوديّون — الرئيسية">${logoImg('green', 'on-light')}${logoImg('cream', 'on-dark')}</a>
           <p style="margin-top:12px">${esc(c.brand.tagline)} — ${esc(c.about.registered)}</p>
           <div class="socials">${so.map(([k, i]) => `<a href="${esc(safeUrl(c.contact[k]))}" target="_blank" rel="noopener" aria-label="${k}"><i class="fa-brands ${i}"></i></a>`).join('')}${c.contact.email ? `<a href="mailto:${esc(c.contact.email)}" aria-label="email"><i class="fa-solid fa-envelope"></i></a>` : ''}${c.contact.whatsapp ? `<a href="${esc(waLink(c.contact.whatsapp))}" target="_blank" rel="noopener" aria-label="whatsapp"><i class="fa-brands fa-whatsapp"></i></a>` : ''}</div>
         </div>
@@ -87,7 +87,8 @@ const App = (() => {
     if (mode === 'local' || Auth.current()?.kind === 'admin') await Store.seedOnce(() => ({ content: defaultContent(), counters: { trainer: 0 }, meta: { createdAt: Date.now() } }));
     render();
     Store.subscribe(refresh);
-    window.addEventListener('hashchange', () => { render(); });
+    // الانتقال لصفحة أخرى يغلق النوافذ المفتوحة
+    window.addEventListener('hashchange', () => { $$('.modal-back').forEach(m => m.remove()); render(); });
     document.addEventListener('click', e => { if (e.target.closest('#nav a')) $('#nav')?.classList.remove('open'); });
     window.addEventListener('scroll', onScroll, { passive: true });
     const boot = $('#boot'); boot.classList.add('out'); setTimeout(() => boot.remove(), 600);

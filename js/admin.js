@@ -25,7 +25,8 @@ Pages.admin = {
     const newHall = Store.list('hallReqs').filter(r => r.status === 'new').length;
     const tabs = [
       ['dash', 'fa-chart-pie', 'المؤشرات'], ['apps', 'fa-user-plus', 'طلبات التسجيل', newApps], ['trainers', 'fa-id-card', 'المدربون'],
-      ['requests', 'fa-inbox', 'طلبات الجهات', newReq], ['halls', 'fa-building-columns', 'القاعات', newHall], ['content', 'fa-pen-ruler', 'المحتوى'],
+      ['requests', 'fa-inbox', 'طلبات الجهات', newReq], ['social', 'fa-share-nodes', 'النشر الاجتماعي', Store.list('social').filter(p => p.status === 'failed').length],
+      ['home', 'fa-house', 'الصفحة الرئيسية'], ['forms', 'fa-rectangle-list', 'النماذج'], ['halls', 'fa-building-columns', 'القاعات', newHall], ['content', 'fa-pen-ruler', 'المحتوى العام'],
       ['admins', 'fa-user-shield', 'المشرفون'], ['backup', 'fa-database', 'البيانات والسجل']
     ];
     const u = Security.currentUser();
@@ -44,14 +45,15 @@ Pages.admin = {
     $$('[data-tab]', root).forEach(b => b.onclick = () => { this.tab = b.dataset.tab; App.render(); });
     $('[data-out]', root).onclick = () => Auth.logout();
     const main = $('#at', root);
-    ({ dash: aDash, apps: aApps, trainers: aTrainers, requests: aRequests, halls: aHalls, content: aContent, admins: aAdmins, backup: aBackup })[this.tab](main);
+    ({ dash: aDash, apps: aApps, trainers: aTrainers, requests: aRequests, social: aSocial, home: aHome, forms: aForms, halls: aHalls, content: aContent, admins: aAdmins, backup: aBackup })[this.tab](main);
   },
-  get static() { return ['content'].includes(this.tab); }
+  // تبويبات التحرير لا يُعاد رسمها تلقائياً حتى لا تضيع التعديلات غير المحفوظة
+  get static() { return ['content', 'home', 'forms'].includes(this.tab); }
 };
 
 function adminLoginView() {
   return `<div class="auth-wrap"><div class="auth-card">
-    ${Card.brandMark(66)}
+    ${logoImg('green', 'auth-logo')}
     <h2>لوحة الإدارة</h2>
     <p class="muted">الدخول بحساب Google المصرّح له بإدارة المنصة.</p>
     <div style="display:grid;gap:12px;margin-top:18px">
@@ -159,6 +161,7 @@ function appDetail(a) {
           <dt>TOT</dt><dd>${a.tot ? '✅ أقرّ بحضورها' : '❌'}</dd><dt>الشهادات</dt><dd>${nl2br(a.certs || '—')}</dd>
           <dt>المرفقات</dt><dd>${a.cvUrl ? `<a href="${esc(safeUrl(a.cvUrl))}" target="_blank" rel="noopener">فتح الرابط <i class="fa-solid fa-arrow-up-right-from-square"></i></a>` : '—'}</dd>
           <dt>النبذة</dt><dd>${nl2br(a.bio)}</dd>
+          ${FormKit.customDefs().filter((f, i, l) => a.extra?.[f.k] != null && l.findIndex(x => x.k === f.k) === i).map(f => `<dt>${esc(f.label)}</dt><dd>${esc(String(a.extra[f.k]).replace(/\|/g, '، '))}</dd>`).join('')}
         </dl>
         ${field('ملاحظة تظهر للمتقدم في صفحة متابعة الطلب', `<textarea id="pn" maxlength="500" style="min-height:70px">${esc(st.note || '')}</textarea>`)}
         <div class="row" style="margin-top:8px">
@@ -167,7 +170,7 @@ function appDetail(a) {
         </div>
       </div>
       <div>
-        <div style="transform:scale(.8);transform-origin:top center;margin-bottom:-110px">${Card.full({ ...a, id: '__app', photoUrl: a.photo }, { preview: true })}</div>
+        <div style="transform:scale(.8);transform-origin:top center;margin-bottom:-110px">${Card.full({ ...a, id: '__app' }, { preview: true })}</div>
         <div style="display:grid;gap:8px;margin-top:14px">
           ${a.status !== 'published' ? `<button class="btn gold" id="pub"><i class="fa-solid fa-certificate"></i> نشر البطاقة وإصدار رمز الدخول</button>` : ''}
           <a class="btn primary" target="_blank" rel="noopener" href="${esc(waLink(a.phone, acceptMsg))}" id="acc"><i class="fa-brands fa-whatsapp"></i> رسالة القبول وبيانات السداد</a>
@@ -197,7 +200,7 @@ function appDetail(a) {
 function showSecret(t, secret, isNew) {
   const msg = loginMessage(t, secret);
   const priv = Store.get(`private/${t.id}`) || {};
-  const phone = priv.phone || t.links?.whatsapp;
+  const phone = priv.phone;
   const m = modal(`<h3><i class="fa-solid fa-key"></i> ${isNew ? 'تم النشر 🎉' : 'رمز الدخول'}</h3>
     <p class="muted">رمز دخول <b>${esc(t.name)}</b>. أرسله له الآن — لن يظهر المدرب في النتائج دون نشر، ويستطيع تعديل بطاقته بهذا الرمز.</p>
     <div class="secret"><span>${esc(secret)}</span><button class="btn sm glass" id="cs"><i class="fa-solid fa-copy"></i></button></div>
@@ -269,38 +272,41 @@ function aTrainers(main) {
 
 function trainerEditor(t) {
   const isNew = !t;
-  t = t || { status: 'active', theme: 'emerald', langs: 'العربية' };
+  t = t || { status: 'active', theme: 'brand', langs: 'العربية' };
   const priv = t.id ? Store.get(`private/${t.id}`) || {} : {};
-  let photo = '';
-  const F = profileFields({ ...t, ...priv, _photo: t.id ? Data.photo(t) : '' }, { withPrivate: true });
+  const steps = FormKit.steps('admin');
+  const values = { ...t, phone: priv.phone || '', email: priv.email || '', extra: { ...(priv.extra || {}), ...(t.extra || {}) } };
   const m = modal(`<h3><i class="fa-solid fa-id-card"></i> ${isNew ? 'إضافة مدرب' : 'تعديل ' + esc(t.name)}</h3>
-    <div class="editor"><form id="te" autocomplete="off">
-      ${F.basic}${F.spec}${F.exp}${F.media}
-      ${field('رابط صورة خارجي (اختياري بدل الرفع)', `<input type="url" name="photoUrl" dir="ltr" maxlength="300" value="${esc(t.photoUrl)}">`)}
+    <p class="muted small">حقول هذا النموذج تُعدَّل من تبويب «النماذج». بيانات التواصل لا تظهر في المنصة.</p>
+    <div class="editor"><form id="te" autocomplete="off" novalidate style="display:grid;gap:16px">
+      ${steps.map(s => `<h4 class="form-sec"><i class="fa-solid ${esc(s.icon || 'fa-circle')}"></i> ${esc(s.title)}</h4>${FormKit.stepHTML(s, values)}`).join('')}
+      <h4 class="form-sec"><i class="fa-solid fa-sliders"></i> النشر</h4>
       <div class="grid2">
         ${field('الحالة', `<select name="status">${opt('active', 'منشور', t.status)}${opt('hidden', 'مخفي', t.status)}</select>`)}
-        ${field('نهاية النشر', `<input type="text" name="exp" dir="ltr" value="${t.expiresAt ? new Date(t.expiresAt).toISOString().slice(0, 10) : new Date(Date.now() + 365 * 864e5).toISOString().slice(0, 10)}" placeholder="YYYY-MM-DD">`, 'اتركه فارغاً لنشر دون انتهاء')}
+        ${field('نهاية النشر', `<input type="text" name="exp" dir="ltr" value="${t.expiresAt ? new Date(t.expiresAt).toISOString().slice(0, 10) : isNew ? new Date(Date.now() + 365 * 864e5).toISOString().slice(0, 10) : ''}" placeholder="YYYY-MM-DD">`, 'اتركه فارغاً لنشر دون انتهاء')}
       </div>
       ${field('رسالة للمدرب تظهر في لوحته', `<textarea name="note" maxlength="600" style="min-height:70px">${esc(Store.get(`notes/${t.id}`)?.text || '')}</textarea>`)}
       <div class="row between"><div>${isNew ? '' : '<button type="button" class="btn ghost" id="dl" style="color:var(--bad)"><i class="fa-solid fa-trash"></i> حذف المدرب</button> <button type="button" class="btn ghost" id="ext"><i class="fa-solid fa-calendar-plus"></i> تمديد سنة</button>'}</div><button class="btn primary lg">حفظ</button></div>
     </form><div class="preview" id="pvw"></div></div>`, { wide: true });
   const form = m.$('#te');
-  $$('[name=phone],[name=email]', form).forEach(i => { i.required = false; });
-  const preview = () => previewCard(m.$('#pvw'), { ...readProfile(form), code: t.code }, photo || (t.id ? Data.photo(t) : '') || driveImg(form.photoUrl.value));
-  wireProfileForm(form, { onPhoto: u => { photo = u; }, preview });
+  const preview = () => previewCard(m.$('#pvw'), { ...FormKit.read(form), code: t.code });
+  FormKit.wire(form, preview);
   preview();
   m.$('#ext') && (m.$('#ext').onclick = () => { const base = Math.max(Date.now(), t.expiresAt || 0); form.exp.value = new Date(base + 365 * 864e5).toISOString().slice(0, 10); toast('اضغط «حفظ» لاعتماد التمديد'); });
   m.$('#dl') && (m.$('#dl').onclick = async () => {
     if (!await confirmBox(`حذف <b>${esc(t.name)}</b> نهائياً مع حساب دخوله؟`, { ok: 'حذف', danger: true })) return;
     await Security.deleteTrainerAccount(t);
-    ['trainers', 'photos', 'private', 'notes', 'secrets/codes', 'stats/views', 'stats/clicks'].forEach(p => Store.remove(`${p}/${t.id}`));
+    ['trainers', 'private', 'notes', 'secrets/codes', 'stats/views', 'stats/clicks'].forEach(p => Store.remove(`${p}/${t.id}`));
     Security.log('حذف مدرب', t.name); m.close();
   });
   form.onsubmit = async e => {
     e.preventDefault();
-    const d = readProfile(form);
-    if (!d.name || !d.region) { toast('الاسم والمنطقة مطلوبان', 'error'); return; }
-    const rec = { ...Data.pick(d, Data.PUBLIC_FIELDS), status: d.status, updatedAt: Date.now() };
+    const d = FormKit.read(form);
+    // الإدارة: الاسم والمنطقة فقط إلزامية، مع التحقق من صيغ بقية الحقول
+    const err = FormKit.validate(steps.flatMap(s => s.fields).map(f => ({ ...f, lock: false, req: ['name', 'region'].includes(f.k) })), d, form);
+    if (err) { toast(err, 'error'); return; }
+    const ex = Data.splitExtra(d.extra);
+    const rec = { ...Data.pick(d, Data.PUBLIC_FIELDS), status: d.status, updatedAt: Date.now(), extra: Object.keys(ex.pub).length ? ex.pub : null };
     rec.expiresAt = /^\d{4}-\d{2}-\d{2}$/.test(d.exp) ? new Date(d.exp + 'T23:59:59').getTime() : null;
     let id = t.id;
     if (isNew) {
@@ -310,14 +316,13 @@ function trainerEditor(t) {
       rec.slug = Data.makeSlug(rec);
       Store.set(`trainers/${id}`, rec);
     } else Store.update(`trainers/${id}`, rec);
-    Store.set(`private/${id}`, { phone: d.phone ? phoneDigits(d.phone) : '', email: d.email || '' });
-    if (photo) Store.set(`photos/${id}`, photo);
+    Store.set(`private/${id}`, { phone: d.phone ? phoneDigits(d.phone) : '', email: d.email || '', ...(Object.keys(ex.priv).length ? { extra: ex.priv } : {}) });
     Store.set(`notes/${id}`, d.note ? { text: d.note, ts: Date.now() } : null);
     Security.log(isNew ? 'إضافة مدرب' : 'تعديل مدرب', d.name);
     m.close(); toast('تم الحفظ');
     if (isNew && await confirmBox('إصدار رمز دخول للمدرب الآن؟', { ok: 'إصدار' })) {
       const nt = Store.get(`trainers/${id}`);
-      try { showSecret(nt, await Security.issueCode(nt), true); } catch (err) { toast(err.message, 'error'); }
+      try { showSecret(nt, await Security.issueCode(nt), true); } catch (err2) { toast(err2.message, 'error'); }
     }
   };
 }
@@ -366,9 +371,8 @@ function importDialog() {
       name: r.name, title: r.title || '', region: matchRegion(r.region) || (REGIONS.some(x => x.k === r.region) ? r.region : ''), city: r.city || '',
       gender: /ة$|انثى|أنثى|f/i.test(r.gender || '') ? 'f' : r.gender ? 'm' : '', specs: Array.isArray(r.specs) ? r.specs : matchSpecs(r.specs || ''),
       topics: r.topics || '', bio: r.bio || '', certs: r.certs || '', years: Number(toEnDigits(r.years)) || 0, hours: Number(toEnDigits(r.hours)) || 0,
-      photoUrl: r.photo || r.photoUrl || '', modes: r.modes || ['onsite'], theme: r.theme || 'emerald', langs: 'العربية',
-      links: { ...(r.links || {}), ...(r.whatsapp ? { whatsapp: r.whatsapp } : {}), ...(r.linkedin ? { linkedin: r.linkedin } : {}), ...(r.x ? { x: r.x } : {}), ...(r.instagram ? { instagram: r.instagram } : {}) },
-      _phone: r.phone || '', _email: r.email || ''
+      photoUrl: r.photo || r.photoUrl || '', modes: r.modes || ['onsite'], theme: CARD_THEMES.some(x => x.k === r.theme) ? r.theme : 'brand', langs: 'العربية',
+      _phone: r.phone || r.whatsapp || '', _email: r.email || ''
     }));
     m.$('#pv').innerHTML = `<p><b class="num">${recs.length}</b> مدرب جاهز للاستيراد ${recs.filter(r => !r.region).length ? `<span class="pill warn">${recs.filter(r => !r.region).length} بلا منطقة مطابقة</span>` : ''}</p>
       <div class="tbl-wrap" style="max-height:300px"><table class="tbl"><thead><tr><th>الاسم</th><th>المنطقة</th><th>التخصصات</th></tr></thead><tbody>${recs.slice(0, 50).map(r => `<tr><td>${esc(r.name)}</td><td>${esc(regionName(r.region) || '—')}</td><td>${r.specs.map(specName).join('، ') || '—'}</td></tr>`).join('')}</tbody></table></div>
@@ -396,27 +400,92 @@ function exportCSV() {
 }
 
 /* ===================== طلبات الجهات ===================== */
+const leadDraft = (r, t) => `السلام عليكم ${t?.name || r.trainerName || ''} 🌟
+وصلك طلب تواصل جديد عبر منصة «مدرّبون سعوديّون»:
+
+• الجهة: ${r.org}
+• المسؤول: ${r.person}
+• موضوع البرنامج: ${r.topic}${r.when ? `\n• الموعد المتوقع: ${r.when}` : ''}${r.mode ? `\n• طريقة التقديم: ${DELIVERY.find(d => d.k === r.mode)?.name || ''}` : ''}${r.msg ? `\n• التفاصيل: ${r.msg}` : ''}
+
+للتواصل معهم: ${r.phone}${r.email ? ' — ' + r.email : ''}
+تفاصيل الطلب في لوحتك: ${siteBase()}#/login`;
+
 function aRequests(main) {
   const reqs = Store.list('requests').map(r => ({ ...r, kind: 'req' }));
   const leads = Store.list('leads').map(r => ({ ...r, kind: 'lead' }));
   const all = [...reqs, ...leads].sort((a, b) => b.ts - a.ts);
-  main.innerHTML = `<div class="dash-h"><h2>طلبات الجهات التدريبية</h2><span class="muted small">«اطلب مدرباً» + الطلبات المرسلة لمدرب محدد</span></div>
-    ${all.length ? all.map(r => `<div class="lead">
+  const show = Store.list('showcase').sort((a, b) => b.ts - a.ts);
+  main.innerHTML = `<div class="dash-h"><h2>طلبات الجهات التدريبية</h2><span class="muted small">طلبات التواصل مع مدرب محدد + «اطلب مدرباً»</span></div>
+    ${Automation.on ? '<div class="banner ok"><i class="fa-solid fa-envelope-circle-check"></i>الإرسال الآلي للبريد مفعّل: يصل كل طلب تواصل إلى بريد المدرب من بريد المنصة.</div>'
+      : '<div class="banner info"><i class="fa-solid fa-circle-info"></i>الإرسال الآلي للبريد غير مفعّل بعد (يحتاج ربط Google Apps Script). يمكنك الآن إرسال الطلب للمدرب بزر واتساب أو البريد.</div>'}
+    <details class="pbox" ${show.length ? '' : 'open'}><summary style="cursor:pointer"><b><i class="fa-solid fa-table-cells-large" style="color:var(--g600)"></i> المعروض في «من طلبات هذا الشهر» (${show.length})</b></summary>
+      <p class="muted small">تظهر هذه البطاقات متحركة في الصفحة الرئيسية دون أي بيانات تواصل. اختر من الطلبات بالأسفل بزر <i class="fa-solid fa-table-cells-large"></i> أو أضف يدوياً.</p>
+      <div class="sc-admin">${show.map(x => `<div class="sc-mini"><b>${esc(x.title)}</b><small>${esc(x.org || 'جهة تدريبية')} · ${esc(regionName(x.region) || '')} · ${fmtDate(x.ts)}</small><div class="acts"><button class="btn sm icon" data-se="${esc(x.id)}"><i class="fa-solid fa-pen"></i></button><button class="btn sm icon" data-sx="${esc(x.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`).join('')}
+      <button class="btn sm" id="sa"><i class="fa-solid fa-plus"></i> إضافة يدوياً</button></div>
+    </details>
+    ${all.length ? all.map(r => {
+      const t = r.trainerId ? Store.get(`trainers/${r.trainerId}`) : null;
+      const tp = r.trainerId ? Store.get(`private/${r.trainerId}`) : null;
+      const shown = show.some(x => x.src === r.id);
+      return `<div class="lead">
       <span class="ic"><i class="fa-solid ${r.kind === 'req' ? 'fa-wand-magic-sparkles' : 'fa-paper-plane'}"></i></span>
-      <div><b>${esc(r.org)}</b> <span class="pill ${r.status === 'new' ? 'gold' : 'gray'}">${r.status === 'new' ? 'جديد' : 'تمت المتابعة'}</span> <span class="pill info">${r.kind === 'req' ? 'اطلب مدرباً' : 'لمدرب: ' + esc(r.trainerName || r.trainerId)}</span><br>
+      <div><b>${esc(r.org)}</b> <span class="pill ${r.status === 'new' ? 'gold' : 'gray'}">${r.status === 'new' ? 'جديد' : 'تمت المتابعة'}</span> <span class="pill info">${r.kind === 'req' ? 'اطلب مدرباً' : 'للمدرب: ' + esc(r.trainerName || r.trainerId)}</span>
+        ${r.kind === 'lead' ? (r.emailedAt ? `<span class="pill ok"><i class="fa-solid fa-envelope-circle-check"></i> أُرسل للمدرب ${ago(r.emailedAt)}</span>` : '') + (r.waSentAt ? `<span class="pill ok"><i class="fa-brands fa-whatsapp"></i> واتساب ${ago(r.waSentAt)}</span>` : '') : ''}
+        ${shown ? '<span class="pill gold"><i class="fa-solid fa-table-cells-large"></i> معروض</span>' : ''}<br>
         <small class="muted">${esc(r.person)} · <span class="num">${esc(r.phone)}</span> ${r.email ? '· ' + esc(r.email) : ''} · ${ago(r.ts)}</small>
         <p><b>الموضوع:</b> ${esc(r.topic)}${r.spec ? ` · <b>التخصص:</b> ${esc(specName(r.spec))}` : ''}${r.region ? ` · <b>المنطقة:</b> ${esc(regionName(r.region))}` : ''}${r.size ? ` · <b class="num">${r.size}</b> متدرب` : ''}${r.when ? ` · <b>الموعد:</b> ${esc(r.when)}` : ''}</p>
         ${r.msg ? `<p>${nl2br(r.msg)}</p>` : ''}
-        ${r.matches?.length ? `<p class="small"><b>الترشيحات الآلية:</b> ${r.matches.map(id => Store.get(`trainers/${id}`)).filter(Boolean).map(t => `<a href="#/t/${esc(t.slug || t.id)}" target="_blank">${esc(t.name)}</a>`).join('، ')}</p>` : ''}
+        ${r.matches?.length ? `<p class="small"><b>الترشيحات الآلية:</b> ${arr(r.matches).map(id => Store.get(`trainers/${id}`)).filter(Boolean).map(x => `<a href="#/t/${esc(x.slug || x.id)}" target="_blank">${esc(x.name)}</a>`).join('، ')}</p>` : ''}
       </div>
       <div class="acts" style="flex-direction:column">
-        <a class="btn sm primary" target="_blank" rel="noopener" href="${esc(waLink(r.phone))}"><i class="fa-brands fa-whatsapp"></i></a>
+        ${r.kind === 'lead' ? `<a class="btn sm primary" target="_blank" rel="noopener" data-wa="${esc(r.id)}" href="${esc(tp?.phone ? waLink(tp.phone, leadDraft(r, t)) : '#')}" title="فتح محادثة المدرب مع مسودة الرسالة"><i class="fa-brands fa-whatsapp"></i> للمدرب</a>
+        ${tp?.email ? `<a class="btn sm" href="mailto:${esc(tp.email)}?subject=${encodeURIComponent('طلب تواصل جديد — ' + r.topic)}&body=${encodeURIComponent(leadDraft(r, t))}" title="بريد للمدرب"><i class="fa-solid fa-envelope"></i> للمدرب</a>` : ''}
+        ${Automation.on ? `<button class="btn sm" data-mail="${esc(r.id)}" title="إعادة إرسال البريد الآلي"><i class="fa-solid fa-rotate"></i> البريد</button>` : ''}` : ''}
+        <a class="btn sm" target="_blank" rel="noopener" href="${esc(waLink(r.phone, `السلام عليكم ${r.person}، معك فريق منصة مدرّبون سعوديّون بخصوص طلبكم: ${r.topic}`))}" title="واتساب الجهة"><i class="fa-brands fa-whatsapp"></i> للجهة</a>
+        <button class="btn sm" data-show="${r.kind}" data-id="${esc(r.id)}" title="عرض في «من طلبات هذا الشهر»"><i class="fa-solid fa-table-cells-large"></i></button>
         <button class="btn sm" data-t="${r.kind}" data-id="${esc(r.id)}" title="تبديل الحالة"><i class="fa-solid fa-check"></i></button>
         <button class="btn sm ghost" data-del="${r.kind}" data-id="${esc(r.id)}" title="حذف"><i class="fa-solid fa-trash"></i></button>
-      </div></div>`).join('') : '<div class="empty"><i class="fa-solid fa-inbox"></i><h3>لا توجد طلبات بعد</h3></div>'}`;
+      </div></div>`;
+    }).join('') : '<div class="empty"><i class="fa-solid fa-inbox"></i><h3>لا توجد طلبات بعد</h3></div>'}`;
   const path = k => (k === 'req' ? 'requests' : 'leads');
+  $$('[data-wa]', main).forEach(a => a.addEventListener('click', e => {
+    if (a.getAttribute('href') === '#') { e.preventDefault(); toast('لا يوجد رقم جوال لهذا المدرب في بياناته الإدارية', 'error'); return; }
+    Store.update(`leads/${a.dataset.wa}`, { waSentAt: Date.now(), status: 'done' });
+    toast(`افتح المحادثة من واتساب المنصة (${window.ST_CONFIG.platformWhatsapp}) ثم اضغط إرسال`);
+  }));
+  $$('[data-mail]', main).forEach(b => b.onclick = async () => { await Automation.notify('lead', b.dataset.mail); toast('طُلب إرسال البريد، ويظهر التأكيد عند وصوله'); });
   $$('[data-t]', main).forEach(b => b.onclick = () => { const p = `${path(b.dataset.t)}/${b.dataset.id}`; Store.update(p, { status: Store.get(p)?.status === 'new' ? 'done' : 'new' }); });
   $$('[data-del]', main).forEach(b => b.onclick = async () => { if (await confirmBox('حذف الطلب؟', { ok: 'حذف', danger: true })) Store.remove(`${path(b.dataset.del)}/${b.dataset.id}`); });
+  $$('[data-show]', main).forEach(b => b.onclick = () => {
+    const r = Store.get(`${path(b.dataset.show)}/${b.dataset.id}`); const t = r.trainerId ? Store.get(`trainers/${r.trainerId}`) : null;
+    showcaseEditor(Store.list('showcase').find(x => x.src === r.id) || { src: r.id, title: r.topic, org: r.org, region: r.region || t?.region || '', spec: r.spec || Data.specs(t || {})[0] || '', trainerName: r.trainerName || '', ts: r.ts });
+  });
+  $('#sa', main).onclick = () => showcaseEditor({ ts: Date.now() });
+  $$('[data-se]', main).forEach(b => b.onclick = () => showcaseEditor(Store.get(`showcase/${b.dataset.se}`)));
+  $$('[data-sx]', main).forEach(b => b.onclick = () => Store.remove(`showcase/${b.dataset.sx}`));
+}
+
+// بطاقة في قسم «من طلبات هذا الشهر» (تُعرض للعامة دون بيانات تواصل)
+function showcaseEditor(x) {
+  const m = modal(`<h3><i class="fa-solid fa-table-cells-large"></i> بطاقة «من طلبات هذا الشهر»</h3>
+    <p class="muted small">تظهر للعامة في الصفحة الرئيسية. لا تُضف بيانات تواصل.</p>
+    <form id="sf">
+      ${field('موضوع البرنامج *', `<input type="text" name="title" required maxlength="90" value="${esc(x.title || '')}">`)}
+      <div class="grid2">
+        ${field('الجهة كما تظهر', `<input type="text" name="org" maxlength="60" value="${esc(x.org || '')}" placeholder="اتركه فارغاً لإظهار «جهة تدريبية»">`)}
+        ${field('المدرب (اختياري)', `<input type="text" name="trainerName" maxlength="60" value="${esc(x.trainerName || '')}">`)}
+        ${field('المنطقة', `<select name="region"><option value="">—</option>${REGIONS.map(r => opt(r.k, r.name, x.region)).join('')}</select>`)}
+        ${field('التخصص', `<select name="spec"><option value="">—</option>${SPECIALTIES.map(s => opt(s.k, s.name, x.spec)).join('')}</select>`)}
+      </div>
+      <button class="btn primary">حفظ وعرض</button>
+    </form>`);
+  m.$('#sf').onsubmit = e => {
+    e.preventDefault();
+    const d = formData(e.target);
+    const rec = { ...d, src: x.src || '', ts: x.ts || Date.now() };
+    if (x.id) Store.update(`showcase/${x.id}`, rec); else Store.push('showcase', rec);
+    Security.log('عرض طلب في الرئيسية', d.title); m.close(); toast('تم — يظهر في الصفحة الرئيسية');
+  };
 }
 
 /* ===================== القاعات ===================== */
@@ -456,18 +525,15 @@ function aHalls(main) {
 function aContent(main) {
   const c = Data.content();
   const sec = (k, title, fields) => `<div class="pbox"><h3><i class="fa-solid fa-pen"></i>${title}</h3><div style="display:grid;gap:12px">${fields.map(([f, l, type, hint]) => field(l, type === 'area' ? `<textarea data-k="${k}.${f}">${esc(c[k][f])}</textarea>` : `<input type="${type || 'text'}" data-k="${k}.${f}" value="${esc(c[k][f])}">`, hint || '')).join('')}</div></div>`;
-  main.innerHTML = `<div class="dash-h"><h2>محتوى الموقع</h2><button class="btn primary" id="sv"><i class="fa-solid fa-floppy-disk"></i> حفظ كل التغييرات</button></div>
-    ${sec('hero', 'الواجهة الرئيسية', [['kicker', 'الشارة العلوية'], ['title', 'العنوان'], ['titleAccent', 'العنوان الذهبي'], ['words', 'الكلمات المتبدلة', 'text', 'افصل بينها بفاصلة'], ['sub', 'الوصف', 'area']])}
+  main.innerHTML = `<div class="dash-h"><h2>المحتوى العام</h2><button class="btn primary" id="sv"><i class="fa-solid fa-floppy-disk"></i> حفظ كل التغييرات</button></div>
+    <div class="banner info"><i class="fa-solid fa-house"></i>محتوى الصفحة الرئيسية وأقسامها يُعدَّل من تبويب «الصفحة الرئيسية»، وحقول نموذج التسجيل من «النماذج».</div>
     ${sec('join', 'التسجيل والرسوم', [['fee', 'الرسوم (ريال)', 'number'], ['feeNote', 'وصف الرسوم'], ['period', 'مدة النشر'], ['requirements', 'المتطلبات', 'area', 'كل متطلب في سطر'], ['benefits', 'المزايا', 'area', 'كل ميزة في سطر'], ['payment', 'تعليمات السداد', 'area'], ['bank', 'بيانات الحساب البنكي (تُرسل في رسالة القبول فقط)', 'area']])}
     ${sec('about', 'عن المنصة', [['intro', 'التعريف', 'area'], ['problem', 'المشكلة', 'area'], ['solution', 'الحل', 'area'], ['vision', 'الرؤية', 'area'], ['registered', 'سطر التسجيل الرسمي']])}
     ${sec('halls', 'القاعات', [['intro', 'النص التعريفي', 'area']])}
-    ${sec('contact', 'التواصل', [['email', 'البريد', 'email'], ['whatsapp', 'واتساب'], ['instagram', 'إنستقرام', 'url'], ['x', 'إكس', 'url'], ['linkedin', 'لينكدإن', 'url']])}
-    <div class="pbox"><h3><i class="fa-solid fa-circle-question"></i>الأسئلة الشائعة</h3><div id="fq" style="display:grid;gap:10px">${c.faq.map(f => `<div class="grid2 fq"><input type="text" value="${esc(f.q)}" placeholder="السؤال"><textarea style="min-height:60px" placeholder="الجواب">${esc(f.a)}</textarea></div>`).join('')}</div><button class="btn sm" id="af" style="margin-top:10px"><i class="fa-solid fa-plus"></i> سؤال</button></div>`;
-  $('#af', main).onclick = () => $('#fq', main).insertAdjacentHTML('beforeend', '<div class="grid2 fq"><input type="text" placeholder="السؤال"><textarea style="min-height:60px" placeholder="الجواب"></textarea></div>');
+    ${sec('contact', 'تواصل المنصة (يظهر في التذييل)', [['email', 'البريد', 'email'], ['whatsapp', 'واتساب المنصة'], ['instagram', 'إنستقرام', 'url'], ['x', 'إكس', 'url'], ['linkedin', 'لينكدإن', 'url']])}`;
   $('#sv', main).onclick = () => {
     const out = {};
     $$('[data-k]', main).forEach(el => { const [k, f] = el.dataset.k.split('.'); (out[k] = out[k] || {})[f] = el.type === 'number' ? Number(el.value) || 0 : el.value.trim(); });
-    out.faq = $$('.fq', main).map(r => ({ q: $('input', r).value.trim(), a: $('textarea', r).value.trim() })).filter(f => f.q);
     Object.entries(out).forEach(([k, v]) => Store.set(`content/${k}`, v));
     Security.log('تعديل المحتوى'); toast('تم حفظ المحتوى');
   };
@@ -507,7 +573,7 @@ function aBackup(main) {
   $('#dx', main).onclick = async () => {
     const demo = Data.all().filter(t => t.demo);
     if (!demo.length || !await confirmBox(`حذف ${demo.length} مدرب تجريبي؟`, { danger: true, ok: 'حذف' })) return;
-    for (const t of demo) { await Security.deleteTrainerAccount(t); ['trainers', 'photos', 'private', 'notes', 'secrets/codes', 'stats/views', 'stats/clicks'].forEach(p => Store.remove(`${p}/${t.id}`)); }
+    for (const t of demo) { await Security.deleteTrainerAccount(t); ['trainers', 'private', 'notes', 'secrets/codes', 'stats/views', 'stats/clicks'].forEach(p => Store.remove(`${p}/${t.id}`)); }
     toast('تم الحذف');
   };
   $('#rs', main).onchange = async e => {
@@ -524,23 +590,24 @@ function aBackup(main) {
 /* بيانات تجريبية بأسماء افتراضية (demo: true) */
 async function seedDemo() {
   const D = [
-    ['م. فيصل الغامدي', 'Faisal Alghamdi', 'm', 'riyadh', 'الرياض', 'مدرب معتمد في الذكاء الاصطناعي وتحليل البيانات', ['ai-data', 'programming', 'digital'], 'تعلم الآلة للمبتدئين، تحليل البيانات بـ Python، الذكاء الاصطناعي التوليدي في بيئة العمل', 9, 2100, 85, 'night', ['onsite', 'online']],
-    ['أ. نورة القحطاني', 'Noura Alqahtani', 'f', 'eastern', 'الدمام', 'مدربة قيادة وتطوير مؤسسي', ['leadership', 'hr', 'quality'], 'القيادة التحويلية، بناء فرق العمل، إدارة التغيير، التخطيط الاستراتيجي', 14, 3600, 140, 'rose', ['onsite', 'hybrid']],
-    ['د. عبدالله الحربي', 'Abdullah Alharbi', 'm', 'madinah', 'المدينة المنورة', 'مستشار ومدرب في ريادة الأعمال', ['entrepreneur', 'finance', 'projects'], 'من الفكرة إلى المشروع، دراسات الجدوى، نماذج العمل التجارية، التمويل للمشاريع الناشئة', 11, 2800, 96, 'sand', ['onsite', 'online']],
+    ['م. فيصل الغامدي', 'Faisal Alghamdi', 'm', 'riyadh', 'الرياض', 'مدرب معتمد في الذكاء الاصطناعي وتحليل البيانات', ['ai-data', 'programming', 'digital'], 'تعلم الآلة للمبتدئين، تحليل البيانات بـ Python، الذكاء الاصطناعي التوليدي في بيئة العمل', 9, 2100, 85, 'deep', ['onsite', 'online']],
+    ['أ. نورة القحطاني', 'Noura Alqahtani', 'f', 'eastern', 'الدمام', 'مدربة قيادة وتطوير مؤسسي', ['leadership', 'hr', 'quality'], 'القيادة التحويلية، بناء فرق العمل، إدارة التغيير، التخطيط الاستراتيجي', 14, 3600, 140, 'sage', ['onsite', 'hybrid']],
+    ['د. عبدالله الحربي', 'Abdullah Alharbi', 'm', 'madinah', 'المدينة المنورة', 'مستشار ومدرب في ريادة الأعمال', ['entrepreneur', 'finance', 'projects'], 'من الفكرة إلى المشروع، دراسات الجدوى، نماذج العمل التجارية، التمويل للمشاريع الناشئة', 11, 2800, 96, 'cream', ['onsite', 'online']],
     ['أ. ريم الشهري', 'Reem Alshehri', 'f', 'asir', 'أبها', 'مدربة مهارات الاتصال وصناعة المحتوى', ['content', 'soft', 'marketing'], 'فن الإلقاء، صناعة المحتوى الرقمي، التسويق عبر وسائل التواصل، العلامة الشخصية', 7, 1500, 60, 'teal', ['online', 'hybrid']],
-    ['م. خالد العتيبي', 'Khalid Alotaibi', 'm', 'makkah', 'جدة', 'مدرب الأمن السيبراني والتحول الرقمي', ['cyber', 'it', 'digital'], 'أساسيات الأمن السيبراني، التوعية الأمنية للموظفين، حوكمة التقنية', 10, 1900, 70, 'graphite', ['onsite', 'online']],
-    ['أ. سارة الدوسري', 'Sarah Aldosari', 'f', 'qassim', 'بريدة', 'مدربة إرشاد مهني ومهارات التوظيف', ['career', 'hr-dev', 'soft'], 'كتابة السيرة الذاتية، اجتياز المقابلات، التخطيط المهني، إدارة الوقت', 6, 1100, 48, 'emerald', ['onsite', 'online']],
-    ['أ. ماجد الشمري', 'Majed Alshammari', 'm', 'hail', 'حائل', 'مدرب تطوير الذات والتفكير الإبداعي', ['hr-dev', 'innovation', 'education'], 'التفكير الإبداعي، حل المشكلات، الذكاء العاطفي، تصميم الحقائب التدريبية', 12, 3000, 120, 'emerald', ['onsite']],
-    ['أ. هند المالكي', 'Hind Almalki', 'f', 'tabuk', 'تبوك', 'مدربة خدمة العملاء وتجربة المستفيد', ['customer', 'quality', 'soft'], 'تجربة العميل، التعامل مع العملاء الصعبين، معايير الجودة في الخدمة', 8, 1400, 55, 'rose', ['onsite', 'hybrid']]
+    ['م. خالد العتيبي', 'Khalid Alotaibi', 'm', 'makkah', 'جدة', 'مدرب الأمن السيبراني والتحول الرقمي', ['cyber', 'it', 'digital'], 'أساسيات الأمن السيبراني، التوعية الأمنية للموظفين، حوكمة التقنية', 10, 1900, 70, 'olive', ['onsite', 'online']],
+    ['أ. سارة الدوسري', 'Sarah Aldosari', 'f', 'qassim', 'بريدة', 'مدربة إرشاد مهني ومهارات التوظيف', ['career', 'hr-dev', 'soft'], 'كتابة السيرة الذاتية، اجتياز المقابلات، التخطيط المهني، إدارة الوقت', 6, 1100, 48, 'brand', ['onsite', 'online']],
+    ['أ. ماجد الشمري', 'Majed Alshammari', 'm', 'hail', 'حائل', 'مدرب تطوير الذات والتفكير الإبداعي', ['hr-dev', 'innovation', 'education'], 'التفكير الإبداعي، حل المشكلات، الذكاء العاطفي، تصميم الحقائب التدريبية', 12, 3000, 120, 'brand', ['onsite']],
+    ['أ. هند المالكي', 'Hind Almalki', 'f', 'tabuk', 'تبوك', 'مدربة خدمة العملاء وتجربة المستفيد', ['customer', 'quality', 'soft'], 'تجربة العميل، التعامل مع العملاء الصعبين، معايير الجودة في الخدمة', 8, 1400, 55, 'sage', ['onsite', 'hybrid']]
   ];
   for (const [name, nameEn, gender, region, city, title, specs, topics, years, hours, programs, theme, modes] of D) {
     const code = await Data.nextCode(); const id = code.toLowerCase();
     const rec = { id, code, name, nameEn, gender, region, city, title, specs, topics, years, hours, programs, theme, modes, langs: 'العربية، الإنجليزية',
       bio: `${gender === 'f' ? 'مدربة' : 'مدرب'} سعودي${gender === 'f' ? 'ة' : ''} بخبرة ${years} سنة في التدريب والتطوير، ${gender === 'f' ? 'قدّمت' : 'قدّم'} أكثر من ${programs} برنامجاً تدريبياً لجهات حكومية وخاصة وغير ربحية. (بيانات تجريبية)`,
-      certs: 'شهادة إعداد المدربين TOT', links: { whatsapp: '0500000000', linkedin: 'https://www.linkedin.com/' }, status: 'active', featured: years >= 10, demo: true,
+      certs: 'شهادة إعداد المدربين TOT', status: 'active', featured: years >= 10, demo: true,
       publishedAt: Date.now(), expiresAt: Date.now() + 365 * 864e5, updatedAt: Date.now() };
     rec.slug = Data.makeSlug(rec);
     Store.set(`trainers/${id}`, rec);
+    Store.set(`private/${id}`, { phone: '966500000000', email: 'demo@example.com' });
   }
   Security.log('إضافة بيانات تجريبية', `${D.length} مدرب`);
 }

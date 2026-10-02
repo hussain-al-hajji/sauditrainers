@@ -1,42 +1,38 @@
-/* البطاقة التعريفية للمدرب: مكوّن HTML تفاعلي + تصدير صورة عالية الدقة للمشاركة (منشور 4:5 وقصة 9:16) */
+/* البطاقة التعريفية للمدرب: مكوّن HTML تفاعلي + تصدير صورة عالية الدقة للمشاركة (منشور 4:5 وقصة 9:16)
+ * لا تحتوي البطاقة أي بيانات تواصل؛ التواصل مع المدرب يتم عبر نموذج المنصة فقط. */
 
-const LINKS = [
-  { k: 'whatsapp', name: 'واتساب', icon: 'fa-brands fa-whatsapp', href: v => waLink(v) },
-  { k: 'email', name: 'البريد', icon: 'fa-solid fa-envelope', href: v => (validEmail(v) ? `mailto:${String(v).trim()}` : '') },
-  { k: 'linkedin', name: 'لينكدإن', icon: 'fa-brands fa-linkedin-in', href: safeUrl },
-  { k: 'x', name: 'إكس', icon: 'fa-brands fa-x-twitter', href: v => safeUrl(/^@/.test(v) ? `x.com/${v.slice(1)}` : v) },
-  { k: 'instagram', name: 'إنستقرام', icon: 'fa-brands fa-instagram', href: v => safeUrl(/^@/.test(v) ? `instagram.com/${v.slice(1)}` : v) },
-  { k: 'youtube', name: 'يوتيوب', icon: 'fa-brands fa-youtube', href: safeUrl },
-  { k: 'website', name: 'الموقع', icon: 'fa-solid fa-globe', href: safeUrl }
-];
-const linkItems = t => LINKS.map(l => ({ ...l, url: t.links?.[l.k] ? l.href(t.links[l.k]) : '' })).filter(l => l.url);
-
-// نقش هندسي (نجمة ثمانية) بلون الثيم — يُستخدم خلفية للبطاقة
-const starPattern = (color = '#fff', op = 0.09) => `url('data:image/svg+xml,${encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'><g fill='none' stroke='${color}' stroke-opacity='${op}' stroke-width='1.1'><path d='M28 6l6.4 15.6L50 28l-15.6 6.4L28 50l-6.4-15.6L6 28l15.6-6.4z'/><rect x='16' y='16' width='24' height='24' transform='rotate(45 28 28)'/><circle cx='28' cy='28' r='4'/><path d='M0 0l8 8M56 0l-8 8M0 56l8-8M56 56l-8-8'/></g></svg>`).replace(/'/g, '%27')}')`;
+const LOGO = { green: 'assets/logo-green.png', cream: 'assets/logo-cream.png' };
+const logoImg = (variant = 'green', cls = '') => `<img class="brand-logo ${cls}" src="${variant === 'cream' ? LOGO.cream : LOGO.green}" alt="مدرّبون سعوديّون" width="94" height="50">`;
 
 const Card = (() => {
-  const brandMark = (size = 28) => `<svg class="mark" width="${size}" height="${size}" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="mk${size}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E9CF8C"/><stop offset="1" stop-color="#B98B33"/></linearGradient></defs><path d="M32 4l7.5 18.2L58 29.5l-18.5 7.4L32 60l-7.5-23.1L6 29.5l18.5-7.3z" fill="url(#mk${size})"/><circle cx="32" cy="24" r="6" fill="#0A3D2A"/><path d="M21 44c1.6-7 6-11 11-11s9.4 4 11 11" fill="#0A3D2A"/></svg>`;
+  // إطار الصورة: موضع أفقي/رأسي (0-100) وتكبير (1-2.5) يحددها المدرب عند إضافة رابط الصورة
+  const fit = t => ({ x: clampN(t.photoX, 0, 100, 50), y: clampN(t.photoY, 0, 100, 30), z: clampN(t.photoZ, 1, 2.5, 1) });
+  function clampN(v, a, b, d) { const n = Number(v); return Number.isFinite(n) && v !== '' && v != null ? Math.min(b, Math.max(a, n)) : d; }
 
   function avatar(t, cls = '') {
-    const p = Data.photo(t);
-    return p ? `<img class="${cls}" src="${esc(p)}" alt="${esc(t.name)}" loading="lazy" referrerpolicy="no-referrer" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'${cls} ph',innerHTML:'${initials(t.name).replace(/'/g, '')}'}))">`
-      : `<span class="${cls} ph">${initials(t.name)}</span>`;
+    const p = Data.photo(t), ini = initials(t.name);
+    if (!p) return `<span class="${cls} avw ph">${ini}</span>`;
+    const f = fit(t);
+    return `<span class="${cls} avw" data-i="${ini}"><img src="${esc(p)}" alt="${esc(t.name)}" loading="lazy" referrerpolicy="no-referrer" style="object-position:${f.x}% ${f.y}%;transform:scale(${f.z})" onerror="const s=this.parentNode;s.classList.add('ph');s.textContent=s.dataset.i"></span>`;
   }
-  const themeVars = t => { const th = themeOf(t.theme); return `--a:${th.a};--b:${th.b};--c:${th.c};--acc:${th.accent};--pat:${starPattern(th.accent, 0.13)}`; };
-
-  const stat = (v, l) => (Number(v) ? `<div class="tc-stat"><b class="num">${fmtNum(v)}${Number(v) >= 1000 ? '' : '+'}</b><span>${l}</span></div>` : '');
+  const themeVars = t => {
+    const th = themeOf(t.theme);
+    return `--a:${th.a};--b:${th.b};--c:${th.c};--acc:${th.accent};--fg:${th.fg};--pat:${Pattern.css(th.light ? '#005430' : th.accent, th.light ? 0.12 : 0.14)}`;
+  };
+  const themeCls = t => (themeOf(t.theme).light ? 'light' : '');
+  const stat = (v, l) => (Number(v) ? `<div class="tc-stat"><b class="num">${fmtNum(v)}+</b><span>${l}</span></div>` : '');
 
   // البطاقة الكاملة (صفحة المدرب والمعاينة ولوحة المدرب)
   function full(t, { preview = false } = {}) {
-    const sp = Data.specs(t), md = Data.modes(t);
+    const sp = Data.specs(t), md = Data.modes(t), th = themeOf(t.theme);
     const stats = [stat(t.years, 'سنة خبرة'), stat(t.hours, 'ساعة تدريبية'), stat(t.programs, 'برنامج ودورة')].filter(Boolean);
-    return `<article class="tcard full" data-tilt="8" style="${themeVars(t)}">
+    return `<article class="tcard full ${themeCls(t)}" data-tilt="8" style="${themeVars(t)}">
       <div class="tc-glow"></div><div class="tc-holo"></div>
       <header class="tc-top">
-        <span class="tc-brand">${brandMark(26)}<span>مدرّبون سعوديّون</span></span>
-        ${t.code ? `<span class="tc-code num">${esc(t.code)}</span>` : `<span class="tc-code">معاينة</span>`}
+        ${logoImg(th.light ? 'green' : 'cream', 'tc-logo')}
+        ${t.code ? `<span class="tc-code num">${esc(t.code)}</span>` : `<span class="tc-code">${preview ? 'معاينة' : ''}</span>`}
       </header>
-      <div class="tc-arch">${avatar(t, 'tc-photo')}<span class="tc-verified" title="مدرب موثّق"><i class="fa-solid fa-certificate"></i><i class="fa-solid fa-check"></i></span></div>
+      <div class="tc-ring">${avatar(t, 'tc-photo')}<span class="tc-verified" title="مدرب موثّق"><i class="fa-solid fa-certificate"></i><i class="fa-solid fa-check"></i></span></div>
       <h2 class="tc-name">${esc(t.name || 'اسم المدرب')}</h2>
       ${t.title ? `<p class="tc-title">${esc(t.title)}</p>` : ''}
       <div class="tc-meta">
@@ -45,7 +41,6 @@ const Card = (() => {
       </div>
       ${stats.length ? `<div class="tc-stats">${stats.join('')}</div>` : ''}
       ${sp.length ? `<div class="tc-chips">${sp.slice(0, 5).map(s => `<span><i class="fa-solid ${specOf(s)?.icon || 'fa-shapes'}"></i>${esc(specName(s))}</span>`).join('')}</div>` : ''}
-      ${preview ? '' : linkItems(t).length ? `<div class="tc-links">${linkItems(t).map(l => `<a href="${esc(l.url)}" target="_blank" rel="noopener" data-click="${esc(t.id)}" title="${l.name}"><i class="${l.icon}"></i></a>`).join('')}</div>` : ''}
       <footer class="tc-foot"><span>sauditrainers.sa</span><span class="tc-bar"></span></footer>
     </article>`;
   }
@@ -53,9 +48,9 @@ const Card = (() => {
   // البطاقة المصغرة (دليل المدربين)
   function mini(t, i = 0) {
     const sp = Data.specs(t);
-    return `<a class="tmini reveal" href="#/t/${esc(encodeURIComponent(t.slug || t.id))}" style="${themeVars(t)};--d:${Math.min(i, 12) * 40}ms" data-tilt="6">
+    return `<a class="tmini reveal ${themeCls(t)}" href="#/t/${esc(encodeURIComponent(t.slug || t.id))}" style="${themeVars(t)};--d:${Math.min(i, 12) * 40}ms" data-tilt="6">
       <div class="tm-head"><div class="tm-glow"></div>${t.featured ? '<span class="tm-star" title="مدرب مميز"><i class="fa-solid fa-star"></i></span>' : ''}<span class="tm-code num">${esc(t.code || '')}</span></div>
-      <div class="tm-arch">${avatar(t, 'tm-photo')}</div>
+      <div class="tm-ring">${avatar(t, 'tm-photo')}</div>
       <div class="tm-body">
         <h3>${esc(t.name)}<i class="fa-solid fa-circle-check tm-ok" title="موثّق"></i></h3>
         <p class="tm-title">${esc(t.title || '')}</p>
@@ -75,7 +70,7 @@ const Card = (() => {
     return new Promise(res => {
       if (!src) return res(null);
       const img = new Image();
-      if (!src.startsWith('data:')) img.crossOrigin = 'anonymous';
+      if (/^https?:/.test(src)) img.crossOrigin = 'anonymous';
       img.referrerPolicy = 'no-referrer';
       img.onload = () => res(img); img.onerror = () => res(null);
       img.src = src;
@@ -97,20 +92,10 @@ const Card = (() => {
   function rr(ctx, x, y, w, h, r) {
     ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
   }
-  // شكل القوس (نافذة نجدية): نصف دائرة أعلى ومستطيل أسفل
-  function arch(ctx, x, y, w, h, r = 22) {
-    const rad = w / 2;
+  function seal(ctx, cx, cy, R) {
+    const r = R * 0.8;
     ctx.beginPath();
-    ctx.moveTo(x, y + rad);
-    ctx.arc(x + rad, y + rad, rad, Math.PI, 0);
-    ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
-    ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
-    ctx.closePath();
-  }
-  function star(ctx, cx, cy, R) {
-    const r = R * 0.42;
-    ctx.beginPath();
-    for (let i = 0; i < 16; i++) { const a = -Math.PI / 2 + i * Math.PI / 8; const d = i % 2 ? r : R; ctx.lineTo(cx + d * Math.cos(a), cy + d * Math.sin(a)); }
+    for (let i = 0; i < 24; i++) { const a = -Math.PI / 2 + i * Math.PI / 12; const d = i % 2 ? r : R; ctx.lineTo(cx + d * Math.cos(a), cy + d * Math.sin(a)); }
     ctx.closePath();
   }
   function wrap(ctx, text, maxW, maxLines = 3) {
@@ -128,84 +113,82 @@ const Card = (() => {
   async function render(t, format = 'post') {
     await ensureFonts();
     const hasQR = await ensureQR();
-    const th = themeOf(t.theme);
+    const th = themeOf(t.theme), light = !!th.light, fg = th.fg;
     const W = 1080, H = format === 'story' ? 1920 : 1350;
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const ctx = cv.getContext('2d');
     ctx.direction = 'rtl'; ctx.textAlign = 'center';
 
-    // الخلفية: تدرج + توهج + نقش هندسي
+    // الخلفية: تدرج + توهج + نقش أدوات القرطاسية
     const g = ctx.createLinearGradient(0, 0, W, H);
     g.addColorStop(0, th.a); g.addColorStop(0.55, th.b); g.addColorStop(1, th.a);
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
     const glow = ctx.createRadialGradient(W * 0.5, H * 0.3, 20, W * 0.5, H * 0.3, W * 0.8);
-    glow.addColorStop(0, hex(th.c, 0.55)); glow.addColorStop(1, hex(th.c, 0));
+    glow.addColorStop(0, hex(th.c, light ? 0.35 : 0.55)); glow.addColorStop(1, hex(th.c, 0));
     ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
-    ctx.save(); ctx.strokeStyle = hex(th.accent, 0.08); ctx.lineWidth = 2;
-    for (let y = -40; y < H + 80; y += 112) for (let x = -40; x < W + 80; x += 112) { star(ctx, x + ((y / 112) % 2 ? 56 : 0), y, 38); ctx.stroke(); }
-    ctx.restore();
+    const tile = await loadImage(Pattern.url(light ? '#005430' : th.accent, light ? 0.1 : 0.11));
+    if (tile) { ctx.save(); ctx.fillStyle = ctx.createPattern(tile, 'repeat'); ctx.fillRect(0, 0, W, H); ctx.restore(); }
 
-    // إطار ذهبي مزدوج
+    // إطار مزدوج بلون الهوية
     const M = 36;
-    ctx.strokeStyle = hex(th.accent, 0.85); ctx.lineWidth = 3; rr(ctx, M, M, W - 2 * M, H - 2 * M, 44); ctx.stroke();
-    ctx.strokeStyle = hex(th.accent, 0.3); ctx.lineWidth = 1.5; rr(ctx, M + 14, M + 14, W - 2 * M - 28, H - 2 * M - 28, 34); ctx.stroke();
+    ctx.strokeStyle = hex(th.accent, 0.8); ctx.lineWidth = 3; rr(ctx, M, M, W - 2 * M, H - 2 * M, 44); ctx.stroke();
+    ctx.strokeStyle = hex(th.accent, 0.28); ctx.lineWidth = 1.5; rr(ctx, M + 14, M + 14, W - 2 * M - 28, H - 2 * M - 28, 34); ctx.stroke();
 
-    // الترويسة
-    const top = format === 'story' ? 150 : 96;
-    const mark = await loadImage('assets/mark.svg');
-    if (mark) ctx.drawImage(mark, W - 152, top - 22, 56, 56); else { ctx.fillStyle = th.accent; star(ctx, W - 124, top + 6, 26); ctx.fill(); }
-    ctx.textAlign = 'right'; ctx.fillStyle = '#fff'; ctx.font = `800 34px ${HEAD}`;
-    ctx.fillText('مدرّبون سعوديّون', W - 164, top + 18);
-    ctx.textAlign = 'left'; ctx.font = `700 28px ${UI}`;
+    // الترويسة: الشعار الرسمي + رقم المدرب
+    const top = format === 'story' ? 150 : 100;
+    const logo = await loadImage(light ? LOGO.green : LOGO.cream);
+    if (logo) { const lh = 104, lw = lh * logo.width / logo.height; ctx.drawImage(logo, W - 96 - lw, top - 52, lw, lh); }
     const code = t.code || '';
     if (code) {
+      ctx.textAlign = 'left'; ctx.font = `700 28px ${UI}`;
       const cw = ctx.measureText(code).width + 44;
-      rr(ctx, 96, top - 22, cw, 50, 25); ctx.strokeStyle = hex(th.accent, 0.9); ctx.lineWidth = 2; ctx.stroke();
-      ctx.fillStyle = th.accent; ctx.direction = 'ltr'; ctx.fillText(code, 118, top + 12); ctx.direction = 'rtl';
+      rr(ctx, 96, top - 25, cw, 50, 25); ctx.strokeStyle = hex(th.accent, 0.9); ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = th.accent; ctx.direction = 'ltr'; ctx.fillText(code, 118, top + 10); ctx.direction = 'rtl';
+      ctx.textAlign = 'center';
     }
-    ctx.textAlign = 'center';
 
-    // الصورة داخل قوس
-    const aw = format === 'story' ? 470 : 400, ah = aw * 1.18;
-    const ax = (W - aw) / 2, ay = top + (format === 'story' ? 110 : 70);
-    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 20;
-    arch(ctx, ax - 12, ay - 12, aw + 24, ah + 24, 34); ctx.fillStyle = th.accent; ctx.fill(); ctx.restore();
-    ctx.save(); arch(ctx, ax, ay, aw, ah, 26); ctx.clip();
+    // الصورة الدائرية
+    const D = format === 'story' ? 470 : 400, cx = W / 2, cy = top + (format === 'story' ? 150 : 110) + D / 2;
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 18;
+    ctx.beginPath(); ctx.arc(cx, cy, D / 2 + 16, 0, Math.PI * 2); ctx.fillStyle = th.accent; ctx.fill(); ctx.restore();
+    ctx.beginPath(); ctx.arc(cx, cy, D / 2 + 6, 0, Math.PI * 2); ctx.fillStyle = th.b; ctx.fill();
+    ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, D / 2, 0, Math.PI * 2); ctx.clip();
     const photo = await loadImage(Data.photo(t));
     if (photo) {
-      const s = Math.max(aw / photo.width, ah / photo.height);
-      ctx.drawImage(photo, ax + (aw - photo.width * s) / 2, ay + (ah - photo.height * s) * 0.3, photo.width * s, photo.height * s);
+      const f = fit(t), s = Math.max(D / photo.width, D / photo.height), iw = photo.width * s, ih = photo.height * s;
+      ctx.translate(cx, cy); ctx.scale(f.z, f.z); ctx.translate(-cx, -cy);
+      ctx.drawImage(photo, cx - D / 2 + (D - iw) * f.x / 100, cy - D / 2 + (D - ih) * f.y / 100, iw, ih);
     } else {
-      const pg = ctx.createLinearGradient(ax, ay, ax + aw, ay + ah); pg.addColorStop(0, th.c); pg.addColorStop(1, th.a);
-      ctx.fillStyle = pg; ctx.fillRect(ax, ay, aw, ah);
+      const pg = ctx.createLinearGradient(cx - D / 2, cy - D / 2, cx + D / 2, cy + D / 2); pg.addColorStop(0, th.c); pg.addColorStop(1, th.a);
+      ctx.fillStyle = pg; ctx.fillRect(cx - D / 2, cy - D / 2, D, D);
       const tmp = document.createElement('div'); tmp.innerHTML = initials(t.name);
-      ctx.fillStyle = '#fff'; ctx.font = `900 150px ${HEAD}`; ctx.textBaseline = 'middle'; ctx.fillText(tmp.textContent, W / 2, ay + ah / 2); ctx.textBaseline = 'alphabetic';
+      ctx.fillStyle = fg; ctx.font = `900 140px ${HEAD}`; ctx.textBaseline = 'middle'; ctx.fillText(tmp.textContent, cx, cy + 6); ctx.textBaseline = 'alphabetic';
     }
     ctx.restore();
     // شارة التوثيق
-    const bx = ax + aw - 18, by = ay + ah - 30;
-    ctx.fillStyle = th.accent; star(ctx, bx, by, 46); ctx.fill();
-    ctx.strokeStyle = th.a; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    const bx = cx + D * 0.36, by = cy + D * 0.36;
+    ctx.fillStyle = th.accent; seal(ctx, bx, by, 44); ctx.fill();
+    ctx.strokeStyle = light ? '#FFFFFF' : th.b; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
     ctx.beginPath(); ctx.moveTo(bx - 13, by + 1); ctx.lineTo(bx - 3, by + 11); ctx.lineTo(bx + 15, by - 10); ctx.stroke();
 
     // الاسم واللقب
-    let y = ay + ah + 100;
-    ctx.fillStyle = '#fff'; ctx.font = `900 ${String(t.name || '').length > 22 ? 56 : 66}px ${HEAD}`;
+    let y = cy + D / 2 + 100;
+    ctx.fillStyle = fg; ctx.font = `900 ${String(t.name || '').length > 22 ? 56 : 66}px ${HEAD}`;
     ctx.fillText(t.name || '', W / 2, y);
     ctx.font = `600 32px ${BODY}`; ctx.fillStyle = th.accent;
     wrap(ctx, t.title, W - 260, 2).forEach(l => { y += 54; ctx.fillText(l, W / 2, y); });
     const meta = [regionName(t.region), ...Data.modes(t).map(m => DELIVERY.find(d => d.k === m)?.name).filter(Boolean)].filter(Boolean).join('  ·  ');
-    if (meta) { y += 52; ctx.font = `500 27px ${UI}`; ctx.fillStyle = 'rgba(255,255,255,.82)'; ctx.fillText(meta, W / 2, y); }
+    if (meta) { y += 52; ctx.font = `500 27px ${UI}`; ctx.fillStyle = hex(fg, 0.8); ctx.fillText(meta, W / 2, y); }
 
     // الإحصاءات
     const stats = [[t.years, 'سنة خبرة'], [t.hours, 'ساعة تدريبية'], [t.programs, 'برنامج ودورة']].filter(s => Number(s[0]));
     if (stats.length) {
-      y += 50; const bw = 250, gap = 24, total = stats.length * bw + (stats.length - 1) * gap;
+      y += 46; const bw = 250, gap = 24, total = stats.length * bw + (stats.length - 1) * gap;
       let x = W / 2 + total / 2;
       stats.forEach(([v, l]) => {
-        rr(ctx, x - bw, y, bw, 124, 24); ctx.fillStyle = 'rgba(255,255,255,.1)'; ctx.fill(); ctx.strokeStyle = hex(th.accent, 0.4); ctx.lineWidth = 1.5; ctx.stroke();
-        ctx.fillStyle = '#fff'; ctx.font = `900 50px ${HEAD}`; ctx.direction = 'ltr'; ctx.fillText(`${fmtNum(v)}+`, x - bw / 2, y + 62); ctx.direction = 'rtl';
-        ctx.fillStyle = 'rgba(255,255,255,.75)'; ctx.font = `500 24px ${UI}`; ctx.fillText(l, x - bw / 2, y + 102);
+        rr(ctx, x - bw, y, bw, 124, 24); ctx.fillStyle = hex(fg, 0.08); ctx.fill(); ctx.strokeStyle = hex(th.accent, 0.4); ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.fillStyle = fg; ctx.font = `900 50px ${HEAD}`; ctx.direction = 'ltr'; ctx.fillText(`${fmtNum(v)}+`, x - bw / 2, y + 62); ctx.direction = 'rtl';
+        ctx.fillStyle = hex(fg, 0.72); ctx.font = `500 24px ${UI}`; ctx.fillText(l, x - bw / 2, y + 102);
         x -= bw + gap;
       });
       y += 124;
@@ -214,40 +197,45 @@ const Card = (() => {
     // التخصصات
     const sp = Data.specs(t).slice(0, format === 'story' ? 6 : 4).map(specName);
     if (sp.length) {
-      y += 40; ctx.font = `600 26px ${UI}`;
+      y += 36; ctx.font = `600 26px ${UI}`;
       const rows = []; let row = [], rw = 0; const maxW = W - 220;
       sp.forEach(s => { const w = ctx.measureText(s).width + 48; if (row.length && rw + 14 + w > maxW) { rows.push({ row, rw }); row = []; rw = 0; } rw += (row.length ? 14 : 0) + w; row.push({ s, w }); });
       if (row.length) rows.push({ row, rw });
       rows.slice(0, 3).forEach(r => {
         let x = W / 2 + r.rw / 2;
-        r.row.forEach(it => { rr(ctx, x - it.w, y, it.w, 56, 28); ctx.fillStyle = hex(th.accent, 0.16); ctx.fill(); ctx.strokeStyle = hex(th.accent, 0.55); ctx.lineWidth = 1.5; ctx.stroke(); ctx.fillStyle = '#fff'; ctx.fillText(it.s, x - it.w / 2, y + 37); x -= it.w + 14; });
+        r.row.forEach(it => { rr(ctx, x - it.w, y, it.w, 56, 28); ctx.fillStyle = hex(th.accent, light ? 0.1 : 0.14); ctx.fill(); ctx.strokeStyle = hex(th.accent, 0.5); ctx.lineWidth = 1.5; ctx.stroke(); ctx.fillStyle = fg; ctx.fillText(it.s, x - it.w / 2, y + 37); x -= it.w + 14; });
         y += 70;
       });
     }
 
-    // التذييل: رمز QR + الرابط
+    // التذييل: رمز QR + الرابط (التواصل عبر المنصة)
     const fy = H - M - 14 - 150;
-    ctx.fillStyle = 'rgba(0,0,0,.22)'; rr(ctx, M + 14, fy, W - 2 * M - 28, 150, 30); ctx.fill();
-    const url = profileUrl(t);
+    ctx.fillStyle = light ? 'rgba(0,84,48,.07)' : 'rgba(0,0,0,.22)'; rr(ctx, M + 14, fy, W - 2 * M - 28, 150, 30); ctx.fill();
     if (hasQR) {
       try {
-        const qr = window.qrcode(0, 'M'); qr.addData(url); qr.make();
+        const qr = window.qrcode(0, 'M'); qr.addData(profileUrl(t)); qr.make();
         const n = qr.getModuleCount(), size = 116, cell = size / n, qx = 104, qy = fy + 17;
         ctx.fillStyle = '#fff'; rr(ctx, qx - 8, qy - 8, size + 16, size + 16, 12); ctx.fill();
-        ctx.fillStyle = th.a;
+        ctx.fillStyle = '#00331D';
         for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (qr.isDark(r, c)) ctx.fillRect(qx + c * cell, qy + r * cell, Math.ceil(cell), Math.ceil(cell));
       } catch { /* ignore */ }
     }
-    ctx.textAlign = 'right'; ctx.fillStyle = '#fff'; ctx.font = `800 34px ${HEAD}`;
-    ctx.fillText('للتواصل وطلب التدريب', W - 110, fy + 64);
-    ctx.fillStyle = th.accent; ctx.font = `600 28px ${UI}`; ctx.direction = 'ltr'; ctx.textAlign = 'right';
+    ctx.textAlign = 'right'; ctx.fillStyle = fg; ctx.font = `800 34px ${HEAD}`;
+    ctx.fillText('للتواصل وطلب التدريب عبر المنصة', W - 110, fy + 64);
+    ctx.fillStyle = th.accent; ctx.font = `600 28px ${UI}`; ctx.direction = 'ltr';
     ctx.fillText('sauditrainers.sa', W - 110, fy + 110);
+    cv.photoFailed = !!t.photoUrl && !photo;
     return cv;
   }
 
+  const photoWarn = cv => cv.photoFailed && toast('تعذّر قراءة الصورة من الرابط؛ تأكد أن ملف Google Drive مشارَك «لأي شخص لديه الرابط»', 'error');
   async function toBlob(t, format) {
-    const cv = await render(t, format);
+    const cv = await render(t, format); photoWarn(cv);
     return new Promise(r => cv.toBlob(r, 'image/png'));
+  }
+  async function toJPEG(t, format = 'post') {
+    const cv = await render(t, format);
+    return { data: cv.toDataURL('image/jpeg', 0.86), photoFailed: cv.photoFailed };
   }
   async function save(t, format = 'post') {
     toast('جارٍ تجهيز البطاقة بدقة عالية...');
@@ -278,10 +266,10 @@ const Card = (() => {
         <button class="sh im" data-img="post"><i class="fa-solid fa-image"></i>صورة منشور</button>
         <button class="sh st" data-img="story"><i class="fa-solid fa-mobile-screen"></i>صورة قصة</button>
       </div>
-      <p class="muted small">صور المنشور (4:5) والقصة (9:16) مناسبة لإنستقرام وسناب ولينكدإن، وفيها رمز QR يفتح صفحتك مباشرة.</p>`);
+      <p class="muted small">صور المنشور (4:5) والقصة (9:16) مناسبة لإنستقرام وسناب ولينكدإن، وفيها رمز QR يفتح صفحة المدرب مباشرة.</p>`);
     m.$('[data-copy]').onclick = () => copyText(url, 'تم نسخ رابط البطاقة');
     m.el.querySelectorAll('[data-img]').forEach(b => { b.onclick = () => save(t, b.dataset.img); });
   }
 
-  return { full, mini, avatar, brandMark, save, share, shareSheet, render };
+  return { full, mini, avatar, fit, save, share, shareSheet, render, toJPEG, themeVars };
 })();

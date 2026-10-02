@@ -29,6 +29,9 @@ Pages.me = {
     const t = Store.get(`trainers/${s.id}`);
     if (!t) return;
     const main = $('#pt', root);
+    // تنبيه بالطلبات الجديدة مرة واحدة في الجلسة
+    const fresh = Store.list('leads').filter(l => l.trainerId === t.id && l.status === 'new').length;
+    try { if (fresh && sessionStorage.getItem('st-leads-seen') !== String(fresh)) { sessionStorage.setItem('st-leads-seen', String(fresh)); toast(`لديك ${fresh} ${fresh === 1 ? 'طلب تواصل جديد' : 'طلبات تواصل جديدة'} من جهات تدريبية`); } } catch { /* ignore */ }
     ({ home: portalHome, edit: portalEdit, leads: portalLeads })[this.tab](main, t);
   },
   // لا نعيد رسم نموذج التعديل أثناء الكتابة
@@ -47,7 +50,6 @@ function portalHome(main, t) {
     ${note?.text ? `<div class="banner ok"><i class="fa-solid fa-bullhorn"></i><div><b>رسالة من الإدارة</b><br>${nl2br(note.text)}</div></div>` : ''}
     <div class="kpis">
       <div class="kpi dark"><i class="fa-solid fa-eye"></i><b class="num" data-count="${Data.views(t.id)}">0</b><span>مشاهدة لبطاقتك</span></div>
-      <div class="kpi"><i class="fa-solid fa-hand-pointer"></i><b class="num" data-count="${Data.clicks(t.id)}">0</b><span>نقرة على وسائل التواصل</span></div>
       <div class="kpi"><i class="fa-solid fa-inbox"></i><b class="num" data-count="${leads.length}">0</b><span>طلب من جهات تدريبية</span></div>
       <div class="kpi"><i class="fa-solid fa-calendar-check"></i><b class="num">${days != null ? Math.max(0, days) : '∞'}</b><span>يوماً متبقية للنشر</span></div>
     </div>
@@ -64,7 +66,6 @@ function portalHome(main, t) {
         <div class="pbox"><h3><i class="fa-solid fa-lightbulb"></i>نصائح لبطاقة أقوى</h3>
           <ul style="margin:0;padding-inline-start:18px;color:var(--ink2)">
             ${!Data.photo(t) ? '<li>أضف صورة شخصية واضحة — البطاقات ذات الصور تحصل على مشاهدات أكثر.</li>' : ''}
-            ${!t.links?.whatsapp ? '<li>أضف رقم واتساب ليسهل على الجهات التواصل معك مباشرة.</li>' : ''}
             ${Data.topics(t).length < 3 ? '<li>أضف برامجك التدريبية في «البرامج ومجالات الخبرة» لتظهر في نتائج البحث.</li>' : ''}
             ${!Number(t.hours) ? '<li>أضف عدد ساعاتك التدريبية لتظهر كمؤشر بارز في بطاقتك.</li>' : ''}
             <li>شارك بطاقتك في لينكدإن وإكس — كل مشاهدة تُحتسب في لوحتك.</li>
@@ -81,32 +82,31 @@ function portalHome(main, t) {
 }
 
 function portalEdit(main, t) {
-  let photo = '';
-  const F = profileFields({ ...t, _photo: Data.photo(t) }, { withPrivate: false });
+  const steps = FormKit.steps('self');
   main.innerHTML = `
     <div class="dash-h"><h2>تعديل بطاقتي</h2><span class="muted small">التعديلات تظهر للزوار فور الحفظ</span></div>
+    <div class="banner info"><i class="fa-solid fa-lock"></i>بيانات تواصلك (الجوال والبريد) لا تظهر في المنصة؛ تصلك طلبات الجهات عبر المنصة والبريد.</div>
     <div class="editor">
-      <form id="ef" class="panel" style="display:grid;gap:18px" autocomplete="off">
-        <h3><i class="fa-solid fa-id-card" style="color:var(--gold-d)"></i> البيانات الأساسية</h3>${F.basic}
-        <h3><i class="fa-solid fa-layer-group" style="color:var(--gold-d)"></i> التخصص</h3>${F.spec}
-        <h3><i class="fa-solid fa-award" style="color:var(--gold-d)"></i> الخبرة</h3>${F.exp}
-        <h3><i class="fa-solid fa-camera" style="color:var(--gold-d)"></i> الصورة والتصميم والتواصل</h3>${F.media}
+      <form id="ef" class="panel" style="display:grid;gap:18px" autocomplete="off" novalidate>
+        ${steps.map(s => `<h3><i class="fa-solid ${esc(s.icon || 'fa-circle')}" style="color:var(--g600)"></i> ${esc(s.title)}</h3>${FormKit.stepHTML(s, t)}`).join('')}
         <div class="row end" style="position:sticky;bottom:12px"><button class="btn primary lg" style="box-shadow:var(--sh3)"><i class="fa-solid fa-floppy-disk"></i> حفظ التعديلات</button></div>
       </form>
       <div class="preview"><div class="lbl center small muted" style="margin-bottom:8px"><i class="fa-solid fa-eye"></i> معاينة حيّة</div><div id="pvw"></div></div>
     </div>`;
   const form = $('#ef', main);
-  const preview = () => previewCard($('#pvw', main), { ...readProfile(form), code: t.code }, photo || Data.photo(t));
-  wireProfileForm(form, { onPhoto: u => { photo = u; }, preview });
+  const preview = () => previewCard($('#pvw', main), { ...FormKit.read(form), code: t.code });
+  FormKit.wire(form, preview);
   preview();
   form.onsubmit = e => {
     e.preventDefault();
-    const d = readProfile(form);
-    if (!d.name || !d.title || !d.region || !d.specs.length) { toast('الاسم واللقب والمنطقة وتخصص واحد على الأقل مطلوبة', 'error'); return; }
-    const upd = Data.pick(d, Data.PUBLIC_FIELDS.filter(k => k !== 'photoUrl'));
+    const d = FormKit.read(form);
+    const err = FormKit.validate(steps.flatMap(s => s.fields), d, form);
+    if (err) { toast(err, 'error'); return; }
+    const upd = Data.pick(d, Data.PUBLIC_FIELDS);
     upd.updatedAt = Date.now();
+    const pub = Data.splitExtra(d.extra).pub;
+    upd.extra = Object.keys(pub).length ? { ...(t.extra || {}), ...pub } : (t.extra || null);
     Store.update(`trainers/${t.id}`, upd);
-    if (photo) Store.set(`photos/${t.id}`, photo);
     toast('تم حفظ بطاقتك');
   };
 }

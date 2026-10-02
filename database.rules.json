@@ -76,6 +76,18 @@
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000",
             ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
           },
+          "photoX": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "photoY": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
+          "photoZ": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 3",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
           "specs": {
             ".validate": "newData.hasChildren()",
             "$i": {
@@ -90,9 +102,9 @@
             },
             ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
           },
-          "links": {
+          "extra": {
             "$k": {
-              ".validate": "$k.matches(/^(whatsapp|email|linkedin|x|instagram|youtube|website)$/) && newData.isString() && newData.val().length <= 200"
+              ".validate": "$k.matches(/^[a-z0-9_]{1,30}$/) && newData.isString() && newData.val().length <= 1000"
             },
             ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
           },
@@ -135,12 +147,8 @@
           }
         }
       },
-      "photos": {
-        ".read": true,
-        "$id": {
-          ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)",
-          ".validate": "newData.isString() && newData.val().beginsWith('data:image/') && newData.val().length < 250000"
-        }
+      "showcase": {
+        ".read": true
       },
       "stats": {
         ".read": true,
@@ -197,6 +205,15 @@
           "trainerName": {
             ".validate": "newData.isString() && newData.val().length <= 80"
           },
+          "emailedAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "waSentAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "notifiedAt": {
+            ".validate": "newData.isNumber()"
+          },
           "status": {
             ".validate": "newData.val() == 'new' || (((auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com')) || (auth != null && root.child('sauditrainers/admins/' + auth.uid).exists())) || newData.val() == 'done')",
             ".write": "auth != null && data.parent().child('trainerId').val() == root.child('sauditrainers/uids/' + auth.uid).val() && (newData.val() == 'done' || newData.val() == 'new')"
@@ -238,6 +255,15 @@
           },
           "msg": {
             ".validate": "newData.isString() && newData.val().length <= 2000"
+          },
+          "emailedAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "waSentAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "notifiedAt": {
+            ".validate": "newData.isNumber()"
           },
           "spec": {
             ".validate": "newData.isString() && newData.val().length <= 20"
@@ -313,7 +339,7 @@
       },
       "applications": {
         "$id": {
-          ".write": "(!data.exists() && newData.hasChildren([\"name\", \"phone\", \"email\", \"region\", \"specs\", \"tot\", \"ts\", \"status\"])) || ((auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com')) || (auth != null && root.child('sauditrainers/admins/' + auth.uid).exists()))",
+          ".write": "(!data.exists() && newData.hasChildren([\"name\", \"phone\", \"email\", \"region\", \"specs\", \"ts\", \"status\"])) || ((auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com')) || (auth != null && root.child('sauditrainers/admins/' + auth.uid).exists()))",
           "name": {
             ".validate": "newData.isString() && newData.val().length <= 60"
           },
@@ -359,6 +385,15 @@
           "programs": {
             ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10000"
           },
+          "photoX": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+          },
+          "photoY": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+          },
+          "photoZ": {
+            ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 3"
+          },
           "specs": {
             ".validate": "newData.hasChildren()",
             "$i": {
@@ -381,12 +416,12 @@
             ".validate": "newData.isString() && newData.val().length <= 300"
           },
           "tot": {
-            ".validate": "newData.val() == true"
-          },
-          "photo": {
-            ".validate": "newData.isString() && newData.val().beginsWith('data:image/') && newData.val().length < 250000"
+            ".validate": "newData.isBoolean()"
           },
           "decidedAt": {
+            ".validate": "newData.isNumber()"
+          },
+          "notifiedAt": {
             ".validate": "newData.isNumber()"
           },
           "trainerId": {
@@ -404,9 +439,9 @@
           "$other": {
             ".validate": false
           },
-          "links": {
+          "extra": {
             "$k": {
-              ".validate": "$k.matches(/^(whatsapp|email|linkedin|x|instagram|youtube|website)$/) && newData.isString() && newData.val().length <= 200"
+              ".validate": "$k.matches(/^[a-z0-9_]{1,30}$/) && newData.isString() && newData.val().length <= 1000"
             }
           },
           ".validate": "$id.matches(/^A[0-9A-Z]{7}$/)"

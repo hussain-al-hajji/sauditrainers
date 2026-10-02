@@ -8,7 +8,7 @@ const Data = (() => {
     return out;
   };
 
-  const photo = t => (t && (Store.get(`photos/${t.id}`) || driveImg(t.photoUrl))) || '';
+  const photo = t => (t && driveImg(t.photoUrl)) || '';
   const specs = t => (Array.isArray(t?.specs) ? t.specs : Object.values(t?.specs || {})).filter(Boolean);
   const modes = t => (Array.isArray(t?.modes) ? t.modes : Object.values(t?.modes || {})).filter(Boolean);
   const topics = t => splitList(t?.topics);
@@ -74,7 +74,9 @@ const Data = (() => {
   }
 
   // الحقول العامة للمدرب (المسموح بتعديلها من صفحته — تطابق القواعد)
-  const PUBLIC_FIELDS = ['name', 'nameEn', 'title', 'gender', 'region', 'city', 'bio', 'specs', 'topics', 'modes', 'years', 'hours', 'programs', 'certs', 'langs', 'theme', 'links', 'photoUrl'];
+  const PUBLIC_FIELDS = ['name', 'nameEn', 'title', 'gender', 'region', 'city', 'bio', 'specs', 'topics', 'modes', 'years', 'hours', 'programs', 'certs', 'langs', 'theme', 'photoUrl', 'photoX', 'photoY', 'photoZ'];
+  // تقسيم إجابات الحقول المخصصة: العامة تظهر في صفحة المدرب، والباقي في بياناته الإدارية
+  const splitExtra = extra => { const pub = {}, priv = {}; Object.entries(extra || {}).forEach(([k, v]) => { (FormKit.isPublicExtra(k) ? pub : priv)[k] = v; }); return { pub, priv }; };
   const pick = (o, keys) => { const r = {}; keys.forEach(k => { if (o[k] !== undefined) r[k] = o[k]; }); return r; };
 
   async function publishFromApplication(app) {
@@ -85,9 +87,10 @@ const Data = (() => {
       publishedAt: Date.now(), expiresAt: Date.now() + 365 * 864e5, updatedAt: Date.now(), appId: app.id
     };
     t.slug = makeSlug(t);
+    const ex = splitExtra(app.extra);
+    if (Object.keys(ex.pub).length) t.extra = ex.pub;
     Store.set(`trainers/${id}`, t);
-    if (app.photo) Store.set(`photos/${id}`, app.photo);
-    Store.set(`private/${id}`, { phone: app.phone || '', email: app.email || '' });
+    Store.set(`private/${id}`, { phone: app.phone || '', email: app.email || '', ...(Object.keys(ex.priv).length ? { extra: ex.priv } : {}) });
     Store.update(`applications/${app.id}`, { status: 'published', trainerId: id, decidedAt: Date.now() });
     Store.update(`appStatus/${app.id}`, { status: 'published', ts: Date.now(), trainerSlug: t.slug });
     const secret = await Security.issueCode(t);
@@ -102,5 +105,17 @@ const Data = (() => {
     Store.transaction(`stats/${kind}/${id}`, c => (Number(c) || 0) + 1).catch(() => {});
   }
 
-  return { content, photo, specs, modes, topics, all, live, trainer, isLive, expired, search, match, regionCounts, specCounts, views, clicks, nextCode, makeSlug, publishFromApplication, track, PUBLIC_FIELDS, pick };
+  return { content, photo, specs, modes, topics, all, live, trainer, isLive, expired, search, match, regionCounts, specCounts, views, clicks, nextCode, makeSlug, publishFromApplication, track, PUBLIC_FIELDS, pick, splitExtra };
 })();
+
+/* الأتمتة (اختيارية): رابط Google Apps Script يرسل البريد من حساب المنصة وينشر في وسائل التواصل.
+ * يُرسل له رقم السجل فقط، ويقرأ هو التفاصيل من قاعدة البيانات بصلاحيته. */
+const Automation = {
+  get url() { return window.ST_CONFIG.automationUrl || ''; },
+  get on() { return /^https:\/\/script\.google\.com\//.test(this.url); },
+  notify(action, id) {
+    if (!this.on) return Promise.resolve(false);
+    return fetch(this.url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, id, root: window.ST_CONFIG.dbRoot || 'sauditrainers' }) })
+      .then(() => true, () => false);
+  }
+};
