@@ -11,7 +11,7 @@
  */
 
 const CFG = {
-  DB_URL: 'https://YOUR-PROJECT-default-rtdb.firebaseio.com', // databaseURL من js/config.js
+  DB_URL: 'https://sauditrainers-6c989-default-rtdb.firebaseio.com', // databaseURL من js/config.js
   ROOT: 'sauditrainers',                                       // dbRoot
   SITE: 'https://www.sauditrainers.sa/',                       // رابط المنصة
   ADMIN_EMAIL: 'trainers.sa3@gmail.com',                       // بريد الإدارة (نسخة من كل طلب)

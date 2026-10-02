@@ -10,10 +10,10 @@ window.ST_CONFIG = {
   firebase: null,
   /* مثال:
   firebase: {
-    apiKey: '...',
-    authDomain: 'sauditrainers-xxxx.firebaseapp.com',
-    databaseURL: 'https://sauditrainers-xxxx-default-rtdb.firebaseio.com',
-    projectId: 'sauditrainers-xxxx',
+    apiKey: '...',                      // من Firebase ← Project settings ← Your apps ← Web app
+    authDomain: 'sauditrainers-6c989.firebaseapp.com',
+    databaseURL: 'https://sauditrainers-6c989-default-rtdb.firebaseio.com',
+    projectId: 'sauditrainers-6c989',
     appId: '1:...:web:...'
   },
   */
