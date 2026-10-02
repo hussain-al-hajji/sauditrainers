@@ -108,6 +108,10 @@
             ".validate": "newData.isBoolean()",
             ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
           },
+          "tot": {
+            ".validate": "newData.isBoolean()",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
           "cardSpecs": {
             ".validate": "newData.hasChildren()",
             "$i": {
@@ -453,6 +457,9 @@
           "travel": {
             ".validate": "newData.isBoolean()"
           },
+          "tot": {
+            ".validate": "newData.isBoolean()"
+          },
           "cardSpecs": {
             ".validate": "newData.hasChildren()",
             "$i": {
@@ -488,9 +495,6 @@
           },
           "cvUrl": {
             ".validate": "newData.isString() && newData.val().length <= 300"
-          },
-          "tot": {
-            ".validate": "newData.isBoolean()"
           },
           "ack": {
             ".validate": "newData.isBoolean()"

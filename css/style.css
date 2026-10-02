@@ -953,3 +953,13 @@ input:checked + .cdot { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--g600); }
 .chk.consent > span > i:first-child::before { content: '\f00c'; font-family: 'Font Awesome 6 Free'; font-weight: 900; font-size: 12px; color: #fff; opacity: 0; transition: opacity .15s; }
 .chk.consent > input:checked + span > i:first-child { background: var(--g500); border-color: #fff; }
 .chk.consent > input:checked + span > i:first-child::before { opacity: 1; }
+
+/* خيار «حاصل على شهادة تدريب المدربين»: دائرة فارغة يظهر فيها مربع أخضر عند الاختيار */
+.chk.tot > span { gap: 10px; }
+.chk.tot > span .tot-dot { flex: none; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--g300); background: #fff; display: inline-grid; place-items: center; transition: border-color .15s; }
+.chk.tot > span .tot-dot::after { content: ''; width: 12px; height: 12px; border-radius: 3px; background: var(--g500); transform: scale(0); transition: transform .15s; }
+.chk.tot > input:checked + span { background: #fff; color: var(--ink); border-color: var(--g500); box-shadow: 0 0 0 3px rgba(26,154,99,.15); }
+.chk.tot > input:checked + span .tot-dot { border-color: var(--g500); }
+.chk.tot > input:checked + span .tot-dot::after { transform: scale(1); }
+.tot-badge { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; padding: 6px 14px; border-radius: 999px; font-family: var(--f-ui); font-size: .85rem; font-weight: 700; background: rgba(238,243,229,.14); color: var(--gold2); border: 1px solid rgba(238,243,229,.3); }
+@media (max-width: 960px) { .tot-badge { background: var(--g50); color: var(--g800); border-color: var(--g100); } }

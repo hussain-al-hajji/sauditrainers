@@ -24,12 +24,12 @@ const CORE_FIELDS = {
   years: { label: 'سنوات الخبرة التدريبية', type: 'number', max: 60 },
   hours: { label: 'الساعات التدريبية المنفذة', type: 'number', max: 100000 },
   programs: { label: 'عدد البرامج والدورات', type: 'number', max: 10000 },
-  certs: { label: 'الشهادات والاعتمادات', type: 'textarea', max: 800, ph: 'مثال: شهادة إعداد المدربين TOT', w: 'full' },
+  certs: { label: 'الشهادات والاعتمادات', type: 'textarea', max: 800, ph: 'مثلاً: مدرب معتمد في تقنية المعلومات من المؤسسة العامة للتدريب التقني والمهني ...', w: 'full' },
   bio: { label: 'نبذة تعريفية', type: 'textarea', max: 1200, req: true, ph: 'عرّف بنفسك وبخبرتك التدريبية وأبرز إنجازاتك', hint: 'لا تضع أرقام تواصل أو بريداً أو روابط؛ التواصل يتم عبر المنصة', w: 'full' },
   langs: { label: 'لغة التدريب', type: 'langs', req: true, w: 'full' },
   photoUrl: { label: 'الصورة الشخصية (رابط مشاركة الصورة)', type: 'photo', w: 'full' },
   theme: { label: 'تصميم البطاقة', type: 'theme', w: 'full' },
-  tot: { label: 'شهادة تدريب المدربين (TOT)', type: 'tot', req: true, joinOnly: true, w: 'full' },
+  tot: { label: 'حاصل على شهادة تدريب المدربين', type: 'tot', w: 'full' },
   cvUrl: { label: 'رابط الشهادات أو السيرة الذاتية', type: 'url', joinOnly: true, priv: true, ltr: true, ph: 'https://drive.google.com/...', hint: 'يطّلع عليه فريق المراجعة فقط', w: 'full' }
 };
 
@@ -53,13 +53,13 @@ function defaultForms() {
     join: { steps: [
       { id: 's1', title: 'البيانات', icon: 'fa-id-card', desc: 'بيانات التواصل الإداري لا تظهر لأحد في المنصة.', fields: f(['name', 'nameEn', 'gender', 'region', 'city', 'travel', 'phone', 'email']) },
       { id: 's2', title: 'التخصص', icon: 'fa-layer-group', desc: 'اختر ما تمارس التدريب فيه فعلياً؛ تظهر بطاقتك في نتائج هذه التخصصات.', fields: f(['title', 'specs', 'topics', 'modes']) },
-      { id: 's3', title: 'الخبرة', icon: 'fa-award', desc: 'الأرقام تظهر في بطاقتك كمؤشرات بارزة.', fields: [{ k: 'tot' }, { k: 'cvUrl', hidden: true }, ...f(['years', 'hours', 'programs', 'certs', 'bio', 'langs'])] },
+      { id: 's3', title: 'الخبرة', icon: 'fa-award', desc: 'الأرقام تظهر في بطاقتك كمؤشرات بارزة.', fields: [{ k: 'cvUrl', hidden: true }, ...f(['years', 'hours', 'programs', 'certs', 'bio', 'langs', 'tot'])] },
       { id: 's4', title: 'الصورة والتصميم', icon: 'fa-camera', desc: 'هذه الخطوة اختيارية: عند الرغبة في نشر صورتك أضف رابط مشاركتها من Google Drive أو أي مساحة تخزين سحابية ونسّقها داخل الدائرة، أو أجّلها الآن وأضفها لاحقاً من لوحتك. واختر تصميم بطاقتك.', fields: f(['photoUrl', 'theme']) }
     ] },
     admin: { steps: [
       { id: 'a1', title: 'البيانات الأساسية', icon: 'fa-id-card', fields: f(['name', 'nameEn', 'gender', 'region', 'city', 'travel', 'phone', 'email']) },
       { id: 'a2', title: 'التخصص', icon: 'fa-layer-group', fields: f(['title', 'specs', 'bio', 'topics', 'modes']) },
-      { id: 'a3', title: 'الخبرة', icon: 'fa-award', fields: f(['years', 'hours', 'programs', 'certs', 'langs']) },
+      { id: 'a3', title: 'الخبرة', icon: 'fa-award', fields: f(['years', 'hours', 'programs', 'certs', 'langs', 'tot']) },
       { id: 'a4', title: 'الصورة والتصميم', icon: 'fa-camera', fields: f(['photoUrl', 'theme']) }
     ] }
   };
@@ -126,8 +126,7 @@ const FormKit = (() => {
           <label class="chk"><input type="checkbox" data-lang-other ${other ? 'checked' : ''}><span><i class="fa-solid fa-plus"></i>أخرى</span></label></div>
           <input type="text" class="lang-other ${other ? '' : 'hidden'}" name="langsOther" maxlength="30" placeholder="اكتب اللغة الأخرى" value="${esc(other)}">`;
       }
-      case 'tot': return `<div class="tot-box"><label class="chk consent"><input type="radio" name="tot" value="1" ${d.tot === true ? 'checked' : ''}><span><i class="fa-solid fa-circle-check"></i>أؤكد أنني حصلت على شهادة تدريب المدربين (TOT)</span></label>
-          <label class="chk consent"><input type="radio" name="tot" value="0" ${d.tot === false ? 'checked' : ''}><span><i class="fa-solid fa-circle-minus"></i>لم أحصل على شهادة ToT حتى الآن</span></label></div>`;
+      case 'tot': return `<label class="chk tot"><input type="checkbox" name="tot" ${d.tot === true ? 'checked' : ''}><span><i class="tot-dot"></i>حاصل على شهادة تدريب المدربين</span></label>`;
       case 'modes': { const md = Data.modes(d); return `<div class="checks">${DELIVERY.map(x => `<label class="chk"><input type="checkbox" name="modes" data-multi value="${x.k}" ${md.includes(x.k) ? 'checked' : ''}><span><i class="fa-solid ${x.icon}"></i>${x.name}</span></label>`).join('')}</div>`; }
       case 'consent': return `<label class="chk consent"><input type="checkbox" name="${name}" ${v === true || v === 'نعم' ? 'checked' : ''}><span><i class="fa-solid fa-circle-check"></i>${esc(f.label)}${required(f) ? ' *' : ''}</span></label>`;
       case 'theme': return `<div class="themes">${CARD_THEMES.map(t => `<label title="${t.name}"><input type="radio" name="theme" value="${t.k}" ${(v || 'brand') === t.k ? 'checked' : ''}><span style="background:linear-gradient(135deg,${t.a},${t.c})${t.light ? ';box-shadow:inset 0 0 0 1px #c9d8c0' : ''}"></span><em>${t.name}</em></label>`).join('')}</div>`;
@@ -179,7 +178,6 @@ const FormKit = (() => {
     ['years', 'hours', 'programs'].forEach(k => { if (k in d) d[k] = Math.max(0, Number(toEnDigits(d[k])) || 0); });
     ['photoX', 'photoY', 'photoZ'].forEach(k => { if (k in d) d[k] = Number(d[k]); });
     d.noPhoto = d.noPhoto === '1' && d.gender === 'f'; // الصورة الرمزية للمدربات فقط
-    if ('tot' in d) { d.tot = d.tot === '1' ? true : d.tot === '0' ? false : undefined; if (d.tot === undefined) delete d.tot; }
     if ('langsSel' in d || 'langsOther' in d) { d.langs = [...(d.langsSel || []), ...(d.langsOther ? [d.langsOther] : [])].join('، '); delete d.langsSel; delete d.langsOther; }
     if ('regions' in d) { d.regions = d.regions.filter(k => regionOf(k)); d.region = d.regions[0] || ''; } // الأولى رئيسية (البطاقة والبحث)
     if (d.specs) {
@@ -196,8 +194,8 @@ const FormKit = (() => {
     const bad = (f, msg) => { const el = form.querySelector(`[data-f="${CSS.escape(f.k)}"]`) || form.querySelector(`[name="${f.custom ? 'x_' + f.k : f.k}"]`); el && el.classList.add('inv'); el && el.scrollIntoView({ behavior: 'smooth', block: 'center' }); return msg; };
     for (const f of fields) {
       const v = val(d, f);
-      const empty = f.type === 'tot' ? v == null : (v == null || v === '' || v === false || (Array.isArray(v) && !v.length) || (f.type === 'number' && !Number(v) && required(f)));
-      if (required(f) && empty) return bad(f, f.type === 'consent' ? `يلزم الإقرار: ${f.label}` : f.type === 'tot' ? 'اختر: حصلت على شهادة TOT، أو لم أحصل عليها حتى الآن' : `أكمل الحقل: ${f.label}`);
+      const empty = v == null || v === '' || v === false || (Array.isArray(v) && !v.length) || (f.type === 'number' && !Number(v) && required(f));
+      if (required(f) && empty) return bad(f, f.type === 'consent' ? `يلزم الإقرار: ${f.label}` : `أكمل الحقل: ${f.label}`);
       if (empty) continue;
       if (f.type === 'tel' && !validPhone(v)) return bad(f, 'رقم الجوال غير صحيح (مثال: 0501234567)');
       if (f.type === 'email' && !validEmail(v)) return bad(f, 'البريد الإلكتروني غير صحيح');

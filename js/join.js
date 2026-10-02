@@ -71,9 +71,9 @@ Pages.join = {
       const d = FormKit.read(form);
       const show = f => {
         const v = f.custom ? d.extra[f.k] : d[f.k];
-        if ((v == null || v === '') && f.type !== 'tot' || (v === false && f.type === 'consent') || f.type === 'theme' || f.type === 'photo' || (f.type === 'tot' && v == null)) return '';
+        if (v == null || v === '' || v === false || f.type === 'theme' || f.type === 'photo') return '';
         const txt = f.type === 'specs' ? Data.specs(d).map(specName).join('، ') : f.type === 'modes' ? Data.modes(d).map(m => DELIVERY.find(x => x.k === m)?.name).join('، ')
-          : f.type === 'region' ? regionsLabel(d) : f.type === 'gender' ? (v === 'f' ? 'مدربة' : 'مدرب') : f.type === 'consent' ? '✓' : f.type === 'tot' ? (v ? 'حصلت على شهادة TOT' : 'لم أحصل على الشهادة حتى الآن') : String(v).replace(/\|/g, '، ');
+          : f.type === 'region' ? regionsLabel(d) : f.type === 'gender' ? (v === 'f' ? 'مدربة' : 'مدرب') : f.type === 'consent' ? '✓' : f.type === 'tot' ? 'حاصل على شهادة تدريب المدربين' : String(v).replace(/\|/g, '، ');
         return `<dt>${esc(f.label)}</dt><dd>${esc(txt)}</dd>`;
       };
       $('#sum', root).innerHTML = `<dl class="dl">${steps.flatMap(s => s.fields).map(show).join('')}</dl>`;
@@ -88,7 +88,7 @@ Pages.join = {
       const id = appId();
       const rec = { ...Data.pick(d, Data.PUBLIC_FIELDS), phone: phoneDigits(d.phone), email: String(d.email || '').toLowerCase(), id, ts: Date.now(), status: 'new' };
       if (d.cvUrl) rec.cvUrl = d.cvUrl;
-      if (d.tot != null) rec.tot = !!d.tot;
+      if (d.tot) rec.tot = true;
       rec.ack = true;
       if (Object.keys(d.extra).length) rec.extra = d.extra;
       if (!rec.noPhoto) delete rec.noPhoto;

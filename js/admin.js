@@ -222,7 +222,7 @@ function appDetail(a) {
           <dt>المنطقة</dt><dd>${esc(regionsLabel(a))} ${esc(a.city || '')}${a.travel ? ' · مستعد للسفر' : ''}</dd><dt>الجنس</dt><dd>${a.gender === 'f' ? 'مدربة' : 'مدرب'}</dd>
           <dt>اللقب</dt><dd>${esc(a.title)}</dd><dt>التخصصات</dt><dd>${Data.specs(a).map(specName).join('، ')}</dd><dt>على البطاقة</dt><dd>${Data.cardSpecs(a).map(specName).join('، ') || '—'}</dd>
           <dt>البرامج</dt><dd>${esc(a.topics || '—')}</dd><dt>الخبرة</dt><dd><span class="num">${a.years || 0}</span> سنة · <span class="num">${a.hours || 0}</span> ساعة · <span class="num">${a.programs || 0}</span> برنامج</dd>
-          <dt>TOT</dt><dd>${a.tot === true ? '✅ حصل على الشهادة' : a.tot === false ? 'لم يحصل عليها بعد' : '—'}</dd><dt>الإقرار</dt><dd>${a.ack ? '✅ وافق على إقرار الفرص' : '—'}</dd><dt>الشهادات</dt><dd>${nl2br(a.certs || '—')}</dd>
+          <dt>TOT</dt><dd>${a.tot ? '✅ حاصل على شهادة تدريب المدربين' : '—'}</dd><dt>الإقرار</dt><dd>${a.ack ? '✅ وافق على إقرار الفرص' : '—'}</dd><dt>الشهادات</dt><dd>${nl2br(a.certs || '—')}</dd>
           ${a.cvUrl ? `<dt>المرفقات</dt><dd>${a.cvUrl ? `<a href="${esc(safeUrl(a.cvUrl))}" target="_blank" rel="noopener">فتح الرابط <i class="fa-solid fa-arrow-up-right-from-square"></i></a>` : '—'}</dd>` : ''}
           <dt>النبذة</dt><dd>${nl2br(a.bio)}</dd>
           ${FormKit.customDefs().filter((f, i, l) => a.extra?.[f.k] != null && l.findIndex(x => x.k === f.k) === i).map(f => `<dt>${esc(f.label)}</dt><dd>${esc(String(a.extra[f.k]).replace(/\|/g, '، '))}</dd>`).join('')}
