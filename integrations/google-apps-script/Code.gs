@@ -15,7 +15,7 @@ const CFG = {
   ROOT: 'sauditrainers',                                       // dbRoot
   SITE: 'https://sauditrainers.sa/',                       // الرابط الرسمي الذي يراه المستلمون في الرسائل
   ASSETS: 'https://hussain-al-hajji.github.io/sauditrainers/',                      // مصدر صورة الشعار في البريد: الرابط المؤقت إلى أن يُربط الدومين، ثم اجعله مثل SITE
-  ADMIN_EMAIL: 'trainers.sa3@gmail.com',                       // بريد الإدارة (نسخة من كل طلب)
+  ADMIN_EMAIL: 'trainers.sa3@gmail.com',                       // بريد الإدارة (إشعار مستقل لكل طلب)
   FROM_NAME: 'منصة مدرّبون سعوديّون',
   PLATFORM_WHATSAPP: '966562391007'
 };
@@ -80,12 +80,15 @@ function sendLeadEmail(id) {
   const priv = db(`private/${lead.trainerId}`) || {};
   const rows = [['الجهة', lead.org], ['المسؤول', lead.person], ['موضوع البرنامج', lead.topic], ['الموعد المتوقع', lead.when], ['طريقة التقديم', MODES[lead.mode] || ''], ['التفاصيل', lead.msg], ['جوال الجهة', lead.phone], ['بريد الجهة', lead.email]];
   const subject = `طلب تواصل جديد: ${lead.topic}`;
-  const html = emailHtml(`مرحباً ${trainer.name || ''}`, 'وصلك طلب تواصل جديد من جهة تدريبية عبر بطاقتك في المنصة. يمكنك التواصل معهم مباشرة على بياناتهم أدناه:', rows, ['فتح لوحتي في المنصة', `${CFG.SITE}#/login`]);
+  // 1) إشعار المدرب على بريده بمحتوى الطلب وبيانات الجهة
   if (priv.email) {
-    MailApp.sendEmail({ to: priv.email, cc: CFG.ADMIN_EMAIL, subject, htmlBody: html, name: CFG.FROM_NAME, replyTo: lead.email || CFG.ADMIN_EMAIL });
-  } else {
-    MailApp.sendEmail({ to: CFG.ADMIN_EMAIL, subject: `[لا يوجد بريد للمدرب ${trainer.name || lead.trainerId}] ${subject}`, htmlBody: html, name: CFG.FROM_NAME });
+    const html = emailHtml(`مرحباً ${trainer.name || ''}`, 'وصلك طلب تواصل جديد من جهة تدريبية عبر بطاقتك في المنصة. يمكنك التواصل معهم مباشرة على بياناتهم أدناه:', rows, ['فتح لوحتي في المنصة', `${CFG.SITE}#/login`]);
+    MailApp.sendEmail({ to: priv.email, subject, htmlBody: html, name: CFG.FROM_NAME, replyTo: lead.email || CFG.ADMIN_EMAIL });
   }
+  // 2) إشعار منفصل للإدارة على البريد الرسمي بنص الطلب نفسه وبيانات الجهة والمدرب
+  const adminRows = [['المدرب المطلوب', `${trainer.name || lead.trainerName || lead.trainerId} (${trainer.code || ''})`], ['بريد المدرب', priv.email || 'غير مسجّل — لم يصله إشعار'], ...rows];
+  MailApp.sendEmail({ to: CFG.ADMIN_EMAIL, subject: `[طلب تواصل مع مدرب] ${subject}`, name: CFG.FROM_NAME, replyTo: lead.email || CFG.ADMIN_EMAIL,
+    htmlBody: emailHtml('طلب تواصل جديد مع مدرب', 'وصل طلب تواصل من جهة تدريبية، وأُرسل إشعار للمدرب بالمحتوى نفسه.', adminRows, ['فتح لوحة الإدارة', `${CFG.SITE}#/admin`]) });
   db(`leads/${id}`, 'patch', { emailedAt: Date.now() });
 }
 
