@@ -7,16 +7,16 @@
  * dbRoot:   المسار الجذري للبيانات داخل قاعدة البيانات.
  */
 window.ST_CONFIG = {
-  firebase: null,
-  /* مثال:
+  // إعدادات تطبيق الويب (ليست سرية؛ الحماية عبر قواعد القاعدة وتسجيل الدخول)
   firebase: {
-    apiKey: '...',                      // من Firebase ← Project settings ← Your apps ← Web app
+    apiKey: 'AIzaSyB36bYSiQpPnT6P50mP93wGMCwv_UIIodo',
     authDomain: 'sauditrainers-6c989.firebaseapp.com',
     databaseURL: 'https://sauditrainers-6c989-default-rtdb.firebaseio.com',
     projectId: 'sauditrainers-6c989',
-    appId: '1:...:web:...'
+    storageBucket: 'sauditrainers-6c989.firebasestorage.app',
+    messagingSenderId: '529223660797',
+    appId: '1:529223660797:web:96365f6ce2a7c62c35fa94'
   },
-  */
   dbRoot: 'sauditrainers',
   // الحسابات الرئيسية: صلاحية كاملة دائماً، وهي وحدها تدعو المشرفين (يجب أن تطابق database.rules.json)
   ownerEmails: ['g.hussainalhajji@gmail.com', 'trainers.sa3@gmail.com'],
