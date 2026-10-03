@@ -202,6 +202,6 @@ function defaultTemplates() {
 }
 
 /* قائمة الصفحات في أعلى الموقع وشريط الإعلانات (يُعدّلان من الإدارة ← الصفحة الرئيسية) */
-const NAV_PRESETS = [['#/', 'الرئيسية'], ['#/trainers', 'المدربون'], ['#/request', 'اطلب مدرباً'], ['#/halls', 'القاعات'], ['#/about', 'عن المنصة'], ['#/join', 'سجّل كمدرب'], ['#/status', 'متابعة الطلب'], ['#/login', 'دخول المدربين']];
-const defaultNav = () => [['nav-home', '#/', 'الرئيسية'], ['nav-trainers', '#/trainers', 'المدربون'], ['nav-request', '#/request', 'اطلب مدرباً'], ['nav-halls', '#/halls', 'القاعات'], ['nav-about', '#/about', 'عن المنصة']].map(([id, href, label]) => ({ id, href, label, vis: true }));
+const NAV_PRESETS = [['#/', 'الرئيسية'], ['#/trainers', 'المدربون'], ['#/request', 'اطلب مدرباً'], ['#/halls', 'قاعات التدريب'], ['#/about', 'عن المنصة'], ['#/join', 'سجّل كمدرب'], ['#/status', 'متابعة الطلب'], ['#/login', 'دخول المدربين']];
+const defaultNav = () => [['nav-home', '#/', 'الرئيسية'], ['nav-trainers', '#/trainers', 'المدربون'], ['nav-request', '#/request', 'اطلب مدرباً'], ['nav-halls', '#/halls', 'قاعات التدريب'], ['nav-about', '#/about', 'عن المنصة']].map(([id, href, label]) => ({ id, href, label, vis: true }));
 const defaultTicker = () => ({ on: false, style: 'green', speed: 40, closable: true, items: [{ text: 'مرحباً بكم في منصة مدرّبون سعوديّون', href: '' }] });

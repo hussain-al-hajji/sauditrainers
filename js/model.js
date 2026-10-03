@@ -155,5 +155,6 @@ const Tpl = {
   wa(key, ctx) { const t = this.get(key); return String(t.wa || '').replace(/\{(\w+)\}/g, (_, k) => (this.vars(ctx)[k] ?? '')).trim(); }
 };
 
-const siteNav = () => { const l = arr(Store.get('content/nav/list')); return (l.length ? l : defaultNav()).filter(x => x.vis !== false && x.label && x.href); };
+// الاسم القديم «القاعات» المحفوظ في إعدادات القائمة يُعرض «قاعات التدريب»
+const siteNav = () => { const l = arr(Store.get('content/nav/list')); return (l.length ? l : defaultNav()).filter(x => x.vis !== false && x.label && x.href).map(x => x.href === '#/halls' && x.label === 'القاعات' ? { ...x, label: 'قاعات التدريب' } : x); };
 const siteTicker = () => { const t = { ...defaultTicker(), ...(Store.get('content/ticker') || {}) }; t.items = arr(t.items).filter(i => i.text); return t; };
