@@ -65,7 +65,7 @@
 
 1. أنشئ مشروعاً في [Firebase Console](https://console.firebase.google.com/) وفعّل **Realtime Database**.
 2. Authentication ← Sign-in method: فعّل **Google** (للإدارة) و**Email/Password** (تستخدمه رموز دخول المدربين داخلياً).
-3. Authentication ← Settings ← Authorized domains: أضف نطاق الموقع (مثل `www.sauditrainers.sa` و`hussain-al-hajji.github.io`).
+3. Authentication ← Settings ← Authorized domains: أضف نطاق الموقع (`sauditrainers.sa` و`www.sauditrainers.sa`).
 4. أضف تطبيق ويب وانسخ إعداداته إلى `firebase` في `js/config.js`.
 5. انشر القواعد: انسخ محتوى `database.rules.json` إلى Realtime Database ← Rules ← Publish. (عند تعديلها: `python3 tools/build_rules.py`.)
 6. افتح `#/admin` وادخل بأحد الحسابات الرئيسية عبر Google.
@@ -85,9 +85,9 @@
 
 ## النشر
 
-الرابط الرسمي الذي يظهر للمستخدمين في الروابط والبطاقات وQR والرسائل هو **https://sauditrainers.sa/** (`siteUrl` في `js/config.js`). رابط GitHub Pages (https://hussain-al-hajji.github.io/sauditrainers/) مؤقت للتجربة قبل ربط الدومين، وعليه تعمل المنصة كاملة لكن الروابط المعروضة تشير للدومين الرسمي؛ ولاختبارها على الرابط المؤقت اجعل `useCurrentOrigin: true` مؤقتاً.
+الموقع منشور على GitHub Pages ومربوط بالدومين الرسمي **https://sauditrainers.sa/** (ملف `CNAME`، وسجلات A الأربعة وCNAME لـ `www` لدى مزود الدومين). يظهر هذا الرابط للمستخدمين في الروابط والبطاقات وQR والرسائل (`siteUrl` في `js/config.js`).
 
-**عند ربط الدومين:** GitHub ← Settings ← Pages ← Custom domain: `sauditrainers.sa` (يُنشئ ملف CNAME؛ لا تضفه قبل أن يشير الدومين لـ GitHub حتى لا ينقطع الرابط المؤقت)، وسجلات DNS لدى مزود الدومين، ثم أضف الدومين في Firebase ← Authentication ← Authorized domains، واجعل `ASSETS` في `Code.gs` مثل `SITE`. ملف `404.html` يحوّل روابط الموقع القديم تلقائياً.
+**عند تغيير الدومين أو نقل الاستضافة:** حدّث `CNAME` وسجلات DNS، ثم Firebase ← Authentication ← Authorized domains، ثم `SITE` و`ASSETS` في سكربت Google Apps Script. ملف `404.html` يحوّل روابط الموقع القديم تلقائياً.
 
 - **GitHub Pages:** الإعدادات ← Pages ← الفرع والمجلد `/ (root)`.
 - **النطاق sauditrainers.sa:** أضف ملف `CNAME` بالنطاق، ووجّه سجلات DNS إلى GitHub Pages بدلاً من Google Sites.

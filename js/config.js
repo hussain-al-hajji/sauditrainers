@@ -29,7 +29,6 @@ window.ST_CONFIG = {
   platformWhatsapp: '966562391007',
   // الرابط الرسمي: يظهر للمستخدمين في الروابط والبطاقات وQR ورسائل البريد والواتساب ومنشورات التواصل
   siteUrl: 'https://sauditrainers.sa/',
-  // للتجربة قبل ربط الدومين: رابط GitHub Pages المؤقت. اجعلها true لتُبنى الروابط من عنوان الصفحة المفتوحة (للاختبار فقط)
-  useCurrentOrigin: false,
-  testUrl: 'https://hussain-al-hajji.github.io/sauditrainers/'
+  // للاختبار المحلي فقط: اجعلها true لتُبنى الروابط من عنوان الصفحة المفتوحة
+  useCurrentOrigin: false
 };

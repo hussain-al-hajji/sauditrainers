@@ -14,7 +14,7 @@ const CFG = {
   DB_URL: 'https://sauditrainers-6c989-default-rtdb.firebaseio.com', // databaseURL من js/config.js
   ROOT: 'sauditrainers',                                       // dbRoot
   SITE: 'https://sauditrainers.sa/',                       // الرابط الرسمي الذي يراه المستلمون في الرسائل
-  ASSETS: 'https://hussain-al-hajji.github.io/sauditrainers/',                      // مصدر صورة الشعار في البريد: الرابط المؤقت إلى أن يُربط الدومين، ثم اجعله مثل SITE
+  ASSETS: 'https://sauditrainers.sa/', // مصدر صورة الشعار في البريد (الدومين الرسمي)
   ADMIN_EMAIL: 'trainers.sa3@gmail.com',                       // بريد الإدارة (إشعار مستقل لكل طلب)
   FROM_NAME: 'منصة مدرّبون سعوديّون',
   PLATFORM_WHATSAPP: '966562391007'
