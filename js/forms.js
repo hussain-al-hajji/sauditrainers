@@ -29,6 +29,7 @@ const CORE_FIELDS = {
   langs: { label: 'لغة التدريب', type: 'langs', req: true, w: 'full' },
   photoUrl: { label: 'الصورة الشخصية (رابط مشاركة الصورة)', type: 'photo', w: 'full' },
   theme: { label: 'تصميم البطاقة', type: 'theme', w: 'full' },
+  proCerts: { label: 'هل تدرّب في شهادات احترافية محددة؟ اذكرها', type: 'procerts', max: 300, w: 'full' },
   tot: { label: 'حاصل على شهادة تدريب المدربين', type: 'tot', w: 'full' },
   cvUrl: { label: 'رابط الشهادات أو السيرة الذاتية', type: 'url', joinOnly: true, priv: true, ltr: true, ph: 'https://drive.google.com/...', hint: 'يطّلع عليه فريق المراجعة فقط', w: 'full' }
 };
@@ -53,13 +54,13 @@ function defaultForms() {
     join: { steps: [
       { id: 's1', title: 'البيانات', icon: 'fa-id-card', desc: 'بيانات التواصل الإداري لا تظهر لأحد في المنصة.', fields: f(['name', 'nameEn', 'gender', 'region', 'city', 'travel', 'phone', 'email']) },
       { id: 's2', title: 'التخصص', icon: 'fa-layer-group', desc: 'اختر ما تمارس التدريب فيه فعلياً؛ تظهر بطاقتك في نتائج هذه التخصصات.', fields: f(['title', 'specs', 'topics', 'modes']) },
-      { id: 's3', title: 'الخبرة', icon: 'fa-award', desc: 'الأرقام تظهر في بطاقتك كمؤشرات بارزة.', fields: [{ k: 'cvUrl', hidden: true }, ...f(['years', 'hours', 'programs', 'certs', 'bio', 'langs', 'tot'])] },
+      { id: 's3', title: 'الخبرة', icon: 'fa-award', desc: 'الأرقام تظهر في بطاقتك كمؤشرات بارزة.', fields: [{ k: 'cvUrl', hidden: true }, ...f(['years', 'hours', 'programs', 'certs', 'proCerts', 'bio', 'langs', 'tot'])] },
       { id: 's4', title: 'الصورة والتصميم', icon: 'fa-camera', desc: 'هذه الخطوة اختيارية: عند الرغبة في نشر صورتك أضف رابط مشاركتها من Google Drive أو أي مساحة تخزين سحابية ونسّقها داخل الدائرة، أو أجّلها الآن وأضفها لاحقاً من لوحتك. واختر تصميم بطاقتك.', fields: f(['photoUrl', 'theme']) }
     ] },
     admin: { steps: [
       { id: 'a1', title: 'البيانات الأساسية', icon: 'fa-id-card', fields: f(['name', 'nameEn', 'gender', 'region', 'city', 'travel', 'phone', 'email']) },
       { id: 'a2', title: 'التخصص', icon: 'fa-layer-group', fields: f(['title', 'specs', 'bio', 'topics', 'modes']) },
-      { id: 'a3', title: 'الخبرة', icon: 'fa-award', fields: f(['years', 'hours', 'programs', 'certs', 'langs', 'tot']) },
+      { id: 'a3', title: 'الخبرة', icon: 'fa-award', fields: f(['years', 'hours', 'programs', 'certs', 'proCerts', 'langs', 'tot']) },
       { id: 'a4', title: 'الصورة والتصميم', icon: 'fa-camera', fields: f(['photoUrl', 'theme']) }
     ] }
   };
@@ -126,6 +127,8 @@ const FormKit = (() => {
           <label class="chk"><input type="checkbox" data-lang-other ${other ? 'checked' : ''}><span><i class="fa-solid fa-plus"></i>أخرى</span></label></div>
           <input type="text" class="lang-other ${other ? '' : 'hidden'}" name="langsOther" maxlength="30" placeholder="اكتب اللغة الأخرى" value="${esc(other)}">`;
       }
+      case 'procerts': { const on = !!d.proCerts; return `<div class="pro-box"><label class="chk tot"><input type="checkbox" name="proCertsYes" data-pro ${on ? 'checked' : ''}><span><i class="tot-dot"></i>نعم</span></label>
+          <div class="pro-list ${on ? '' : 'hidden'}"><textarea name="proCerts" maxlength="300" placeholder="اكتب أسماء الشهادات الاحترافية التي تدرّب عليها، شهادة في كل سطر (مثل: PMP، CISSP ...)">${esc(d.proCerts || '')}</textarea></div></div>`; }
       case 'tot': return `<label class="chk tot"><input type="checkbox" name="tot" ${d.tot === true ? 'checked' : ''}><span><i class="tot-dot"></i>حاصل على شهادة تدريب المدربين</span></label>`;
       case 'modes': { const md = Data.modes(d); return `<div class="checks">${DELIVERY.map(x => `<label class="chk"><input type="checkbox" name="modes" data-multi value="${x.k}" ${md.includes(x.k) ? 'checked' : ''}><span><i class="fa-solid ${x.icon}"></i>${x.name}</span></label>`).join('')}</div>`; }
       case 'consent': return `<label class="chk consent"><input type="checkbox" name="${name}" ${v === true || v === 'نعم' ? 'checked' : ''}><span><i class="fa-solid fa-circle-check"></i>${esc(f.label)}${required(f) ? ' *' : ''}</span></label>`;
@@ -160,7 +163,7 @@ const FormKit = (() => {
   // reqKeys: عند تمريرها تحدد الحقول الإلزامية فعلياً (نموذج الإدارة)؛ وإلا فحسب إعداد الحقل
   function fieldHTML(f, d, reqKeys) {
     if (f.type === 'consent') return `<div class="field full req-box">${input(f, d)}${f.hint ? `<small>${esc(f.hint)}</small>` : ''}</div>`;
-    const group = ['region', 'specs', 'modes', 'multi', 'theme', 'photo', 'langs', 'tot'].includes(f.type);
+    const group = ['procerts', 'region', 'specs', 'modes', 'multi', 'theme', 'photo', 'langs', 'tot'].includes(f.type);
     const lab = `${esc(f.label)}${(reqKeys ? reqKeys.includes(f.k) : required(f)) ? ' *' : ' <em class="opt">(اختياري)</em>'}${f.type === 'specs' ? ` <small>(${esc(f.hint || '')})</small>` : ''}`;
     const hint = f.type !== 'specs' && f.hint ? `<small>${esc(f.hint)}</small>` : '';
     return group ? `<div class="field ${f.w === 'full' ? 'full' : ''}" data-f="${esc(f.k)}"><span>${lab}</span>${input(f, d)}${hint}</div>`
@@ -180,6 +183,7 @@ const FormKit = (() => {
     d.noPhoto = d.noPhoto === '1' && d.gender === 'f'; // الصورة الرمزية للمدربات فقط
     if ('langsSel' in d || 'langsOther' in d) { d.langs = [...(d.langsSel || []), ...(d.langsOther ? [d.langsOther] : [])].join('، '); delete d.langsSel; delete d.langsOther; }
     if ('regions' in d) { d.regions = d.regions.filter(k => regionOf(k)); d.region = d.regions[0] || ''; } // الأولى رئيسية (البطاقة والبحث)
+    if ('proCertsYes' in d && !d.proCertsYes) d.proCerts = ''; // «نعم» ملغاة: لا شهادات محددة
     if (d.specs) {
       d.specs = d.specs.slice(0, MAX_SPECS);
       d.cardSpecs = (d.cardSpecs || []).filter(k => d.specs.includes(k)).slice(0, MAX_CARD_SPECS);
@@ -195,13 +199,14 @@ const FormKit = (() => {
     for (const f of fields) {
       const v = val(d, f);
       const empty = v == null || v === '' || v === false || (Array.isArray(v) && !v.length) || (f.type === 'number' && !Number(v) && required(f));
+      if (f.type === 'procerts' && d.proCertsYes && !String(d.proCerts || '').trim()) return bad(f, 'اكتب أسماء الشهادات الاحترافية التي تدرّب عليها، أو ألغِ اختيار «نعم»');
       if (required(f) && empty) return bad(f, f.type === 'consent' ? `يلزم الإقرار: ${f.label}` : `أكمل الحقل: ${f.label}`);
       if (empty) continue;
       if (f.type === 'tel' && !validPhone(v)) return bad(f, 'رقم الجوال غير صحيح (مثال: 0501234567)');
       if (f.type === 'email' && !validEmail(v)) return bad(f, 'البريد الإلكتروني غير صحيح');
       if (f.type === 'url' && !safeUrl(v)) return bad(f, `الرابط غير صحيح: ${f.label}`);
       if (f.type === 'photo' && !d.noPhoto && !isImageLink(v)) return bad(f, 'أضف رابط مشاركة الصورة من Google Drive أو أي مساحة تخزين سحابية (https)');
-      if (['text', 'textarea'].includes(f.type) && !f.priv && f.k !== 'nameEn') { const leak = leaksContact(v); if (leak) return bad(f, `«${f.label}» يحتوي ${leak}. التواصل مع المدربين يتم عبر نموذج المنصة فقط`); }
+      if (['text', 'textarea', 'procerts'].includes(f.type) && !f.priv && f.k !== 'nameEn') { const leak = leaksContact(v); if (leak) return bad(f, `«${f.label}» يحتوي ${leak}. التواصل مع المدربين يتم عبر نموذج المنصة فقط`); }
     }
     return null;
   }
@@ -255,6 +260,11 @@ const FormKit = (() => {
       nAr.addEventListener('input', () => { if (!auto) return; nEn.value = arToEn(nAr.value); nEn.dispatchEvent(new Event('input', { bubbles: true })); });
       nEn.addEventListener('input', e => { if (e.isTrusted) auto = !nEn.value; });
     }
+    $$('[data-pro]', form).forEach(cb => cb.addEventListener('change', () => { // «نعم» تُظهر مربع الشهادات، والضغط عليها ثانية يُلغيها ويمسح ما كُتب
+      const box = $('.pro-list', cb.closest('.pro-box')), ta = $('textarea', box);
+      box.classList.toggle('hidden', !cb.checked); if (cb.checked) ta.focus(); else ta.value = '';
+      preview();
+    }));
     const lo = $('[data-lang-other]', form);
     lo && lo.addEventListener('change', e => { const t = $('.lang-other', form); t.classList.toggle('hidden', !e.target.checked); if (!e.target.checked) t.value = ''; else t.focus(); preview(); });
     const pf = $('.photo-field', form);

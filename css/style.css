@@ -963,3 +963,8 @@ input:checked + .cdot { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--g600); }
 .chk.tot > input:checked + span .tot-dot::after { transform: scale(1); }
 .tot-badge { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; padding: 6px 14px; border-radius: 999px; font-family: var(--f-ui); font-size: .85rem; font-weight: 700; background: rgba(238,243,229,.14); color: var(--gold2); border: 1px solid rgba(238,243,229,.3); }
 @media (max-width: 960px) { .tot-badge { background: var(--g50); color: var(--g800); border-color: var(--g100); } }
+
+/* شهادات احترافية: «نعم» تُظهر مربع الكتابة */
+.pro-box { display: grid; gap: 10px; }
+.pro-list.hidden { display: none; }
+.pro-list textarea { min-height: 90px; }

@@ -191,6 +191,7 @@ Pages.profile = {
         ${t.bio ? `<div class="pbox reveal"><h3><i class="fa-solid fa-user"></i>نبذة تعريفية</h3><p>${nl2br(t.bio)}</p></div>` : ''}
         ${sp.length ? `<div class="pbox reveal"><h3><i class="fa-solid fa-layer-group"></i>التخصصات التدريبية</h3><div class="checks">${sp.map(k => `<a class="chk" href="#/trainers?spec=${k}"><span><i class="fa-solid ${specOf(k)?.icon || 'fa-shapes'}"></i>${esc(specName(k))}</span></a>`).join('')}</div></div>` : ''}
         ${tp.length ? `<div class="pbox reveal"><h3><i class="fa-solid fa-chalkboard"></i>دورات تم تقديمها سابقاً</h3><div class="topics">${tp.map(x => `<span>${esc(x)}</span>`).join('')}</div></div>` : ''}
+        ${t.proCerts ? `<div class="pbox reveal"><h3><i class="fa-solid fa-certificate"></i>شهادات احترافية يدرّب عليها</h3><div class="topics">${splitList(String(t.proCerts).replace(/\n/g, '،')).map(x => `<span>${esc(x)}</span>`).join('')}</div></div>` : ''}
         ${t.certs ? `<div class="pbox reveal"><h3><i class="fa-solid fa-award"></i>الشهادات والاعتمادات</h3><p>${nl2br(t.certs)}</p></div>` : ''}
         ${extras.length ? `<div class="pbox reveal"><h3><i class="fa-solid fa-list"></i>معلومات إضافية</h3><dl class="dl">${extras.map(f => `<dt>${esc(f.label)}</dt><dd>${esc(String(t.extra[f.k]).replace(/\|/g, '، '))}</dd>`).join('')}</dl></div>` : ''}
         <div class="pbox reveal"><h3><i class="fa-solid fa-circle-info"></i>معلومات سريعة</h3>

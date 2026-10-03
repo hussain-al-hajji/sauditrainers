@@ -27,7 +27,7 @@ const Data = (() => {
   const clicks = id => Number(Store.get(`stats/clicks/${id}`) || 0);
 
   // نص البحث المجمّع لكل مدرب
-  const hay = t => normAr([t.name, t.title, t.bio, t.topics, t.certs, t.city, regionsLabel(t), ...specs(t).map(specName)].join(' '));
+  const hay = t => normAr([t.name, t.title, t.bio, t.topics, t.certs, t.proCerts, t.city, regionsLabel(t), ...specs(t).map(specName)].join(' '));
 
   function search(list, { q = '', region = '', spec = '', mode = '', gender = '' } = {}) {
     const terms = normAr(q).split(' ').filter(Boolean);
@@ -79,7 +79,7 @@ const Data = (() => {
   }
 
   // الحقول العامة للمدرب (المسموح بتعديلها من صفحته — تطابق القواعد)
-  const PUBLIC_FIELDS = ['name', 'nameEn', 'title', 'gender', 'region', 'city', 'bio', 'specs', 'topics', 'modes', 'years', 'hours', 'programs', 'certs', 'langs', 'theme', 'photoUrl', 'photoX', 'photoY', 'photoZ', 'noPhoto', 'cardSpecs', 'regions', 'travel', 'tot'];
+  const PUBLIC_FIELDS = ['name', 'nameEn', 'title', 'gender', 'region', 'city', 'bio', 'specs', 'topics', 'modes', 'years', 'hours', 'programs', 'certs', 'langs', 'theme', 'photoUrl', 'photoX', 'photoY', 'photoZ', 'noPhoto', 'cardSpecs', 'regions', 'travel', 'tot', 'proCerts'];
   // تقسيم إجابات الحقول المخصصة: العامة تظهر في صفحة المدرب، والباقي في بياناته الإدارية
   const splitExtra = extra => { const pub = {}, priv = {}; Object.entries(extra || {}).forEach(([k, v]) => { (FormKit.isPublicExtra(k) ? pub : priv)[k] = v; }); return { pub, priv }; };
   const pick = (o, keys) => { const r = {}; keys.forEach(k => { if (o[k] !== undefined) r[k] = o[k]; }); return r; };
