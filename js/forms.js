@@ -25,7 +25,7 @@ const CORE_FIELDS = {
   hours: { label: 'الساعات التدريبية المنفذة', type: 'number', max: 100000 },
   programs: { label: 'عدد البرامج والدورات', type: 'number', max: 10000 },
   certs: { label: 'الشهادات والاعتمادات والعضويات', type: 'textarea', max: 800, ph: 'مثلاً: مدرب معتمد في تقنية المعلومات من المؤسسة العامة للتدريب التقني والمهني ...', w: 'full' },
-  bio: { label: 'نبذة تعريفية', type: 'textarea', max: 4000, req: true, ph: 'عرّف بنفسك وبخبرتك التدريبية وأبرز إنجازاتك', hint: 'لا تضع أرقام تواصل أو بريداً أو روابط؛ التواصل يتم عبر المنصة', w: 'full' },
+  bio: { label: 'نبذة تعريفية', type: 'textarea', max: 4000, req: true, ph: 'عرّف بنفسك وبخبرتك التدريبية وأبرز إنجازاتك', counter: true, w: 'full' },
   langs: { label: 'لغة التدريب', type: 'langs', req: true, w: 'full' },
   photoUrl: { label: 'الصورة الشخصية (رابط مشاركة الصورة)', type: 'photo', w: 'full' },
   theme: { label: 'تصميم البطاقة', type: 'theme', w: 'full' },
@@ -166,7 +166,7 @@ const FormKit = (() => {
     if (f.type === 'consent') return `<div class="field full req-box">${input(f, d)}${f.hint ? `<small>${esc(f.hint)}</small>` : ''}</div>`;
     const group = ['procerts', 'region', 'specs', 'modes', 'multi', 'theme', 'photo', 'langs', 'tot'].includes(f.type);
     const lab = `${esc(f.label)}${(reqKeys ? reqKeys.includes(f.k) : required(f)) ? ' *' : ' <em class="opt">(اختياري)</em>'}${f.type === 'specs' ? ` <small>(${esc(f.hint || '')})</small>` : ''}`;
-    const hint = f.type !== 'specs' && f.hint ? `<small>${esc(f.hint)}</small>` : '';
+    const hint = f.counter ? `<small class="cc"><span data-cc="${esc(f.k)}">${[...String(d[f.k] ?? '')].length}</span> / ${f.max} حرف</small>` : f.type !== 'specs' && f.hint ? `<small>${esc(f.hint)}</small>` : '';
     return group ? `<div class="field ${f.w === 'full' ? 'full' : ''}" data-f="${esc(f.k)}"><span>${lab}</span>${input(f, d)}${hint}</div>`
       : `<label class="field ${f.w === 'full' ? 'full' : ''}" data-f="${esc(f.k)}"><span>${lab}</span>${input(f, d)}${hint}</label>`;
   }
@@ -214,6 +214,8 @@ const FormKit = (() => {
 
   /* ===== ربط النموذج: حد التخصصات، معاينة الصورة، والمعاينة الحية ===== */
   function wire(form, preview) {
+    // عدّاد الأحرف تحت حقل النبذة
+    form.addEventListener('input', e => { const c = e.target.name && $(`[data-cc="${e.target.name}"]`, form); if (c) { const n = [...e.target.value].length; c.textContent = n; c.parentNode.classList.toggle('near', n > e.target.maxLength * 0.9); } });
     form.addEventListener('change', e => {
       const box = e.target.closest('[data-max]');
       if (box && $$('input:checked', box).length > Number(box.dataset.max)) { e.target.checked = false; toast(`يمكن اختيار ${box.dataset.max} تخصصات كحد أقصى`, 'error'); }
