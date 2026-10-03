@@ -3,6 +3,10 @@
 // تُنشأ الحملة في campaigns/{id} من لوحة الإدارة، ويُحدَّث تقدّمها في السجل نفسه.
 // تُرسل بحدود حصة Gmail اليومية، وما تبقّى يُستكمل تلقائياً (مؤقّت sweepPending) في اليوم التالي.
 function sendCampaign(id) {
+  try { sendCampaignNow(id); }
+  catch (err) { console.error('campaign', id, err); try { db(`campaigns/${id}`, 'patch', { status: 'failed', note: String(err.message || err).slice(0, 200) }); } catch (e2) { /* ignore */ } throw err; }
+}
+function sendCampaignNow(id) {
   const c = db(`campaigns/${id}`);
   if (!c || !c.doc || c.status === 'done' || c.status === 'failed' || Date.now() - (c.ts || 0) > 7 * 864e5) return;
   const recs = c.recipients || {};
@@ -58,4 +62,14 @@ function continueCampaigns() {
     if (MailApp.getRemainingDailyQuota() < 1) return;
     try { sendCampaign(k); } catch (err) { console.error('campaign', k, err); }
   });
+}
+
+// اختبار يدوي: يعالج آخر حملة ويُظهر أي خطأ في السجل (Executions) دون ابتلاعه
+function testLastCampaign() {
+  const all = db('campaigns') || {};
+  const last = Object.keys(all).map(k => all[k]).sort((a, b) => (b.ts || 0) - (a.ts || 0))[0];
+  if (!last) { console.log('لا توجد حملات في القاعدة'); return; }
+  console.log('آخر حملة: ' + last.id + ' | الحالة=' + last.status + ' | المستلمون=' + last.total);
+  sendCampaign(last.id);
+  console.log('تمت المعالجة: ' + JSON.stringify(db('campaigns/' + last.id + '/status')) + ' | أُرسل=' + JSON.stringify(db('campaigns/' + last.id + '/sent')));
 }
