@@ -968,3 +968,7 @@ input:checked + .cdot { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--g600); }
 .pro-box { display: grid; gap: 10px; }
 .pro-list.hidden { display: none; }
 .pro-list textarea { min-height: 90px; }
+
+/* أزرار قسم نخبة المدربين */
+.fx-tabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin: 0 0 26px; }
+.fx-tabs .btn { padding: 12px 26px; font-weight: 700; }

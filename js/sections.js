@@ -79,18 +79,26 @@ const SECTION_TYPES = (() => {
   T.featured = {
     name: 'نخبة المدربين', icon: 'fa-id-card',
     tpls: [['grid', 'شبكة بطاقات'], ['carousel', 'شريط قابل للتمرير'], ['list', 'قائمة مختصرة']],
-    schema: [...HEAD, { k: 'count', label: 'عدد المدربين', t: 'number' }, { k: 'only', label: 'من يظهر', t: 'select', opts: [['mix', 'المميزون أولاً ثم الأحدث'], ['featured', 'المميزون فقط'], ['latest', 'الأحدث نشراً']] }, { k: 'btn', label: 'زر «تصفّح جميع المدربين»', t: 'check' }],
-    def: () => ({ eyebrow: 'نخبة المدربين', title: 'كفاءات سعودية جاهزة لبرنامجك القادم', sub: 'بطاقات تعريفية موثّقة تختصر عليك السيرة الذاتية: التخصص، والخبرة، والمنطقة.', count: 8, only: 'mix', btn: true }),
+    schema: [...HEAD, { k: 'count', label: 'عدد المدربين', t: 'number' }, { k: 'only', label: 'من يظهر', t: 'select', opts: [['random', 'عشوائي يتغير مع كل زيارة'], ['mix', 'المميزون أولاً ثم الأحدث'], ['featured', 'المميزون فقط'], ['latest', 'الأحدث نشراً']] }, { k: 'btn', label: 'زر «تصفّح جميع المدربين»', t: 'check' }],
+    def: () => ({ eyebrow: 'نخبة المدربين', title: 'كفاءات سعودية جاهزة لبرنامجك القادم', sub: 'بطاقات تعريفية موثّقة تختصر عليك السيرة الذاتية: التخصص، والخبرة، والمنطقة.', count: 5, only: 'random', btn: true }),
+    // قائمة المدربين المعروضة: عشوائية (تتجدد مع كل عرض) أو حسب الإعداد. القيمة القديمة «mix» بعدد 8 (الافتراضي السابق) تُعامَل كالإعداد الجديد
+    pick(d) {
+      const ls = live(), legacy = d.only === 'mix' && Number(d.count) === 8, only = legacy || !d.only ? 'random' : d.only, n = Math.max(1, legacy ? 5 : Number(d.count) || 5);
+      if (only === 'random') { const a = [...ls]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a.slice(0, n); }
+      return (only === 'featured' ? ls.filter(t => t.featured) : only === 'latest' ? [...ls].sort((a, b) => (b.publishedAt || 0) - (a.publishedAt || 0)) : [...ls.filter(t => t.featured), ...ls.filter(t => !t.featured)]).slice(0, n);
+    },
     render(sec) {
-      const d = sec.d, ls = live(), n = Math.max(1, Number(d.count) || 8);
-      const list = (d.only === 'featured' ? ls.filter(t => t.featured) : d.only === 'latest' ? [...ls].sort((a, b) => (b.publishedAt || 0) - (a.publishedAt || 0)) : [...ls.filter(t => t.featured), ...ls.filter(t => !t.featured)]).slice(0, n);
+      const d = sec.d, list = T.featured.pick(d);
       if (!list.length) return '';
       const body = sec.tpl === 'carousel' ? `<div class="hs-carousel"><button class="cr-btn prev" aria-label="السابق"><i class="fa-solid fa-chevron-right"></i></button><div class="cr-track">${list.map((t, i) => Card.mini(t, i)).join('')}</div><button class="cr-btn next" aria-label="التالي"><i class="fa-solid fa-chevron-left"></i></button></div>`
         : sec.tpl === 'list' ? `<div class="hs-list">${list.map(t => `<a class="hl-row reveal" href="#/t/${esc(encodeURIComponent(t.slug || t.id))}">${Card.avatar(t, 'hl-av')}<span class="grow"><b>${esc(t.name)}</b><small>${esc(t.title || '')}</small></span><span class="hl-meta"><i class="fa-solid fa-location-dot"></i>${esc(regionName(t.region))}</span><span class="hl-chips">${Data.specs(t).slice(0, 2).map(s => `<span>${esc(specName(s))}</span>`).join('')}</span><i class="fa-solid fa-arrow-left hl-go"></i></a>`).join('')}</div>`
           : `<div class="tgrid">${list.map((t, i) => Card.mini(t, i)).join('')}</div>`;
-      return `<div class="wrap">${head(d)}${body}${d.btn !== false ? '<div class="center" style="margin-top:30px"><a class="btn primary lg" href="#/trainers">تصفّح جميع المدربين <i class="fa-solid fa-arrow-left"></i></a></div>' : ''}</div>`;
+      return `<div class="wrap">${head(d)}<div class="fx-tabs"><button type="button" class="btn primary" data-shuffle><i class="fa-solid fa-id-card"></i> تصفح سير المدربين</button><a class="btn ghost" href="#/request"><i class="fa-solid fa-wand-magic-sparkles"></i> اطلب ترشيح مدرب</a></div>${body}${d.btn !== false ? '<div class="center" style="margin-top:30px"><a class="btn primary lg" href="#/trainers">تصفّح جميع المدربين <i class="fa-solid fa-arrow-left"></i></a></div>' : ''}</div>`;
     },
-    mount(el) {
+    mount(el, sec) {
+      // «تصفح سير المدربين»: يعرض خمسة مدربين جدداً عشوائياً
+      const sh = $('[data-shuffle]', el);
+      sh && (sh.onclick = () => { const box = $('.tgrid, .cr-track', el); if (box && sec) { box.innerHTML = T.featured.pick(sec.d).map((t, i) => Card.mini(t, i)).join(''); tilt(box); $$('.reveal', box).forEach(x => x.classList.add('in')); } });
       const tr = $('.cr-track', el); if (!tr) return;
       const step = () => tr.clientWidth * 0.8;
       $('.prev', el).onclick = () => tr.scrollBy({ left: step(), behavior: 'smooth' });
