@@ -172,13 +172,13 @@ Pages.profile = {
     <div style="position:relative"><div class="profile-hero-bg"></div>
     <div class="wrap profile">
       <aside class="profile-side">
+        ${Card.full(t)}
         <div class="profile-actions">
           <button class="btn primary wide lg" id="ask"><i class="fa-solid fa-paper-plane"></i> تواصل مع المدرب</button>
-          <p class="wide small muted center" style="margin:0"><i class="fa-solid fa-lock"></i> يصل طلبك للمدرب عبر المنصة، وبيانات تواصله لا تُعرض حفاظاً على خصوصيته</p>
+          <p class="wide small muted center" style="margin:0"><i class="fa-solid fa-lock"></i> يصل طلبك للمدرب عبر المنصة</p>
           <button class="btn" id="shr"><i class="fa-solid fa-share-nodes"></i> مشاركة</button>
           <button class="btn" id="sv"><i class="fa-solid fa-download"></i> حفظ البطاقة</button>
         </div>
-        ${Card.full(t)}
         ${!Data.isLive(t) ? `<div class="banner warn" style="margin-top:14px"><i class="fa-solid fa-eye-slash"></i>هذه البطاقة غير ظاهرة للزوار حالياً.</div>` : ''}
       </aside>
       <div>
@@ -217,6 +217,15 @@ Pages.profile = {
     $('#shr', root) && ($('#shr', root).onclick = () => Card.share(t));
     $('#sv', root) && ($('#sv', root).onclick = () => Card.shareSheet(t));
     $('#ask', root) && ($('#ask', root).onclick = () => leadForm(t));
+    // على اللابتوب: تُصغَّر البطاقة تلقائياً لتظهر مع أزرارها تحتها في الشاشة الأولى دون تمرير
+    const side = $('.profile-side', root), card = side && $('.tcard', side), act = side && $('.profile-actions', side);
+    const fitCard = () => {
+      if (!card) return; card.style.zoom = '';
+      if (!matchMedia('(min-width: 961px)').matches) return;
+      const top = side.getBoundingClientRect().top + scrollY, room = innerHeight - top - act.offsetHeight - 30;
+      card.style.zoom = String(Math.min(1, Math.max(0.5, room / card.offsetHeight)));
+    };
+    if (card) { fitCard(); addEventListener('resize', fitCard); document.fonts && document.fonts.ready.then(fitCard); }
     const tr = $('.similar .cr-track', root);
     if (tr) { // أزرار الأسهم + سحب بالماوس (وباللمس يعمل أصلاً)
       const step = () => tr.clientWidth * 0.8;

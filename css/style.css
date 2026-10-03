@@ -974,7 +974,7 @@ input:checked + .cdot { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--g600); }
 .fx-tabs .btn { padding: 12px 26px; font-weight: 700; }
 
 /* صفحة المدرب: الأزرار أولاً، وقسم «مدربون في تخصصات مشابهة» منفصل بشريط واحد قابل للسحب */
-.profile-actions { margin: 0 0 18px; }
+.profile-actions { margin: 18px 0 0; }
 .similar { margin-top: 56px; padding: 34px 0 44px; background: linear-gradient(var(--g50), #fff); border-top: 1px solid var(--line); }
 .similar h3 { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; margin: 0 0 6px; }
 .similar h3 i { color: var(--g600); }
