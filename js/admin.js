@@ -11,7 +11,7 @@ Pages.admin = {
     const newReq = Store.list('requests').filter(r => r.status === 'new').length + Store.list('leads').filter(r => r.status === 'new').length;
     const all = [
       ['dash', 'fa-chart-pie', 'المؤشرات'], ['apps', 'fa-user-plus', 'طلبات التسجيل', apps.filter(a => a.status === 'new').length], ['trainers', 'fa-id-card', 'المدربون'],
-      ['requests', 'fa-inbox', 'طلبات الجهات', newReq], ['social', 'fa-share-nodes', 'النشر الاجتماعي', Store.list('social').filter(p => p.status === 'failed').length],
+      ['requests', 'fa-inbox', 'طلبات الجهات', newReq], ['mail', 'fa-envelope', 'المراسلة'], ['social', 'fa-share-nodes', 'النشر الاجتماعي', Store.list('social').filter(p => p.status === 'failed').length],
       ['home', 'fa-house', 'الصفحة الرئيسية'], ['forms', 'fa-rectangle-list', 'النماذج'], ['templates', 'fa-envelope-open-text', 'قوالب'], ['specs', 'fa-shapes', 'التخصصات'], ['halls', 'fa-building-columns', 'القاعات', Store.list('hallReqs').filter(r => r.status === 'new').length],
       ['content', 'fa-pen-ruler', 'المحتوى العام'], ['admins', 'fa-user-shield', 'المشرفون'], ['backup', 'fa-database', 'البيانات والسجل']
     ];
@@ -74,7 +74,7 @@ Pages.admin = {
     $$('[data-menu-edit]', root).forEach(b => b.onclick = () => { this.menuEdit = !this.menuEdit; this.wireMenu(root); });
     $('[data-out]', root).onclick = () => Auth.logout();
     const main = $('#at', root);
-    ({ dash: aDash, apps: aApps, trainers: aTrainers, requests: aRequests, social: aSocial, home: aHome, forms: aForms, templates: aTemplates, specs: aSpecs, halls: aHalls, content: aContent, admins: aAdmins, backup: aBackup })[this.tab](main);
+    ({ dash: aDash, apps: aApps, trainers: aTrainers, requests: aRequests, mail: aMail, social: aSocial, home: aHome, forms: aForms, templates: aTemplates, specs: aSpecs, halls: aHalls, content: aContent, admins: aAdmins, backup: aBackup })[this.tab](main);
   },
   // تبويبات التحرير لا يُعاد رسمها تلقائياً حتى لا تضيع التعديلات غير المحفوظة، وكذلك أثناء ترتيب القائمة
   get static() { return this.menuEdit || ['content', 'home', 'forms', 'templates', 'specs'].includes(this.tab); }

@@ -30,6 +30,7 @@ function doPost(e) {
     else if (body.action === 'request' && id) notifyAdmin('requests', id);
     else if (body.action === 'application' && id) { notifyAdmin('applications', id); sendReceivedEmail(id); }
     else if (body.action === 'outbox' && id) sendOutbox(id);
+    else if (body.action === 'campaign' && id) sendCampaign(id);
     else if (body.action === 'ping') ping();
   } catch (err) {
     console.error(err);
@@ -40,7 +41,7 @@ function doPost(e) {
 }
 function doGet() { return out('sauditrainers mail automation is running'); }
 const out = t => ContentService.createTextOutput(t);
-function ping() { db('settings/automation', 'patch', { lastPing: Date.now() }); }
+function ping() { db('settings/automation', 'patch', { lastPing: Date.now(), quota: MailApp.getRemainingDailyQuota() }); }
 
 /* ===================== قاعدة البيانات (REST بصلاحية حساب المنصة) ===================== */
 function db(path, method, payload) {
@@ -136,6 +137,7 @@ function sweepPending() {
   each('leads', (id, r) => { if (recent(r) && !r.emailedAt) sendLeadEmail(id); });
   each('requests', (id, r) => { if (recent(r) && !r.notifiedAt) notifyAdmin('requests', id); });
   each('applications', (id, r) => { if (recent(r)) { if (!r.notifiedAt) notifyAdmin('applications', id); if (!r.receivedEmailAt && r.email) sendReceivedEmail(id); } });
+  try { continueCampaigns(); } catch (err) { console.error('campaigns', err); }
 }
 
 // اختبار يدوي: يعالج آخر طلب تواصل ويُظهر أي خطأ في السجل (دون ابتلاعه)

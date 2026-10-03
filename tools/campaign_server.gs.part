@@ -1,0 +1,61 @@
+
+/* ===================== إرسال الحملات (المراسلة من لوحة الإدارة) ===================== */
+// تُنشأ الحملة في campaigns/{id} من لوحة الإدارة، ويُحدَّث تقدّمها في السجل نفسه.
+// تُرسل بحدود حصة Gmail اليومية، وما تبقّى يُستكمل تلقائياً (مؤقّت sweepPending) في اليوم التالي.
+function sendCampaign(id) {
+  const c = db(`campaigns/${id}`);
+  if (!c || !c.doc || c.status === 'done' || c.status === 'failed' || Date.now() - (c.ts || 0) > 7 * 864e5) return;
+  const recs = c.recipients || {};
+  const keys = Object.keys(recs).filter(k => !recs[k].sentAt && !recs[k].err).sort((a, b) => Number(a.slice(1)) - Number(b.slice(1)));
+  if (!keys.length) { db(`campaigns/${id}`, 'patch', { status: 'done', finishedAt: Date.now() }); return; }
+  db(`campaigns/${id}`, 'patch', { status: 'sending' });
+  let attachments = [];
+  try { attachments = campaignAttachments(c.doc.atts); }
+  catch (err) { db(`campaigns/${id}`, 'patch', { status: 'failed', note: String(err.message || err).slice(0, 200) }); return; }
+  const t0 = Date.now(), quota = MailApp.getRemainingDailyQuota();
+  let sent = Number(c.sent) || 0, failed = Number(c.failed) || 0, upd = {}, n = 0, left = keys.length;
+  const flush = () => { if (Object.keys(upd).length) { upd.sent = sent; upd.failed = failed; db(`campaigns/${id}`, 'patch', upd); upd = {}; } };
+  for (const k of keys) {
+    if (n >= quota || Date.now() - t0 > 270000) break;
+    const r = recs[k], vars = campaignVars(r);
+    try {
+      MailApp.sendEmail({ to: r.email, subject: mailVars(c.subject, vars), body: mailPlain(c.doc, vars), htmlBody: mailHtml(c.doc, vars, { site: CFG.SITE, assets: CFG.ASSETS, fromName: CFG.FROM_NAME }), name: CFG.FROM_NAME, replyTo: CFG.ADMIN_EMAIL, attachments });
+      sent++; upd[`recipients/${k}/sentAt`] = Date.now();
+      if (r.type === 'i' && r.rid) { try { db(`invitees/${r.rid}`, 'patch', { lastMailAt: Date.now() }); } catch (e) { /* ignore */ } }
+    } catch (err) { failed++; upd[`recipients/${k}/err`] = String(err.message || err).slice(0, 120); }
+    n++; left--;
+    if (n % 10 === 0) flush();
+  }
+  upd.status = left ? 'partial' : 'done'; if (!left) upd.finishedAt = Date.now();
+  flush(); db(`campaigns/${id}`, 'patch', { status: left ? 'partial' : 'done', sent, failed });
+  ping();
+}
+function campaignVars(r) {
+  const name = String(r.name || '').trim();
+  return { name, first: name.replace(/^(د|م|أ)\.\s*/, '').split(/\s+/)[0] || name, loginUrl: CFG.SITE + '#/login', siteUrl: CFG.SITE, profileUrl: r.slug ? CFG.SITE + '#/t/' + encodeURIComponent(r.slug) : CFG.SITE };
+}
+// يحمّل المرفقات من روابطها (حتى 5 ملفات و20 ميغابايت)، ويفشل بوضوح إن تعذّر أحدها
+function campaignAttachments(list) {
+  const out = []; let total = 0;
+  (list || []).slice(0, 5).forEach(a => {
+    if (!a || !/^https:\/\//.test(a.url || '')) return;
+    const res = UrlFetchApp.fetch(mailFileUrl(a.url), { muteHttpExceptions: true, followRedirects: true });
+    const type = String(res.getHeaders()['Content-Type'] || '');
+    if (res.getResponseCode() !== 200 || /text\/html/i.test(type)) throw new Error('تعذّر تحميل المرفق «' + (a.name || a.url) + '»: تأكد أن مشاركته «لأي شخص لديه الرابط»');
+    const blob = res.getBlob(); total += blob.getBytes().length;
+    if (total > 20 * 1024 * 1024) throw new Error('حجم المرفقات يتجاوز 20 ميغابايت');
+    out.push(blob.setName(String(a.name || 'file').replace(/[\\/:*?"<>|]/g, '_').slice(0, 80)));
+  });
+  return out;
+}
+// يستكمل الحملات المتوقفة (انتهت الحصة اليومية أو توقّف السكربت): يُستدعى من sweepPending
+function continueCampaigns() {
+  const all = db('campaigns') || {};
+  Object.keys(all).forEach(k => {
+    const c = all[k];
+    if (!c || !['queued', 'sending', 'partial'].includes(c.status) || Date.now() - (c.ts || 0) > 7 * 864e5) return;
+    if (c.status === 'sending' && Date.now() - (c.ts || 0) < 6 * 60000) return;   // قيد المعالجة الآن
+    if (MailApp.getRemainingDailyQuota() < 1) return;
+    try { sendCampaign(k); } catch (err) { console.error('campaign', k, err); }
+  });
+}

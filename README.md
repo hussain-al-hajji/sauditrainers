@@ -130,3 +130,9 @@ integrations/         سكربت الأتمتة (بريد + نشر)
 tools/build_rules.py  مولّد قواعد الحماية
 database.rules.json   قواعد Firebase Realtime Database
 ```
+
+## المراسلة من لوحة الإدارة
+تبويب «المراسلة» يكتب رسائل منسّقة (عناوين، نصوص، صور مع مواضعها، صورة مع نص، أزرار، مرفقات بروابط) ويرسلها من بريد المنصة للمدربين المسجلين وللمدعوّين (بريدات غير مسجلة).
+- يحتاج الإرسال إضافة الملف `integrations/google-apps-script/Campaign.gs` إلى مشروع Apps Script نفسه ثم نشر نسخة جديدة (Manage deployments ← Edit ← New version). الملف مولَّد: لا تعدّله، بل عدّل `js/mail-render.js` أو `tools/campaign_server.gs.part` ثم شغّل `python3 tools/build_campaign.py`.
+- حصة Gmail العادي 100 مستلم يومياً (Workspace حتى 1500)؛ ما زاد يُستكمل تلقائياً في اليوم التالي عبر مؤقّت `sweepPending`.
+- الحملات في `campaigns/` والمدعوّون في `invitees/` وهما للإدارة فقط.

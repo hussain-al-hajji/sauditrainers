@@ -33,6 +33,7 @@ function doPost(e) {
     else if (body.action === 'request' && id) notifyAdmin('requests', id);
     else if (body.action === 'application' && id) { notifyAdmin('applications', id); sendReceivedEmail(id); }
     else if (body.action === 'outbox' && id) sendOutbox(id);
+    else if (body.action === 'campaign' && id) sendCampaign(id);
     else if (body.action === 'publish' && id) publishPost(id);
     else if (body.action === 'ping') ping();
   } catch (err) {
@@ -139,6 +140,7 @@ function sweepPending() {
   each('leads', (id, r) => { if (recent(r) && !r.emailedAt) sendLeadEmail(id); });
   each('requests', (id, r) => { if (recent(r) && !r.notifiedAt) notifyAdmin('requests', id); });
   each('applications', (id, r) => { if (recent(r)) { if (!r.notifiedAt) notifyAdmin('applications', id); if (!r.receivedEmailAt && r.email) sendReceivedEmail(id); } });
+  try { continueCampaigns(); } catch (err) { console.error('campaigns', err); }
 }
 
 // اختبار يدوي: يعالج آخر طلب تواصل ويُظهر أي خطأ في السجل (دون ابتلاعه)
@@ -157,7 +159,7 @@ function connected() {
   const has = k => !!PROPS.getProperty(k);
   return { x: has('X_API_KEY') && has('X_API_SECRET') && has('X_ACCESS_TOKEN') && has('X_ACCESS_SECRET'), linkedin: has('LI_ACCESS_TOKEN') && has('LI_AUTHOR_URN'), instagram: has('IG_USER_ID') && has('IG_ACCESS_TOKEN') };
 }
-function ping() { db('settings/automation', 'patch', { lastPing: Date.now(), platforms: connected() }); }
+function ping() { db('settings/automation', 'patch', { lastPing: Date.now(), platforms: connected(), quota: MailApp.getRemainingDailyQuota() }); }
 
 // يُشغَّل كل 5 دقائق (setupTriggers)
 function publishDue() {
