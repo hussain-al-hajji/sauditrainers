@@ -320,7 +320,7 @@ function aTrainers(main) {
   if (f.region) list = list.filter(t => regionsOf(t).includes(f.region));
   if (f.st === 'live') list = list.filter(Data.isLive); else if (f.st === 'hidden') list = list.filter(t => t.status !== 'active'); else if (f.st === 'nocode') list = list.filter(t => !Store.get(`secrets/codes/${t.id}`));
   main.innerHTML = `
-    <div class="dash-h"><h2>المدربون <span class="muted num" style="font-size:1rem">(${list.length})</span></h2><div class="row"><button class="btn sm" id="imp"><i class="fa-solid fa-file-import"></i> استيراد</button><button class="btn sm" id="exp"><i class="fa-solid fa-file-csv"></i> تصدير CSV</button><button class="btn primary sm" id="add"><i class="fa-solid fa-plus"></i> إضافة مدرب</button></div></div>
+    <div class="dash-h"><h2>المدربون <span class="muted num" style="font-size:1rem">(${list.length})</span></h2><div class="row"><button class="btn sm" id="imp"><i class="fa-solid fa-file-import"></i> استيراد</button><button class="btn sm" id="tplx"><i class="fa-solid fa-file-arrow-down"></i> قالب الاستيراد</button><button class="btn sm" id="exp"><i class="fa-solid fa-file-csv"></i> تصدير CSV</button><button class="btn primary sm" id="add"><i class="fa-solid fa-plus"></i> إضافة مدرب</button></div></div>
     <div class="toolbar">
       <input type="search" id="tq" placeholder="بحث..." value="${esc(f.q || '')}">
       <select id="tr"><option value="">كل المناطق</option>${REGIONS.map(r => opt(r.k, r.name, f.region)).join('')}</select>
@@ -348,6 +348,7 @@ function aTrainers(main) {
   $('#ts', main).onchange = e => setF('st', e.target.value);
   $('#add', main).onclick = () => trainerEditor(null);
   $('#imp', main).onclick = importDialog;
+  $('#tplx', main).onclick = downloadImportTemplate;
   $('#exp', main).onclick = exportCSV;
   $$('[data-a]', main).forEach(b => b.onclick = async () => {
     const t = Store.get(`trainers/${b.dataset.id}`);
@@ -436,55 +437,110 @@ function parseCSV(text) {
   if (cur || row.length) { row.push(cur); rows.push(row); }
   return rows.filter(r => r.some(c => c.trim()));
 }
-const COLS = {
-  name: ['الاسم', 'اسم المدرب', 'name'], title: ['اللقب', 'المسمى', 'التعريف', 'title'], region: ['المنطقة', 'region'], city: ['المدينة', 'city'],
-  phone: ['الجوال', 'رقم الجوال', 'phone', 'mobile'], email: ['البريد', 'البريد الإلكتروني', 'email'], whatsapp: ['واتساب', 'whatsapp'],
-  specs: ['التخصص', 'التخصصات', 'specs', 'specialty'], topics: ['البرامج', 'مجالات الخبرة', 'الخبرات', 'topics'], bio: ['النبذة', 'نبذة', 'bio'],
-  years: ['سنوات الخبرة', 'years'], hours: ['الساعات', 'الساعات التدريبية', 'hours'], photo: ['الصورة', 'رابط الصورة', 'photo'], gender: ['الجنس', 'gender'],
-  linkedin: ['لينكدإن', 'linkedin'], x: ['تويتر', 'إكس', 'x', 'twitter'], instagram: ['انستقرام', 'إنستقرام', 'instagram'], certs: ['الشهادات', 'certs']
-};
+/* أعمدة قالب استيراد المدربين: الإلزامية أولاً ثم الاختيارية (تطابق نموذج التسجيل). ex = مثال في القالب */
+const IMPORT_COLS = [
+  { k: 'name', label: 'الاسم', req: true, ex: 'أ. سارة العتيبي' },
+  { k: 'gender', label: 'الجنس', req: true, ex: 'مدربة', alt: ['gender'] },
+  { k: 'region', label: 'المنطقة', req: true, ex: 'الرياض | مكة المكرمة', alt: ['region'] },
+  { k: 'phone', label: 'الجوال', req: true, ex: '0501234567', alt: ['phone', 'mobile', 'واتساب', 'whatsapp'] },
+  { k: 'email', label: 'البريد الإلكتروني', req: true, ex: 'sarah@example.com', alt: ['email', 'البريد'] },
+  { k: 'title', label: 'اللقب المهني (سطر تعريفي)', req: true, ex: 'مدربة معتمدة في القيادة والتحول الرقمي', alt: ['title', 'اللقب', 'المسمى'] },
+  { k: 'specs', label: 'مجالات التدريب', req: true, ex: 'القيادة | التحول الرقمي', alt: ['specs', 'التخصصات', 'التخصص'] },
+  { k: 'bio', label: 'نبذة تعريفية', req: true, ex: 'مدربة بخبرة 8 سنوات في تطوير القيادات...', alt: ['bio', 'النبذة'] },
+  { k: 'modes', label: 'طريقة التقديم', req: true, ex: 'حضوري | عن بُعد', alt: ['modes'] },
+  { k: 'langs', label: 'لغة التدريب', req: true, ex: 'العربية | الإنجليزية', alt: ['langs', 'اللغات'] },
+  { k: 'nameEn', label: 'الاسم بالإنجليزية', ex: 'Sarah Alotaibi', alt: ['nameEn', 'english name'] },
+  { k: 'city', label: 'المدينة', ex: 'الرياض', alt: ['city'] },
+  { k: 'travel', label: 'مستعد للسفر', ex: 'نعم', alt: ['travel'] },
+  { k: 'topics', label: 'عناوين دورات تم تقديمها سابقاً', ex: 'إدارة الوقت، القيادة الفعالة', alt: ['topics', 'البرامج'] },
+  { k: 'years', label: 'سنوات الخبرة', ex: '8', alt: ['years'] },
+  { k: 'hours', label: 'الساعات التدريبية', ex: '1200', alt: ['hours'] },
+  { k: 'programs', label: 'عدد البرامج والدورات', ex: '60', alt: ['programs'] },
+  { k: 'certs', label: 'الشهادات والاعتمادات', ex: 'مدربة معتمدة من المؤسسة العامة للتدريب التقني والمهني', alt: ['certs', 'الشهادات'] },
+  { k: 'tot', label: 'حاصل على شهادة تدريب المدربين', ex: 'نعم', alt: ['tot'] },
+  { k: 'photo', label: 'رابط الصورة', ex: 'https://drive.google.com/file/d/.../view', alt: ['photo', 'photoUrl', 'الصورة'] },
+  { k: 'theme', label: 'لون البطاقة', ex: 'brand', alt: ['theme'] }
+];
+const splitMulti = v => String(v || '').split(/[|،,;؛\n]+/).map(x => x.trim()).filter(Boolean);
+const yes = v => /^(نعم|yes|true|1|y|✓)$/i.test(String(v || '').trim());
+function downloadImportTemplate() {
+  const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  download('قالب-استيراد-المدربين.csv', '\uFEFF' + [IMPORT_COLS.map(c => q(c.label)), IMPORT_COLS.map(c => q(c.ex))].map(r => r.join(',')).join('\r\n'), 'text/csv;charset=utf-8');
+}
+// يحوّل صفاً مقروءاً من الملف إلى سجل مدرب صالح للقواعد، أو يعيد الحقول الإلزامية الناقصة
+function importRecord(r) {
+  const miss = [], rec = {}, priv = {};
+  const regions = splitMulti(r.region).map(matchRegion).filter((k, i, a) => k && a.indexOf(k) === i);
+  const specNames = splitMulti(r.specs);
+  const keys = specNames.map(n => SPECIALTIES.find(s => s.k !== 'other' && normAr(s.name) === normAr(n))?.k || matchSpecs(n)[0] || '');
+  const specs = keys.filter((k, i) => k && keys.indexOf(k) === i);
+  const unknown = specNames.filter((n, i) => !keys[i] && n.length > 1 && !leaksContact(n));
+  const modes = splitMulti(r.modes).map(n => DELIVERY.find(d => normAr(d.name) === normAr(n) || d.k === n.toLowerCase() || normAr(d.name).includes(normAr(n)))?.k).filter((k, i, a) => k && a.indexOf(k) === i);
+  const phone = phoneDigits(r.phone), langs = splitMulti(r.langs).join('، ');
+  const gender = /ة$|انثى|أنثى|female|^f/i.test(String(r.gender || '').trim()) ? 'f' : String(r.gender || '').trim() ? 'm' : '';
+  if (!r.name) miss.push('الاسم'); if (!gender) miss.push('الجنس'); if (!regions.length) miss.push('المنطقة');
+  if (!validPhone(phone)) miss.push('الجوال'); if (!validEmail(r.email)) miss.push('البريد');
+  if (!r.title) miss.push('اللقب'); if (!specNames.length) miss.push('مجالات التدريب'); if (!r.bio) miss.push('النبذة');
+  if (!modes.length) miss.push('طريقة التقديم'); if (!langs) miss.push('لغة التدريب');
+  if (miss.length) return { miss, name: r.name };
+  const num = v => Math.max(0, Number(toEnDigits(v)) || 0);
+  const clip = (v, n) => String(v || '').trim().slice(0, n);
+  Object.assign(rec, { name: clip(r.name, 60), gender, region: regions[0], regions, title: clip(r.title, 80), specs: specs.slice(0, MAX_SPECS), bio: clip(r.bio, 1200), modes, langs: clip(langs, 60),
+    theme: CARD_THEMES.some(x => x.k === r.theme) ? r.theme : 'brand' });
+  const opt = { nameEn: clip(r.nameEn, 60), city: clip(r.city, 40), topics: clip(r.topics, 800), certs: clip(r.certs, 800), photoUrl: isImageLink(r.photo) ? clip(r.photo, 300) : '' };
+  Object.entries(opt).forEach(([k, v]) => { if (v) rec[k] = v; });
+  ['years', 'hours', 'programs'].forEach(k => { if (num(r[k])) rec[k] = Math.min(num(r[k]), { years: 60, hours: 100000, programs: 10000 }[k]); });
+  if (yes(r.travel)) rec.travel = true;
+  if (yes(r.tot)) rec.tot = true;
+  priv.phone = phone; priv.email = clip(r.email, 120);
+  return { rec, priv, unknown: unknown.slice(0, 5) };
+}
 function matchRegion(v) { const n = normAr(v); return REGIONS.find(r => n && (normAr(r.name).includes(n) || n.includes(normAr(r.name)) || r.old.toLowerCase() === n || r.k === n))?.k || ''; }
 function matchSpecs(v) {
-  return splitList(v).map(x => { const n = normAr(x); return SPECIALTIES.find(s => normAr(s.name).includes(n) || n.includes(normAr(s.name).split(' ')[0]))?.k; }).filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).slice(0, MAX_SPECS);
+  return splitList(v).map(x => { const n = normAr(x); return n.length > 2 && SPECIALTIES.find(s => s.k !== 'other' && (normAr(s.name).includes(n) || n.includes(normAr(s.name))))?.k; }).filter(Boolean).filter((x, i, a) => a.indexOf(x) === i).slice(0, MAX_SPECS);
 }
 function importDialog() {
   const m = modal(`<h3><i class="fa-solid fa-file-import"></i> استيراد المدربين</h3>
-    <p class="muted small">ارفع ملف CSV (مثلاً من Google Sheets: ملف ← تنزيل ← CSV) يحتوي أعمدة مثل: الاسم، اللقب، المنطقة، المدينة، الجوال، البريد، واتساب، التخصصات، البرامج، النبذة، سنوات الخبرة، رابط الصورة. تُطابق المناطق والتخصصات تلقائياً.</p>
-    <input type="file" id="f" accept=".csv,.json,text/csv,application/json">
+    <p class="muted small">ارفع ملف CSV بنفس أعمدة القالب (الإلزامية أولاً ثم الاختيارية). لأكثر من منطقة أو تخصص أو لغة افصل بين القيم بالرمز | . الصفوف الناقصة تُعرض أسبابها ولا تُستورد.</p>
+    <div class="row"><button class="btn sm" id="tpl"><i class="fa-solid fa-download"></i> تنزيل القالب الجاهز</button></div>
+    <input type="file" id="f" accept=".csv,.json,text/csv,application/json" style="margin-top:12px">
     <div id="pv" style="margin-top:12px"></div>`, { wide: true });
+  m.$('#tpl').onclick = downloadImportTemplate;
   m.$('#f').onchange = async () => {
     const file = m.$('#f').files[0]; if (!file) return;
     const text = await file.text();
-    let recs = [];
-    if (/\.json$/i.test(file.name)) { try { const j = JSON.parse(text); recs = Array.isArray(j) ? j : Object.values(j.trainers || j); } catch { toast('ملف JSON غير صالح', 'error'); return; } }
+    let rows = [];
+    if (/\.json$/i.test(file.name)) { try { const j = JSON.parse(text); rows = (Array.isArray(j) ? j : Object.values(j.trainers || j)).map(o => ({ ...o, region: Array.isArray(o.regions) ? o.regions.join('|') : o.region, specs: Array.isArray(o.specs) ? o.specs.map(specName).filter(Boolean).join('|') : o.specs, modes: Array.isArray(o.modes) ? o.modes.map(k => DELIVERY.find(d => d.k === k)?.name).filter(Boolean).join('|') : o.modes, photo: o.photo || o.photoUrl })); } catch { toast('ملف JSON غير صالح', 'error'); return; } }
     else {
-      const rows = parseCSV(text.replace(/^﻿/, '')); const head = rows.shift() || [];
-      const idx = {}; Object.entries(COLS).forEach(([k, names]) => { idx[k] = head.findIndex(h => names.some(n => normAr(h).includes(normAr(n)))); });
-      recs = rows.map(r => { const o = {}; Object.keys(COLS).forEach(k => { if (idx[k] >= 0) o[k] = (r[idx[k]] || '').trim(); }); return o; });
+      const grid = parseCSV(text.replace(/^\uFEFF/, '')); const head = grid.shift() || [];
+      const nh = head.map(h => normAr(h));
+      const idx = {};
+      IMPORT_COLS.forEach(c => { const names = [c.label, ...(c.alt || [])].map(normAr); idx[c.k] = nh.findIndex(h => names.includes(h)); if (idx[c.k] < 0) idx[c.k] = nh.findIndex(h => names.some(n => h.includes(n))); });
+      rows = grid.map(r => { const o = {}; IMPORT_COLS.forEach(c => { if (idx[c.k] >= 0) o[c.k] = (r[idx[c.k]] || '').trim(); }); return o; });
     }
-    recs = recs.filter(r => r.name).map(r => ({
-      name: r.name, title: r.title || '', region: matchRegion(r.region) || (REGIONS.some(x => x.k === r.region) ? r.region : ''), city: r.city || '',
-      gender: /ة$|انثى|أنثى|f/i.test(r.gender || '') ? 'f' : r.gender ? 'm' : '', specs: Array.isArray(r.specs) ? r.specs : matchSpecs(r.specs || ''),
-      topics: r.topics || '', bio: r.bio || '', certs: r.certs || '', years: Number(toEnDigits(r.years)) || 0, hours: Number(toEnDigits(r.hours)) || 0,
-      photoUrl: r.photo || r.photoUrl || '', modes: r.modes || ['onsite'], theme: CARD_THEMES.some(x => x.k === r.theme) ? r.theme : 'brand', langs: 'العربية',
-      _phone: r.phone || r.whatsapp || '', _email: r.email || ''
-    }));
-    m.$('#pv').innerHTML = `<p><b class="num">${recs.length}</b> مدرب جاهز للاستيراد ${recs.filter(r => !r.region).length ? `<span class="pill warn">${recs.filter(r => !r.region).length} بلا منطقة مطابقة</span>` : ''}</p>
-      <div class="tbl-wrap" style="max-height:300px"><table class="tbl"><thead><tr><th>الاسم</th><th>المنطقة</th><th>التخصصات</th></tr></thead><tbody>${recs.slice(0, 50).map(r => `<tr><td>${esc(r.name)}</td><td>${esc(regionName(r.region) || '—')}</td><td>${r.specs.map(specName).join('، ') || '—'}</td></tr>`).join('')}</tbody></table></div>
-      <div class="row end" style="margin-top:12px"><button class="btn primary" id="go">استيراد ونشر</button></div>`;
-    m.$('#go').onclick = async () => {
-      m.$('#go').disabled = true;
-      for (const r of recs) {
+    const res = rows.filter(r => r.name || r.phone || r.email).map(importRecord);
+    const ok = res.filter(x => x.rec), bad = res.filter(x => !x.rec);
+    m.$('#pv').innerHTML = `<p><b class="num">${ok.length}</b> مدرب جاهز للاستيراد${bad.length ? ` <span class="pill warn">${bad.length} صف ينقصه بيانات إلزامية</span>` : ''}</p>
+      ${bad.length ? `<div class="banner warn"><div>${bad.slice(0, 8).map(x => `<div><b>${esc(x.name || 'بلا اسم')}</b>: ينقصه ${esc(x.miss.join('، '))}</div>`).join('')}${bad.length > 8 ? `<div>و${bad.length - 8} غيرها...</div>` : ''}</div></div>` : ''}
+      <div class="tbl-wrap" style="max-height:300px"><table class="tbl"><thead><tr><th>الاسم</th><th>المناطق</th><th>التخصصات</th></tr></thead><tbody>${ok.slice(0, 50).map(x => `<tr><td>${esc(x.rec.name)}</td><td>${esc(regionsLabel(x.rec))}</td><td>${esc(x.rec.specs.map(specName).join('، ') || '—')}${x.unknown.length ? ` <span class="pill gold">جديد: ${esc(x.unknown.join('، '))}</span>` : ''}</td></tr>`).join('')}</tbody></table></div>
+      <div class="row end" style="margin-top:12px"><button class="btn primary" id="go" ${ok.length ? '' : 'disabled'}>استيراد ونشر ${ok.length} مدرب</button></div>`;
+    m.$('#go') && (m.$('#go').onclick = async () => {
+      m.$('#go').disabled = true; let done = 0, failed = 0;
+      for (const { rec: r0, priv, unknown } of ok) {
+        const rec = { ...r0 };
+        unknown.forEach(n => { const k = Data.addSpecialty(n); if (k && !rec.specs.includes(k) && rec.specs.length < MAX_SPECS) rec.specs.push(k); });
         const code = await Data.nextCode(); const id = code.toLowerCase();
-        const { _phone, _email, ...pub } = r;
-        const rec = { ...pub, id, code, status: 'active', featured: false, publishedAt: Date.now(), updatedAt: Date.now() };
+        Object.assign(rec, { id, code, status: 'active', featured: false, publishedAt: Date.now(), updatedAt: Date.now() });
         rec.slug = Data.makeSlug(rec);
-        Store.set(`trainers/${id}`, rec);
-        Store.set(`private/${id}`, { phone: _phone ? phoneDigits(_phone) : '', email: _email });
+        const a = await Store.setConfirmed(`trainers/${id}`, rec);
+        const b = a && await Store.setConfirmed(`private/${id}`, priv);
+        if (a && b) done++; else failed++;
       }
-      Security.log('استيراد مدربين', `${recs.length} مدرب`, file.name);
-      toast(`تم استيراد ${recs.length} مدرب — أصدر رموز الدخول من فلتر «بلا رمز دخول»`); m.close();
-    };
+      Security.log('استيراد مدربين', `${done} مدرب`, file.name);
+      if (failed) toast(`استُورد ${done} وتعذّر ${failed}. تأكد من نشر آخر database.rules.json في Firebase`, 'error');
+      else toast(`تم استيراد ${done} مدرب — أصدر رموز الدخول من فلتر «بلا رمز دخول»`);
+      m.close();
+    });
   };
 }
 function exportCSV() {
