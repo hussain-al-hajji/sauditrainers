@@ -2,7 +2,9 @@
  * المصادر: (1) عدّادات المنصة الذاتية analytics/ (آنية، بلا بيانات شخصية)،
  *          (2) Google Analytics 4 وSearch Console عبر سكربت الأتمتة → analytics_ext/ga و analytics_ext/gsc. */
 
-const Stats = { days: 30 };
+const Stats = { days: 30, gp: '28' };
+const AN_GP = [['7', '7 أيام'], ['28', '28 يوماً'], ['90', '90 يوماً'], ['365', '12 شهراً'], ['all', 'منذ البداية']];
+const AN_GP_LABEL = { 7: 'آخر 7 أيام', 28: 'آخر 28 يوماً', 90: 'آخر 90 يوماً', 365: 'آخر 12 شهراً', all: 'منذ البداية' };
 
 const AN_PAGES = { home: 'الرئيسية', trainers: 'دليل المدربين', profile: 'بطاقة مدرب', join: 'التسجيل كمدرب', request: 'طلب مدرب', halls: 'قاعات التدريب', about: 'عن المنصة', login: 'دخول المدربين', status: 'متابعة الطلب' };
 const AN_DEV = { mobile: 'جوال', desktop: 'كمبيوتر', tablet: 'لوحي' };
@@ -35,6 +37,7 @@ const anSum = (rows, f) => rows.reduce((a, r) => a + (+r[f] || 0), 0);
 const anTop = (kind, max = 10) => Object.entries(Store.get(`analytics/${kind}`) || {}).map(([k, v]) => [k, +v || 0]).filter(x => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, max);
 
 function anDelta(cur, prev) {
+  if (prev == null) return '';   // لا فترة سابقة للمقارنة (منذ البداية)
   if (!prev && !cur) return '<div class="an-d flat">—</div>';
   if (!prev) return '<div class="an-d up">▲ جديد</div>';
   const p = Math.round((cur - prev) / prev * 100);
@@ -72,9 +75,20 @@ const anBars = (rows, nameFn, empty = 'لا بيانات بعد') => {
 const anBox = (icon, title, body, cls = '') => `<div class="pbox ${cls}"><h3><i class="fa-solid ${icon}"></i>${title}</h3>${body}</div>`;
 
 /* ===== أقسام اللوحة ===== */
+// تجميع شهري للفترات الطويلة حتى يبقى الرسم مقروءاً
+function anMonthly(rows) {
+  const m = {};
+  rows.forEach(r => { const k = r.k.slice(0, 6); const o = m[k] || (m[k] = { label: `${+k.slice(4)}/${k.slice(2, 4)}`, views: 0, visits: 0, visitors: 0 }); o.views += r.views; o.visits += r.visits; o.visitors += r.visitors; });
+  return Object.values(m);
+}
 function statsOwn() {
-  const n = Stats.days, cur = anDays(n), prev = anDays(n, n);
-  const S = f => anSum(cur, f), P = f => anSum(prev, f);
+  let n = Stats.days;
+  if (!n) {   // منذ بدء الرصد
+    const first = Object.keys(Store.get('analytics/day') || {}).sort()[0];
+    n = first ? Math.max(1, Math.ceil((Date.now() + 3 * 3600e3 - Date.UTC(+first.slice(0, 4), +first.slice(4, 6) - 1, +first.slice(6, 8))) / 864e5) + 1) : 7;
+  }
+  const cur = anDays(n), prev = Stats.days ? anDays(n, n) : [];
+  const S = f => anSum(cur, f), P = f => (prev.length ? anSum(prev, f) : null);
   const visits = S('visits'), views = S('views');
   const hasData = !!Store.get('analytics/day');
   const hours = Array.from({ length: 24 }, (_, h) => [String(h).padStart(2, '0'), +(Store.get(`analytics/hour/${String(h).padStart(2, '0')}`) || 0)]);
@@ -88,7 +102,7 @@ function statsOwn() {
   const fm = Math.max(1, ...funnel.map(f => f[1]));
   return `
     <div class="an-head"><div><h3><i class="fa-solid fa-chart-line"></i> زيارات المنصة</h3><small class="muted">عدّادات المنصة الذاتية، آنية وبلا بيانات شخصية. لا تُحسب زياراتك كمشرف.</small></div>
-      <div class="an-per">${[7, 30, 90].map(d => `<button data-an-p="${d}" class="${n === d ? 'on' : ''}">${d} يوماً</button>`).join('')}</div></div>
+      <div class="an-per">${[[7, '7 أيام'], [30, '30 يوماً'], [90, '90 يوماً'], [365, 'سنة'], [0, 'منذ البدء']].map(([d, l]) => `<button data-an-p="${d}" class="${Stats.days === d ? 'on' : ''}">${l}</button>`).join('')}</div></div>
     ${hasData ? '' : '<div class="banner info"><i class="fa-solid fa-circle-info"></i><span>لم تُسجَّل زيارات بعد. تبدأ الأرقام بالظهور بعد نشر آخر تحديث للموقع وتصفّح الزوار له.</span></div>'}
     <div class="kpis">
       ${anKpi('fa-door-open', anNum(visits), 'زيارة (جلسة)', anDelta(visits, P('visits')), true)}
@@ -98,9 +112,9 @@ function statsOwn() {
       ${anKpi('fa-user-plus', anPct(S('newv'), S('visitors')) + '%', 'زوار جدد', anDelta(S('newv'), P('newv')))}
       ${anKpi('fa-magnifying-glass', anNum(S('searches')), 'عملية بحث في الدليل', anDelta(S('searches'), P('searches')))}
       ${anKpi('fa-inbox', anNum(S('contacts')), 'طلب تواصل مع مدرب', anDelta(S('contacts'), P('contacts')))}
-      ${anKpi('fa-user-check', anNum(appsN), 'طلب تسجيل مدرب', anDelta(appsN, appsPrev))}
+      ${anKpi('fa-user-check', anNum(appsN), 'طلب تسجيل مدرب', anDelta(appsN, Stats.days ? appsPrev : null))}
     </div>
-    ${anBox('fa-chart-area', `الزيارات والمشاهدات يومياً — آخر ${n} يوماً`, anLine(cur, [{ k: 'views', name: 'مشاهدات الصفحات', c: '#005430' }, { k: 'visits', name: 'الزيارات', c: '#6E9142' }, { k: 'visitors', name: 'الزوار الفريدون', c: '#B8A25A', dash: true }]))}
+    ${anBox('fa-chart-area', `الزيارات والمشاهدات ${n > 120 ? 'شهرياً' : 'يومياً'} — ${Stats.days ? `آخر ${n} يوماً` : 'منذ بدء الرصد'}`, anLine(n > 120 ? anMonthly(cur) : cur, [{ k: 'views', name: 'مشاهدات الصفحات', c: '#005430' }, { k: 'visits', name: 'الزيارات', c: '#6E9142' }, { k: 'visitors', name: 'الزوار الفريدون', c: '#B8A25A', dash: true }]))}
     <div class="grid2">
       ${anBox('fa-mobile-screen', 'الأجهزة', anDonut(anTop('dev'), k => AN_DEV[k] || k))}
       ${anBox('fa-globe', 'المتصفحات', anDonut(anTop('browser'), k => AN_BROWSER[k] || k))}
@@ -118,13 +132,14 @@ function statsOwn() {
     </div>`;
 }
 
-function anGaCard(ga) {
+function anGaCard(ga0) {
+  const ga = ga0.periods ? Object.assign({ updatedAt: ga0.updatedAt, realtime: ga0.realtime }, ga0.periods[Stats.gp] || {}) : ga0;
   const o = ga.overview || {}, pv = o.prev || {};
-  const rows = arr(ga.daily).map(r => { const d = String(r[0]); return { label: `${+d.slice(6)}/${+d.slice(4, 6)}`, users: +r[1] || 0, sessions: +r[2] || 0, views: +r[3] || 0 }; });
+  const rows = arr(ga.daily).map(r => { const d = String(r[0]); return { label: d.length === 6 ? `${+d.slice(4)}/${d.slice(2, 4)}` : `${+d.slice(6)}/${+d.slice(4, 6)}`, users: +r[1] || 0, sessions: +r[2] || 0, views: +r[3] || 0 }; });
   const list = (k, nameFn) => arr(ga[k]).map(r => [nameFn(r), +r[r.length - 1] || 0]);
   const rt = ga.realtime || {};
   return `
-    <div class="an-head"><div><h3><i class="fa-brands fa-google"></i> Google Analytics — آخر 28 يوماً</h3><small class="muted">تحديث: ${ga.updatedAt ? ago(ga.updatedAt) : '—'}</small></div></div>
+    <div class="an-head"><div><h3><i class="fa-brands fa-google"></i> Google Analytics — ${AN_GP_LABEL[Stats.gp]}</h3><small class="muted">تحديث: ${ga.updatedAt ? ago(ga.updatedAt) : '—'}</small></div></div>
     <div class="kpis">
       ${anKpi('fa-bolt', anNum(rt.users), 'نشط الآن (آخر 30 دقيقة)', '', true)}
       ${anKpi('fa-users', anNum(o.activeUsers), 'مستخدم نشط', anDelta(o.activeUsers, pv.activeUsers))}
@@ -135,7 +150,7 @@ function anGaCard(ga) {
       ${anKpi('fa-hand-pointer', anPct(+o.engagementRate || 0, 1) + '%', 'نسبة التفاعل', '')}
       ${anKpi('fa-person-walking-arrow-right', anPct(+o.bounceRate || 0, 1) + '%', 'معدل الارتداد', '')}
     </div>
-    ${rows.length ? anBox('fa-chart-area', 'المستخدمون والجلسات يومياً', anLine(rows, [{ k: 'views', name: 'المشاهدات', c: '#005430' }, { k: 'sessions', name: 'الجلسات', c: '#6E9142' }, { k: 'users', name: 'المستخدمون', c: '#B8A25A', dash: true }])) : ''}
+    ${rows.length ? anBox('fa-chart-area', `المستخدمون والجلسات ${Stats.gp === '365' || Stats.gp === 'all' ? 'شهرياً' : 'يومياً'}`, anLine(rows, [{ k: 'views', name: 'المشاهدات', c: '#005430' }, { k: 'sessions', name: 'الجلسات', c: '#6E9142' }, { k: 'users', name: 'المستخدمون', c: '#B8A25A', dash: true }])) : ''}
     <div class="grid2">
       ${anBox('fa-earth-asia', 'الدول', anBars(list('countries', r => anCountry(r[0], r[1])), k => k))}
       ${anBox('fa-city', 'المدن', anBars(list('cities', r => r[0]), k => k))}
@@ -146,21 +161,22 @@ function anGaCard(ga) {
     </div>`;
 }
 
-function anGscCard(g) {
+function anGscCard(g0) {
+  const g = g0.periods ? Object.assign({ updatedAt: g0.updatedAt }, g0.periods[Stats.gp] || {}) : g0;
   const t = g.totals || {}, pv = g.prev || {};
-  const rows = arr(g.daily).map(r => { const d = String(r[0]); return { label: `${+d.slice(8)}/${+d.slice(5, 7)}`, clicks: +r[1] || 0, impr: +r[2] || 0 }; });
+  const rows = arr(g.daily).map(r => { const d = String(r[0]); return { label: d.length === 7 ? `${+d.slice(5)}/${d.slice(2, 4)}` : `${+d.slice(8)}/${+d.slice(5, 7)}`, clicks: +r[1] || 0, impr: +r[2] || 0 }; });
   const tbl = (head, body) => `<div class="tbl-wrap" style="box-shadow:none"><table class="tbl"><thead><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table></div>`;
   const qrows = arr(g.queries).slice(0, 20).map(r => `<tr><td>${esc(r[0])}</td><td>${anNum(r[1])}</td><td>${anNum(r[2])}</td><td>${(+r[3] * 100).toFixed(1)}%</td><td>${(+r[4]).toFixed(1)}</td></tr>`).join('');
   const prows = arr(g.pages).slice(0, 10).map(r => `<tr><td dir="ltr" style="text-align:end">${esc(String(r[0]).replace(/^https?:\/\/[^/]+/, '') || '/')}</td><td>${anNum(r[1])}</td><td>${anNum(r[2])}</td></tr>`).join('');
   return `
-    <div class="an-head"><div><h3><i class="fa-solid fa-magnifying-glass-chart"></i> ظهور المنصة في بحث Google (Search Console)</h3><small class="muted">${g.range ? `${esc(g.range.start)} → ${esc(g.range.end)}` : ''} · تأخر البيانات يومان إلى ثلاثة · تحديث: ${g.updatedAt ? ago(g.updatedAt) : '—'}</small></div></div>
+    <div class="an-head"><div><h3><i class="fa-solid fa-magnifying-glass-chart"></i> ظهور المنصة في بحث Google (Search Console)</h3><small class="muted">${g.range ? `${esc(g.range.start)} → ${esc(g.range.end)}` : ''} · ${Stats.gp === 'all' ? 'أقصى ما يحتفظ به Google نحو 16 شهراً · ' : ''}تأخر البيانات يومان إلى ثلاثة · تحديث: ${g.updatedAt ? ago(g.updatedAt) : '—'}</small></div></div>
     <div class="kpis">
       ${anKpi('fa-eye', anNum(t.impressions), 'مرة ظهرت في نتائج البحث', anDelta(t.impressions, pv.impressions), true)}
       ${anKpi('fa-arrow-pointer', anNum(t.clicks), 'نقرة من نتائج البحث', anDelta(t.clicks, pv.clicks))}
       ${anKpi('fa-percent', ((+t.ctr || 0) * 100).toFixed(1) + '%', 'نسبة النقر (CTR)', '')}
       ${anKpi('fa-ranking-star', (+t.position || 0).toFixed(1), 'متوسط الترتيب في البحث', '')}
     </div>
-    ${rows.length ? anBox('fa-chart-area', 'الظهور والنقرات يومياً', anLine(rows, [{ k: 'impr', name: 'مرات الظهور', c: '#005430' }, { k: 'clicks', name: 'النقرات', c: '#B8A25A' }])) : ''}
+    ${rows.length ? anBox('fa-chart-area', `الظهور والنقرات ${Stats.gp === '365' || Stats.gp === 'all' ? 'شهرياً' : 'يومياً'}`, anLine(rows, [{ k: 'impr', name: 'مرات الظهور', c: '#005430' }, { k: 'clicks', name: 'النقرات', c: '#B8A25A' }])) : ''}
     <div class="grid2">
       ${anBox('fa-keyboard', 'كلمات البحث التي ظهرتَ بها', qrows ? tbl(['الكلمة', 'نقرات', 'ظهور', 'CTR', 'الترتيب'], qrows) : '<p class="muted small">لا بيانات بعد</p>')}
       <div>${anBox('fa-file-lines', 'الصفحات الأكثر ظهوراً', prows ? tbl(['الصفحة', 'نقرات', 'ظهور'], prows) : '<p class="muted small">لا بيانات بعد</p>')}
@@ -182,10 +198,12 @@ function statsMount(main) {
   box.innerHTML = `${statsOwn()}
     <div class="an-ext-h"><h2><i class="fa-brands fa-google"></i> بيانات Google</h2>
       ${Automation.on ? '<button class="btn sm" id="anr"><i class="fa-solid fa-rotate"></i> تحديث الآن</button>' : ''}</div>
-    ${ga ? anGaCard(ga) : anSetup('ga')}
-    ${gsc ? anGscCard(gsc) : anSetup('gsc')}
+    ${ga || gsc ? `<div class="an-per" style="margin:6px 0 4px">${AN_GP.map(([k, l]) => `<button data-an-g="${k}" class="${Stats.gp === k ? 'on' : ''}">${l}</button>`).join('')}</div>` : ''}
+    ${ga && (ga.periods || ga.overview) ? anGaCard(ga) : anSetup('ga')}
+    ${gsc && (gsc.periods || gsc.totals) ? anGscCard(gsc) : anSetup('gsc')}
     ${ga?.error || gsc?.error ? `<div class="banner warn"><i class="fa-solid fa-triangle-exclamation"></i><span>${esc([ga?.error && 'Analytics: ' + ga.error, gsc?.error && 'Search Console: ' + gsc.error].filter(Boolean).join(' | '))}</span></div>` : ''}`;
   $$('[data-an-p]', box).forEach(b => b.onclick = () => { Stats.days = +b.dataset.anP; statsMount(main); });
+  $$('[data-an-g]', box).forEach(b => b.onclick = () => { Stats.gp = b.dataset.anG; statsMount(main); });
   const r = $('#anr', box);
   r && (r.onclick = async () => { r.disabled = true; await Automation.notify('analytics', 'now'); toast('طُلب تحديث البيانات، يظهر خلال دقيقة تقريباً'); setTimeout(() => { r.disabled = false; }, 8000); });
 }

@@ -19,29 +19,34 @@ function anFetch(url, body) {
   return JSON.parse(txt || '{}');
 }
 
+/* ===================== الفترات: 7 أيام، 28، 90، 12 شهراً، ومنذ البداية ===================== */
+// لكل فترة: [المفتاح، عدد الأيام (0 = منذ البداية)]
+const AN_PERIODS = [['7', 7], ['28', 28], ['90', 90], ['365', 365], ['all', 0]];
+
 /* ===================== Google Analytics 4 (Data API) ===================== */
-function gaReport(pid, body) { return anFetch('https://analyticsdata.googleapis.com/v1beta/properties/' + pid + ':runReport', body); }
-const gaRows = (r, dims, mets) => (r.rows || []).map(x => []
+function gaBatch(pid, reqs) { return anFetch('https://analyticsdata.googleapis.com/v1beta/properties/' + pid + ':batchRunReports', { requests: reqs }).reports || []; }
+const gaRows = (r, dims, mets) => ((r || {}).rows || []).map(x => []
   .concat((x.dimensionValues || []).slice(0, dims).map(d => d.value))
   .concat((x.metricValues || []).slice(0, mets).map(m => Number(m.value) || 0)));
 
 function fetchGa() {
   const pid = String(AN_PROPS.getProperty('GA_PROPERTY_ID') || '').replace(/\D/g, '');
   if (!pid) return null;
-  const range = [{ startDate: '27daysAgo', endDate: 'today' }], prev = [{ startDate: '55daysAgo', endDate: '28daysAgo' }];
-  const mets = ['activeUsers', 'newUsers', 'sessions', 'screenPageViews', 'averageSessionDuration', 'engagementRate', 'bounceRate'];
-  const sum = r => { const v = ((r.rows || [])[0] || {}).metricValues || []; return { activeUsers: +(v[0] || {}).value || 0, newUsers: +(v[1] || {}).value || 0, sessions: +(v[2] || {}).value || 0, pageViews: +(v[3] || {}).value || 0, avgDuration: +(v[4] || {}).value || 0, engagementRate: +(v[5] || {}).value || 0, bounceRate: +(v[6] || {}).value || 0 }; };
-  const m = names => names.map(name => ({ name }));
-  const top = (dim, met, n, extra) => gaReport(pid, Object.assign({ dateRanges: range, dimensions: [{ name: dim }].concat(extra ? [{ name: extra }] : []), metrics: m([met]), orderBys: [{ metric: { metricName: met }, desc: true }], limit: n }));
-  const out = { updatedAt: Date.now(), overview: sum(gaReport(pid, { dateRanges: range, metrics: m(mets) })) };
-  out.overview.prev = sum(gaReport(pid, { dateRanges: prev, metrics: m(mets) }));
-  out.daily = gaRows(gaReport(pid, { dateRanges: range, dimensions: [{ name: 'date' }], metrics: m(['activeUsers', 'sessions', 'screenPageViews']), orderBys: [{ dimension: { dimensionName: 'date' } }] }), 1, 3);
-  out.countries = gaRows(top('countryId', 'activeUsers', 10, 'country'), 2, 1);
-  out.cities = gaRows(top('city', 'activeUsers', 10), 1, 1).filter(r => r[0] !== '(not set)');
-  out.devices = gaRows(top('deviceCategory', 'activeUsers', 5), 1, 1);
-  out.channels = gaRows(top('sessionDefaultChannelGroup', 'sessions', 8), 1, 1);
-  out.sources = gaRows(top('sessionSource', 'sessions', 10), 1, 1);
-  out.pages = gaRows(top('pagePath', 'screenPageViews', 10), 1, 1);
+  const mets = ['activeUsers', 'newUsers', 'sessions', 'screenPageViews', 'averageSessionDuration', 'engagementRate', 'bounceRate'].map(name => ({ name }));
+  const sum = r => { const v = (((r || {}).rows || [])[0] || {}).metricValues || []; const g = i => +(v[i] || {}).value || 0; return { activeUsers: g(0), newUsers: g(1), sessions: g(2), pageViews: g(3), avgDuration: g(4), engagementRate: g(5), bounceRate: g(6) }; };
+  const top = (range, dim, met, n, extra) => ({ dateRanges: range, dimensions: [{ name: dim }].concat(extra ? [{ name: extra }] : []), metrics: [{ name: met }], orderBys: [{ metric: { metricName: met }, desc: true }], limit: n });
+  const out = { updatedAt: Date.now(), periods: {} };
+  AN_PERIODS.forEach(function (p) {
+    const key = p[0], n = p[1];
+    const range = [{ startDate: n ? (n - 1) + 'daysAgo' : '2015-08-14', endDate: 'today' }];
+    const prev = n ? [{ startDate: (2 * n - 1) + 'daysAgo', endDate: n + 'daysAgo' }] : null;
+    const monthly = n === 0 || n > 90;
+    const seriesReq = { dateRanges: range, dimensions: [{ name: monthly ? 'yearMonth' : 'date' }], metrics: [{ name: 'activeUsers' }, { name: 'sessions' }, { name: 'screenPageViews' }], orderBys: [{ dimension: { dimensionName: monthly ? 'yearMonth' : 'date' } }], limit: 400 };
+    const r1 = gaBatch(pid, [{ dateRanges: range, metrics: mets }, seriesReq, top(range, 'countryId', 'activeUsers', 12, 'country'), top(range, 'city', 'activeUsers', 12), top(range, 'deviceCategory', 'activeUsers', 5)]);
+    const r2 = gaBatch(pid, [top(range, 'sessionDefaultChannelGroup', 'sessions', 8), top(range, 'sessionSource', 'sessions', 10), top(range, 'pagePath', 'screenPageViews', 10)].concat(prev ? [{ dateRanges: prev, metrics: mets }] : []));
+    const o = sum(r1[0]); if (prev) o.prev = sum(r2[3]);
+    out.periods[key] = { overview: o, daily: gaRows(r1[1], 1, 3), countries: gaRows(r1[2], 2, 1), cities: gaRows(r1[3], 1, 1).filter(r => r[0] !== '(not set)'), devices: gaRows(r1[4], 1, 1), channels: gaRows(r2[0], 1, 1), sources: gaRows(r2[1], 1, 1), pages: gaRows(r2[2], 1, 1) };
+  });
   try { out.realtime = { users: Number((((anFetch('https://analyticsdata.googleapis.com/v1beta/properties/' + pid + ':runRealtimeReport', { metrics: [{ name: 'activeUsers' }] }).rows || [])[0] || {}).metricValues || [{}])[0].value) || 0 }; } catch (e) { out.realtime = { users: 0 }; }
   return out;
 }
@@ -52,17 +57,26 @@ function fetchGsc() {
   const site = String(AN_PROPS.getProperty('GSC_SITE') || '').trim();
   if (!site) return null;
   const day = n => Utilities.formatDate(new Date(Date.now() - n * 864e5), 'Asia/Riyadh', 'yyyy-MM-dd');
-  const end = day(2), start = day(29), pEnd = day(30), pStart = day(57);   // البيانات تتأخر يومين
-  const tot = r => { const x = (r.rows || [])[0] || {}; return { clicks: x.clicks || 0, impressions: x.impressions || 0, ctr: x.ctr || 0, position: x.position || 0 }; };
-  const q = (dims, n) => gscQuery(site, { startDate: start, endDate: end, dimensions: dims, rowLimit: n });
-  const out = { updatedAt: Date.now(), range: { start: start, end: end } };
-  out.totals = tot(gscQuery(site, { startDate: start, endDate: end }));
-  out.prev = tot(gscQuery(site, { startDate: pStart, endDate: pEnd }));
-  out.daily = (q(['date'], 60).rows || []).map(r => [r.keys[0], r.clicks, r.impressions]).sort((a, b) => (a[0] < b[0] ? -1 : 1));
-  out.queries = (q(['query'], 25).rows || []).map(r => [r.keys[0], r.clicks, r.impressions, r.ctr, r.position]);
-  out.pages = (q(['page'], 10).rows || []).map(r => [r.keys[0], r.clicks, r.impressions]);
-  out.countries = (q(['country'], 10).rows || []).map(r => [r.keys[0], r.clicks, r.impressions]);
-  out.devices = (q(['device'], 5).rows || []).map(r => [r.keys[0], r.clicks, r.impressions]);
+  const tot = r => { const x = ((r || {}).rows || [])[0] || {}; return { clicks: x.clicks || 0, impressions: x.impressions || 0, ctr: x.ctr || 0, position: x.position || 0 }; };
+  const out = { updatedAt: Date.now(), periods: {} };
+  // Search Console يحتفظ بنحو 16 شهراً فقط، فـ «منذ البداية» = أقصى ما يوفّره (480 يوماً)
+  AN_PERIODS.forEach(function (p) {
+    const key = p[0], n = p[1] || 480, end = day(2), start = day(1 + n);   // البيانات تتأخر يومين
+    const q = (dims, rows) => gscQuery(site, { startDate: start, endDate: end, dimensions: dims, rowLimit: rows });
+    const per = { range: { start: start, end: end }, totals: tot(gscQuery(site, { startDate: start, endDate: end })) };
+    if (p[1]) per.prev = tot(gscQuery(site, { startDate: day(1 + 2 * n), endDate: day(2 + n) }));
+    let daily = (q(['date'], 1000).rows || []).map(r => [r.keys[0], r.clicks, r.impressions]).sort((a, b) => (a[0] < b[0] ? -1 : 1));
+    if (n > 90) {   // فترات طويلة: تجميع شهري
+      const m = {}; daily.forEach(r => { const k = r[0].slice(0, 7); m[k] = m[k] || [k, 0, 0]; m[k][1] += r[1]; m[k][2] += r[2]; });
+      daily = Object.keys(m).sort().map(k => m[k]);
+    }
+    per.daily = daily;
+    per.queries = (q(['query'], 25).rows || []).map(r => [r.keys[0], r.clicks, r.impressions, r.ctr, r.position]);
+    per.pages = (q(['page'], 10).rows || []).map(r => [r.keys[0], r.clicks, r.impressions]);
+    per.countries = (q(['country'], 10).rows || []).map(r => [r.keys[0], r.clicks, r.impressions]);
+    per.devices = (q(['device'], 5).rows || []).map(r => [r.keys[0], r.clicks, r.impressions]);
+    out.periods[key] = per;
+  });
   return out;
 }
 
@@ -89,7 +103,7 @@ function testAnalytics() {
   ['ga', 'gsc'].forEach(function (k) {
     try {
       const d = k === 'ga' ? fetchGa() : fetchGsc();
-      console.log(k + ': ' + (d ? 'تم — ' + JSON.stringify(k === 'ga' ? d.overview : d.totals) : 'غير مُعدّ (أضف الخاصية في Script Properties)'));
+      console.log(k + ': ' + (d ? 'تم — ' + JSON.stringify(k === 'ga' ? d.periods['28'].overview : d.periods['28'].totals) : 'غير مُعدّ (أضف الخاصية في Script Properties)'));
     } catch (err) { console.log(k + ' خطأ: ' + (err.message || err)); }
   });
 }
