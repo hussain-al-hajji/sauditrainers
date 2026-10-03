@@ -120,6 +120,7 @@ const Data = (() => {
     const k = `st-${kind}-${id}`;
     try { if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1'); } catch { /* ignore */ }
     Store.transaction(`stats/${kind}/${id}`, c => (Number(c) || 0) + 1).catch(() => {});
+    if (kind === 'views') Store.bump([`stats/vday/${id}/${dayKeyRiyadh()}`]);   // مشاهدات يومية لإحصاءات المدرب
   }
 
   return { content, photo, specs, cardSpecs, modes, topics, all, live, trainer, isLive, search, match, regionCounts, specCounts, views, clicks, nextCode, makeSlug, addSpecialty, publishFromApplication, track, PUBLIC_FIELDS, pick, splitExtra };

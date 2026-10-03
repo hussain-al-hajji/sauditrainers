@@ -47,6 +47,9 @@ function fetchGa() {
     const o = sum(r1[0]); if (prev) o.prev = sum(r2[3]);
     out.periods[key] = { overview: o, daily: gaRows(r1[1], 1, 3), countries: gaRows(r1[2], 2, 1), cities: gaRows(r1[3], 1, 1).filter(r => r[0] !== '(not set)'), devices: gaRows(r1[4], 1, 1), channels: gaRows(r2[0], 1, 1), sources: gaRows(r2[1], 1, 1), pages: gaRows(r2[2], 1, 1) };
   });
+  // ملخص يظهر للمدربين في لوحاتهم: زيارات منذ أول رقم مسجّل، وزوار آخر 30 يوماً
+  const rs = gaBatch(pid, [{ dateRanges: [{ startDate: '29daysAgo', endDate: 'today' }], metrics: mets }, { dateRanges: [{ startDate: '2015-08-14', endDate: 'today' }], dimensions: [{ name: 'date' }], metrics: [{ name: 'sessions' }], orderBys: [{ dimension: { dimensionName: 'date' } }], limit: 1 }]);
+  out.last30 = sum(rs[0]); out.firstDate = ((((rs[1] || {}).rows || [])[0] || {}).dimensionValues || [{}])[0].value || '';
   try { out.realtime = { users: Number((((anFetch('https://analyticsdata.googleapis.com/v1beta/properties/' + pid + ':runRealtimeReport', { metrics: [{ name: 'activeUsers' }] }).rows || [])[0] || {}).metricValues || [{}])[0].value) || 0 }; } catch (e) { out.realtime = { users: 0 }; }
   return out;
 }
@@ -83,12 +86,31 @@ function fetchGsc() {
 /* ===================== التحديث ===================== */
 // يُستدعى من المؤقّت (كل ساعتين) ومن زر «تحديث الآن» في لوحة الإدارة (action: analytics)
 function refreshAnalytics() {
+  gaOk = false;
   [['ga', fetchGa], ['gsc', fetchGsc]].forEach(function (p) {
     let data;
     try { data = p[1](); }
     catch (err) { console.error(p[0], err); data = { updatedAt: Date.now(), error: String(err.message || err).slice(0, 240) }; }
     if (data) db('analytics_ext/' + p[0], 'put', data);
+    if (p[0] === 'ga' && data && data.periods) platformFromGa(data);
   });
+  if (!gaOk) platformFromOwn();
+}
+let gaOk = false;
+// ملخص المنصة العام (قراءة عامة): أرقام Google Analytics كاملة منذ أول رقم مسجّل
+function platformFromGa(d) {
+  const all = d.periods.all.overview, l30 = d.last30 || d.periods['28'].overview;
+  gaOk = true;
+  db('stats/platform', 'put', { updatedAt: Date.now(), source: 'ga', since: d.firstDate || '', sessionsAll: all.sessions, usersAll: all.activeUsers, viewsAll: all.pageViews, users30: l30.activeUsers, sessions30: l30.sessions, views30: l30.pageViews });
+}
+// بديل عند عدم ربط Google Analytics: من عدّادات المنصة الذاتية
+function platformFromOwn() {
+  const days = db('analytics/day') || {}, keys = Object.keys(days).sort();
+  if (!keys.length) return;
+  const cut = Utilities.formatDate(new Date(Date.now() - 29 * 864e5), 'Asia/Riyadh', 'yyyyMMdd');
+  let s = 0, v = 0, u30 = 0, s30 = 0, v30 = 0;
+  keys.forEach(k => { const x = days[k] || {}; s += x.visits || 0; v += x.views || 0; if (k >= cut) { u30 += x.visitors || 0; s30 += x.visits || 0; v30 += x.views || 0; } });
+  db('stats/platform', 'put', { updatedAt: Date.now(), source: 'own', since: keys[0], sessionsAll: s, usersAll: 0, viewsAll: v, users30: u30, sessions30: s30, views30: v30 });
 }
 // تحديث عند الطلب مع تحديد المعدل (مرة كل 5 دقائق على الأكثر)
 function refreshAnalyticsThrottled() {

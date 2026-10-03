@@ -13,6 +13,7 @@ ROOT = 'sauditrainers'
 OWNERS = ['g.hussainalhajji@gmail.com', 'trainers.sa3@gmail.com']  # يجب أن تطابق ownerEmails في js/config.js
 
 owner = '(auth != null && auth.token.email_verified == true && (' + ' || '.join(f"auth.token.email.toLowerCase() == '{e}'" for e in OWNERS) + '))'
+INC = "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1"
 admin = f"({owner} || (auth != null && root.child('{ROOT}/admins/' + auth.uid).exists()))"
 me = f"root.child('{ROOT}/uids/' + auth.uid).val()"
 self_trainer = f"(auth != null && {me} == $id)"
@@ -109,19 +110,16 @@ rules = {
             # بطاقات «من طلبات هذا الشهر» في الرئيسية (دون بيانات تواصل)
             'showcase': {'.read': True},
             # منشورات التواصل الاجتماعي وصورها وإعدادات الأتمتة: للإدارة فقط (القاعدة العامة أعلاه)
-            'stats': {'.read': True, '$kind': {'$id': {
-                '.write': "$kind.matches(/^(views|clicks)$/) && newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
-            }}},
+            # عدّادات المشاهدات (زيادة بمقدار 1 فقط) + مشاهدات كل مدرب يومياً + ملخص المنصة العام الذي يكتبه سكربت الأتمتة (للإدارة فقط كتابةً)
+            'stats': {'.read': True, **{k: {'$id': {'.write': INC}} for k in ('views', 'clicks')},
+                'vday': {'$id': {'$d': {'.write': INC, '.validate': "$d.matches(/^[0-9]{8}$/)"}}}},
             # إحصاءات الزوار (زيادة بمقدار 1 فقط، دون أي بيانات شخصية): يقرؤها المشرفون
             'analytics': {
                 'day': {'$d': {'.validate': "$d.matches(/^[0-9]{8}$/)", '$m': {
-                    '.write': "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
+                    '.write': INC,
                     '.validate': "$m.matches(/^(views|visits|visitors|newv|searches|contacts|joins|requests)$/)",
                 }}},
-                '$kind': {'.validate': "$kind.matches(/^(page|ref|dev|browser|lang|hour|term|spec|region|event|utm)$/)", '$k': {
-                    '.write': "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
-                    '.validate': "$k.length <= 40",
-                }},
+                **{k: {'$k': {'.write': INC, '.validate': "$k.length <= 40"}} for k in ('page', 'ref', 'dev', 'browser', 'lang', 'hour', 'term', 'spec', 'region', 'event', 'utm')},
             },
             # بيانات Google Analytics وSearch Console يكتبها سكربت الأتمتة (للإدارة فقط)
             # بيانات التواصل الخاصة: يقرؤها المدرب ويعدّل جواله وبريده فقط (والباقي للإدارة)

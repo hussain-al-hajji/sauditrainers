@@ -146,6 +146,8 @@ const waLink = (p, text = '') => { const d = phoneDigits(p); return d ? `https:/
 const validPhone = p => /^9665\d{8}$/.test(phoneDigits(p));
 const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(e || '').trim());
 // رابط المنصة الذي يراه المستخدمون: الدومين الرسمي دائماً (siteUrl)، إلا عند تفعيل useCurrentOrigin للاختبار على الرابط المؤقت
+// مفتاح اليوم بتوقيت الرياض (YYYYMMDD) لعدّادات المشاهدات اليومية
+const dayKeyRiyadh = (offsetDays = 0) => new Date(Date.now() + 3 * 3600e3 - offsetDays * 864e5).toISOString().slice(0, 10).replace(/-/g, '');
 const siteBase = () => { const c = window.ST_CONFIG; return c.useCurrentOrigin && /^https?:$/.test(location.protocol) && !/^(localhost|127\.|\[::1\]|0\.0\.0\.0)/.test(location.hostname) ? location.href.split('#')[0] : (c.siteUrl || location.href.split('#')[0]); };
 const profileUrl = t => `${siteBase()}#/t/${encodeURIComponent(t.slug || t.id)}`;
 

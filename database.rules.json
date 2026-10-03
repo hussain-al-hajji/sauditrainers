@@ -203,9 +203,22 @@
       },
       "stats": {
         ".read": true,
-        "$kind": {
+        "views": {
           "$id": {
-            ".write": "$kind.matches(/^(views|clicks)$/) && newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1"
+            ".write": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1"
+          }
+        },
+        "clicks": {
+          "$id": {
+            ".write": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1"
+          }
+        },
+        "vday": {
+          "$id": {
+            "$d": {
+              ".write": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
+              ".validate": "$d.matches(/^[0-9]{8}$/)"
+            }
           }
         }
       },
@@ -219,8 +232,67 @@
             }
           }
         },
-        "$kind": {
-          ".validate": "$kind.matches(/^(page|ref|dev|browser|lang|hour|term|spec|region|event|utm)$/)",
+        "page": {
+          "$k": {
+            ".write": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
+            ".validate": "$k.length <= 40"
+          }
+        },
+        "ref": {
+          "$k": {
+            ".write": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
+            ".validate": "$k.length <= 40"
+          }
+        },
+        "dev": {
+          "$k": {
+            ".write": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
+            ".validate": "$k.length <= 40"
+          }
+        },
+        "browser": {
+          "$k": {
+            ".write": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
+            ".validate": "$k.length <= 40"
+          }
+        },
+        "lang": {
+          "$k": {
+            ".write": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
+            ".validate": "$k.length <= 40"
+          }
+        },
+        "hour": {
+          "$k": {
+            ".write": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
+            ".validate": "$k.length <= 40"
+          }
+        },
+        "term": {
+          "$k": {
+            ".write": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
+            ".validate": "$k.length <= 40"
+          }
+        },
+        "spec": {
+          "$k": {
+            ".write": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
+            ".validate": "$k.length <= 40"
+          }
+        },
+        "region": {
+          "$k": {
+            ".write": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
+            ".validate": "$k.length <= 40"
+          }
+        },
+        "event": {
+          "$k": {
+            ".write": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
+            ".validate": "$k.length <= 40"
+          }
+        },
+        "utm": {
           "$k": {
             ".write": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
             ".validate": "$k.length <= 40"

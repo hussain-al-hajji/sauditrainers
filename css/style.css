@@ -1062,3 +1062,8 @@ input:checked + .cdot { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--g600); }
 .an-funnel b, .an-funnel em { position: relative; font-style: normal; }
 .an-h4 { margin: 12px 0 6px; font-size: .9rem; color: var(--muted); }
 .an-setup { border-style: dashed; }
+
+/* ===== إحصاءات المدرب ===== */
+.ts-box .kpis { margin-top: 12px; }
+.ts-spark { display: flex; align-items: flex-end; gap: 3px; height: 70px; direction: ltr; margin-top: 14px; }
+.ts-spark span { flex: 1; background: linear-gradient(180deg, var(--g600), var(--g800)); border-radius: 4px 4px 0 0; min-height: 4px; opacity: .85; }

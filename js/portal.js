@@ -38,6 +38,26 @@ Pages.me = {
   get static() { return this.tab === 'edit'; }
 };
 
+/* إحصاءات المدرب: أرقام المنصة العامة (يكتبها سكربت الأتمتة من Google Analytics) + مشاهدات صفحته */
+function trainerStatsHTML(t) {
+  const P = Store.get('stats/platform') || {};
+  const vd = Store.get(`stats/vday/${t.id}`) || {};
+  const days = Array.from({ length: 30 }, (_, i) => { const k = dayKeyRiyadh(29 - i); return +vd[k] || 0; });
+  const v30 = days.reduce((a, b) => a + b, 0), max = Math.max(1, ...days);
+  const n = x => Number(x || 0).toLocaleString('en-US');
+  const since = P.since ? ` منذ ${fmtDate(new Date(`${P.since.slice(0, 4)}-${P.since.slice(4, 6)}-${P.since.slice(6, 8)}`).getTime())}` : '';
+  const has = P.sessionsAll != null;
+  return `<div class="pbox ts-box"><h3><i class="fa-solid fa-chart-column"></i>إحصاءات</h3>
+    <div class="kpis">
+      ${has ? `<div class="kpi dark"><i class="fa-solid fa-globe"></i><b class="num" data-count="${+P.sessionsAll || 0}">0</b><span>زيارة للمنصة${since}</span></div>
+      <div class="kpi"><i class="fa-solid fa-users"></i><b class="num" data-count="${+P.users30 || 0}">0</b><span>زائر للمنصة خلال آخر 30 يوماً</span></div>` : ''}
+      <div class="kpi ${has ? '' : 'dark'}"><i class="fa-solid fa-id-card"></i><b class="num" data-count="${Data.views(t.id)}">0</b><span>زائر لصفحتك الشخصية (الإجمالي)</span></div>
+      <div class="kpi"><i class="fa-solid fa-eye"></i><b class="num" data-count="${v30}">0</b><span>زائر لصفحتك خلال آخر 30 يوماً</span></div>
+    </div>
+    <div class="ts-spark" title="زوار صفحتك يومياً خلال آخر 30 يوماً">${days.map((v, i) => `<span style="height:${Math.max(4, v / max * 100)}%" title="${dayKeyRiyadh(29 - i).slice(6)}/${dayKeyRiyadh(29 - i).slice(4, 6)} — ${v}"></span>`).join('')}</div>
+    <p class="muted small" style="margin:8px 0 0">${has ? 'أرقام المنصة من Google Analytics وتتحدث كل ساعتين. ' : ''}زوار صفحتك يُحسبون مرة لكل زائر في الجلسة، ولا تُحتسب زياراتك أنت.${v30 === 0 && Data.views(t.id) ? ' (التفصيل اليومي يبدأ من تاريخ هذا التحديث.)' : ''}</p></div>`;
+}
+
 function portalHome(main, t) {
   const leads = Store.list('leads').filter(l => l.trainerId === t.id);
   const priv = Store.get(`private/${t.id}`) || {};
@@ -47,10 +67,10 @@ function portalHome(main, t) {
     ${t.status !== 'active' ? `<div class="banner warn"><i class="fa-solid fa-eye-slash"></i>بطاقتك غير ظاهرة للزوار حالياً. تواصل مع إدارة المنصة للاستفسار.</div>` : ''}
     ${note?.text ? `<div class="banner ok"><i class="fa-solid fa-bullhorn"></i><div><b>رسالة من الإدارة</b><br>${nl2br(note.text)}</div></div>` : ''}
     <div class="kpis">
-      <div class="kpi dark"><i class="fa-solid fa-eye"></i><b class="num" data-count="${Data.views(t.id)}">0</b><span>مشاهدة لبطاقتك</span></div>
-      <div class="kpi"><i class="fa-solid fa-inbox"></i><b class="num" data-count="${leads.length}">0</b><span>طلب من جهات تدريبية</span></div>
+      <div class="kpi dark"><i class="fa-solid fa-inbox"></i><b class="num" data-count="${leads.length}">0</b><span>طلب من جهات تدريبية</span></div>
       <div class="kpi"><i class="fa-solid fa-infinity"></i><b>مدى الحياة</b><span>اشتراكك${t.publishedAt ? ' منذ ' + fmtDate(t.publishedAt) : ''}</span></div>
     </div>
+    ${trainerStatsHTML(t)}
     <div class="editor">
       <div>
         <div class="pbox"><h3><i class="fa-solid fa-images"></i>صور جاهزة للمشاركة</h3>
