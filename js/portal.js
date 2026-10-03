@@ -49,7 +49,7 @@ function trainerStatsHTML(t) {
   const has = P.sessionsAll != null;
   return `<div class="pbox ts-box"><h3><i class="fa-solid fa-chart-column"></i>إحصاءات</h3>
     <div class="kpis">
-      ${has ? `<div class="kpi dark"><i class="fa-solid fa-globe"></i><b class="num" data-count="${+P.sessionsAll || 0}">0</b><span>زيارة للمنصة${since}</span></div>
+      ${has ? `<div class="kpi dark"><i class="fa-solid fa-globe"></i><b class="num" data-count="${+P.sessionsAll || 0}">0</b><span>زيارة للمنصة${since}${P.since ? ' (أقدم بيانات متاحة)' : ''}</span></div>
       <div class="kpi"><i class="fa-solid fa-users"></i><b class="num" data-count="${+P.users30 || 0}">0</b><span>زائر للمنصة خلال آخر 30 يوماً</span></div>` : ''}
       <div class="kpi ${has ? '' : 'dark'}"><i class="fa-solid fa-id-card"></i><b class="num" data-count="${Data.views(t.id)}">0</b><span>زائر لصفحتك الشخصية (الإجمالي)</span></div>
       <div class="kpi"><i class="fa-solid fa-eye"></i><b class="num" data-count="${v30}">0</b><span>زائر لصفحتك خلال آخر 30 يوماً</span></div>

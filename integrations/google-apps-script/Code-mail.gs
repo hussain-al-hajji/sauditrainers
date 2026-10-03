@@ -32,6 +32,8 @@ function doPost(e) {
     else if (body.action === 'outbox' && id) sendOutbox(id);
     else if (body.action === 'campaign' && id) sendCampaign(id);
     else if (body.action === 'analytics') refreshAnalyticsThrottled();
+    else if (body.action === 'snapshot') monthlySnapshot();
+    else if (body.action === 'backfill') backfillMonthly();
     else if (body.action === 'ping') ping();
   } catch (err) {
     console.error(err);
@@ -169,6 +171,9 @@ function setupTriggers() {
   ScriptApp.newTrigger('sweepPending').timeBased().everyMinutes(5).create();
   ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'refreshAnalytics').forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('refreshAnalytics').timeBased().everyHours(2).create();
+  // لقطة شهرية شاملة في اليوم 4 من كل شهر ميلادي (بعد اكتمال بيانات Search Console)
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'monthlySnapshot').forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('monthlySnapshot').timeBased().onMonthDay(4).atHour(3).create();
   ping();
   console.log('تم: مؤقّت المعالجة يعمل');
 }

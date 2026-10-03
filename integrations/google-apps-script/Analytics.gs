@@ -112,6 +112,69 @@ function platformFromOwn() {
   keys.forEach(k => { const x = days[k] || {}; s += x.visits || 0; v += x.views || 0; if (k >= cut) { u30 += x.visitors || 0; s30 += x.visits || 0; v30 += x.views || 0; } });
   db('stats/platform', 'put', { updatedAt: Date.now(), source: 'own', since: keys[0], sessionsAll: s, usersAll: 0, viewsAll: v, users30: u30, sessions30: s30, views30: v30 });
 }
+
+/* ===================== اللقطة الشهرية ===================== */
+// تُحفظ في analytics_ext/monthly/YYYYMM في أول أيام الشهر التالي (اليوم 4 لتكتمل بيانات Search Console المتأخرة)،
+// وتحوي: الأرقام التراكمية منذ أقدم رقم متاح حتى نهاية الشهر + أرقام الشهر نفسه ومقارنته بما قبله.
+const AN_START = '2015-08-14';
+const anPad = n => String(n).padStart(2, '0');
+function monthBounds(ym) {
+  const y = +ym.slice(0, 4), m = +ym.slice(5, 7), last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const py = m === 1 ? y - 1 : y, pm = m === 1 ? 12 : m - 1, plast = new Date(Date.UTC(py, pm, 0)).getUTCDate();
+  return { start: y + '-' + anPad(m) + '-01', end: y + '-' + anPad(m) + '-' + anPad(last), pstart: py + '-' + anPad(pm) + '-01', pend: py + '-' + anPad(pm) + '-' + anPad(plast) };
+}
+const anPrevMonth = () => { const d = new Date(Date.now() + 3 * 3600e3); d.setUTCDate(1); d.setUTCMonth(d.getUTCMonth() - 1); return d.getUTCFullYear() + '-' + anPad(d.getUTCMonth() + 1); };
+
+function gaFirstDate(pid) {
+  const r = gaBatch(pid, [{ dateRanges: [{ startDate: AN_START, endDate: 'today' }], dimensions: [{ name: 'date' }], metrics: [{ name: 'sessions' }], orderBys: [{ dimension: { dimensionName: 'date' } }], limit: 1 }]);
+  return ((((r[0] || {}).rows || [])[0] || {}).dimensionValues || [{}])[0].value || '';
+}
+function snapshotGa(pid, ym, first) {
+  const b = monthBounds(ym), mets = ['activeUsers', 'newUsers', 'sessions', 'screenPageViews', 'averageSessionDuration', 'engagementRate', 'bounceRate'].map(name => ({ name }));
+  const sum = r => { const v = (((r || {}).rows || [])[0] || {}).metricValues || []; const g = i => +(v[i] || {}).value || 0; return { activeUsers: g(0), newUsers: g(1), sessions: g(2), pageViews: g(3), avgDuration: g(4), engagementRate: g(5), bounceRate: g(6) }; };
+  const mon = [{ startDate: b.start, endDate: b.end }];
+  const top = (dim, met, n, extra) => ({ dateRanges: mon, dimensions: [{ name: dim }].concat(extra ? [{ name: extra }] : []), metrics: [{ name: met }], orderBys: [{ metric: { metricName: met }, desc: true }], limit: n });
+  const r1 = gaBatch(pid, [{ dateRanges: [{ startDate: AN_START, endDate: b.end }], metrics: mets }, { dateRanges: mon, metrics: mets }, { dateRanges: [{ startDate: b.pstart, endDate: b.pend }], metrics: mets }, top('countryId', 'activeUsers', 10, 'country'), top('city', 'activeUsers', 10)]);
+  const r2 = gaBatch(pid, [top('deviceCategory', 'activeUsers', 5), top('sessionDefaultChannelGroup', 'sessions', 8), top('sessionSource', 'sessions', 10), top('pagePath', 'screenPageViews', 10)]);
+  return { since: first || '', cum: sum(r1[0]), mon: sum(r1[1]), prev: sum(r1[2]), countries: gaRows(r1[3], 2, 1), cities: gaRows(r1[4], 1, 1).filter(r => r[0] !== '(not set)'), devices: gaRows(r2[0], 1, 1), channels: gaRows(r2[1], 1, 1), sources: gaRows(r2[2], 1, 1), pages: gaRows(r2[3], 1, 1) };
+}
+function snapshotGsc(site, ym) {
+  const b = monthBounds(ym), day = n => Utilities.formatDate(new Date(Date.now() - n * 864e5), 'Asia/Riyadh', 'yyyy-MM-dd');
+  const oldest = day(480);                                   // أقدم ما يحتفظ به Search Console (نحو 16 شهراً)
+  if (b.end < oldest) return null;
+  const tot = r => { const x = ((r || {}).rows || [])[0] || {}; return { clicks: x.clicks || 0, impressions: x.impressions || 0, ctr: x.ctr || 0, position: x.position || 0 }; };
+  const from = b.start > oldest ? b.start : oldest;
+  const q = (dims, n) => gscQuery(site, { startDate: from, endDate: b.end, dimensions: dims, rowLimit: n });
+  return { oldest: oldest, cum: tot(gscQuery(site, { startDate: oldest, endDate: b.end })), mon: tot(gscQuery(site, { startDate: from, endDate: b.end })), queries: (q(['query'], 10).rows || []).map(r => [r.keys[0], r.clicks, r.impressions, r.ctr, r.position]), pages: (q(['page'], 5).rows || []).map(r => [r.keys[0], r.clicks, r.impressions]) };
+}
+function snapshotOwn(ym) {
+  const days = db('analytics/day') || {}, b = monthBounds(ym), a = { visits: 0, views: 0, visitors: 0, searches: 0, contacts: 0, joins: 0 }, cum = Object.assign({}, a), mon = Object.assign({}, a);
+  Object.keys(days).forEach(k => { const d = k.slice(0, 4) + '-' + k.slice(4, 6) + '-' + k.slice(6, 8); if (d > b.end) return; Object.keys(a).forEach(f => { const v = +(days[k] || {})[f] || 0; cum[f] += v; if (d >= b.start) mon[f] += v; }); });
+  return { cum: cum, mon: mon };
+}
+function snapshotMonth(ym, first) {
+  const pid = String(AN_PROPS.getProperty('GA_PROPERTY_ID') || '').replace(/\D/g, ''), site = String(AN_PROPS.getProperty('GSC_SITE') || '').trim();
+  const snap = { ym: ym, createdAt: Date.now() }, errs = [];
+  if (pid) { try { snap.ga = snapshotGa(pid, ym, first || gaFirstDate(pid)); } catch (e) { errs.push('GA: ' + (e.message || e)); } }
+  if (site) { try { const g = snapshotGsc(site, ym); if (g) snap.gsc = g; } catch (e) { errs.push('GSC: ' + String(e.message || e).slice(0, 150)); } }
+  try { snap.own = snapshotOwn(ym); } catch (e) { /* ignore */ }
+  if (errs.length) snap.error = errs.join(' | ').slice(0, 300);
+  db('analytics_ext/monthly/' + ym.replace('-', ''), 'put', snap);
+  return snap;
+}
+// يُشغَّل شهرياً (اليوم 4): لقطة الشهر الميلادي الماضي كاملاً
+function monthlySnapshot() { const ym = anPrevMonth(); snapshotMonth(ym); console.log('لقطة الشهر ' + ym + ' جاهزة'); }
+// استرجاع الأشهر السابقة من أقدم رقم في Analytics (يعالج 12 شهراً في كل تشغيل؛ أعد تشغيلها حتى تنتهي)
+function backfillMonthly() {
+  const pid = String(AN_PROPS.getProperty('GA_PROPERTY_ID') || '').replace(/\D/g, '');
+  const first = pid ? gaFirstDate(pid) : '';
+  const have = db('analytics_ext/monthly') || {}, last = anPrevMonth(), todo = [];
+  let y = first ? +first.slice(0, 4) : new Date().getFullYear(), m = first ? +first.slice(4, 6) : 1;
+  while (y + '-' + anPad(m) <= last) { const ym = y + '-' + anPad(m); if (!have[ym.replace('-', '')]) todo.push(ym); m++; if (m > 12) { m = 1; y++; } }
+  todo.slice(0, 12).forEach(ym => { try { snapshotMonth(ym, first); } catch (e) { console.error(ym, e); } });
+  console.log('أُنشئت ' + Math.min(12, todo.length) + ' لقطة، والمتبقي ' + Math.max(0, todo.length - 12) + (todo.length > 12 ? ' — أعد التشغيل' : ''));
+}
+
 // تحديث عند الطلب مع تحديد المعدل (مرة كل 5 دقائق على الأكثر)
 function refreshAnalyticsThrottled() {
   const last = Number(AN_PROPS.getProperty('AN_LAST') || 0);

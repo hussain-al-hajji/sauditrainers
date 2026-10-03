@@ -14,6 +14,7 @@ const AN_CHANNEL = { Direct: 'مباشر', 'Organic Search': 'بحث (مجاني
 const AN_A3 = { sau: 'SA', are: 'AE', kwt: 'KW', qat: 'QA', bhr: 'BH', omn: 'OM', egy: 'EG', jor: 'JO', usa: 'US', gbr: 'GB', ind: 'IN', pak: 'PK', tur: 'TR', irq: 'IQ', yem: 'YE', sdn: 'SD', mar: 'MA', dza: 'DZ', tun: 'TN', lby: 'LY', lbn: 'LB', syr: 'SY', pse: 'PS', deu: 'DE', fra: 'FR', can: 'CA', aus: 'AU', mys: 'MY', idn: 'ID', bgd: 'BD' };
 const AN_COLORS = ['#005430', '#138550', '#6E9142', '#86D3AC', '#C9DAB4', '#3B5420', '#B8A25A', '#8AA294'];
 
+const anDate = d => { d = String(d || ''); return d.length === 8 ? `${d.slice(6)}/${d.slice(4, 6)}/${d.slice(0, 4)}` : d; };
 const anNum = n => Number(n || 0).toLocaleString('en-US');
 const anPct = (a, b) => (b ? Math.round(a / b * 1000) / 10 : 0);
 function anCountry(code, name) {
@@ -139,7 +140,7 @@ function anGaCard(ga0) {
   const list = (k, nameFn) => arr(ga[k]).map(r => [nameFn(r), +r[r.length - 1] || 0]);
   const rt = ga.realtime || {};
   return `
-    <div class="an-head"><div><h3><i class="fa-brands fa-google"></i> Google Analytics — ${AN_GP_LABEL[Stats.gp]}</h3><small class="muted">تحديث: ${ga.updatedAt ? ago(ga.updatedAt) : '—'}</small></div></div>
+    <div class="an-head"><div><h3><i class="fa-brands fa-google"></i> Google Analytics — ${Stats.gp === 'all' ? (ga0.firstDate ? `منذ ${anDate(ga0.firstDate)} (أقدم بيانات متاحة)` : 'كل البيانات المتاحة') : AN_GP_LABEL[Stats.gp]}</h3><small class="muted">تحديث: ${ga.updatedAt ? ago(ga.updatedAt) : '—'}</small></div></div>
     <div class="kpis">
       ${anKpi('fa-bolt', anNum(rt.users), 'نشط الآن (آخر 30 دقيقة)', '', true)}
       ${anKpi('fa-users', anNum(o.activeUsers), 'مستخدم نشط', anDelta(o.activeUsers, pv.activeUsers))}
@@ -169,7 +170,7 @@ function anGscCard(g0) {
   const qrows = arr(g.queries).slice(0, 20).map(r => `<tr><td>${esc(r[0])}</td><td>${anNum(r[1])}</td><td>${anNum(r[2])}</td><td>${(+r[3] * 100).toFixed(1)}%</td><td>${(+r[4]).toFixed(1)}</td></tr>`).join('');
   const prows = arr(g.pages).slice(0, 10).map(r => `<tr><td dir="ltr" style="text-align:end">${esc(String(r[0]).replace(/^https?:\/\/[^/]+/, '') || '/')}</td><td>${anNum(r[1])}</td><td>${anNum(r[2])}</td></tr>`).join('');
   return `
-    <div class="an-head"><div><h3><i class="fa-solid fa-magnifying-glass-chart"></i> ظهور المنصة في بحث Google (Search Console)</h3><small class="muted">${g.range ? `${esc(g.range.start)} → ${esc(g.range.end)}` : ''} · ${Stats.gp === 'all' ? 'أقصى ما يحتفظ به Google نحو 16 شهراً · ' : ''}تأخر البيانات يومان إلى ثلاثة · تحديث: ${g.updatedAt ? ago(g.updatedAt) : '—'}</small></div></div>
+    <div class="an-head"><div><h3><i class="fa-solid fa-magnifying-glass-chart"></i> ظهور المنصة في بحث Google (Search Console)</h3><small class="muted">${g.range ? `${esc(g.range.start)} → ${esc(g.range.end)}` : ''} · ${Stats.gp === 'all' ? 'آخر 16 شهراً: أقصى ما يحتفظ به Search Console · ' : ''}تأخر البيانات يومان إلى ثلاثة · تحديث: ${g.updatedAt ? ago(g.updatedAt) : '—'}</small></div></div>
     <div class="kpis">
       ${anKpi('fa-eye', anNum(t.impressions), 'مرة ظهرت في نتائج البحث', anDelta(t.impressions, pv.impressions), true)}
       ${anKpi('fa-arrow-pointer', anNum(t.clicks), 'نقرة من نتائج البحث', anDelta(t.clicks, pv.clicks))}
@@ -192,6 +193,48 @@ function anSetup(kind) {
     الخطوات في <code>integrations/google-apps-script/README.md</code> (قسم «إحصاءات Google»)، ويتم الربط مرة واحدة.</p></div>`;
 }
 
+/* ===== السجل الشهري: لقطة شاملة في أول أيام كل شهر (منذ أقدم رقم متاح حتى نهاية الشهر) ===== */
+const AN_MONTHS_AR = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+const anMonthName = ym => `${AN_MONTHS_AR[+ym.slice(5, 7) - 1]} ${ym.slice(0, 4)}`;
+function anMonthlyList() { return Object.values(Store.get('analytics_ext/monthly') || {}).filter(m => m && m.ym).sort((a, b) => (a.ym < b.ym ? 1 : -1)); }
+function anMonthlyRow(m) {
+  const g = m.ga || {}, c = m.gsc || {}, o = m.own || {};
+  return { ym: m.ym, sessions: g.mon?.sessions, users: g.mon?.activeUsers, views: g.mon?.pageViews, cumSessions: g.cum?.sessions, cumUsers: g.cum?.activeUsers, cumViews: g.cum?.pageViews, impr: c.mon?.impressions, clicks: c.mon?.clicks, ownVisits: o.mon?.visits, ownCum: o.cum?.visits };
+}
+function statsMonthly() {
+  const list = anMonthlyList();
+  const cell = v => (v == null ? '—' : anNum(v));
+  return `<div class="an-ext-h"><h2><i class="fa-solid fa-calendar-days"></i> السجل الشهري</h2>
+      <div class="row">${Automation.on ? '<button class="btn sm" id="ansnap"><i class="fa-solid fa-camera"></i> لقطة الشهر الماضي الآن</button><button class="btn sm" id="anbf"><i class="fa-solid fa-clock-rotate-left"></i> استرجاع الأشهر السابقة</button>' : ''}${list.length ? '<button class="btn sm" id="ancsv"><i class="fa-solid fa-file-csv"></i> تصدير CSV</button>' : ''}</div></div>
+    <p class="muted small">في اليوم الرابع من كل شهر ميلادي تُحفظ لقطة شاملة للشهر المنتهي: الأرقام التراكمية منذ أقدم رقم متاح في Google Analytics حتى نهاية الشهر، وأرقام الشهر نفسه ومقارنتها بالشهر السابق، وظهور المنصة في بحث Google (Search Console يحتفظ بنحو 16 شهراً فقط). اضغط أي شهر لتفاصيله.</p>
+    ${list.length ? `<div class="tbl-wrap"><table class="tbl an-mt"><thead><tr><th>الشهر</th><th>جلسات الشهر</th><th>مستخدمو الشهر</th><th>مشاهدات الشهر</th><th>جلسات تراكمية</th><th>ظهور في Google</th><th>نقرات Google</th></tr></thead><tbody>
+      ${list.map(m => { const r = anMonthlyRow(m); return `<tr data-ym="${esc(m.ym)}" style="cursor:pointer"><td><b>${esc(anMonthName(m.ym))}</b>${m.error ? ' <span class="pill warn" title="' + esc(m.error) + '">ناقصة</span>' : ''}</td><td>${cell(r.sessions ?? r.ownVisits)}</td><td>${cell(r.users)}</td><td>${cell(r.views)}</td><td>${cell(r.cumSessions ?? r.ownCum)}</td><td>${cell(r.impr)}</td><td>${cell(r.clicks)}</td></tr>`; }).join('')}</tbody></table></div>`
+      : '<div class="pbox an-setup"><p class="muted small">لا لقطات شهرية بعد. ستُنشأ تلقائياً في اليوم الرابع من الشهر القادم، أو اضغط «استرجاع الأشهر السابقة» لإنشاء السجل منذ أقدم رقم متاح (يعالج 12 شهراً في كل مرة).</p></div>'}`;
+}
+function anMonthDetail(m) {
+  const g = m.ga || {}, c = m.gsc || {}, o = m.own || {}, pv = g.prev || {};
+  const k = (icon, v, l, d) => anKpi(icon, v, l, d || '');
+  const list = (rows, f) => arr(rows).map(f);
+  const body = `
+    ${g.cum ? `<h4 class="an-h4">تراكمي منذ ${g.since ? anDate(g.since) : 'أقدم رقم'} حتى ${anDate(m.ym.replace('-', '') + String(new Date(Date.UTC(+m.ym.slice(0, 4), +m.ym.slice(5, 7), 0)).getUTCDate()))} (Google Analytics)</h4>
+      <div class="kpis">${k('fa-door-open', anNum(g.cum.sessions), 'جلسة')}${k('fa-users', anNum(g.cum.activeUsers), 'مستخدم')}${k('fa-eye', anNum(g.cum.pageViews), 'مشاهدة صفحة')}</div>
+      <h4 class="an-h4">${esc(anMonthName(m.ym))} وحده</h4>
+      <div class="kpis">${k('fa-door-open', anNum(g.mon.sessions), 'جلسة', anDelta(g.mon.sessions, pv.sessions))}${k('fa-users', anNum(g.mon.activeUsers), 'مستخدم', anDelta(g.mon.activeUsers, pv.activeUsers))}${k('fa-eye', anNum(g.mon.pageViews), 'مشاهدة', anDelta(g.mon.pageViews, pv.pageViews))}${k('fa-stopwatch', anDur(g.mon.avgDuration), 'متوسط الجلسة')}</div>
+      <div class="grid2">${anBox('fa-earth-asia', 'الدول', anBars(list(g.countries, r => [anCountry(r[0], r[1]), +r[2] || 0]), x => x))}${anBox('fa-route', 'القنوات', anBars(list(g.channels, r => [AN_CHANNEL[r[0]] || r[0], +r[1] || 0]), x => x))}
+      ${anBox('fa-city', 'المدن', anBars(list(g.cities, r => [r[0], +r[1] || 0]), x => x))}${anBox('fa-file-lines', 'الصفحات', anBars(list(g.pages, r => [r[0] || '/', +r[1] || 0]), x => x))}</div>` : '<p class="muted small">لا بيانات Google Analytics لهذا الشهر.</p>'}
+    ${c.cum ? `<h4 class="an-h4">Search Console (من ${esc(c.oldest || '')} حتى نهاية الشهر · أقصى ما يتوفر)</h4>
+      <div class="kpis">${k('fa-eye', anNum(c.cum.impressions), 'ظهور تراكمي')}${k('fa-arrow-pointer', anNum(c.cum.clicks), 'نقرات تراكمية')}${k('fa-eye', anNum(c.mon.impressions), 'ظهور الشهر')}${k('fa-arrow-pointer', anNum(c.mon.clicks), 'نقرات الشهر')}</div>
+      ${arr(c.queries).length ? anBox('fa-keyboard', 'كلمات البحث', anBars(arr(c.queries).map(r => [r[0], +r[2] || 0]), x => x)) : ''}` : ''}
+    ${o.cum ? `<h4 class="an-h4">عدّادات المنصة الذاتية</h4><div class="kpis">${k('fa-door-open', anNum(o.cum.visits), 'زيارة تراكمية')}${k('fa-door-open', anNum(o.mon.visits), 'زيارات الشهر')}${k('fa-magnifying-glass', anNum(o.mon.searches), 'عمليات بحث')}${k('fa-inbox', anNum(o.mon.contacts), 'طلبات تواصل')}</div>` : ''}`;
+  modal(`<h3><i class="fa-solid fa-calendar-days"></i> لقطة ${esc(anMonthName(m.ym))}</h3><p class="muted small">أُنشئت ${fmtTs(m.createdAt)}</p>${body}`, { wide: true });
+}
+function anMonthlyCsv() {
+  const head = ['الشهر', 'جلسات الشهر', 'مستخدمو الشهر', 'مشاهدات الشهر', 'جلسات تراكمية', 'مستخدمون تراكميون', 'مشاهدات تراكمية', 'ظهور Google', 'نقرات Google', 'زيارات ذاتية للشهر'];
+  const rows = anMonthlyList().sort((a, b) => (a.ym < b.ym ? -1 : 1)).map(m => { const r = anMonthlyRow(m); return [m.ym, r.sessions, r.users, r.views, r.cumSessions, r.cumUsers, r.cumViews, r.impr, r.clicks, r.ownVisits].map(v => v ?? ''); });
+  const csv = '\ufeff' + [head, ...rows].map(r => r.join(',')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'سجل-الإحصاءات-الشهري.csv'; a.click();
+}
+
 function statsMount(main) {
   const box = $('#anx', main); if (!box) return;
   const ga = Store.get('analytics_ext/ga'), gsc = Store.get('analytics_ext/gsc');
@@ -201,9 +244,14 @@ function statsMount(main) {
     ${ga || gsc ? `<div class="an-per" style="margin:6px 0 4px">${AN_GP.map(([k, l]) => `<button data-an-g="${k}" class="${Stats.gp === k ? 'on' : ''}">${l}</button>`).join('')}</div>` : ''}
     ${ga && (ga.periods || ga.overview) ? anGaCard(ga) : anSetup('ga')}
     ${gsc && (gsc.periods || gsc.totals) ? anGscCard(gsc) : anSetup('gsc')}
+    ${statsMonthly()}
     ${ga?.error || gsc?.error ? `<div class="banner warn"><i class="fa-solid fa-triangle-exclamation"></i><span>${esc([ga?.error && 'Analytics: ' + ga.error, gsc?.error && 'Search Console: ' + gsc.error].filter(Boolean).join(' | '))}</span></div>` : ''}`;
   $$('[data-an-p]', box).forEach(b => b.onclick = () => { Stats.days = +b.dataset.anP; statsMount(main); });
   $$('[data-an-g]', box).forEach(b => b.onclick = () => { Stats.gp = b.dataset.anG; statsMount(main); });
+  $$('[data-ym]', box).forEach(tr => tr.onclick = () => { const m = Store.get(`analytics_ext/monthly/${tr.dataset.ym.replace('-', '')}`); m && anMonthDetail(m); });
+  $('#ancsv', box) && ($('#ancsv', box).onclick = anMonthlyCsv);
+  $('#ansnap', box) && ($('#ansnap', box).onclick = async () => { await Automation.notify('snapshot', 'last'); toast('طُلبت لقطة الشهر الماضي، تظهر خلال دقيقة تقريباً'); });
+  $('#anbf', box) && ($('#anbf', box).onclick = async () => { await Automation.notify('backfill', 'all'); toast('بدأ استرجاع الأشهر السابقة، قد يستغرق عدة دقائق (12 شهراً في كل مرة). حدّث الصفحة لاحقاً'); });
   const r = $('#anr', box);
   r && (r.onclick = async () => { r.disabled = true; await Automation.notify('analytics', 'now'); toast('طُلب تحديث البيانات، يظهر خلال دقيقة تقريباً'); setTimeout(() => { r.disabled = false; }, 8000); });
 }
