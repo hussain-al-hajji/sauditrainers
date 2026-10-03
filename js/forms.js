@@ -24,11 +24,12 @@ const CORE_FIELDS = {
   years: { label: 'سنوات الخبرة التدريبية', type: 'number', max: 60 },
   hours: { label: 'الساعات التدريبية المنفذة', type: 'number', max: 100000 },
   programs: { label: 'عدد البرامج والدورات', type: 'number', max: 10000 },
-  certs: { label: 'الشهادات والاعتمادات', type: 'textarea', max: 800, ph: 'مثلاً: مدرب معتمد في تقنية المعلومات من المؤسسة العامة للتدريب التقني والمهني ...', w: 'full' },
+  certs: { label: 'الشهادات والاعتمادات والعضويات', type: 'textarea', max: 800, ph: 'مثلاً: مدرب معتمد في تقنية المعلومات من المؤسسة العامة للتدريب التقني والمهني ...', w: 'full' },
   bio: { label: 'نبذة تعريفية', type: 'textarea', max: 1200, req: true, ph: 'عرّف بنفسك وبخبرتك التدريبية وأبرز إنجازاتك', hint: 'لا تضع أرقام تواصل أو بريداً أو روابط؛ التواصل يتم عبر المنصة', w: 'full' },
   langs: { label: 'لغة التدريب', type: 'langs', req: true, w: 'full' },
   photoUrl: { label: 'الصورة الشخصية (رابط مشاركة الصورة)', type: 'photo', w: 'full' },
   theme: { label: 'تصميم البطاقة', type: 'theme', w: 'full' },
+  partners: { label: 'جهات تم التعاون معها', type: 'textarea', max: 600, ph: 'اكتب أبرز الجهات التي تعاونت معها في المجال التدريبي، جهة في كل سطر أو افصل بفاصلة', w: 'full' },
   proCerts: { label: 'هل تدرّب في شهادات احترافية محددة؟ اذكرها', type: 'procerts', max: 300, w: 'full' },
   tot: { label: 'حاصل على شهادة تدريب المدربين', type: 'tot', w: 'full' },
   cvUrl: { label: 'رابط الشهادات أو السيرة الذاتية', type: 'url', joinOnly: true, priv: true, ltr: true, ph: 'https://drive.google.com/...', hint: 'يطّلع عليه فريق المراجعة فقط', w: 'full' }
@@ -54,13 +55,13 @@ function defaultForms() {
     join: { steps: [
       { id: 's1', title: 'البيانات', icon: 'fa-id-card', desc: 'بيانات التواصل الإداري لا تظهر لأحد في المنصة.', fields: f(['name', 'nameEn', 'gender', 'region', 'city', 'travel', 'phone', 'email']) },
       { id: 's2', title: 'التخصص', icon: 'fa-layer-group', desc: 'اختر ما تمارس التدريب فيه فعلياً؛ تظهر بطاقتك في نتائج هذه التخصصات.', fields: f(['title', 'specs', 'topics', 'modes']) },
-      { id: 's3', title: 'الخبرة', icon: 'fa-award', desc: 'الأرقام تظهر في بطاقتك كمؤشرات بارزة.', fields: [{ k: 'cvUrl', hidden: true }, ...f(['years', 'hours', 'programs', 'certs', 'proCerts', 'bio', 'langs', 'tot'])] },
+      { id: 's3', title: 'الخبرة', icon: 'fa-award', desc: 'الأرقام تظهر في بطاقتك كمؤشرات بارزة.', fields: [{ k: 'cvUrl', hidden: true }, ...f(['years', 'hours', 'programs', 'certs', 'proCerts', 'partners', 'bio', 'langs', 'tot'])] },
       { id: 's4', title: 'الصورة والتصميم', icon: 'fa-camera', desc: 'هذه الخطوة اختيارية: عند الرغبة في نشر صورتك أضف رابط مشاركتها من Google Drive أو أي مساحة تخزين سحابية ونسّقها داخل الدائرة، أو أجّلها الآن وأضفها لاحقاً من لوحتك. واختر تصميم بطاقتك.', fields: f(['photoUrl', 'theme']) }
     ] },
     admin: { steps: [
       { id: 'a1', title: 'البيانات الأساسية', icon: 'fa-id-card', fields: f(['name', 'nameEn', 'gender', 'region', 'city', 'travel', 'phone', 'email']) },
       { id: 'a2', title: 'التخصص', icon: 'fa-layer-group', fields: f(['title', 'specs', 'bio', 'topics', 'modes']) },
-      { id: 'a3', title: 'الخبرة', icon: 'fa-award', fields: f(['years', 'hours', 'programs', 'certs', 'proCerts', 'langs', 'tot']) },
+      { id: 'a3', title: 'الخبرة', icon: 'fa-award', fields: f(['years', 'hours', 'programs', 'certs', 'proCerts', 'partners', 'langs', 'tot']) },
       { id: 'a4', title: 'الصورة والتصميم', icon: 'fa-camera', fields: f(['photoUrl', 'theme']) }
     ] }
   };

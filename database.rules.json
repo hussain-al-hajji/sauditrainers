@@ -116,6 +116,10 @@
             ".validate": "newData.isString() && newData.val().length <= 300",
             ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
           },
+          "partners": {
+            ".validate": "newData.isString() && newData.val().length <= 600",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
+          },
           "cardSpecs": {
             ".validate": "newData.hasChildren()",
             "$i": {
@@ -466,6 +470,9 @@
           },
           "proCerts": {
             ".validate": "newData.isString() && newData.val().length <= 300"
+          },
+          "partners": {
+            ".validate": "newData.isString() && newData.val().length <= 600"
           },
           "cardSpecs": {
             ".validate": "newData.hasChildren()",

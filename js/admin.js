@@ -456,7 +456,8 @@ const IMPORT_COLS = [
   { k: 'years', label: 'سنوات الخبرة', ex: '8', alt: ['years'] },
   { k: 'hours', label: 'الساعات التدريبية', ex: '1200', alt: ['hours'] },
   { k: 'programs', label: 'عدد البرامج والدورات', ex: '60', alt: ['programs'] },
-  { k: 'certs', label: 'الشهادات والاعتمادات', ex: 'مدربة معتمدة من المؤسسة العامة للتدريب التقني والمهني', alt: ['certs', 'الشهادات'] },
+  { k: 'certs', label: 'الشهادات والاعتمادات والعضويات', ex: 'مدربة معتمدة من المؤسسة العامة للتدريب التقني والمهني', alt: ['certs', 'الشهادات'] },
+  { k: 'partners', label: 'جهات تم التعاون معها', ex: 'جامعة الملك سعود | غرفة الرياض', alt: ['partners'] },
   { k: 'proCerts', label: 'شهادات احترافية يدرب عليها', ex: 'PMP | CISSP', alt: ['proCerts'] },
   { k: 'tot', label: 'حاصل على شهادة تدريب المدربين', ex: 'نعم', alt: ['tot'] },
   { k: 'photo', label: 'رابط الصورة', ex: 'https://drive.google.com/file/d/.../view', alt: ['photo', 'photoUrl', 'الصورة'] },
@@ -488,7 +489,7 @@ function importRecord(r) {
   const clip = (v, n) => String(v || '').trim().slice(0, n);
   Object.assign(rec, { name: clip(r.name, 60), gender, region: regions[0], regions, title: clip(r.title, 80), specs: specs.slice(0, MAX_SPECS), bio: clip(r.bio, 1200), modes, langs: clip(langs, 60),
     theme: CARD_THEMES.some(x => x.k === r.theme) ? r.theme : 'brand' });
-  const opt = { nameEn: clip(r.nameEn, 60), city: clip(r.city, 40), topics: clip(r.topics, 800), certs: clip(r.certs, 800), proCerts: clip(splitMulti(r.proCerts).join('\n'), 300), photoUrl: isImageLink(r.photo) ? clip(r.photo, 300) : '' };
+  const opt = { nameEn: clip(r.nameEn, 60), city: clip(r.city, 40), topics: clip(r.topics, 800), certs: clip(r.certs, 800), proCerts: clip(splitMulti(r.proCerts).join('\n'), 300), partners: clip(splitMulti(r.partners).join('\n'), 600), photoUrl: isImageLink(r.photo) ? clip(r.photo, 300) : '' };
   Object.entries(opt).forEach(([k, v]) => { if (v) rec[k] = v; });
   ['years', 'hours', 'programs'].forEach(k => { if (num(r[k])) rec[k] = Math.min(num(r[k]), { years: 60, hours: 100000, programs: 10000 }[k]); });
   if (yes(r.travel)) rec.travel = true;
