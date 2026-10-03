@@ -58,7 +58,7 @@
             ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
           },
           "bio": {
-            ".validate": "newData.isString() && newData.val().length <= 1200",
+            ".validate": "newData.isString() && newData.val().length <= 4000",
             ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
           },
           "topics": {
@@ -540,7 +540,7 @@
             ".validate": "newData.isString() && newData.val().length <= 40"
           },
           "bio": {
-            ".validate": "newData.isString() && newData.val().length <= 1200"
+            ".validate": "newData.isString() && newData.val().length <= 4000"
           },
           "topics": {
             ".validate": "newData.isString() && newData.val().length <= 800"

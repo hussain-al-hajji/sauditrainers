@@ -510,7 +510,7 @@ function importRecord(r) {
   if (miss.length) return { miss, name: r.name };
   const num = v => Math.max(0, Number(toEnDigits(v)) || 0);
   const clip = (v, n) => String(v || '').trim().slice(0, n);
-  Object.assign(rec, { name: clip(r.name, 60), gender, region: regions[0], regions, title: clip(r.title, 80), specs: specs.slice(0, MAX_SPECS), bio: clip(r.bio, 1200), modes, langs: clip(langs, 60),
+  Object.assign(rec, { name: clip(r.name, 60), gender, region: regions[0], regions, title: clip(r.title, 80), specs: specs.slice(0, MAX_SPECS), bio: clip(r.bio, 4000), modes, langs: clip(langs, 60),
     theme: CARD_THEMES.some(x => x.k === r.theme) ? r.theme : 'brand' });
   const opt = { nameEn: clip(r.nameEn, 60), city: clip(r.city, 40), topics: clip(r.topics, 800), certs: clip(r.certs, 800), proCerts: clip(splitMulti(r.proCerts).join('\n'), 300), partners: clip(splitMulti(r.partners).join('\n'), 600), photoUrl: isImageLink(r.photo) ? clip(r.photo, 300) : '' };
   Object.entries(opt).forEach(([k, v]) => { if (v) rec[k] = v; });

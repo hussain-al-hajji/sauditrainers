@@ -25,7 +25,7 @@ str_list = lambda n, each=80: {'.validate': 'newData.hasChildren()', '$i': {'.va
 # الحقول العامة للمدرب (تطابق Data.PUBLIC_FIELDS)
 PUBLIC = {
     'name': S(60), 'nameEn': S(60), 'title': S(80), 'gender': "newData.val() == 'm' || newData.val() == 'f'", 'region': S(20), 'city': S(40),
-    'bio': S(1200), 'topics': S(800), 'certs': S(800), 'langs': S(60), 'theme': S(20), 'photoUrl': S(300),
+    'bio': S(4000), 'topics': S(800), 'certs': S(800), 'langs': S(60), 'theme': S(20), 'photoUrl': S(300),
     'years': N(60), 'hours': N(100000), 'programs': N(10000),
     # إطار الصورة الدائرية: الموضع والتكبير
     'noPhoto': 'newData.isBoolean()',

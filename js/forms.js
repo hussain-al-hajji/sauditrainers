@@ -25,7 +25,7 @@ const CORE_FIELDS = {
   hours: { label: 'الساعات التدريبية المنفذة', type: 'number', max: 100000 },
   programs: { label: 'عدد البرامج والدورات', type: 'number', max: 10000 },
   certs: { label: 'الشهادات والاعتمادات والعضويات', type: 'textarea', max: 800, ph: 'مثلاً: مدرب معتمد في تقنية المعلومات من المؤسسة العامة للتدريب التقني والمهني ...', w: 'full' },
-  bio: { label: 'نبذة تعريفية', type: 'textarea', max: 1200, req: true, ph: 'عرّف بنفسك وبخبرتك التدريبية وأبرز إنجازاتك', hint: 'لا تضع أرقام تواصل أو بريداً أو روابط؛ التواصل يتم عبر المنصة', w: 'full' },
+  bio: { label: 'نبذة تعريفية', type: 'textarea', max: 4000, req: true, ph: 'عرّف بنفسك وبخبرتك التدريبية وأبرز إنجازاتك', hint: 'لا تضع أرقام تواصل أو بريداً أو روابط؛ التواصل يتم عبر المنصة', w: 'full' },
   langs: { label: 'لغة التدريب', type: 'langs', req: true, w: 'full' },
   photoUrl: { label: 'الصورة الشخصية (رابط مشاركة الصورة)', type: 'photo', w: 'full' },
   theme: { label: 'تصميم البطاقة', type: 'theme', w: 'full' },
