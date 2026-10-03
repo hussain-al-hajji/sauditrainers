@@ -166,19 +166,19 @@ Pages.profile = {
     const own = s && ((s.kind === 'trainer' && s.id === t?.id) || s.kind === 'admin');
     if (!t || (!Data.isLive(t) && !own)) return `<section class="page-head"><div class="wrap"><h1>البطاقة غير متاحة</h1><p>قد تكون البطاقة غير منشورة حالياً أو الرابط غير صحيح.</p></div></section><div class="wrap empty"><a class="btn primary" href="#/trainers">تصفّح المدربين</a></div>`;
     const sp = Data.specs(t), tp = Data.topics(t), md = Data.modes(t);
-    const similar = Data.live().filter(x => x.id !== t.id && Data.specs(x).some(k => sp.includes(k))).slice(0, 4);
+    const similar = Data.live().filter(x => x.id !== t.id && Data.specs(x).some(k => sp.includes(k))).sort(() => Math.random() - 0.5).slice(0, 12);
     const extras = FormKit.customDefs().filter((f, i, l) => f.pub && t.extra?.[f.k] && l.findIndex(x => x.k === f.k) === i);
     return `
     <div style="position:relative"><div class="profile-hero-bg"></div>
     <div class="wrap profile">
       <aside class="profile-side">
-        ${Card.full(t)}
         <div class="profile-actions">
           <button class="btn primary wide lg" id="ask"><i class="fa-solid fa-paper-plane"></i> تواصل مع المدرب</button>
           <p class="wide small muted center" style="margin:0"><i class="fa-solid fa-lock"></i> يصل طلبك للمدرب عبر المنصة، وبيانات تواصله لا تُعرض حفاظاً على خصوصيته</p>
           <button class="btn" id="shr"><i class="fa-solid fa-share-nodes"></i> مشاركة</button>
           <button class="btn" id="sv"><i class="fa-solid fa-download"></i> حفظ البطاقة</button>
         </div>
+        ${Card.full(t)}
         ${!Data.isLive(t) ? `<div class="banner warn" style="margin-top:14px"><i class="fa-solid fa-eye-slash"></i>هذه البطاقة غير ظاهرة للزوار حالياً.</div>` : ''}
       </aside>
       <div>
@@ -204,9 +204,9 @@ Pages.profile = {
             ${t.langs ? `<div><small>لغات التدريب</small><b>${esc(t.langs)}</b></div>` : ''}
           </div>
         </div>
-        ${similar.length ? `<h3 style="margin-top:30px">مدربون في تخصصات مشابهة</h3><div class="tgrid">${similar.map((x, i) => Card.mini(x, i)).join('')}</div>` : ''}
       </div>
-    </div></div>`;
+    </div>
+    ${similar.length ? `<section class="similar"><div class="wrap"><h3><i class="fa-solid fa-users"></i> مدربون في تخصصات مشابهة</h3><div class="hs-carousel"><button class="cr-btn prev" aria-label="السابق"><i class="fa-solid fa-chevron-right"></i></button><div class="cr-track" data-drag>${similar.map((x, i) => Card.mini(x, i)).join('')}</div><button class="cr-btn next" aria-label="التالي"><i class="fa-solid fa-chevron-left"></i></button></div></div></section>` : ''}</div>`;
   },
   mount(root, params, slug) {
     const t = Data.trainer(decodeURIComponent(slug || ''));
@@ -216,6 +216,17 @@ Pages.profile = {
     $('#shr', root) && ($('#shr', root).onclick = () => Card.share(t));
     $('#sv', root) && ($('#sv', root).onclick = () => Card.shareSheet(t));
     $('#ask', root) && ($('#ask', root).onclick = () => leadForm(t));
+    const tr = $('.similar .cr-track', root);
+    if (tr) { // أزرار الأسهم + سحب بالماوس (وباللمس يعمل أصلاً)
+      const step = () => tr.clientWidth * 0.8;
+      $('.similar .prev', root).onclick = () => tr.scrollBy({ left: step(), behavior: 'smooth' });
+      $('.similar .next', root).onclick = () => tr.scrollBy({ left: -step(), behavior: 'smooth' });
+      let down = false, sx = 0, sl = 0, moved = false;
+      tr.addEventListener('mousedown', e => { down = true; moved = false; sx = e.pageX; sl = tr.scrollLeft; tr.classList.add('drag'); });
+      window.addEventListener('mousemove', e => { if (!down) return; const dx = e.pageX - sx; if (Math.abs(dx) > 4) moved = true; tr.scrollLeft = sl - dx; });
+      window.addEventListener('mouseup', () => { down = false; tr.classList.remove('drag'); });
+      tr.addEventListener('click', e => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
+    }
   }
 };
 
