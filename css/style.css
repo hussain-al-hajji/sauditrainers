@@ -985,3 +985,14 @@ input:checked + .cdot { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--g600); }
 @media (max-width: 700px) { .similar .cr-track { grid-auto-columns: 190px; } }
 .similar .tm-chips span:nth-child(n+3):not(.more) { display: none; }
 .similar .tm-title { min-height: 0; }
+
+/* لابتوب: الأزرار تلتصق بأسفل الشاشة إن لم تتسع الشاشة للبطاقة وأزرارها، وتُضغط على الشاشات القصيرة */
+@media (min-width: 961px) {
+  .profile-actions { position: sticky; bottom: 10px; z-index: 5; }
+}
+@media (min-width: 961px) and (max-height: 760px) {
+  .profile-actions { gap: 6px; margin-top: 10px; }
+  .profile-actions p { display: none; }
+  .profile-actions .btn.lg { padding: 10px 18px; font-size: .95rem; }
+  .profile-actions .btn { padding-block: 9px; }
+}
