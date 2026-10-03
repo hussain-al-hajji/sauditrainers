@@ -41,7 +41,7 @@ const App = (() => {
       </nav>
       <div class="nav-cta">
         ${s?.kind === 'trainer' ? '<a class="btn ghost sm" href="#/me"><i class="fa-solid fa-id-card"></i><span>لوحتي</span></a>' : s?.kind === 'admin' ? '<a class="btn ghost sm" href="#/admin"><i class="fa-solid fa-shield-halved"></i><span>الإدارة</span></a>' : '<a class="btn ghost sm" href="#/login"><i class="fa-solid fa-right-to-bracket"></i><span>دخول المدربين</span></a>'}
-        <a class="btn gold sm" href="#/join"><i class="fa-solid fa-user-plus"></i><span>سجّل كمدرب</span></a>
+        <a class="btn gold sm" href="#/join"><i class="fa-solid fa-user-plus"></i><span>سجّل كمدرب سعودي</span></a>
       </div>
       <button class="btn icon ghost burger" id="bg" aria-label="القائمة"><i class="fa-solid fa-bars"></i></button>
     </div></header>`;

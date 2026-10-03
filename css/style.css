@@ -99,7 +99,7 @@ textarea { min-height: 110px; resize: vertical; }
   .nav-cta .btn.ghost { display: none; }
   .topbar.dark .burger { color: #fff; background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.2); }
 }
-@media (max-width: 520px) { .nav-cta .btn span { display: none; } .logo small { display: none; } }
+@media (max-width: 520px) { .nav-cta .btn.ghost span { display: none; } .nav-cta .btn.gold { padding: 8px 12px; font-size: .8rem; gap: 6px; white-space: nowrap; } .logo small { display: none; } }
 
 /* ===== الواجهة الرئيسية ===== */
 .hero { position: relative; margin-top: -70px; padding: 130px 0 90px; color: #fff; overflow: hidden; isolation: isolate;
