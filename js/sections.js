@@ -80,10 +80,10 @@ const SECTION_TYPES = (() => {
     name: 'نخبة المدربين', icon: 'fa-id-card',
     tpls: [['grid', 'شبكة بطاقات'], ['carousel', 'شريط قابل للتمرير'], ['list', 'قائمة مختصرة']],
     schema: [...HEAD, { k: 'count', label: 'عدد المدربين', t: 'number' }, { k: 'only', label: 'من يظهر', t: 'select', opts: [['random', 'عشوائي يتغير مع كل زيارة'], ['mix', 'المميزون أولاً ثم الأحدث'], ['featured', 'المميزون فقط'], ['latest', 'الأحدث نشراً']] }, { k: 'btn', label: 'زر «تصفّح جميع المدربين»', t: 'check' }],
-    def: () => ({ eyebrow: 'نخبة المدربين', title: 'كفاءات سعودية جاهزة لبرنامجك القادم', sub: 'بطاقات تعريفية موثّقة تختصر عليك السيرة الذاتية: التخصص، والخبرة، والمنطقة.', count: 5, only: 'random', btn: true }),
-    // قائمة المدربين المعروضة: عشوائية (تتجدد مع كل عرض) أو حسب الإعداد. القيمة القديمة «mix» بعدد 8 (الافتراضي السابق) تُعامَل كالإعداد الجديد
+    def: () => ({ eyebrow: 'نخبة المدربين', title: 'كفاءات سعودية جاهزة لبرنامجك القادم', sub: 'بطاقات تعريفية موثّقة تختصر عليك السيرة الذاتية: التخصص، والخبرة، والمنطقة.', count: 6, only: 'random', btn: true }),
+    // قائمة المدربين المعروضة: عشوائية (تتجدد مع كل عرض) أو حسب الإعداد. القيمتان الافتراضيتان السابقتان («mix» بعدد 8 و«random» بعدد 5) تُعامَلان كالإعداد الجديد: عشوائي بست بطاقات
     pick(d) {
-      const ls = live(), legacy = d.only === 'mix' && Number(d.count) === 8, only = legacy || !d.only ? 'random' : d.only, n = Math.max(1, legacy ? 5 : Number(d.count) || 5);
+      const ls = live(), legacy = (d.only === 'mix' && Number(d.count) === 8) || (d.only === 'random' && Number(d.count) === 5), only = legacy || !d.only ? 'random' : d.only, n = Math.max(1, legacy ? 6 : Number(d.count) || 6);
       if (only === 'random') { const a = [...ls]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a.slice(0, n); }
       return (only === 'featured' ? ls.filter(t => t.featured) : only === 'latest' ? [...ls].sort((a, b) => (b.publishedAt || 0) - (a.publishedAt || 0)) : [...ls.filter(t => t.featured), ...ls.filter(t => !t.featured)]).slice(0, n);
     },
