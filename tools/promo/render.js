@@ -20,12 +20,18 @@ const SAMPLE = [
   await p.addStyleTag({ content: [600, 700, 800, 900].map(w => `@font-face{font-family:'Cairo';font-weight:${w};src:url(${BASE}/tools/promo/fonts/cairo-arabic-${w}-normal.woff2)}`).join('') + [400, 500, 600, 700].map(w => `@font-face{font-family:'IBM Plex Sans Arabic';font-weight:${w};src:url(${BASE}/tools/promo/fonts/ibm-plex-sans-arabic-arabic-${w}-normal.woff2)}`).join('') });
   const cards = await p.evaluate(async sample => {
     const out = [];
-    for (const t of sample) { const cv = await Card.render({ ...t, region: t.regions[0], noPhoto: true, slug: 'x' }, 'post'); out.push(cv.toDataURL('image/png')); }
+    const mk = async (t, f) => (await Card.render({ ...t, region: t.regions[0], noPhoto: true, slug: 'x' }, f)).toDataURL('image/png');
+    for (const t of sample) out.push(await mk(t, 'post'));
+    out.push(await mk(sample[0], 'wide'), await mk(sample[1], 'story'));   // 4: عريضة، 5: ستوري
     return out;
   }, SAMPLE);
   const q = await b.newPage({ viewport: { width: 1200, height: 1400 } });
-  await q.goto(BASE + '/tools/promo/posts.html'); await q.evaluate(c => window.setCards(c), cards);
-  await q.evaluate(() => document.fonts.ready); await q.waitForTimeout(800);
-  for (let i = 1; i <= 6; i++) await q.locator('#p' + i).screenshot({ path: path.join(OUT, `post-${i}.png`) });
+  // posts.html: منشورات ترويجية للجمهور، updates.html: صور إعلام المدربين بتحديث المنصة
+  for (const [file, pre, n, dir] of [['posts', 'p', 6, ''], ['updates', 'u', 10, 'updates/']]) {
+    await q.goto(`${BASE}/tools/promo/${file}.html`); await q.evaluate(c => window.setCards(c), cards);
+    await q.evaluate(() => document.fonts.ready); await q.waitForTimeout(800);
+    if (dir) require('fs').mkdirSync(path.join(OUT, dir), { recursive: true });
+    for (let i = 1; i <= n; i++) await q.locator('#' + pre + i).screenshot({ path: path.join(OUT, `${dir}${dir ? 'update' : 'post'}-${i}.png`) });
+  }
   await b.close(); console.log('تم: ' + OUT);
 })();
