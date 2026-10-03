@@ -91,11 +91,12 @@ function portalHome(main, t) {
     if (phone && !validPhone(phone)) { toast('رقم الجوال غير صحيح (مثال: 0501234567)', 'error'); return; }
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) { toast('البريد الإلكتروني غير صحيح', 'error'); return; }
     Store.update(`private/${t.id}`, { phone: phone ? phoneDigits(phone) : '', email });
+    Security.track('edit', 'بيانات التواصل');
     toast('تم حفظ بيانات التواصل');
   };
   $$('#thm input', main).forEach(i => i.onchange = () => {
     Store.update(`trainers/${t.id}`, { theme: i.value, updatedAt: Date.now() });
-    $('.preview', main).innerHTML = Card.full({ ...t, theme: i.value }); tilt(main); toast('تم تغيير لون بطاقتك');
+    $('.preview', main).innerHTML = Card.full({ ...t, theme: i.value }); tilt(main); Security.track('edit', 'لون البطاقة'); toast('تم تغيير لون بطاقتك');
   });
   $('#sh', main).onclick = () => Card.share(t);
   $('#cl', main).onclick = () => copyText(profileUrl(t), 'تم نسخ رابط صفحتك');
@@ -128,6 +129,7 @@ function portalEdit(main, t) {
     const pub = Data.splitExtra(d.extra).pub;
     upd.extra = Object.keys(pub).length ? { ...(t.extra || {}), ...pub } : (t.extra || null);
     Store.update(`trainers/${t.id}`, upd);
+    Security.track('edit', 'بيانات البطاقة');
     toast('تم حفظ بطاقتك');
   };
 }

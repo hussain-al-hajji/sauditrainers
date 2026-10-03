@@ -121,6 +121,16 @@ rules = {
                 '$other': {'.validate': False},
             }},
             'notes': {'$id': {'.read': self_trainer}},
+            # نشاط المدربين (دخول/تعديل): يُسجَّل بواسطة المدرب نفسه إنشاءً فقط، وتقرؤه الإدارة
+            'activity': {'$id': {'$k': {
+                '.write': f"auth != null && {me} == $id && !data.exists() && newData.exists()",
+                '.validate': "newData.hasChildren(['ts', 'type'])",
+                'ts': {'.validate': 'newData.isNumber()'},
+                'type': {'.validate': "newData.isString() && newData.val().matches(/^(login|edit)$/)"},
+                'detail': {'.validate': S(80)},
+                'id': {'.validate': S(40)},
+                '$other': {'.validate': False},
+            }}},
             'leads': {
                 '.read': f"auth != null && query.orderByChild == 'trainerId' && query.equalTo == {me}",
                 '.indexOn': ['trainerId'],

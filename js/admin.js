@@ -112,6 +112,25 @@ function aDash(main) {
     return rows.length ? rows.map(([k, v]) => `<div class="bar"><span>${esc(name(k))}</span><div class="t"><span style="width:${v / m * 100}%"></span></div><b class="num">${v}</b></div>`).join('') : '<p class="muted small">لا بيانات بعد</p>';
   };
   const top = [...live].sort((a, b) => Data.views(b.id) - Data.views(a.id)).slice(0, 5);
+  // نشاط المدربين: تجميع سجل الدخول والتعديل لكل مدرب
+  const act = {}, evs = [];
+  Object.entries(Store.get('activity') || {}).forEach(([id, m]) => Object.values(m || {}).forEach(e => {
+    if (!e || !e.ts) return;
+    const a = act[id] || (act[id] = { id, logins: 0, edits: 0, lastLogin: 0, lastEdit: 0 });
+    if (e.type === 'login') { a.logins++; a.lastLogin = Math.max(a.lastLogin, e.ts); } else { a.edits++; a.lastEdit = Math.max(a.lastEdit, e.ts); }
+    evs.push({ ...e, tid: id });
+  }));
+  const tname = id => Store.get(`trainers/${id}`)?.name || id;
+  const week = Date.now() - 7 * 864e5;
+  const rows = Object.values(act).sort((a, b) => Math.max(b.lastLogin, b.lastEdit) - Math.max(a.lastLogin, a.lastEdit));
+  const actHTML = `<div class="pbox" style="grid-column:1/-1"><h3><i class="fa-solid fa-user-clock"></i>نشاط المدربين</h3>
+    <div class="kpis" style="margin-bottom:12px">
+      <div class="kpi"><i class="fa-solid fa-right-to-bracket"></i><b class="num">${rows.filter(a => a.lastLogin > week).length}</b><span>دخلوا خلال 7 أيام</span></div>
+      <div class="kpi"><i class="fa-solid fa-pen-to-square"></i><b class="num">${rows.filter(a => a.lastEdit > week).length}</b><span>عدّلوا بياناتهم خلال 7 أيام</span></div>
+      <div class="kpi"><i class="fa-solid fa-user-slash"></i><b class="num">${live.filter(t => !act[t.id]).length}</b><span>لم يدخلوا بعد</span></div>
+    </div>
+    ${rows.length ? `<div class="tbl-wrap" style="overflow:auto"><table class="tbl"><thead><tr><th>المدرب</th><th>آخر دخول</th><th>مرات الدخول</th><th>آخر تعديل</th><th>مرات التعديل</th></tr></thead><tbody>${rows.map(a => `<tr><td><a href="#/t/${esc(a.id)}">${esc(tname(a.id))}</a></td><td>${a.lastLogin ? ago(a.lastLogin) : '—'}</td><td class="num">${a.logins}</td><td>${a.lastEdit ? ago(a.lastEdit) : '—'}</td><td class="num">${a.edits}</td></tr>`).join('')}</tbody></table></div>
+    <h4 style="margin:14px 0 6px">آخر الحركات</h4><div class="log">${evs.sort((a, b) => b.ts - a.ts).slice(0, 12).map(e => `<div><small>${ago(e.ts)}</small><span><b>${esc(tname(e.tid))}</b> — ${e.type === 'login' ? '<i class="fa-solid fa-right-to-bracket"></i> دخل إلى صفحته' : `<i class="fa-solid fa-pen"></i> عدّل ${esc(e.detail || 'بياناته')}`}</span></div>`).join('')}</div>` : '<p class="muted small">لا نشاط للمدربين بعد، يظهر هنا عند دخول أي مدرب أو تعديله لبياناته</p>'}</div>`;
   main.innerHTML = `
     <div class="dash-h"><h2>نظرة عامة</h2><span class="muted small">${fmtTs(Date.now())}</span></div>
     <div class="kpis">
@@ -127,6 +146,7 @@ function aDash(main) {
       <div class="pbox"><h3><i class="fa-solid fa-layer-group"></i>أكثر التخصصات</h3><div class="bars">${bars(sc, specName, 10)}</div></div>
       <div class="pbox"><h3><i class="fa-solid fa-fire"></i>الأكثر مشاهدة</h3>${top.length ? top.map(t => `<div class="bar"><span>${esc(t.name)}</span><div class="t"><span style="width:${Data.views(t.id) / Math.max(1, Data.views(top[0].id)) * 100}%"></span></div><b class="num">${Data.views(t.id)}</b></div>`).join('') : '<p class="muted small">لا بيانات بعد</p>'}</div>
       <div class="pbox"><h3><i class="fa-solid fa-clock-rotate-left"></i>آخر النشاطات</h3><div class="log">${Store.list('adminLog').sort((a, b) => b.ts - a.ts).slice(0, 8).map(l => `<div><small>${ago(l.ts)}</small><span><b>${esc(l.action)}</b> ${esc(l.target)} <small>— ${esc(l.by?.name || '')}</small></span></div>`).join('') || '<p class="muted small">لا نشاط بعد</p>'}</div></div>
+      ${actHTML}
     </div>`;
   countUp(main);
 }
@@ -392,7 +412,7 @@ function trainerEditor(t) {
   m.$('#dl') && (m.$('#dl').onclick = async () => {
     if (!await confirmBox(`حذف <b>${esc(t.name)}</b> نهائياً مع حساب دخوله؟`, { ok: 'حذف', danger: true })) return;
     await Security.deleteTrainerAccount(t);
-    ['trainers', 'private', 'notes', 'secrets/codes', 'stats/views', 'stats/clicks'].forEach(p => Store.remove(`${p}/${t.id}`));
+    ['trainers', 'private', 'notes', 'secrets/codes', 'stats/views', 'stats/clicks', 'activity'].forEach(p => Store.remove(`${p}/${t.id}`));
     Security.log('حذف مدرب', t.name); m.close();
   });
   form.onsubmit = async e => {
@@ -726,7 +746,7 @@ function aBackup(main) {
   $('#dx', main).onclick = async () => {
     const demo = Data.all().filter(t => t.demo);
     if (!demo.length || !await confirmBox(`حذف ${demo.length} مدرب تجريبي؟`, { danger: true, ok: 'حذف' })) return;
-    for (const t of demo) { await Security.deleteTrainerAccount(t); ['trainers', 'private', 'notes', 'secrets/codes', 'stats/views', 'stats/clicks'].forEach(p => Store.remove(`${p}/${t.id}`)); }
+    for (const t of demo) { await Security.deleteTrainerAccount(t); ['trainers', 'private', 'notes', 'secrets/codes', 'stats/views', 'stats/clicks', 'activity'].forEach(p => Store.remove(`${p}/${t.id}`)); }
     toast('تم الحذف');
   };
   $('#rs', main).onchange = async e => {

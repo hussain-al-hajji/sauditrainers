@@ -110,6 +110,7 @@ const Security = (() => {
     }
     Auth.set(session);
     await applyScope(session);
+    track('login', 'فتح لوحته');
   }
 
   /* ===== دخول المدرب ===== */
@@ -123,14 +124,14 @@ const Security = (() => {
       catch (e) { throw new Error(authMsg(e)); }
       const s = await roleFor(Store.auth.currentUser);
       if (!s || s.kind !== 'trainer') { await Store.auth.signOut(); throw new Error('الرمز غير صحيح'); }
-      Auth.set(s); await applyScope(s);
+      Auth.set(s); await applyScope(s); track('login', 'تسجيل دخول');
       return s;
     }
     const codes = Store.get('secrets/codes') || {};
     const id = Object.keys(codes).find(k => normCode(codes[k]) === code);
     if (!id || !Store.get(`trainers/${id}`)) throw new Error('الرمز غير صحيح');
     const s = { kind: 'trainer', id };
-    Auth.set(s);
+    Auth.set(s); track('login', 'تسجيل دخول');
     return s;
   }
 
@@ -213,5 +214,15 @@ const Security = (() => {
     Store.remove(`uids/${t.uid}`);
   }
 
-  return { secure, restore, applyScope, trainerLogin, googleLogin, inviteAdmin, inviteKey, issueCode, deleteTrainerAccount, log, isOwner, adminName, currentUser, normCode };
+  /* تتبّع نشاط المدرب (دخول/تعديل) لتراه الإدارة؛ الدخول يُسجَّل مرة لكل جلسة متصفح */
+  function track(type, detail = '') {
+    const s = Auth.current();
+    if (s?.kind !== 'trainer') return;
+    if (type === 'login') {
+      try { if (sessionStorage.getItem('st-logged')) return; sessionStorage.setItem('st-logged', '1'); } catch { /* ignore */ }
+    }
+    Store.push(`activity/${s.id}`, { ts: Date.now(), type, detail: String(detail).slice(0, 80) });
+  }
+
+  return { track, secure, restore, applyScope, trainerLogin, googleLogin, inviteAdmin, inviteKey, issueCode, deleteTrainerAccount, log, isOwner, adminName, currentUser, normCode };
 })();

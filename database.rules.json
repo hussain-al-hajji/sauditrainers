@@ -235,6 +235,29 @@
           ".read": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)"
         }
       },
+      "activity": {
+        "$id": {
+          "$k": {
+            ".write": "auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id && !data.exists() && newData.exists()",
+            ".validate": "newData.hasChildren(['ts', 'type'])",
+            "ts": {
+              ".validate": "newData.isNumber()"
+            },
+            "type": {
+              ".validate": "newData.isString() && newData.val().matches(/^(login|edit)$/)"
+            },
+            "detail": {
+              ".validate": "newData.isString() && newData.val().length <= 80"
+            },
+            "id": {
+              ".validate": "newData.isString() && newData.val().length <= 40"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      },
       "leads": {
         ".read": "auth != null && query.orderByChild == 'trainerId' && query.equalTo == root.child('sauditrainers/uids/' + auth.uid).val()",
         ".indexOn": [
