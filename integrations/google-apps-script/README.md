@@ -91,3 +91,22 @@
 - **مع تفعيل الأتمتة:** زر «بريد» في لوحة الإدارة يرسل الرسالة فعلياً من `trainers.sa3@gmail.com` دون فتح أي نافذة، ويظهر بجانبه «أُرسل».
 - **قبل تفعيل الأتمتة:** يفتح الزر نافذة كتابة **Gmail على الويب** (`mail.google.com`) برسالة جاهزة مُعبّأة المستلم والعنوان والنص، فتسجّل الدخول ببريد المنصة وتضغط «إرسال». ولا يعتمد ذلك على برنامج بريد في الجهاز.
 - **واتساب:** يفتح الزر `wa.me` في المتصفح (ويصل لـ WhatsApp Web أو تطبيق سطح المكتب) برسالة جاهزة في محادثة المستلم، فتضغط «إرسال».
+
+## إحصاءات Google (Analytics وSearch Console) في لوحة الإدارة
+المؤشرات تعرض نوعين من البيانات:
+1. **عدّادات المنصة الذاتية** (تعمل فور نشر التحديث، بلا إعداد): الزيارات والزوار الفريدون والمشاهدات والأجهزة والمتصفحات ومصادر الزيارات وكلمات البحث والتصفية وساعات الذروة وقمع الزائر ← طلب تواصل وقمع التسجيل. لا تُجمع أي بيانات شخصية، ولا تُحسب زيارات المشرفين والمدربين المسجلين.
+2. **Google Analytics 4 وSearch Console** (تتطلب الإعداد أدناه): الدول والمدن والمستخدمون النشطون الآن ومدة الجلسة وقنوات الوصول، ومرات الظهور في نتائج Google وكلمات البحث وترتيب المنصة.
+
+### الإعداد (مرة واحدة)
+1. **Google Analytics:** أنشئ خاصية GA4 على analytics.google.com ← Data stream (Web) برابط `https://sauditrainers.sa`، وانسخ **Measurement ID** (يبدأ بـ `G-`) إلى `gaId` في `js/config.js`. وانسخ **Property ID** (أرقام) من Admin ← Property details.
+2. **امنح حساب المنصة صلاحية القراءة:** Admin ← Property access management ← أضف `trainers.sa3@gmail.com` بدور **Viewer**.
+3. **Search Console:** أضف الدومين على search.google.com/search-console (خاصية Domain، والتحقق بسجل DNS من لوحة الدومين)، ثم Settings ← Users and permissions ← أضف `trainers.sa3@gmail.com` بصلاحية **Restricted** أو **Full**.
+4. في Apps Script: أضف ملفاً جديداً `Analytics` والصق محتوى `Analytics.gs`، ثم حدّث `appsscript.json` بالنسخة الجديدة (فيها صلاحيتا `analytics.readonly` و`webmasters.readonly`).
+5. **Project Settings ← Script Properties** أضف:
+   - `GA_PROPERTY_ID` = رقم الخاصية (أرقام فقط)
+   - `GSC_SITE` = `sc-domain:sauditrainers.sa` (للخاصية من نوع Domain) أو `https://sauditrainers.sa/` (للخاصية من نوع URL prefix)
+6. شغّل `testAnalytics` وافق على الصلاحيات الجديدة؛ يظهر في السجل ما جُلب أو سبب الخطأ. ثم شغّل `setupTriggers` (يحدّث البيانات كل ساعتين)، وانشر نسخة جديدة من الـ Web app.
+7. في لوحة الإدارة ← المؤشرات اضغط «تحديث الآن» في قسم «بيانات Google».
+
+> بيانات Search Console تتأخر يومين إلى ثلاثة، وبيانات Analytics قد تحتاج 24 ساعة لتظهر بعد أول زيارة.
+> لتتبّع قنوات منشوراتك أضف لروابطها `?utm_source=twitter` (أو linkedin وغيرها)، فتظهر في «حملاتك الإعلانية».

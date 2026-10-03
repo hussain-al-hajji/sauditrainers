@@ -100,7 +100,7 @@ Pages.join = {
         return;
       }
       await Store.setConfirmed(`appStatus/${id}`, { status: 'new', ts: Date.now() });
-      Automation.notify('application', id);
+      Automation.notify('application', id); Analytics.event('join', { day: 'joins' });
       try { localStorage.removeItem(DRAFT_KEY); } catch { /* ignore */ }
       $('.wiz-main', root).innerHTML = `<div class="done-card">
         <div class="big"><i class="fa-solid fa-check"></i></div>

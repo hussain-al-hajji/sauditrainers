@@ -34,6 +34,7 @@ function doPost(e) {
     else if (body.action === 'application' && id) { notifyAdmin('applications', id); sendReceivedEmail(id); }
     else if (body.action === 'outbox' && id) sendOutbox(id);
     else if (body.action === 'campaign' && id) sendCampaign(id);
+    else if (body.action === 'analytics') refreshAnalyticsThrottled();
     else if (body.action === 'publish' && id) publishPost(id);
     else if (body.action === 'ping') ping();
   } catch (err) {
@@ -294,6 +295,9 @@ function setupTriggers() {
   ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'sweepPending').forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('publishDue').timeBased().everyMinutes(5).create();
   ScriptApp.newTrigger('sweepPending').timeBased().everyMinutes(5).create();
+  // إحصاءات Google (Analytics وSearch Console) كل ساعتين — تعمل فقط بعد ضبط GA_PROPERTY_ID / GSC_SITE
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'refreshAnalytics').forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('refreshAnalytics').timeBased().everyHours(2).create();
   ping();
   console.log('تم: مؤقّت النشر يعمل، والاتصال بقاعدة البيانات سليم', JSON.stringify(connected()));
 }

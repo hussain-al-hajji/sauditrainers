@@ -31,6 +31,7 @@ function doPost(e) {
     else if (body.action === 'application' && id) { notifyAdmin('applications', id); sendReceivedEmail(id); }
     else if (body.action === 'outbox' && id) sendOutbox(id);
     else if (body.action === 'campaign' && id) sendCampaign(id);
+    else if (body.action === 'analytics') refreshAnalyticsThrottled();
     else if (body.action === 'ping') ping();
   } catch (err) {
     console.error(err);
@@ -166,6 +167,8 @@ function testDb() {
 function setupTriggers() {
   ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'sweepPending').forEach(t => ScriptApp.deleteTrigger(t));
   ScriptApp.newTrigger('sweepPending').timeBased().everyMinutes(5).create();
+  ScriptApp.getProjectTriggers().filter(t => t.getHandlerFunction() === 'refreshAnalytics').forEach(t => ScriptApp.deleteTrigger(t));
+  ScriptApp.newTrigger('refreshAnalytics').timeBased().everyHours(2).create();
   ping();
   console.log('تم: مؤقّت المعالجة يعمل');
 }

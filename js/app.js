@@ -103,6 +103,7 @@ const App = (() => {
     loadSpecialties(); Store.subscribe(loadSpecialties);
     if (mode === 'local' || Auth.current()?.kind === 'admin') await Store.seedOnce(() => ({ content: defaultContent(), counters: { trainer: 0 }, meta: { createdAt: Date.now() } }));
     render();
+    Analytics.start();
     Store.subscribe(refresh);
     // الانتقال لصفحة أخرى يغلق النوافذ المفتوحة
     window.addEventListener('hashchange', () => { $$('.modal-back').forEach(m => m.remove()); render(); });

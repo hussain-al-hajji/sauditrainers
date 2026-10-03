@@ -151,6 +151,13 @@ Pages.trainers = {
       draw();
     };
     form.addEventListener('input', debounce(sync, 180));
+    // إحصاءات: كلمات البحث والفلاتر المستخدمة (بعد توقف الكتابة، ومرة لكل قيمة)
+    const seen = {};
+    form.addEventListener('input', debounce(() => {
+      const f = formData(form), q = (f.q || '').trim();
+      if (q.length >= 2 && seen.q !== q) { seen.q = q; Analytics.event('', { day: 'searches', kind: 'term', key: q }); }
+      ['spec', 'region'].forEach(k => { if (f[k] && seen[k] !== f[k]) { seen[k] = f[k]; Analytics.event('', { kind: k, key: f[k] }); } if (!f[k]) seen[k] = ''; });
+    }, 1500));
     form.addEventListener('submit', e => e.preventDefault());
     $('#clr', root).onclick = () => { form.reset(); $$('select, input', form).forEach(x => { x.value = ''; }); sync(); };
     draw();
@@ -266,7 +273,7 @@ function leadForm(t) {
     if (d.email && !validEmail(d.email)) { toast('البريد الإلكتروني غير صحيح', 'error'); return; }
     const id = await Store.pushConfirmed('leads', { ...d, phone: phoneDigits(d.phone), trainerId: t.id, trainerName: t.name, ts: Date.now(), status: 'new' });
     if (!id) { toast('تعذّر إرسال الطلب، أعد المحاولة', 'error'); return; }
-    Automation.notify('lead', id);
+    Automation.notify('lead', id); Analytics.event('lead', { day: 'contacts' });
     m.close();
     modal(`<div class="done-card"><div class="big"><i class="fa-solid fa-check"></i></div><h3 style="justify-content:center">تم إرسال طلبك</h3><p class="muted">وصل طلبك إلى ${esc(t.name)} وإلى فريق المنصة، وسيتواصل معك قريباً بإذن الله.</p><button class="btn primary" data-close>حسناً</button></div>`);
   };
@@ -322,7 +329,7 @@ Pages.request = {
       const matches = Data.match(d).map(x => x.t.id);
       const rid = await Store.pushConfirmed('requests', { ...d, phone: phoneDigits(d.phone), size: Number(d.size) || 0, matches, ts: Date.now(), status: 'new' });
       if (!rid) { toast('تعذّر إرسال الطلب، أعد المحاولة', 'error'); return; }
-      Automation.notify('request', rid);
+      Automation.notify('request', rid); Analytics.event('request', { day: 'requests' });
       form.innerHTML = `<div class="done-card"><div class="big"><i class="fa-solid fa-check"></i></div><h2>تم استلام طلبك</h2><p class="muted">سيتواصل معك فريق المنصة بالترشيحات المناسبة قريباً. يمكنك أيضاً التواصل مباشرة مع المدربين المقترحين.</p><a class="btn primary" href="#/trainers">تصفّح المدربين</a></div>`;
     };
   }

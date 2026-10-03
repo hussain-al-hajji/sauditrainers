@@ -112,6 +112,18 @@ rules = {
             'stats': {'.read': True, '$kind': {'$id': {
                 '.write': "$kind.matches(/^(views|clicks)$/) && newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
             }}},
+            # إحصاءات الزوار (زيادة بمقدار 1 فقط، دون أي بيانات شخصية): يقرؤها المشرفون
+            'analytics': {
+                'day': {'$d': {'.validate': "$d.matches(/^[0-9]{8}$/)", '$m': {
+                    '.write': "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
+                    '.validate': "$m.matches(/^(views|visits|visitors|newv|searches|contacts|joins|requests)$/)",
+                }}},
+                '$kind': {'.validate': "$kind.matches(/^(page|ref|dev|browser|lang|hour|term|spec|region|event|utm)$/)", '$k': {
+                    '.write': "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
+                    '.validate': "$k.length <= 40",
+                }},
+            },
+            # بيانات Google Analytics وSearch Console يكتبها سكربت الأتمتة (للإدارة فقط)
             # بيانات التواصل الخاصة: يقرؤها المدرب ويعدّل جواله وبريده فقط (والباقي للإدارة)
             'private': {'$id': {
                 '.read': self_trainer,

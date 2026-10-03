@@ -295,6 +295,16 @@ const Store = (() => {
     notify();
   }
 
+  // زيادة عدّادات عدة مسارات دفعة واحدة (إحصاءات الزيارات): ServerValue.increment في طلب واحد، ومحلياً بإضافة 1
+  function bump(paths) {
+    paths = [...new Set(paths)];
+    if (!paths.length) return;
+    if (rootRef) {
+      const up = {}; paths.forEach(p => { up[parts(p).join('/')] = window.firebase.database.ServerValue.increment(1); });
+      rootRef.update(up).catch(() => {});
+    } else { paths.forEach(p => { state = setIn(state, p, (Number(getIn(state, p)) || 0) + 1); }); saveLocal(); }
+  }
+
   const remove = path => set(path, null);
 
   // زيادة ذرّية لعدّاد (أرقام العضوية) حتى لا يحصل مشرفان على الرقم نفسه
@@ -326,7 +336,7 @@ const Store = (() => {
   const subscribe = fn => { subs.add(fn); return () => subs.delete(fn); };
   const dump = () => JSON.parse(JSON.stringify(state || {}));
 
-  return { init, get, list, set, setConfirmed, pushConfirmed, update, remove, push, transaction, newId, subscribe, seedOnce, dump, setScope, watch, readOnce, secondaryAuth,
+  return { init, get, list, set, setConfirmed, pushConfirmed, update, remove, push, bump, transaction, newId, subscribe, seedOnce, dump, setScope, watch, readOnce, secondaryAuth,
     get auth() { return authApi; }, get hasAuth() { return !!authApi; }, get scope() { return scopeKey; },
     get mode() { return mode; }, get lastError() { return lastError; },
     get connected() { return connected; }, get everConnected() { return everConnected; }, get pending() { return pending; } };

@@ -209,6 +209,24 @@
           }
         }
       },
+      "analytics": {
+        "day": {
+          "$d": {
+            ".validate": "$d.matches(/^[0-9]{8}$/)",
+            "$m": {
+              ".write": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
+              ".validate": "$m.matches(/^(views|visits|visitors|newv|searches|contacts|joins|requests)$/)"
+            }
+          }
+        },
+        "$kind": {
+          ".validate": "$kind.matches(/^(page|ref|dev|browser|lang|hour|term|spec|region|event|utm)$/)",
+          "$k": {
+            ".write": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
+            ".validate": "$k.length <= 40"
+          }
+        }
+      },
       "private": {
         "$id": {
           ".read": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id)",

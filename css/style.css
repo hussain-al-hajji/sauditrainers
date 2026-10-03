@@ -1032,3 +1032,33 @@ input:checked + .cdot { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--g600); }
 .mail-bar { height: 8px; border-radius: 99px; background: var(--g100); overflow: hidden; margin-top: 10px; }
 .mail-bar span { display: block; height: 100%; background: linear-gradient(90deg, var(--g600), var(--g800)); }
 @media (max-width: 980px) { .mail-grid { grid-template-columns: 1fr; } .mail-prev { position: static; } .mail-att { grid-template-columns: 1fr; } .mblock-f { grid-template-columns: 1fr; } }
+
+/* ===== المؤشرات: إحصاءات الزيارات ===== */
+.an-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin: 6px 0 14px; }
+.an-head h3 { display: flex; gap: 10px; align-items: center; font-size: 1.2rem; margin: 0; }
+.an-head h3 i { color: var(--g600); }
+.an-per { display: inline-flex; gap: 4px; background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 4px; }
+.an-per button { border: 0; background: transparent; padding: 7px 16px; border-radius: 999px; font-family: var(--f-ui); font-weight: 600; cursor: pointer; color: var(--ink2); }
+.an-per button.on { background: var(--g800); color: #fff; }
+.an-ext-h { display: flex; justify-content: space-between; align-items: center; margin: 30px 0 4px; padding-top: 22px; border-top: 2px solid var(--line); }
+.an-ext-h h2 { font-size: 1.35rem; display: flex; gap: 10px; align-items: center; margin: 0; }
+.an-d { display: inline-flex; align-items: center; gap: 4px; width: fit-content; position: static; height: auto; font-family: var(--f-ui); font-size: .78rem; font-weight: 700; padding: 2px 9px; border-radius: 999px; margin-top: 6px; }
+.an-d.up { background: #E3F3EA; color: #0B7A45; } .an-d.down { background: #FBE9E7; color: #B3392C; } .an-d.flat { background: #EEF1EF; color: var(--muted); }
+.kpi.dark .an-d { background: rgba(255,255,255,.16); color: #EEF3E5; }
+.an-svg { width: 100%; height: auto; direction: ltr; display: block; margin-top: 8px; }
+.an-leg { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; font-family: var(--f-ui); font-size: .85rem; color: var(--ink2); }
+.an-leg i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-inline-end: 6px; vertical-align: -1px; }
+.an-donut { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+.an-donut ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; flex: 1; min-width: 150px; }
+.an-donut li { display: flex; align-items: center; gap: 8px; font-family: var(--f-ui); font-size: .9rem; }
+.an-donut li i { width: 12px; height: 12px; border-radius: 50%; flex: none; } .an-donut li span { flex: 1; } 
+.an-hours { display: flex; align-items: flex-end; gap: 5px; height: 130px; direction: ltr; margin-top: 12px; }
+.an-hours > div { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 4px; }
+.an-hours span { width: 100%; background: linear-gradient(180deg, var(--g600), var(--g800)); border-radius: 6px 6px 0 0; min-height: 3px; }
+.an-hours small { height: 14px; font-size: .7rem; color: var(--muted); }
+.an-funnel { display: grid; gap: 10px; margin-top: 12px; }
+.an-funnel > div { position: relative; padding: 11px 16px; border-radius: 12px; background: var(--g50); overflow: hidden; display: flex; justify-content: space-between; gap: 10px; font-family: var(--f-ui); }
+.an-funnel > div span { position: absolute; inset-block: 0; inset-inline-start: 0; background: rgba(19,133,80,.2); }
+.an-funnel b, .an-funnel em { position: relative; font-style: normal; }
+.an-h4 { margin: 12px 0 6px; font-size: .9rem; color: var(--muted); }
+.an-setup { border-style: dashed; }

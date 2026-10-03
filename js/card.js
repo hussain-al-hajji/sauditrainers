@@ -288,6 +288,7 @@ const Card = (() => {
     catch (e) { console.error(e); toast('تعذّر إنشاء صورة البطاقة (تأكد أن رابط الصورة متاح للعامة)', 'error'); }
   }
   async function share(t) {
+    Analytics.event('share');
     const url = profileUrl(t);
     const text = `تعرّف على المدرب ${t.name}${t.title ? ' — ' + t.title : ''} عبر منصة مدرّبون سعوديّون`;
     try {
