@@ -117,7 +117,7 @@ function plainMail(to, subject, body, cc) {
 // إشعار تلقائي للمسجّل فور تعبئة النموذج: تأكيد الاستلام وأن الطلب تحت الدراسة
 function sendReceivedEmail(id) {
   const a = db(`applications/${id}`);
-  if (!a || a.receivedEmailAt || !a.email || Date.now() - (a.ts || 0) > 3 * 864e5) return;
+  if (!a || a.receivedEmailAt || !a.email || Date.now() - (a.ts || 0) > 6 * 3600e3) return; // لا يُرسل تأكيد متأخر (أكثر من 6 ساعات)
   const t = Object.assign({}, DEFAULT_RECEIVED, db('settings/templates/received') || {});
   const vars = { name: a.name, first: String(a.name || '').replace(/^(د|م|أ)\.\s*/, '').split(/\s+/)[0], appId: a.id, statusUrl: `${CFG.SITE}#/status?id=${a.id}` };
   plainMail(a.email, fillTpl(t.subject, vars), fillTpl(t.body, vars));
