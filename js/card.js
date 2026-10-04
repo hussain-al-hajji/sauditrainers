@@ -208,9 +208,71 @@ const Card = (() => {
     const logo = tp.show.logo ? await loadImage(light ? LOGO.green : LOGO.cream) : null;
     if (logo) { const lh = 104, lw = lh * logo.width / logo.height; ctx.drawImage(logo, wide ? 96 : W - 96 - lw, top - 52, lw, lh); }
 
+    // ---------- تخطيط المحتوى: يتكيّف مع عدد التخصصات (حتى 6) وطول الاسم والعنوان ----------
+    const T = 70, limitY = tp.show.footer ? H - M - 14 - (wide ? 130 : 150) - 14 : H - M - 40;
+    const title = tp.show.title && t.title ? t.title : '';
+    const meta = tp.show.region ? regionsLabel(t, true, tp.maxRegions) : '';
+    const stats = !tp.show.stats ? [] : [[t.years, x0.years], [t.hours, x0.hours], [t.programs, x0.programs]].filter(s => Number(s[0]));
+    const chips = !tp.show.specs ? [] : Data.cardSpecs(t).slice(0, tp.maxSpecs).map(specName).filter(Boolean);
+    const packRows = (fs, maxW) => {
+      ctx.font = `600 ${fs}px ${UI}`; const rows = []; let row = [], rw = 0;
+      chips.forEach(sp => { const w = ctx.measureText(sp).width + 48; if (row.length && rw + 14 + w > maxW) { rows.push({ row, rw }); row = []; rw = 0; } rw += (row.length ? 14 : 0) + w; row.push({ sp, w }); });
+      if (row.length) rows.push({ row, rw });
+      return rows;
+    };
+    const nameTxt = t.name || '', nameW = (ns, str) => { ctx.font = `900 ${ns}px ${HEAD}`; return ctx.measureText(str).width; };
+    // الاسم: سطر واحد ما أمكن، وإلا سطران بحجم خط أصغر
+    const fitName = (maxW, big, oneMin, twoMin) => {
+      for (let ns = big; ns >= oneMin; ns -= 2) if (nameW(ns, nameTxt) <= maxW) return { lines: [nameTxt], ns };
+      for (let ns = Math.min(big, oneMin + 6); ns >= twoMin; ns -= 2) { ctx.font = `900 ${ns}px ${HEAD}`; const ls = wrap(ctx, nameTxt, maxW, 2); if (ls.length <= 2 && ls.every(l => ctx.measureText(l).width <= maxW)) return { lines: ls, ns }; }
+      for (let ns = twoMin; ns >= twoMin - 6; ns -= 2) { ctx.font = `900 ${ns}px ${HEAD}`; const ls = wrap(ctx, nameTxt, maxW, 3); if (ls.every(l => ctx.measureText(l).width <= maxW)) return { lines: ls, ns }; }   // أسماء طويلة جداً: ثلاثة أسطر
+      ctx.font = `900 ${twoMin - 6}px ${HEAD}`; return { lines: wrap(ctx, nameTxt, maxW, 3), ns: twoMin - 6 };
+    };
+    const bigName = Math.round((wide ? 64 : String(t.name || '').length > 22 ? 56 : 66) * tp.nameScale / 100);
+    const pillH = f => f + 30, rowH = f => f + 44;
+    const D0 = wide ? 380 : format === 'story' ? 470 : 360, gap0 = format === 'story' ? 150 : 96;
+    let wideLoc = 38, D, cx, cy, fs, rows, nm, tl = [], colW, ax, y0 = 0;
+
+    if (!wide) {
+      colW = W - 260; ax = W / 2;
+      nm = fitName(colW, bigName, 44, 36);
+      ctx.font = `600 32px ${BODY}`; tl = title ? wrap(ctx, title, colW, 2) : [];
+      const endY = (d, f, n) => {
+        let y = top + gap0 * d / D0 + d + 104 + (nm.lines.length - 1) * nm.ns * 1.15;
+        if (tl.length) y += 66 + 52 * (tl.length - 1);
+        if (meta) y += 72;
+        if (stats.length) y += 44 + 112;
+        if (n) y += 40 + (n - 1) * rowH(f) + pillH(f);
+        return y;
+      };
+      let ok = false;
+      for (const [f, dmin] of [[26, 320], [24, 300], [22, 260], [22, 220]]) {
+        const r = packRows(f, W - 220);
+        for (let d = D0; d >= Math.min(dmin, D0); d -= 10) if (endY(d, f, r.length) <= limitY) { D = d; fs = f; rows = r; ok = true; break; }
+        if (ok) break;
+      }
+      if (!ok) { D = 220; fs = 22; rows = packRows(22, W - 220); }
+      cx = W / 2; cy = top + gap0 * D / D0 + D / 2;
+    } else {
+      // العرضي: الصورة والاسم والموقع في عمود على اليمين، والعنوان والإحصاءات والتخصصات على يسارها
+      const pw = 580, colR = W - 110;
+      cx = colR - pw / 2; nm = fitName(pw, bigName, 52, 38);
+      ctx.font = `700 36px ${UI}`; const ml = meta ? ctx.measureText(meta).width : 0, locSz = ml > pw - 50 ? 30 : 36;
+      const below = 24 + 0.95 * nm.ns + (nm.lines.length - 1) * nm.ns * 1.12 + (meta ? 58 : 0) + 12;
+      D = Math.max(240, Math.min(D0, limitY - T - 32 - below));
+      const used = 32 + D + below, off = Math.max(0, (limitY - T - used) / 2);
+      cy = T + off + 16 + D / 2; wideLoc = locSz;
+      ax = cx - pw / 2 - 50; colW = ax - 96;
+      ctx.font = `600 34px ${BODY}`; tl = title ? wrap(ctx, title, colW, 2) : [];
+      const lo = 170, avail = limitY - lo;
+      const need = f => { const n = rows.length; return (tl.length ? 34 + 52 * (tl.length - 1) + 14 : 0) + (stats.length ? 22 + 112 : 0) + (n ? 30 + (n - 1) * rowH(f) + pillH(f) : 0); };
+      let h = 0;
+      for (const f of [25, 23, 21]) { fs = f; rows = packRows(f, colW); h = need(f); if (h <= avail) break; }
+      y0 = lo + Math.max(0, (avail - h) / 2);
+    }
+    const locSz = wideLoc;
+
     // الصورة الدائرية
-    const D = wide ? 380 : format === 'story' ? 470 : 360;
-    const cx = wide ? W - 100 - 16 - D / 2 : W / 2, cy = wide ? 66 + (H - M - 14 - 130 - 66) / 2 + 6 : top + (format === 'story' ? 150 : 96) + D / 2;
     ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 50; ctx.shadowOffsetY = 18;
     ctx.beginPath(); ctx.arc(cx, cy, D / 2 + 16, 0, Math.PI * 2); ctx.fillStyle = th.accent; ctx.fill(); ctx.restore();
     ctx.beginPath(); ctx.arc(cx, cy, D / 2 + 6, 0, Math.PI * 2); ctx.fillStyle = th.b; ctx.fill();
@@ -238,59 +300,54 @@ const Card = (() => {
     // شارة التوثيق
     if (tp.show.badge) {
       const bx = cx + D * 0.36, by = cy + D * 0.36;
-      ctx.fillStyle = th.accent; seal(ctx, bx, by, 44); ctx.fill();
+      ctx.fillStyle = th.accent; seal(ctx, bx, by, wide ? 38 : 44); ctx.fill();
       ctx.strokeStyle = light ? '#FFFFFF' : th.b; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
       ctx.beginPath(); ctx.moveTo(bx - 13, by + 1); ctx.lineTo(bx - 3, by + 11); ctx.lineTo(bx + 15, by - 10); ctx.stroke();
     }
 
-    // الاسم والسطر التعريفي والمنطقة والإحصاءات والتخصصات (تتوسط في العمودي، وتحاذي يمين العمود في العرضي)
-    const ax = wide ? cx - D / 2 - 70 : W / 2, colW = wide ? ax - 96 : W - 260;
-    ctx.textAlign = wide ? 'right' : 'center';
-    let y = wide ? 238 : cy + D / 2 + 104;
-    let ns = Math.round((wide ? 76 : String(t.name || '').length > 22 ? 56 : 66) * tp.nameScale / 100);
-    ctx.fillStyle = fg; ctx.font = `900 ${ns}px ${HEAD}`;
-    while (ns > 36 && ctx.measureText(t.name || '').width > colW) { ns -= 4; ctx.font = `900 ${ns}px ${HEAD}`; }
-    ctx.fillText(t.name || '', ax, y);
-    if (tp.show.title && t.title) {
-      ctx.font = `600 ${wide ? 34 : 32}px ${BODY}`; ctx.fillStyle = th.accent;
-      wrap(ctx, t.title, colW, 2).forEach((l, i) => { y += i ? 52 : 66; ctx.fillText(l, ax, y); });
-    }
-    const meta = tp.show.region ? regionsLabel(t, true, tp.maxRegions) : '';
-    if (meta) {
-      y += wide ? 76 : 72; ctx.font = `700 ${wide ? 36 : 38}px ${UI}`; ctx.fillStyle = hex(fg, 0.92);
-      const mw = ctx.measureText(meta).width, pr = ax + (wide ? 0 : mw / 2 + 40);
-      ctx.textAlign = 'right'; ctx.fillText(meta, wide ? ax - 48 : W / 2 + mw / 2, y);
-      pin(ctx, wide ? ax - 17 : pr - 8, y - 10, 1.15, th.accent);
-      ctx.textAlign = wide ? 'right' : 'center';
-    }
-
-    const stats = !tp.show.stats ? [] : [[t.years, x0.years], [t.hours, x0.hours], [t.programs, x0.programs]].filter(s => Number(s[0]));
-    if (stats.length) {
-      y += wide ? 40 : 44;
-      const bw = wide ? 210 : 250, bh = wide ? 112 : 112, gap = wide ? 20 : 24, total = stats.length * bw + (stats.length - 1) * gap;
-      let x = wide ? ax : W / 2 + total / 2;
+    // الاسم (تحت الصورة دائماً) ثم الموقع
+    const drawName = (x, y) => {
+      ctx.textAlign = 'center'; ctx.fillStyle = fg; ctx.font = `900 ${nm.ns}px ${HEAD}`;
+      nm.lines.forEach((l, i) => ctx.fillText(l, x, y + i * nm.ns * 1.15));
+      return y + (nm.lines.length - 1) * nm.ns * 1.15;
+    };
+    const drawMeta = (x, y, sz) => {
+      ctx.font = `700 ${sz}px ${UI}`; ctx.fillStyle = hex(fg, 0.92);
+      const mw = ctx.measureText(meta).width, sh = wide ? -16 : 0;
+      ctx.textAlign = 'right'; ctx.fillText(meta, x + mw / 2 + sh, y);
+      pin(ctx, x + mw / 2 + sh + 32 - 8 + 8, y - 10, wide ? 1 : 1.15, th.accent);
       ctx.textAlign = 'center';
+    };
+    const stat = (x, y, bw, bh) => {
+      let sx = x;
       stats.forEach(([v, l]) => {
-        rr(ctx, x - bw, y, bw, bh, 24); ctx.fillStyle = hex(fg, 0.08); ctx.fill(); ctx.strokeStyle = hex(th.accent, 0.4); ctx.lineWidth = 1.5; ctx.stroke();
-        ctx.fillStyle = fg; ctx.font = `900 ${wide ? 44 : 50}px ${HEAD}`; ctx.direction = 'ltr'; ctx.fillText(`${fmtNum(v)}+`, x - bw / 2, y + bh * 0.5); ctx.direction = 'rtl';
-        ctx.fillStyle = hex(fg, 0.72); ctx.font = `500 ${wide ? 22 : 24}px ${UI}`; ctx.fillText(l, x - bw / 2, y + bh - 20);
-        x -= bw + gap;
+        rr(ctx, sx - bw, y, bw, bh, 24); ctx.fillStyle = hex(fg, 0.08); ctx.fill(); ctx.strokeStyle = hex(th.accent, 0.4); ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.textAlign = 'center'; ctx.fillStyle = fg; ctx.font = `900 ${wide ? 44 : 50}px ${HEAD}`; ctx.direction = 'ltr'; ctx.fillText(`${fmtNum(v)}+`, sx - bw / 2, y + bh * 0.5); ctx.direction = 'rtl';
+        ctx.fillStyle = hex(fg, 0.72); ctx.font = `500 ${wide ? 22 : 24}px ${UI}`; ctx.fillText(l, sx - bw / 2, y + bh - 20);
+        sx -= bw + (wide ? 20 : 24);
       });
-      y += bh;
-    }
+    };
+    const drawChips = (startX, y) => {
+      ctx.font = `600 ${fs}px ${UI}`; ctx.textAlign = 'center';
+      rows.forEach((r, i) => {
+        let cxr = startX === 'center' ? W / 2 + r.rw / 2 : startX; const ry = y + i * rowH(fs);
+        r.row.forEach(it => { rr(ctx, cxr - it.w, ry, it.w, pillH(fs), pillH(fs) / 2); ctx.fillStyle = hex(th.accent, light ? 0.1 : 0.14); ctx.fill(); ctx.strokeStyle = hex(th.accent, 0.5); ctx.lineWidth = 1.5; ctx.stroke(); ctx.fillStyle = fg; ctx.fillText(it.sp, cxr - it.w / 2, ry + pillH(fs) * 0.66); cxr -= it.w + 14; });
+      });
+    };
 
-    const sp = !tp.show.specs ? [] : Data.cardSpecs(t).slice(0, Math.min(tp.maxSpecs, format === 'story' ? 6 : 4)).map(specName);
-    if (sp.length) {
-      y += wide ? 34 : 40; ctx.font = `600 ${wide ? 25 : 26}px ${UI}`; ctx.textAlign = 'center';
-      const rows = []; let row = [], rw = 0; const maxW = wide ? colW : W - 220;
-      sp.forEach(s => { const w = ctx.measureText(s).width + 48; if (row.length && rw + 14 + w > maxW) { rows.push({ row, rw }); row = []; rw = 0; } rw += (row.length ? 14 : 0) + w; row.push({ s, w }); });
-      if (row.length) rows.push({ row, rw });
-      const limitY = tp.show.footer ? H - M - 14 - (wide ? 130 : 150) - 24 : H - M - 40, rowH = wide ? 64 : 70;
-      rows.slice(0, wide ? 2 : 3).filter((_, i) => y + (i + 1) * rowH - 14 <= limitY).forEach(r => {
-        let x = wide ? ax : W / 2 + r.rw / 2;
-        r.row.forEach(it => { rr(ctx, x - it.w, y, it.w, wide ? 52 : 56, 28); ctx.fillStyle = hex(th.accent, light ? 0.1 : 0.14); ctx.fill(); ctx.strokeStyle = hex(th.accent, 0.5); ctx.lineWidth = 1.5; ctx.stroke(); ctx.fillStyle = fg; ctx.fillText(it.s, x - it.w / 2, y + (wide ? 35 : 37)); x -= it.w + 14; });
-        y += wide ? 64 : 70;
-      });
+    if (!wide) {
+      let y = drawName(ax, cy + D / 2 + 104);
+      if (tl.length) { ctx.font = `600 32px ${BODY}`; ctx.fillStyle = th.accent; ctx.textAlign = 'center'; tl.forEach((l, i) => { y += i ? 52 : 66; ctx.fillText(l, ax, y); }); }
+      if (meta) { y += 72; drawMeta(ax, y, 38); }
+      if (stats.length) { y += 44; stat(W / 2 + (stats.length * 250 + (stats.length - 1) * 24) / 2, y, 250, 112); y += 112; }
+      if (rows.length) { y += 40; drawChips('center', y); }
+    } else {
+      const ny = drawName(cx, cy + D / 2 + 24 + 0.95 * nm.ns);
+      if (meta) drawMeta(cx, ny + 58, locSz);
+      let c = y0;
+      if (tl.length) { ctx.font = `600 34px ${BODY}`; ctx.fillStyle = th.accent; ctx.textAlign = 'right'; tl.forEach((l, i) => ctx.fillText(l, ax, c + 34 + i * 52)); c += 34 + 52 * (tl.length - 1) + 14; }
+      if (stats.length) { c += 22; stat(ax, c, 210, 112); c += 112; }
+      if (rows.length) { c += 30; drawChips(ax, c); }
     }
 
     // التذييل: رمز QR + الرابط (التواصل عبر المنصة)
