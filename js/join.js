@@ -14,6 +14,7 @@ Pages.join = {
     return `
     <section class="page-head"><div class="wrap"><div class="crumbs"><a href="#/">الرئيسية</a> / سجّل كمدرب سعودي</div><h1>سجّل كمدرّب سعودي</h1><p>${nav.length} خطوات، وترى بطاقتك التعريفية تتشكّل أمامك لحظة بلحظة. يُحفظ تقدّمك تلقائياً على جهازك.</p></div></section>
     <div class="wrap" style="margin-top:-30px;position:relative">
+      ${PromoSlides.html()}
       <div class="cards3" style="margin-bottom:26px">
         <div class="icard reveal"><div class="ic"><i class="fa-solid fa-list-check"></i></div><h3>المتطلبات</h3><ul style="margin:0;padding-inline-start:18px;color:var(--ink2)">${lines(c.join.requirements).map(r => `<li>${esc(r)}</li>`).join('')}</ul></div>
         <div class="icard reveal" style="--d:160ms"><div class="ic"><i class="fa-solid fa-receipt"></i></div><h3><span class="num">${esc(c.join.fee)}</span> ريال</h3><p><b>${esc(c.join.feeNote)}</b> — ${esc(c.join.period)}.<br><span class="small muted">لا يُطلب السداد إلا بعد قبول الطلب.</span></p></div>
@@ -32,6 +33,7 @@ Pages.join = {
     </div>`;
   },
   mount(root) {
+    PromoSlides.mount(root);
     const c = Data.content();
     let draft = {};
     try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || '{}') || {}; } catch { draft = {}; }
