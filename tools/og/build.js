@@ -8,7 +8,7 @@
 const fs = require('fs'), path = require('path'), crypto = require('crypto'), http = require('http');
 const ROOT = path.resolve(__dirname, '../..');
 const CHECK = process.argv.includes('--check'), LOCAL = !!process.env.OG_LOCAL;
-const VERSION = 'og-3';
+const VERSION = 'og-3';   // يتغير توقيع الشيفرة أيضاً عند تعديل js/seo.js
 
 const cfgSrc = fs.readFileSync(path.join(ROOT, 'js/config.js'), 'utf8');
 const CFG = (() => { const w = {}; new Function('window', cfgSrc)(w); return w.ST_CONFIG; })();
@@ -19,12 +19,12 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': 
 const fetchJson = async p => { const r = await fetch(`${DB}/${p}.json`); if (!r.ok) throw new Error(`${p}: ${r.status}`); return r.json(); };
 const manifestPath = path.join(ROOT, 'og/manifest.json');
 const readManifest = () => { try { return JSON.parse(fs.readFileSync(manifestPath, 'utf8')); } catch { return { sig: '', trainers: {} }; } };
-const codeSig = () => sha(['js/card.js', 'js/data.js', 'tools/og/build.js'].map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('|') + VERSION);
+const codeSig = (withSeo = true) => sha(['js/card.js', 'js/data.js', ...(withSeo ? ['js/seo.js'] : []), 'tools/og/build.js'].map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('|') + VERSION);
 
 (async () => {
   if (CHECK) {
-    const [trainers, slugs, content] = await Promise.all([fetchJson('trainers'), fetchJson('slugs'), fetchJson('content/cardTemplate').catch(() => null)]);
-    const sig = sha(JSON.stringify([trainers, slugs, content]) + codeSig());
+    const [trainers, slugs, content, seo] = await Promise.all([fetchJson('trainers'), fetchJson('slugs'), fetchJson('content/cardTemplate').catch(() => null), fetchJson('content/seo').catch(() => null)]);
+    const sig = sha(JSON.stringify([trainers, slugs, content, seo]) + codeSig());
     const changed = sig !== readManifest().sig;
     console.log(`changed=${changed}`);
     if (process.env.GITHUB_OUTPUT) fs.appendFileSync(process.env.GITHUB_OUTPUT, `changed=${changed}\n`);
@@ -50,14 +50,14 @@ const codeSig = () => sha(['js/card.js', 'js/data.js', 'tools/og/build.js'].map(
 
   const data = await page.evaluate(() => {
     const live = Data.live().map(t => ({ id: t.id, slug: t.slug || t.id, name: t.name, title: t.title || '', region: regionsLabel(t), hash: JSON.stringify([t, cardTemplate()]) }));
-    return { live, slugs: Store.get('slugs') || {}, tpl: JSON.stringify(cardTemplate()) };
+    return { live, slugs: Store.get('slugs') || {}, tpl: JSON.stringify(cardTemplate()), seo: JSON.stringify(Store.get('content/seo') || null) };
   });
-  const sig = sha(JSON.stringify([data.live.map(t => t.hash), data.slugs, data.tpl]) + codeSig());
+  const sig = sha(JSON.stringify([data.live.map(t => t.hash), data.slugs, data.tpl, data.seo]) + codeSig());
   const man = readManifest(), nextMan = { sig, trainers: {} };
   fs.mkdirSync(path.join(ROOT, 'og'), { recursive: true });
 
   for (const t of data.live) {
-    const h = sha(t.hash + codeSig()), file = path.join(ROOT, `og/${t.id}.jpg`);
+    const h = sha(t.hash + codeSig(false)), file = path.join(ROOT, `og/${t.id}.jpg`);
     nextMan.trainers[t.id] = h;
     if (man.trainers[t.id] === h && fs.existsSync(file)) continue;
     let url = null;
@@ -81,34 +81,36 @@ const codeSig = () => sha(['js/card.js', 'js/data.js', 'tools/og/build.js'].map(
   Object.entries(data.slugs).forEach(([s, id]) => { if (byId[id] && !pages.has(s)) pages.set(s, byId[id]); });
   const tdir = path.join(ROOT, 't');
   fs.rmSync(tdir, { recursive: true, force: true });
+  // وسوم الـ SEO والمحتوى من نفس شيفرة الموقع (js/seo.js) وإعدادات الإدارة (content/seo)
+  const seo = await page.evaluate(({ base }) => {
+    const trainers = {}; Data.live().forEach(t => { trainers[t.id] = { head: SEO.trainerHead(t, base), body: SEO.trainerBody(t, base) }; });
+    return { trainers, home: SEO.homeBlock(base), robots: SEO.robotsTxt(base), sitemap: SEO.sitemapXml(base, Data.live()) };
+  }, { base: SITE });
   for (const [slug, t] of pages) {
-    const cur = t.slug, url = `${SITE}t/${cur}/`, img = `${SITE}og/${t.id}.jpg`;
-    const title = `${t.name} | مدرّبون سعوديّون`, desc = [t.title, t.region && `المنطقة: ${t.region}`, 'منصة مدرّبون سعوديّون لتسويق خبرات المدربين السعوديين'].filter(Boolean).join(' — ').slice(0, 220);
+    const cur = t.slug, ts = seo.trainers[t.id];
     const html = `<!doctype html>
 <html lang="ar" dir="rtl"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>${esc(title)}</title>
-<meta name="description" content="${esc(desc)}">
-<link rel="canonical" href="${esc(url)}">
-<meta property="og:type" content="profile"><meta property="og:site_name" content="مدرّبون سعوديّون"><meta property="og:locale" content="ar_SA">
-<meta property="og:title" content="${esc(title)}"><meta property="og:description" content="${esc(desc)}"><meta property="og:url" content="${esc(url)}">
-<meta property="og:image" content="${esc(img)}"><meta property="og:image:type" content="image/jpeg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="675"><meta property="og:image:alt" content="${esc('بطاقة ' + t.name)}">
-<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="${esc(title)}"><meta name="twitter:description" content="${esc(desc)}"><meta name="twitter:image" content="${esc(img)}">
-<meta name="theme-color" content="#005430">
+${ts.head}
 <link rel="icon" type="image/png" href="../../assets/favicon.png">
 <script>location.replace('../../#/t/${encodeURIComponent(cur)}' + location.search);</script>
 <noscript><meta http-equiv="refresh" content="0;url=../../#/t/${esc(encodeURIComponent(cur))}"></noscript>
 </head><body style="font-family:Tahoma,Arial,sans-serif;text-align:center;padding:40px;color:#0D2418">
-<h1>${esc(t.name)}</h1><p>${esc(t.title)}</p><p><a href="../../#/t/${esc(encodeURIComponent(cur))}">فتح بطاقة المدرب في منصة مدرّبون سعوديّون</a></p>
+${ts.body}
 </body></html>
 `;
     fs.mkdirSync(path.join(tdir, slug), { recursive: true });
     fs.writeFileSync(path.join(tdir, slug, 'index.html'), html);
   }
+  // وسوم الصفحة الرئيسية داخل index.html بين <!--seo:start--> و<!--seo:end--> فقط (وبشرط وجود عنوان صالح)
+  const idx = path.join(ROOT, 'index.html'), cur0 = fs.readFileSync(idx, 'utf8');
+  if (/<!--seo:start-->[\s\S]*?<!--seo:end-->/.test(cur0) && /<title>[^<]+<\/title>/.test(seo.home)) {
+    const next = cur0.replace(/<!--seo:start-->[\s\S]*?<!--seo:end-->/, () => `<!--seo:start-->\n${seo.home.replace(/^/gm, '  ')}\n  <!--seo:end-->`);
+    if (next !== cur0) fs.writeFileSync(idx, next);
+  }
   // خريطة الموقع (للفهرسة) وملف robots
-  const urls = [SITE, ...data.live.map(t => `${SITE}t/${t.slug}/`)];
-  fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(u => `  <url><loc>${esc(u)}</loc></url>`).join('\n')}\n</urlset>\n`);
-  fs.writeFileSync(path.join(ROOT, 'robots.txt'), `User-agent: *\nAllow: /\nSitemap: ${SITE}sitemap.xml\n`);
+  fs.writeFileSync(path.join(ROOT, 'sitemap.xml'), seo.sitemap);
+  fs.writeFileSync(path.join(ROOT, 'robots.txt'), seo.robots);
   fs.writeFileSync(manifestPath, JSON.stringify(nextMan, null, 1));
   console.log(`تم: ${data.live.length} مدرب، ${pages.size} صفحة`);
   await b.close(); srv.close();

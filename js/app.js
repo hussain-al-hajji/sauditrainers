@@ -73,7 +73,7 @@ const App = (() => {
     const y = app.dataset.page === page + (arg || '') ? scrollY : 0;
     app.dataset.page = page + (arg || '');
     app.innerHTML = `${header(page)}<main id="view">${P.render(params, arg)}</main>${['me', 'admin'].includes(page) ? '' : footer()}${Store.mode === 'local' ? '<div class="local-flag"><i class="fa-solid fa-flask"></i> وضع التجربة المحلي</div>' : ''}`;
-    if (page !== 'profile') document.title = 'مدرّبون سعوديّون | منصة تسويق خبرات المدربين السعوديين';
+    if (page !== 'profile') SEO.apply(page);
     const view = $('#view');
     P.mount && P.mount(view, params, arg);
     reveal(app); tilt(app);

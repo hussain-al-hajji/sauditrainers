@@ -616,5 +616,5 @@ const Card = (() => {
     m.el.querySelectorAll('[data-img]').forEach(b => { b.onclick = () => save(t, b.dataset.img); });
   }
 
-  return { full, mini, avatar, symbol, fit, imgStyle, save, share, shareSheet, shareIcons, shareTo, memberPost, xLen, SHARE_DEFAULTS, SHARE_VARS, render, toJPEG, themeVars };
+  return { full, mini, avatar, symbol, fit, imgStyle, save, share, shareSheet, shareIcons, shareTo, memberPost, fillShare, xLen, SHARE_DEFAULTS, SHARE_VARS, render, toJPEG, themeVars };
 })();

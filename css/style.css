@@ -1111,3 +1111,10 @@ body.preview .local-flag { display: none; }
 .pa-ic { flex: none; width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--line); background: #fff; color: var(--g700, #006a3c); font-size: 1.1rem; cursor: pointer; display: grid; place-items: center; transition: transform .2s, box-shadow .2s; }
 .pa-ic:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0, 0, 0, .14); }
 .profile-actions > p { margin-top: 8px !important; }
+
+/* SEO */
+.seo-cnt { font-family: var(--f-ui); color: var(--muted); } .seo-cnt.warn, .seo-w { color: var(--bad, #b3261e); font-weight: 700; }
+.serp { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; background: #fff; direction: rtl; font-family: Arial, sans-serif; }
+.serp-u { font-size: .78rem; color: #4d5156; direction: ltr; text-align: right; } .serp-t { font-size: 1.12rem; color: #1a0dab; margin: 2px 0; } .serp-d { font-size: .86rem; color: #4d5156; line-height: 1.5; }
+.seo-issues { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 6px; } .seo-issues li { padding: 8px 12px; border-radius: 10px; background: var(--paper); border: 1px solid var(--line); font-size: .9rem; }
+.seo-issues li.bad { border-color: #e6a7a2; background: #fdf1f0; } .seo-issues li.warn { border-color: #e8d28b; background: #fffaea; } .seo-issues a { margin-inline-start: 8px; font-weight: 700; }

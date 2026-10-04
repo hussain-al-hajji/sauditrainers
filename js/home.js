@@ -224,7 +224,7 @@ Pages.profile = {
     // رابط قديم (قبل تغيير الاسم الإنجليزي): نحدّث شريط العنوان إلى الرابط الحالي دون إعادة تحميل
     const asked = decodeURIComponent(slug || '');
     if (t.slug && asked !== t.slug && asked !== t.id) history.replaceState(null, '', `#/t/${encodeURIComponent(t.slug)}`);
-    document.title = `${t.name} | مدرّبون سعوديّون`;
+    SEO.apply('profile', t);
     if (!Auth.current()) Data.track('views', t.id);
     $$('[data-sp]', root).forEach(b => b.onclick = () => Card.shareTo(t, b.dataset.sp));
     $('#cpl', root) && ($('#cpl', root).onclick = () => copyText(profileUrl(t), 'تم نسخ رابط الصفحة'));
