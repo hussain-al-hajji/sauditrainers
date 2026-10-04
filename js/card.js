@@ -154,6 +154,27 @@ const Card = (() => {
   // أبعاد صور المشاركة: منشور 4:5، قصة 9:16، وعرضي 16:9
   const SIZES = { post: [1080, 1350], story: [1080, 1920], wide: [1600, 900] };
 
+  // نقش الخلفية يُرسم مباشرة على لوحة (دون تحميل SVG كصورة) لأن Safari يعدّ اللوحة «ملوّثة» وفيها صورة SVG فيرفض تصديرها
+  function patternTile(color, opacity) {
+    const S = Pattern.TILE, tc = document.createElement('canvas'); tc.width = tc.height = S;
+    const c = tc.getContext('2d'), doc = new DOMParser().parseFromString(Pattern.svg(color, opacity), 'image/svg+xml');
+    const rgb = hex(color, opacity);
+    c.strokeStyle = rgb; c.lineWidth = 1.15; c.lineCap = 'round'; c.lineJoin = 'round';
+    doc.querySelectorAll('g > g').forEach(g => {
+      const m = /translate\(([\d.-]+) ([\d.-]+)\) rotate\(([\d.-]+)\) scale\(([\d.]+)\)/.exec(g.getAttribute('transform') || '');
+      if (!m) return;
+      c.save(); c.translate(+m[1], +m[2]); c.rotate(+m[3] * Math.PI / 180); c.scale(+m[4], +m[4]); c.translate(-12, -12); c.lineWidth = 1.15;
+      g.querySelectorAll('path,rect,circle').forEach(el => {
+        const n = k => parseFloat(el.getAttribute(k) || 0);
+        if (el.tagName === 'path') c.stroke(new Path2D(el.getAttribute('d')));
+        else if (el.tagName === 'rect') { rr(c, n('x'), n('y'), n('width'), n('height'), n('rx')); c.stroke(); }
+        else { c.beginPath(); c.arc(n('cx'), n('cy'), n('r'), 0, Math.PI * 2); c.stroke(); }
+      });
+      c.restore();
+    });
+    return tc;
+  }
+
   async function render(t, format = 'post', tpl) {
     const tp = tpl || cardTemplate(), x0 = tp.text;
     const HEAD = fontCss(tp.fonts.name), BODY = fontCss(tp.fonts.body), UI = BODY, BRAND = fontCss(tp.fonts.brand);
@@ -173,7 +194,8 @@ const Card = (() => {
     const glow = ctx.createRadialGradient(gx, gy, 20, gx, gy, W * 0.8);
     glow.addColorStop(0, hex(th.c, light ? 0.35 : 0.55)); glow.addColorStop(1, hex(th.c, 0));
     ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
-    const tile = plain || !tp.show.pattern || !tp.patternOpacity ? null : await loadImage(Pattern.url(light ? '#005430' : th.accent, light ? 0.1 : 0.11));
+    let tile = null;
+    if (!plain && tp.show.pattern && tp.patternOpacity) { try { tile = patternTile(light ? '#005430' : th.accent, light ? 0.1 : 0.11); } catch (e) { console.warn('pattern', e); } }
     if (tile) { ctx.save(); ctx.fillStyle = ctx.createPattern(tile, 'repeat'); ctx.fillRect(0, 0, W, H); ctx.restore(); }
 
     // إطار مزدوج بلون الهوية
