@@ -109,15 +109,18 @@ function fetchFirebaseUsage() {
 /* ===================== التحديث ===================== */
 // يُستدعى من المؤقّت (كل ساعتين) ومن زر «تحديث الآن» في لوحة الإدارة (action: analytics)
 function refreshAnalytics() {
-  gaOk = false;
+  gaOk = false; let gscData = null;
   [['ga', fetchGa], ['gsc', fetchGsc]].forEach(function (p) {
     let data;
     try { data = p[1](); }
     catch (err) { console.error(p[0], err); data = { updatedAt: Date.now(), error: String(err.message || err).slice(0, 240) }; }
     if (data) db('analytics_ext/' + p[0], 'put', data);
     if (p[0] === 'ga' && data && data.periods) platformFromGa(data);
+    if (p[0] === 'gsc' && data && data.periods) gscData = data;
   });
   if (!gaOk) platformFromOwn();
+  // ظهور المنصة في نتائج بحث Google (أقصى مدة يتيحها Search Console نحو 16 شهراً) يُضاف لملخص المنصة الذي يراه المدربون
+  if (gscData && gscData.periods.all) { try { db('stats/platform', 'patch', { impressionsAll: gscData.periods.all.totals.impressions, clicksAll: gscData.periods.all.totals.clicks, impressionsSince: (gscData.periods.all.range || {}).start || '' }); } catch (e) { console.error('platform impressions', e); } }
   try { db('analytics_ext/firebase', 'put', fetchFirebaseUsage()); } catch (e) { console.error('firebase usage', e); }
 }
 let gaOk = false;
