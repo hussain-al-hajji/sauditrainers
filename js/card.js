@@ -76,7 +76,7 @@ const Card = (() => {
   const UI = "'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif";
   const BODY = "'Noto Sans Arabic', 'IBM Plex Sans Arabic', sans-serif";
 
-  let bust = false;   // إعادة المحاولة بمعامل جديد يتجاوز نسخة الصورة المخزّنة في المتصفح دون ترويسات CORS (سبب شائع في Safari)
+  let bust = false, plain = false;   // إعادة المحاولة بمعامل جديد يتجاوز نسخة الصورة المخزّنة في المتصفح دون ترويسات CORS (سبب شائع في Safari)
   function loadImage(src) {
     return new Promise(res => {
       if (!src) return res(null);
@@ -136,7 +136,7 @@ const Card = (() => {
   async function render(t, format = 'post', tpl) {
     const tp = tpl || cardTemplate(), x0 = tp.text;
     const HEAD = fontCss(tp.fonts.name), BODY = fontCss(tp.fonts.body), UI = BODY, BRAND = fontCss(tp.fonts.brand);
-    await ensureFonts(tp);
+    await Promise.race([ensureFonts(tp), new Promise(r => setTimeout(r, 6000))]);   // لا نعلّق إن تأخرت الخطوط
     const hasQR = await ensureQR();
     const th = themed(t, tp), light = !!th.light, fg = th.fg;
     const wide = format === 'wide', [W, H] = SIZES[format] || SIZES.post;
@@ -152,7 +152,7 @@ const Card = (() => {
     const glow = ctx.createRadialGradient(gx, gy, 20, gx, gy, W * 0.8);
     glow.addColorStop(0, hex(th.c, light ? 0.35 : 0.55)); glow.addColorStop(1, hex(th.c, 0));
     ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
-    const tile = !tp.show.pattern || !tp.patternOpacity ? null : await loadImage(Pattern.url(light ? '#005430' : th.accent, light ? 0.1 : 0.11));
+    const tile = plain || !tp.show.pattern || !tp.patternOpacity ? null : await loadImage(Pattern.url(light ? '#005430' : th.accent, light ? 0.1 : 0.11));
     if (tile) { ctx.save(); ctx.fillStyle = ctx.createPattern(tile, 'repeat'); ctx.fillRect(0, 0, W, H); ctx.restore(); }
 
     // إطار مزدوج بلون الهوية
@@ -280,13 +280,14 @@ const Card = (() => {
   // رسم قابل للتصدير: إن كانت الصورة تُلوّث اللوحة (سياسة CORS) نعيد المحاولة بتجاوز الكاش، ثم بدون الصورة مع تنبيه
   const exportable = cv => { try { cv.getContext('2d').getImageData(0, 0, 1, 1); return true; } catch { return false; } };
   async function renderSafe(t, format, tpl) {
-    for (const attempt of ['normal', 'bust', 'nophoto']) {
-      bust = attempt === 'bust';
+    // 4 محاولات: عادي، تجاوز الكاش، بلا صورة، ثم نسخة مبسّطة (بلا صورة ولا نقش) للمتصفحات الأضعف (Safari)
+    for (const attempt of ['normal', 'bust', 'nophoto', 'plain']) {
+      bust = attempt === 'bust'; plain = attempt === 'plain';
       try {
-        const cv = await render(attempt === 'nophoto' ? { ...t, noPhoto: true } : t, format, tpl);
-        if (exportable(cv)) { if (attempt === 'nophoto') cv.photoFailed = true; return cv; }
-      } catch (e) { console.warn('card render', attempt, e); if (attempt === 'nophoto') throw e; }
-      finally { bust = false; }
+        const cv = await render(attempt === 'nophoto' || attempt === 'plain' ? { ...t, noPhoto: true } : t, format, tpl);
+        if (exportable(cv)) { if (attempt === 'nophoto' || attempt === 'plain') cv.photoFailed = !t.noPhoto && !!t.photoUrl; return cv; }
+      } catch (e) { console.warn('card render', attempt, e); if (attempt === 'plain') throw e; }
+      finally { bust = false; plain = false; }
     }
     throw new Error('card render failed');
   }
@@ -303,10 +304,25 @@ const Card = (() => {
     const cv = await renderSafe(t, format);
     return { data: cv.toDataURL('image/jpeg', 0.86), photoFailed: cv.photoFailed };
   }
+  const isApple = /iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1) || (/^((?!chrome|android|crios|fxios|edg).)*safari/i.test(navigator.userAgent));
+  // نافذة معاينة: على Safari يضمن ذلك الحفظ (ضغطة مطولة على الصورة أو زر المشاركة) حين يتعذر التنزيل المباشر
+  function previewModal(blob, name) {
+    const url = URL.createObjectURL(blob), file = new File([blob], name, { type: 'image/png' });
+    const canShare = !!(navigator.canShare && navigator.canShare({ files: [file] }));
+    const m = modal(`<h3><i class="fa-solid fa-image"></i> بطاقتك جاهزة</h3>
+      <img src="${url}" alt="بطاقة المدرب" style="width:100%;max-height:60vh;object-fit:contain;border-radius:12px">
+      <p class="muted small">${canShare ? 'اضغط «حفظ / مشاركة» ثم اختر «حفظ الصورة»' : 'اضغط مطولاً على الصورة ثم اختر «إضافة إلى الصور» أو «حفظ الصورة»'}.</p>
+      <div class="row" style="gap:8px;margin-top:8px">${canShare ? '<button class="btn" data-sh><i class="fa-solid fa-share-nodes"></i> حفظ / مشاركة</button>' : ''}<a class="btn ghost" href="${url}" download="${name}">تنزيل</a></div>`);
+    const b = m.$('[data-sh]'); if (b) b.onclick = () => navigator.share({ files: [file] }).catch(() => {});
+  }
   async function save(t, format = 'post') {
     toast('جارٍ تجهيز البطاقة بدقة عالية...');
-    try { download(`sauditrainers-${(t.slug || 'card')}-${format}.png`, await toBlob(t, format)); toast('تم حفظ البطاقة'); }
-    catch (e) { console.error(e); toast(`تعذّر إنشاء صورة البطاقة (${e && e.name ? e.name : 'خطأ'}): حدّث الصفحة وأعد المحاولة، وإن تكرر فأرسل هذه الرسالة للإدارة`, 'error'); }
+    let blob, name = `sauditrainers-${(t.slug || 'card')}-${format}.png`;
+    try { blob = await toBlob(t, format); }
+    catch (e) { console.error(e); toast(`تعذّر إنشاء صورة البطاقة (${e && e.name ? e.name : 'خطأ'}: ${String(e && e.message || '').slice(0, 80)}): حدّث الصفحة وأعد المحاولة، وإن تكرر فأرسل هذه الرسالة للإدارة`, 'error'); return; }
+    try {
+      if (isApple) previewModal(blob, name); else { download(name, blob); toast('تم حفظ البطاقة'); }
+    } catch (e) { console.error(e); try { previewModal(blob, name); } catch { toast('تعذّر عرض الصورة', 'error'); } }
   }
   async function share(t) {
     Analytics.event('share');
