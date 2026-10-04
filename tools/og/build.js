@@ -37,7 +37,7 @@ const codeSig = () => sha(['js/card.js', 'js/data.js', 'tools/og/build.js'].map(
   const srv = http.createServer((q, s) => { let f = path.join(ROOT, decodeURIComponent(q.url.split('?')[0])); if (f.endsWith('/')) f += 'index.html'; fs.readFile(f, (e, d) => { if (e) { s.writeHead(404); return s.end(); } s.writeHead(200, { 'Content-Type': types[path.extname(f)] || 'application/octet-stream' }); s.end(d); }); }).listen(0);
   const base = `http://localhost:${srv.address().port}`;
   const b = await chromium.launch({ executablePath: process.env.CHROME || undefined, args: ['--no-sandbox'] });
-  const page = await b.newPage({ viewport: { width: 1280, height: 900 } });
+  const page = await b.newPage({ bypassCSP: true, viewport: { width: 1280, height: 900 } });
   page.on('pageerror', e => console.warn('pageerror:', e.message));
   if (LOCAL) await page.route('**/js/config.js*', r => r.fulfill({ contentType: 'application/javascript', body: "window.ST_CONFIG={firebase:null,dbRoot:'x',ownerEmails:[],siteUrl:'http://localhost/',useCurrentOrigin:true};" }));
   await page.goto(`${base}/#/${LOCAL ? 'admin' : 'trainers'}`);
