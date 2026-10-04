@@ -46,7 +46,18 @@ function doPost(e) {
   }
   return out('ok');
 }
-function doGet() { return out('sauditrainers automation is running'); }
+// صورة عامة من Drive كـ data URL (CORS مفتوح) لتصدير البطاقة في Safari: ?img=<معرّف الملف>
+function doGet(e) {
+  const id = e && e.parameter && e.parameter.img;
+  if (!id) return out('sauditrainers automation is running');
+  if (!/^[\w-]{10,}$/.test(id)) return out('');
+  try {
+    const r = UrlFetchApp.fetch('https://lh3.googleusercontent.com/d/' + id + '=w900', { muteHttpExceptions: true, followRedirects: true });
+    const ct = String(r.getHeaders()['Content-Type'] || r.getHeaders()['content-type'] || '');
+    if (r.getResponseCode() !== 200 || !/^image\//.test(ct)) return out('');
+    return out('data:' + ct.split(';')[0] + ';base64,' + Utilities.base64Encode(r.getContent()));
+  } catch (err) { return out(''); }
+}
 const out = t => ContentService.createTextOutput(t);
 
 /* ===================== قاعدة البيانات (REST بصلاحية حساب المنصة) ===================== */
