@@ -38,6 +38,6 @@ const SAMPLE = [
   await sp.goto(BASE + '/tools/promo/social.html'); await sp.evaluate(c => window.setCards(c), cards);
   await sp.evaluate(() => document.fonts.ready); await sp.waitForTimeout(800);
   require('fs').mkdirSync(path.join(OUT, 'social'), { recursive: true });
-  for (const [id, name] of [['x', 'x-header'], ['li', 'linkedin-banner'], ['av', 'profile-logo']]) await sp.locator('#' + id).screenshot({ path: path.join(OUT, 'social', name + '.png') });
+  for (const [id, name] of [['x', 'x-header'], ['li', 'linkedin-banner'], ['li2', 'linkedin-banner-cards'], ['av', 'profile-logo']]) await sp.locator('#' + id).screenshot({ path: path.join(OUT, 'social', name + '.png') });
   await b.close(); console.log('تم: ' + OUT);
 })();
