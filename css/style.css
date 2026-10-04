@@ -1103,3 +1103,11 @@ body.preview .local-flag { display: none; }
 .spb:hover { transform: translateY(-3px); box-shadow: 0 8px 18px rgba(0, 0, 0, .14); }
 .spb.linkedin { color: #0A66C2; } .spb.instagram { color: #E1306C; } .spb.x { color: #000; } .spb.whatsapp { color: #25D366; }
 .spb-b { position: absolute; bottom: -3px; inset-inline-start: -3px; width: 20px; height: 20px; border-radius: 50%; background: var(--g600, #006a3c); color: #fff; display: grid; place-items: center; font-size: .6rem; border: 2px solid var(--paper, #fff); }
+
+/* صف تواصل مع المدرب + زرّان دائريان (نسخ الرابط، تنزيل البطاقة) */
+.profile-actions { display: block; }
+.pa-row { display: flex; align-items: center; gap: 8px; }
+.pa-row .btn.primary { flex: 1; min-width: 0; padding-inline: 12px; }
+.pa-ic { flex: none; width: 48px; height: 48px; border-radius: 50%; border: 1px solid var(--line); background: #fff; color: var(--g700, #006a3c); font-size: 1.1rem; cursor: pointer; display: grid; place-items: center; transition: transform .2s, box-shadow .2s; }
+.pa-ic:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0, 0, 0, .14); }
+.profile-actions > p { margin-top: 8px !important; }

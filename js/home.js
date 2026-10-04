@@ -180,13 +180,15 @@ Pages.profile = {
     <div class="wrap profile">
       <aside class="profile-side">
         ${Card.full(t)}
-        ${Card.shareIcons()}
         <div class="profile-actions">
-          <button class="btn primary wide lg" id="ask"><i class="fa-solid fa-paper-plane"></i> تواصل مع المدرب</button>
-          <p class="wide small muted center" style="margin:0"><i class="fa-solid fa-lock"></i> يصل طلبك للمدرب عبر المنصة</p>
-          <button class="btn" id="shr"><i class="fa-solid fa-share-nodes"></i> مشاركة</button>
-          <button class="btn" id="sv"><i class="fa-solid fa-download"></i> حفظ البطاقة</button>
+          <div class="pa-row">
+            <button class="btn primary lg" id="ask"><i class="fa-solid fa-paper-plane"></i> تواصل مع المدرب</button>
+            <button type="button" class="pa-ic" id="cpl" title="نسخ رابط الصفحة" aria-label="نسخ رابط الصفحة"><i class="fa-regular fa-copy"></i></button>
+            <button type="button" class="pa-ic" id="sv" title="تنزيل البطاقة" aria-label="تنزيل البطاقة"><i class="fa-solid fa-download"></i></button>
+          </div>
+          <p class="small muted center" style="margin:0"><i class="fa-solid fa-lock"></i> يصل طلبك للمدرب عبر المنصة</p>
         </div>
+        ${Card.shareIcons()}
         ${!Data.isLive(t) ? `<div class="banner warn" style="margin-top:14px"><i class="fa-solid fa-eye-slash"></i>هذه البطاقة غير ظاهرة للزوار حالياً.</div>` : ''}
       </aside>
       <div>
@@ -226,7 +228,7 @@ Pages.profile = {
     document.title = `${t.name} | مدرّبون سعوديّون`;
     if (!Auth.current()) Data.track('views', t.id);
     $$('[data-sp]', root).forEach(b => b.onclick = () => Card.shareTo(t, b.dataset.sp));
-    $('#shr', root) && ($('#shr', root).onclick = () => Card.share(t));
+    $('#cpl', root) && ($('#cpl', root).onclick = () => copyText(profileUrl(t), 'تم نسخ رابط الصفحة'));
     $('#sv', root) && ($('#sv', root).onclick = () => Card.shareSheet(t));
     $('#ask', root) && ($('#ask', root).onclick = () => leadForm(t));
     // على اللابتوب: تُصغَّر البطاقة تلقائياً لتظهر مع أزرارها تحتها في الشاشة الأولى دون تمرير
@@ -234,7 +236,7 @@ Pages.profile = {
     const fitCard = () => {
       if (!card) return; card.style.zoom = '';
       if (!matchMedia('(min-width: 961px)').matches) return;
-      const top = side.getBoundingClientRect().top + scrollY, room = innerHeight - top - act.offsetHeight - 30;
+      const top = side.getBoundingClientRect().top + scrollY, room = innerHeight - top - act.offsetHeight - ($('.share-pl', side)?.offsetHeight || 0) - 46;
       card.style.zoom = String(Math.min(1, Math.max(0.42, room / card.offsetHeight)));
     };
     if (card) { fitCard(); addEventListener('resize', fitCard); document.fonts && document.fonts.ready.then(fitCard); }
