@@ -146,7 +146,7 @@ const Card = (() => {
     ctx.moveTo(6.5, -9); ctx.arc(0, -9, 6.5, 0, Math.PI * 2, true); ctx.fill('evenodd'); ctx.restore();
   }
   // أبعاد صور المشاركة: منشور 4:5، قصة 9:16، وعرضي 16:9
-  const SIZES = { post: [1080, 1350], story: [1080, 1920], wide: [1600, 900] };
+  const SIZES = { post: [1080, 1350], story: [1080, 1920], wide: [1600, 900], og: [1200, 675] };
 
   // نقش الخلفية يُرسم مباشرة على لوحة (دون تحميل SVG كصورة) لأن Safari يعدّ اللوحة «ملوّثة» وفيها صورة SVG فيرفض تصديرها
   function patternTile(color, opacity) {
@@ -169,7 +169,87 @@ const Card = (() => {
     return tc;
   }
 
+
+  // صورة معاينة الروابط (واتساب وإكس ولينكدإن) 1200×675: صورة المدرب واسمه وسطره التعريفي وشعار المنصة ورابطها
+  async function renderOg(t, tp) {
+    const x0 = tp.text, HEAD = fontCss(tp.fonts.name), BODY = fontCss(tp.fonts.body), BRAND = fontCss(tp.fonts.brand);
+    await Promise.race([ensureFonts(tp), new Promise(r => setTimeout(r, 6000))]);
+    const th = themed(t, tp), light = !!th.light, fg = th.fg, [W, H] = SIZES.og, M = 28;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d'); ctx.direction = 'rtl'; ctx.textAlign = 'center';
+    const g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, th.a); g.addColorStop(0.55, th.b); g.addColorStop(1, th.a);
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    const glow = ctx.createRadialGradient(W * 0.78, H * 0.45, 20, W * 0.78, H * 0.45, W * 0.7);
+    glow.addColorStop(0, hex(th.c, light ? 0.35 : 0.55)); glow.addColorStop(1, hex(th.c, 0));
+    ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+    if (!plain && tp.show.pattern && tp.patternOpacity) { try { ctx.save(); ctx.fillStyle = ctx.createPattern(patternTile(light ? '#005430' : th.accent, light ? 0.1 : 0.11), 'repeat'); ctx.fillRect(0, 0, W, H); ctx.restore(); } catch (e) { console.warn('pattern', e); } }
+    ctx.strokeStyle = hex(th.accent, 0.8); ctx.lineWidth = 3; rr(ctx, M, M, W - 2 * M, H - 2 * M, 36); ctx.stroke();
+    ctx.strokeStyle = hex(th.accent, 0.28); ctx.lineWidth = 1.5; rr(ctx, M + 12, M + 12, W - 2 * M - 24, H - 2 * M - 24, 28); ctx.stroke();
+
+    // الشعار (أعلى اليسار) ورابط المنصة (أسفل اليسار)
+    const logo = await loadImage(light ? LOGO.green : LOGO.cream);
+    if (logo) { const lh = 92, lw = lh * logo.width / logo.height; ctx.drawImage(logo, 74, 56, lw, lh); }
+    const site = String(x0.site || 'sauditrainers.sa').toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
+    ctx.font = `800 36px ${BRAND}`; ctx.direction = 'ltr';
+    const sw = ctx.measureText(site).width + 64;
+    rr(ctx, 74, H - 64 - 66, sw, 66, 33); ctx.fillStyle = hex(th.accent, light ? 0.12 : 0.16); ctx.fill(); ctx.strokeStyle = hex(th.accent, 0.55); ctx.lineWidth = 1.5; ctx.stroke();
+    ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.fillText(site, 74 + sw / 2, H - 64 - 20); ctx.direction = 'rtl';
+
+    // الصورة الدائرية (يمين)
+    const D = 340, cx = W - 74 - 16 - D / 2, cy = H / 2;
+    ctx.save(); ctx.shadowColor = 'rgba(0,0,0,.4)'; ctx.shadowBlur = 44; ctx.shadowOffsetY = 14;
+    ctx.beginPath(); ctx.arc(cx, cy, D / 2 + 16, 0, Math.PI * 2); ctx.fillStyle = th.accent; ctx.fill(); ctx.restore();
+    ctx.beginPath(); ctx.arc(cx, cy, D / 2 + 6, 0, Math.PI * 2); ctx.fillStyle = th.b; ctx.fill();
+    ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, D / 2, 0, Math.PI * 2); ctx.clip();
+    const photo = t.noPhoto ? null : await loadImage(Data.photo(t));
+    const pg = ctx.createLinearGradient(cx - D / 2, cy - D / 2, cx + D / 2, cy + D / 2); pg.addColorStop(0, th.c); pg.addColorStop(1, th.a);
+    if (t.noPhoto) {
+      ctx.fillStyle = pg; ctx.fillRect(cx - D / 2, cy - D / 2, D, D);
+      ctx.save(); ctx.translate(cx - D / 2, cy - D / 2); ctx.scale(D / 100, D / 100); ctx.fillStyle = th.accent;
+      if (t.gender === 'f') ctx.fill(new Path2D(SYM_F)); else { ctx.beginPath(); ctx.arc(50, 36, 17, 0, Math.PI * 2); ctx.fill(); ctx.fill(new Path2D(SYM_M_BODY)); }
+      ctx.restore();
+    } else if (photo) {
+      const f = fit(t), sc = Math.max(D / photo.width, D / photo.height), iw = photo.width * sc, ih = photo.height * sc;
+      const ox = cx - D / 2 + D * f.x / 100, oy = cy - D / 2 + D * f.y / 100;
+      ctx.translate(ox, oy); ctx.scale(f.z, f.z); ctx.translate(-ox, -oy);
+      ctx.drawImage(photo, cx - D / 2 + (D - iw) * f.x / 100, cy - D / 2 + (D - ih) * f.y / 100, iw, ih);
+    } else {
+      ctx.fillStyle = pg; ctx.fillRect(cx - D / 2, cy - D / 2, D, D);
+      const tmp = document.createElement('div'); tmp.innerHTML = initials(t.name);
+      ctx.fillStyle = fg; ctx.font = `900 130px ${HEAD}`; ctx.textBaseline = 'middle'; ctx.fillText(tmp.textContent, cx, cy + 6); ctx.textBaseline = 'alphabetic';
+    }
+    ctx.restore();
+    if (tp.show.badge) {
+      const bx = cx + D * 0.36, by = cy + D * 0.36;
+      ctx.fillStyle = th.accent; seal(ctx, bx, by, 38); ctx.fill();
+      ctx.strokeStyle = light ? '#FFFFFF' : th.b; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.beginPath(); ctx.moveTo(bx - 11, by + 1); ctx.lineTo(bx - 3, by + 10); ctx.lineTo(bx + 13, by - 9); ctx.stroke();
+    }
+
+    // النص: الاسم ثم السطر التعريفي ثم المنطقة، محاذاة لليمين بجانب الصورة
+    const ax = cx - D / 2 - 16 - 56, colW = ax - 74;
+    const name = t.name || '', meas = (sz, str) => { ctx.font = `900 ${sz}px ${HEAD}`; return ctx.measureText(str).width; };
+    let ns = Math.round(80 * tp.nameScale / 100), nl = [name];
+    while (ns > 52 && meas(ns, name) > colW) ns -= 2;
+    if (meas(ns, name) > colW) { ns = Math.min(ns, 62); for (; ns >= 40; ns -= 2) { ctx.font = `900 ${ns}px ${HEAD}`; nl = wrap(ctx, name, colW, 2); if (nl.every(l => ctx.measureText(l).width <= colW)) break; } }
+    const title = tp.show.title && t.title ? t.title : '';
+    ctx.font = `600 34px ${BODY}`; const tl = title ? wrap(ctx, title, colW, 3) : [];
+    const meta = tp.show.region ? regionsLabel(t, true, tp.maxRegions) : '';
+    const nameH = nl.length * ns * 1.15, tH = tl.length ? 22 + tl.length * 50 : 0, mH = meta ? 26 + 40 : 0;
+    let y = Math.max(168, cy - (nameH + tH + mH) / 2) + ns * 0.9;
+    ctx.textAlign = 'right'; ctx.fillStyle = fg; ctx.font = `900 ${ns}px ${HEAD}`;
+    nl.forEach((l, i) => ctx.fillText(l, ax, y + i * ns * 1.15)); y += (nl.length - 1) * ns * 1.15;
+    if (tl.length) { ctx.font = `600 34px ${BODY}`; ctx.fillStyle = th.accent; y += 22; tl.forEach((l, i) => { y += i ? 50 : 40; ctx.fillText(l, ax, y); }); }
+    if (meta) {
+      y += 26 + 36; ctx.font = `700 32px ${UI}`; ctx.fillStyle = hex(fg, 0.9); const mw = ctx.measureText(meta).width;
+      ctx.fillText(meta, ax - 40, y); pin(ctx, ax - 14, y - 9, 1, th.accent); void mw;
+    }
+    cv.photoFailed = !t.noPhoto && !!t.photoUrl && !photo;
+    return cv;
+  }
+
   async function render(t, format = 'post', tpl) {
+    if (format === 'og') return renderOg(t, tpl || cardTemplate());
     const tp = tpl || cardTemplate(), x0 = tp.text;
     const HEAD = fontCss(tp.fonts.name), BODY = fontCss(tp.fonts.body), UI = BODY, BRAND = fontCss(tp.fonts.brand);
     await Promise.race([ensureFonts(tp), new Promise(r => setTimeout(r, 6000))]);   // لا نعلّق إن تأخرت الخطوط

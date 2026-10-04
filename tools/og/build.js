@@ -8,7 +8,7 @@
 const fs = require('fs'), path = require('path'), crypto = require('crypto'), http = require('http');
 const ROOT = path.resolve(__dirname, '../..');
 const CHECK = process.argv.includes('--check'), LOCAL = !!process.env.OG_LOCAL;
-const VERSION = 'og-1';
+const VERSION = 'og-2';
 
 const cfgSrc = fs.readFileSync(path.join(ROOT, 'js/config.js'), 'utf8');
 const CFG = (() => { const w = {}; new Function('window', cfgSrc)(w); return w.ST_CONFIG; })();
@@ -63,8 +63,7 @@ const codeSig = () => sha(['js/card.js', 'js/data.js', 'tools/og/build.js'].map(
     let url = null;
     for (const q of [0.84, 0.72, 0.6]) {
       url = await page.evaluate(async ({ id, q }) => {
-        const cv = await Card.render(Data.trainer(id), 'wide'), o = document.createElement('canvas'); o.width = 1200; o.height = 675;
-        const c = o.getContext('2d'); c.imageSmoothingQuality = 'high'; c.drawImage(cv, 0, 0, 1200, 675); return o.toDataURL('image/jpeg', q);
+        const cv = await Card.render(Data.trainer(id), 'og'); return cv.toDataURL('image/jpeg', q);   // 1200×675 مباشرة
       }, { id: t.id, q });
       if (url.length * 0.75 < 290 * 1024) break;      // واتساب يفضّل صورة المعاينة أقل من ~300KB
     }
