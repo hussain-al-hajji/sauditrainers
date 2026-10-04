@@ -151,10 +151,13 @@ const Data = (() => {
 const Automation = {
   get url() { return window.ST_CONFIG.automationUrl || ''; },
   get on() { return /^https:\/\/script\.google\.com\//.test(this.url); },
-  notify(action, id) {
-    if (!this.on) return Promise.resolve(false);
-    return fetch(this.url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, id, root: window.ST_CONFIG.dbRoot || 'sauditrainers' }) })
-      .then(() => true, () => false);
+  // إجراءات الإدارة تُرفق رمز دخول المشرف (Firebase ID token) ليتحقق منه السكربت؛ الإجراءات العامة (طلب تواصل/تسجيل) بلا رمز
+  ADMIN: ['campaign', 'outbox', 'publish', 'ping', 'snapshot', 'backfill', 'analytics'],
+  async notify(action, id) {
+    if (!this.on) return false;
+    const body = { action, id, root: window.ST_CONFIG.dbRoot || 'sauditrainers' };
+    if (this.ADMIN.includes(action)) { try { const u = Store.auth && Store.auth.currentUser; if (u) body.token = await u.getIdToken(); } catch { /* بلا رمز: يرفضه السكربت */ } }
+    return fetch(this.url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) }).then(() => true, () => false);
   }
 };
 

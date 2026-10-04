@@ -115,3 +115,11 @@
 تعرض المؤشرات حجم البيانات والتنزيل (30 يوماً) وأعلى اتصالات متزامنة مقابل حدود الخطة المجانية Spark (1GB تخزين، 10GB تنزيل شهرياً، 100 اتصال)، وتنبّه عند 80%.
 - **حجم البيانات** يظهر فوراً بتقدير من البيانات المحمّلة، ويصبح دقيقاً بعد ربط Cloud Monitoring.
 - **التنزيل والاتصالات** تحتاج الربط: (1) في Google Cloud للمشروع SaudiTrainers فعّل **Cloud Monitoring API** (APIs & Services ← Library)، (2) حدّث `appsscript.json` (فيه الآن `monitoring.read`)، (3) في Apps Script شغّل `testFirebaseUsage` ووافق على الصلاحيات (يطبع الأرقام أو الخطأ)، (4) شغّل `refreshAnalytics` أو اضغط «تحديث الآن» في المؤشرات، وانشر نسخة جديدة.
+
+## حماية إجراءات الإدارة (ID token)
+إجراءات الإدارة (`campaign` و`outbox` و`publish` و`ping` و`snapshot` و`backfill` و`analytics`) لا تُنفَّذ إلا إذا أرفق الموقع معها رمز دخول Firebase لمشرف أو مالك؛ يتحقق منه السكربت عبر Identity Toolkit ويطابقه مع `CFG.OWNERS` أو سجل `admins/`. الإجراءات العامة (`lead` و`request` و`application`) تبقى بلا رمز.
+
+- بعد تحديث `Code.gs` (أو `Code-mail.gs`) انشره **إصداراً جديداً** على نفس رابط النشر.
+- إن قيّدت مفتاح Firebase API بروابط HTTP referrer، أضف `https://sauditrainers.sa/*`؛ السكربت يرسل ترويسة `Referer` بهذا الرابط.
+- لإيقاف التحقق مؤقتاً عند التشخيص: `REQUIRE_ADMIN_TOKEN: false` في `CFG` (لا يُنصح به دائماً).
+- أُزيل المسار `?img=` الذي أُضيف مؤقتاً لتشخيص مشكلة سفاري.

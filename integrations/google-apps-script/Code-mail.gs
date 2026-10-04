@@ -14,15 +14,42 @@ const CFG = {
   ASSETS: 'https://sauditrainers.sa/', // مصدر صورة الشعار في البريد (الدومين الرسمي)
   ADMIN_EMAIL: 'trainers.sa3@gmail.com',                       // بريد الإدارة (إشعار مستقل لكل طلب)
   FROM_NAME: 'منصة مدرّبون سعوديّون',
+  FIREBASE_API_KEY: 'AIzaSyB36bYSiQpPnT6P50mP93wGMCwv_UIIodo',   // apiKey من js/config.js (ليس سراً)
+  OWNERS: ['g.hussainalhajji@gmail.com', 'trainers.sa3@gmail.com'], // ownerEmails من js/config.js
+  REQUIRE_ADMIN_TOKEN: true,                                   // يرفض إجراءات الإدارة دون رمز دخول مشرف صالح
   PLATFORM_WHATSAPP: '966562391007'
 };
 
+
+/* ===================== التحقق من هوية المشرف =====================
+ * إجراءات الإدارة (إرسال الحملات والبريد، النشر، الإحصاءات...) لا تُنفَّذ إلا إن أرفق الموقع معها رمز دخول Firebase (ID token)
+ * يعود لحساب مالك أو مشرف مسجّل. الإجراءات العامة (طلب تواصل، تسجيل، طلب مدرب) لا تحتاج رمزاً. */
+const ADMIN_ACTIONS = ['campaign', 'outbox', 'publish', 'ping', 'snapshot', 'backfill', 'analytics'];
+function isAdmin(token) {
+  if (!token || typeof token !== 'string' || token.length > 4096) return false;
+  const cache = CacheService.getScriptCache();
+  const key = 'adm_' + Utilities.base64EncodeWebSafe(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, token)).slice(0, 40);
+  if (cache.get(key) === '1') return true;
+  try {
+    const r = UrlFetchApp.fetch('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=' + encodeURIComponent(CFG.FIREBASE_API_KEY), {
+      method: 'post', contentType: 'application/json', payload: JSON.stringify({ idToken: token }), headers: { Referer: CFG.SITE }, muteHttpExceptions: true
+    });
+    if (r.getResponseCode() !== 200) return false;
+    const u = (JSON.parse(r.getContentText()).users || [])[0];
+    if (!u) return false;
+    let ok = !!u.emailVerified && CFG.OWNERS.indexOf(String(u.email || '').toLowerCase()) >= 0;
+    if (!ok && u.localId) ok = !!db('admins/' + u.localId);
+    if (ok) cache.put(key, '1', 300);
+    return ok;
+  } catch (err) { console.error(err); return false; }
+}
 
 /* ===================== نقطة الاستقبال ===================== */
 function doPost(e) {
   let body = {};
   try { body = JSON.parse(e.postData.contents); } catch (err) { return out('bad request'); }
   const id = String(body.id || '').replace(/[^\w-]/g, '').slice(0, 40);
+  if (CFG.REQUIRE_ADMIN_TOKEN && ADMIN_ACTIONS.indexOf(body.action) >= 0 && !isAdmin(body.token)) { console.error('رُفض الإجراء دون صلاحية مشرف: ' + body.action); return out('forbidden'); }
   const lock = LockService.getScriptLock();
   lock.tryLock(25000);
   try {
@@ -42,18 +69,7 @@ function doPost(e) {
   }
   return out('ok');
 }
-// صورة عامة من Drive كـ data URL (CORS مفتوح) لتصدير البطاقة في Safari: ?img=<معرّف الملف>
-function doGet(e) {
-  const id = e && e.parameter && e.parameter.img;
-  if (!id) return out('sauditrainers mail automation is running');
-  if (!/^[\w-]{10,}$/.test(id)) return out('');
-  try {
-    const r = UrlFetchApp.fetch('https://lh3.googleusercontent.com/d/' + id + '=w900', { muteHttpExceptions: true, followRedirects: true });
-    const ct = String(r.getHeaders()['Content-Type'] || r.getHeaders()['content-type'] || '');
-    if (r.getResponseCode() !== 200 || !/^image\//.test(ct)) return out('');
-    return out('data:' + ct.split(';')[0] + ';base64,' + Utilities.base64Encode(r.getContent()));
-  } catch (err) { return out(''); }
-}
+function doGet() { return out('sauditrainers mail automation is running'); }
 const out = t => ContentService.createTextOutput(t);
 function ping() { db('settings/automation', 'patch', { lastPing: Date.now(), quota: MailApp.getRemainingDailyQuota() }); }
 
