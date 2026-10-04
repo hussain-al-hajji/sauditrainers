@@ -186,7 +186,6 @@ Pages.profile = {
             <button type="button" class="pa-ic" id="cpl" title="نسخ رابط الصفحة" aria-label="نسخ رابط الصفحة"><i class="fa-regular fa-copy"></i></button>
             <button type="button" class="pa-ic" id="sv" title="تنزيل البطاقة" aria-label="تنزيل البطاقة"><i class="fa-solid fa-download"></i></button>
           </div>
-          <p class="small muted center" style="margin:0"><i class="fa-solid fa-lock"></i> يصل طلبك للمدرب عبر المنصة</p>
         </div>
         ${Card.shareIcons()}
         ${!Data.isLive(t) ? `<div class="banner warn" style="margin-top:14px"><i class="fa-solid fa-eye-slash"></i>هذه البطاقة غير ظاهرة للزوار حالياً.</div>` : ''}
