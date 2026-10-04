@@ -33,5 +33,11 @@ const SAMPLE = [
     if (dir) require('fs').mkdirSync(path.join(OUT, dir), { recursive: true });
     for (let i = 1; i <= n; i++) await q.locator('#' + pre + i).screenshot({ path: path.join(OUT, `${dir}${dir ? 'update' : 'post'}-${i}.png`) });
   }
+  // أغلفة وصورة حسابات التواصل (X ولينكدإن) — لينكدإن بدقة مضاعفة لأن غلافه نحيف
+  const sp = await b.newPage({ viewport: { width: 1600, height: 1200 }, deviceScaleFactor: 2 });
+  await sp.goto(BASE + '/tools/promo/social.html'); await sp.evaluate(c => window.setCards(c), cards);
+  await sp.evaluate(() => document.fonts.ready); await sp.waitForTimeout(800);
+  require('fs').mkdirSync(path.join(OUT, 'social'), { recursive: true });
+  for (const [id, name] of [['x', 'x-header'], ['li', 'linkedin-banner'], ['av', 'profile-logo']]) await sp.locator('#' + id).screenshot({ path: path.join(OUT, 'social', name + '.png') });
   await b.close(); console.log('تم: ' + OUT);
 })();
