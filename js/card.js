@@ -77,15 +77,27 @@ const Card = (() => {
   const BODY = "'Noto Sans Arabic', 'IBM Plex Sans Arabic', sans-serif";
 
   let bust = false, plain = false;   // إعادة المحاولة بمعامل جديد يتجاوز نسخة الصورة المخزّنة في المتصفح دون ترويسات CORS (سبب شائع في Safari)
-  function loadImage(src) {
-    return new Promise(res => {
-      if (!src) return res(null);
-      const img = new Image();
-      if (/^https?:/.test(src)) { img.crossOrigin = 'anonymous'; if (bust) src += (src.includes('?') ? '&' : '?') + '_cb=' + Date.now(); }
-      img.referrerPolicy = 'no-referrer';
-      img.onload = () => res(img); img.onerror = () => res(null);
-      img.src = src;
-    });
+  // تجاوز الكاش: روابط Google تتحمل تغيير الحجم (=w800 → =w803) أما إضافة معاملات فتُفسدها
+  const bustUrl = src => /googleusercontent\.com\/.*=w\d+/.test(src) ? src.replace(/=w(\d+)/, (m, n) => '=w' + (Number(n) + 1 + Math.floor(Math.random() * 40))) : src + (src.includes('?') ? '&' : '?') + '_cb=' + Date.now();
+  const imgFrom = (src, cors) => new Promise(res => {
+    const img = new Image();
+    if (cors) img.crossOrigin = 'anonymous';
+    img.referrerPolicy = 'no-referrer';
+    img.onload = () => res(img); img.onerror = () => res(null);
+    img.src = src;
+  });
+  async function loadImage(src) {
+    if (!src) return null;
+    if (!/^https?:/.test(src)) return imgFrom(src, false);
+    if (bust) src = bustUrl(src);
+    const img = await imgFrom(src, true);
+    if (img) return img;
+    // Safari: نجلب الملف عبر fetch (CORS) ونحوّله إلى blob محلي لا يلوّث اللوحة
+    try {
+      const r = await fetch(src, { mode: 'cors', referrerPolicy: 'no-referrer', cache: 'reload' });
+      if (r.ok) { const u = URL.createObjectURL(await r.blob()); const im = await imgFrom(u, false); if (im) return im; }
+    } catch { /* ignore */ }
+    return null;
   }
   function loadScript(src) {
     return new Promise(res => { const s = document.createElement('script'); s.src = src; s.onload = () => res(true); s.onerror = () => res(false); document.head.appendChild(s); });
@@ -281,14 +293,20 @@ const Card = (() => {
   const exportable = cv => { try { cv.getContext('2d').getImageData(0, 0, 1, 1); return true; } catch { return false; } };
   async function renderSafe(t, format, tpl) {
     // 4 محاولات: عادي، تجاوز الكاش، بلا صورة، ثم نسخة مبسّطة (بلا صورة ولا نقش) للمتصفحات الأضعف (Safari)
+    let fallback = null;   // أفضل نتيجة صالحة للتصدير حتى الآن (قد تكون بلا صورة)
     for (const attempt of ['normal', 'bust', 'nophoto', 'plain']) {
       bust = attempt === 'bust'; plain = attempt === 'plain';
       try {
         const cv = await render(attempt === 'nophoto' || attempt === 'plain' ? { ...t, noPhoto: true } : t, format, tpl);
-        if (exportable(cv)) { if (attempt === 'nophoto' || attempt === 'plain') cv.photoFailed = !t.noPhoto && !!t.photoUrl; return cv; }
+        if (exportable(cv)) {
+          if (attempt === 'nophoto' || attempt === 'plain') cv.photoFailed = !t.noPhoto && !!t.photoUrl;
+          if (cv.photoFailed && attempt === 'normal') { fallback = cv; continue; }   // فشلت الصورة فقط: نجرّب تجاوز الكاش
+          return cv;
+        }
       } catch (e) { console.warn('card render', attempt, e); if (attempt === 'plain') throw e; }
       finally { bust = false; plain = false; }
     }
+    if (fallback) return fallback;
     throw new Error('card render failed');
   }
   async function toBlob(t, format) {
