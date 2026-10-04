@@ -83,6 +83,29 @@ function fetchGsc() {
   return out;
 }
 
+
+/* ===================== استهلاك Firebase (Cloud Monitoring) ===================== */
+// حدود الخطة المجانية Spark: تخزين 1GB، تنزيل 10GB شهرياً، 100 اتصال متزامن.
+// يتطلب صلاحية monitoring.read في appsscript.json وتفعيل «Cloud Monitoring API» في مشروع Google Cloud المرتبط بالسكربت.
+const FB_PROJECT_ID = 'sauditrainers-6c989';
+function fbMetric(type, aligner, period, reducer, days) {
+  const iso = ms => Utilities.formatDate(new Date(ms), 'UTC', "yyyy-MM-dd'T'HH:mm:ss'Z'"), now = Date.now();
+  const q = ['filter=' + encodeURIComponent('metric.type="firebasedatabase.googleapis.com/' + type + '"'), 'interval.startTime=' + iso(now - days * 864e5), 'interval.endTime=' + iso(now),
+    'aggregation.alignmentPeriod=' + period + 's', 'aggregation.perSeriesAligner=' + aligner, 'aggregation.crossSeriesReducer=' + reducer].join('&');
+  const r = anFetch('https://monitoring.googleapis.com/v3/projects/' + FB_PROJECT_ID + '/timeSeries?' + q);
+  const pts = []; (r.timeSeries || []).forEach(ts => (ts.points || []).forEach(p => pts.push(Number(p.value.doubleValue != null ? p.value.doubleValue : p.value.int64Value) || 0)));
+  return pts;
+}
+function fetchFirebaseUsage() {
+  const out = { updatedAt: Date.now() }, errs = [];
+  const run = (key, fn) => { try { out[key] = fn(); } catch (e) { errs.push(key + ': ' + String(e.message || e).slice(0, 120)); } };
+  run('storageBytes', () => { const p = fbMetric('storage/total_bytes', 'ALIGN_MAX', 86400, 'REDUCE_SUM', 3); return p.length ? p[0] : null; });
+  run('sentBytes30', () => fbMetric('network/sent_bytes_count', 'ALIGN_SUM', 86400, 'REDUCE_SUM', 30).reduce((a, b) => a + b, 0));
+  run('maxConn30', () => { const p = fbMetric('network/active_connections', 'ALIGN_MAX', 86400, 'REDUCE_SUM', 30); return p.length ? Math.max.apply(null, p) : 0; });
+  if (errs.length) out.error = errs.join(' | ');
+  return out;
+}
+
 /* ===================== التحديث ===================== */
 // يُستدعى من المؤقّت (كل ساعتين) ومن زر «تحديث الآن» في لوحة الإدارة (action: analytics)
 function refreshAnalytics() {
@@ -95,6 +118,7 @@ function refreshAnalytics() {
     if (p[0] === 'ga' && data && data.periods) platformFromGa(data);
   });
   if (!gaOk) platformFromOwn();
+  try { db('analytics_ext/firebase', 'put', fetchFirebaseUsage()); } catch (e) { console.error('firebase usage', e); }
 }
 let gaOk = false;
 // ملخص المنصة العام (قراءة عامة): أرقام Google Analytics كاملة منذ أول رقم مسجّل
@@ -182,6 +206,9 @@ function refreshAnalyticsThrottled() {
   AN_PROPS.setProperty('AN_LAST', String(Date.now()));
   refreshAnalytics();
 }
+
+// اختبار استهلاك Firebase
+function testFirebaseUsage() { console.log(JSON.stringify(fetchFirebaseUsage())); }
 
 // اختبار يدوي: يعرض في السجل ما جُلب أو الخطأ الحقيقي (صلاحيات، رقم خاصية خاطئ...)
 function testAnalytics() {

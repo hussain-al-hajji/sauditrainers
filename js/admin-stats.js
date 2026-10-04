@@ -235,6 +235,29 @@ function anMonthlyCsv() {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'سجل-الإحصاءات-الشهري.csv'; a.click();
 }
 
+/* ===== استهلاك Firebase مقابل حدود الخطة المجانية (Spark) ===== */
+const FB_LIMITS = { storage: 1024 ** 3, down: 10 * 1024 ** 3, conn: 100 };
+const anBytes = b => (b >= 1024 ** 3 ? (b / 1024 ** 3).toFixed(2) + ' GB' : b >= 1024 ** 2 ? (b / 1024 ** 2).toFixed(1) + ' MB' : Math.round(b / 1024) + ' KB');
+function statsFirebase() {
+  const u = Store.get('analytics_ext/firebase') || {};
+  let est = 0; try { est = new TextEncoder().encode(JSON.stringify(Store.dump())).length; } catch { /* ignore */ }
+  const st = u.storageBytes != null ? u.storageBytes : est;
+  const meter = (icon, label, val, limit, text, note) => {
+    if (val == null) return `<div class="fb-m"><div class="fb-h"><span><i class="fa-solid ${icon}"></i> ${label}</span><b>—</b></div><small class="muted">${note}</small></div>`;
+    const pct = Math.min(100, val / limit * 100), tone = pct >= 85 ? 'bad' : pct >= 60 ? 'warn' : 'ok';
+    return `<div class="fb-m"><div class="fb-h"><span><i class="fa-solid ${icon}"></i> ${label}</span><b class="num">${text}</b></div><div class="fb-bar ${tone}"><span style="width:${Math.max(1.5, pct)}%"></span></div><small class="muted">${pct < 1 ? 'أقل من 1%' : pct.toFixed(1) + '%'} من الحد المجاني · ${note}</small></div>`;
+  };
+  const worst = Math.max(st / FB_LIMITS.storage, (u.sentBytes30 || 0) / FB_LIMITS.down, (u.maxConn30 || 0) / FB_LIMITS.conn);
+  return `<div class="an-ext-h"><h2><i class="fa-solid fa-database"></i> استهلاك Firebase</h2></div>
+    ${worst >= 0.8 ? `<div class="banner warn"><i class="fa-solid fa-triangle-exclamation"></i><span>اقتربتَ من حد الخطة المجانية (${Math.round(worst * 100)}%). عند تجاوز الحد قد يتوقف الوصول للبيانات أو تُطلب الترقية لخطة Blaze (الدفع حسب الاستخدام).</span></div>` : ''}
+    <div class="pbox fb-box">
+      ${meter('fa-hard-drive', 'حجم البيانات المخزّنة', st, FB_LIMITS.storage, anBytes(st) + ' / 1 GB', u.storageBytes != null ? 'من Firebase مباشرة' : 'تقدير من البيانات المحمّلة الآن')}
+      ${meter('fa-cloud-arrow-down', 'التنزيل خلال آخر 30 يوماً', u.sentBytes30 == null ? null : u.sentBytes30, FB_LIMITS.down, u.sentBytes30 == null ? '' : anBytes(u.sentBytes30) + ' / 10 GB', u.sentBytes30 == null ? 'يحتاج ربط Cloud Monitoring (انظر README)' : 'من Firebase مباشرة')}
+      ${meter('fa-plug', 'أعلى اتصالات متزامنة (30 يوماً)', u.maxConn30 == null ? null : u.maxConn30, FB_LIMITS.conn, u.maxConn30 == null ? '' : u.maxConn30 + ' / 100', u.maxConn30 == null ? 'يحتاج ربط Cloud Monitoring (انظر README)' : 'من Firebase مباشرة')}
+      <p class="muted small" style="margin:10px 0 0">${u.updatedAt ? 'آخر تحديث: ' + ago(u.updatedAt) + '. ' : ''}الحدود للخطة المجانية Spark. ${u.error ? 'تنبيه: ' + esc(u.error) : ''}</p>
+    </div>`;
+}
+
 function statsMount(main) {
   const box = $('#anx', main); if (!box) return;
   const ga = Store.get('analytics_ext/ga'), gsc = Store.get('analytics_ext/gsc');
@@ -245,6 +268,7 @@ function statsMount(main) {
     ${ga && (ga.periods || ga.overview) ? anGaCard(ga) : anSetup('ga')}
     ${gsc && (gsc.periods || gsc.totals) ? anGscCard(gsc) : anSetup('gsc')}
     ${statsMonthly()}
+    ${statsFirebase()}
     ${ga?.error || gsc?.error ? `<div class="banner warn"><i class="fa-solid fa-triangle-exclamation"></i><span>${esc([ga?.error && 'Analytics: ' + ga.error, gsc?.error && 'Search Console: ' + gsc.error].filter(Boolean).join(' | '))}</span></div>` : ''}`;
   $$('[data-an-p]', box).forEach(b => b.onclick = () => { Stats.days = +b.dataset.anP; statsMount(main); });
   $$('[data-an-g]', box).forEach(b => b.onclick = () => { Stats.gp = b.dataset.anG; statsMount(main); });

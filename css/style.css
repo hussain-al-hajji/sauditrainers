@@ -1071,3 +1071,12 @@ input:checked + .cdot { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--g600); }
 .field small.cc.near { color: var(--warn); font-weight: 700; }
 .field small.dup-warn { color: #8A4B00; background: #FDF3E1; border-radius: 10px; padding: 8px 12px; line-height: 1.7; font-weight: 600; }
 .field small.dup-warn.hidden { display: none; }
+
+/* استهلاك Firebase */
+.fb-box { display: grid; gap: 18px; }
+.fb-h { display: flex; justify-content: space-between; align-items: center; font-family: var(--f-ui); font-weight: 700; margin-bottom: 6px; gap: 10px; }
+.fb-h i { color: var(--g600); margin-inline-end: 6px; }
+.fb-bar { height: 12px; border-radius: 99px; background: var(--g100); overflow: hidden; margin-bottom: 4px; }
+.fb-bar span { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--g600), var(--g800)); }
+.fb-bar.warn span { background: linear-gradient(90deg, #E0A33A, #B97A12); }
+.fb-bar.bad span { background: linear-gradient(90deg, #E26A5C, #B3392C); }
