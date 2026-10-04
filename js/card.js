@@ -532,27 +532,47 @@ const Card = (() => {
     </div>`;
   // طول التغريدة بحسب قواعد إكس: الرابط 23، والإيموجي وما بعد U+10FF بوزن 2
   const xLen = str => { let n = 0; String(str).replace(/https?:\/\/\S+/g, () => { n += 23; return ''; }).split('').forEach(ch => { n += ch.codePointAt(0) > 0x10FF && !/[ -⁯]/.test(ch) ? 2 : 1; }); return n; };
-  // نص المنشور بلسان المدرب نفسه، مخصّص لكل منصة
-  function memberPost(t, pl) {
-    const link = profileUrl(t), name = t.name || '', title = (t.title || '').trim(), region = regionsLabel(t, true, 2);
-    const sp = Data.cardSpecs(t).slice(0, 4).map(specName).filter(Boolean);
-    const yrs = Number(t.years) ? `${fmtNum(t.years)} سنة` : '', hrs = Number(t.hours) ? `${fmtNum(t.hours)}+ ساعة تدريبية` : '', prg = Number(t.programs) ? `${fmtNum(t.programs)}+ برنامج ودورة` : '';
-    const tags = '#مدرّبون_سعوديّون #تدريب';
-    if (pl === 'x') {
-      const build = ti => ['تعرّفوا على مسيرتي في عالم التدريب عبر منصة «مدرّبون سعوديّون» 🌟', ti, [region && `📍 ${region}`, yrs && `⏳ خبرة ${yrs}`].filter(Boolean).join(' · '), `بطاقتي وطلب التدريب 👇\n${link}`].filter(Boolean).join('\n\n').replace(/\n\n(📍|⏳)/, '\n\n$1');
-      let ti = title, txt = build(ti);
-      if (xLen(txt + '\n' + tags) <= 280) return txt + '\n' + tags;
-      while (ti.length > 12 && xLen(build(ti + '…')) > 280) ti = ti.slice(0, -4).trim();
-      return build(ti === title ? ti : ti + '…');
-    }
-    if (pl === 'linkedin') {
-      const nums = [yrs && `خبرة ${yrs} في التدريب`, hrs, prg].filter(Boolean).join(' · ');
-      return ['يسعدني أن أشارككم بطاقتي التعريفية في منصة «مدرّبون سعوديّون» 🌟', `أنا ${name}${title ? ' — ' + title : ''}.`, nums && `📊 ${nums}`, sp.length && `🎯 تخصصاتي: ${sp.join('، ')}`, region && `📍 ${region}`, `تعرّفوا على مسيرتي وتواصلوا معي لطلب التدريب عبر المنصة:\n${link}`, `${tags} #تطوير_المهارات`].filter(Boolean).join('\n\n');
-    }
-    if (pl === 'instagram') {
-      return ['تعرّفوا على مسيرتي في عالم التدريب عبر منصة «مدرّبون سعوديّون» 🌟', `${name}${title ? '\n' + title : ''}`, [region && `📍 ${region}`, yrs && `⏳ خبرة ${yrs}`].filter(Boolean).join(' · '), sp.length && `🎯 ${sp.join(' | ')}`, `بطاقتي وطلب التدريب 👇\n${link}`, `${tags} #تطوير_الذات`].filter(Boolean).join('\n\n');
-    }
-    return `السلام عليكم 👋\nتعرّف على مسيرتي في عالم التدريب عبر منصة «مدرّبون سعوديّون»${title ? '\n' + title : ''}\nبطاقتي وطلب التدريب 👇\n${link}`;
+  // قوالب نصوص المشاركة الافتراضية (بلسان المدرب). تعدّلها الإدارة من «قوالب ← نصوص مشاركة المدرب» وتُحفظ في content/shareTpl
+  const SHARE_DEFAULTS = {
+    x: 'تعرّفوا على مسيرتي في عالم التدريب عبر منصة «مدرّبون سعوديّون» 🌟\n\n{title}\n\n📍 {region} · ⏳ خبرة {years} سنة\n\nبطاقتي وطلب التدريب 👇\n{link}\n{hashtags}',
+    linkedin: 'يسعدني أن أشارككم بطاقتي التعريفية في منصة «مدرّبون سعوديّون» 🌟\n\nأنا {name} — {title}\n\n📊 خبرة {years} سنة في التدريب · {hours}+ ساعة تدريبية · {programs}+ برنامج ودورة\n\n🎯 تخصصاتي: {specs}\n\n📍 {region}\n\nتعرّفوا على مسيرتي وتواصلوا معي لطلب التدريب عبر المنصة:\n{link}\n\n{hashtags} #تطوير_المهارات',
+    instagram: 'تعرّفوا على مسيرتي في عالم التدريب عبر منصة «مدرّبون سعوديّون» 🌟\n\n{name}\n{title}\n\n📍 {region} · ⏳ خبرة {years} سنة\n\n🎯 {specs}\n\nبطاقتي وطلب التدريب 👇\n{link}\n\n{hashtags} #تطوير_الذات',
+    whatsapp: 'السلام عليكم 👋\nتعرّف على مسيرتي في عالم التدريب عبر منصة «مدرّبون سعوديّون»\n{title}\nبطاقتي وطلب التدريب 👇\n{link}'
+  };
+  const SHARE_VARS = [['name', 'اسم المدرب'], ['title', 'السطر التعريفي'], ['region', 'المنطقة'], ['years', 'سنوات الخبرة'], ['hours', 'الساعات التدريبية'], ['programs', 'البرامج والدورات'], ['specs', 'التخصصات'], ['link', 'رابط الصفحة'], ['hashtags', 'الوسوم']];
+  const shareTpl = pl => String((Store.get('content/shareTpl') || {})[pl] || '').trim() || SHARE_DEFAULTS[pl];
+  function shareVars(t) {
+    const n = v => (Number(v) ? fmtNum(v) : '');
+    return { name: t.name || '', title: (t.title || '').trim(), region: regionsLabel(t, true, 2), years: n(t.years), hours: n(t.hours), programs: n(t.programs),
+      specs: Data.cardSpecs(t).slice(0, 4).map(specName).filter(Boolean).join('، '), link: profileUrl(t), hashtags: '#مدرّبون_سعوديّون #تدريب' };
+  }
+  // يستبدل المتغيرات، ويحذف الجزء الذي متغيره فارغ (الفاصل · أو | أو —) والسطر الذي كل أجزائه فارغة
+  function fillShare(tpl, v) {
+    const SEP = / (·|\||—) /;
+    const lines = String(tpl).split('\n').map(line => {
+      const parts = line.split(SEP);       // [نص، فاصل، نص، ...]
+      let out = '', first = true;
+      for (let i = 0; i < parts.length; i += 2) {
+        const seg = parts[i], names = [...seg.matchAll(/\{(\w+)\}/g)].map(m => m[1]);
+        if (names.some(k => !(v[k] || ''))) continue;
+        out += (first ? '' : ` ${parts[i - 1]} `) + seg; first = false;
+      }
+      if (/\{\w+\}/.test(line) && first) return null;    // سطر كل أجزائه فارغة
+      return out.replace(/\{(\w+)\}/g, (m, k) => v[k] ?? m).replace(/[ \t]+$/g, '');
+    });
+    return lines.filter(l => l !== null).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+  // نص المنشور بلسان المدرب نفسه، مخصّص لكل منصة (tplText: قالب مخصّص للمعاينة)
+  function memberPost(t, pl, tplText) {
+    const tpl = tplText != null ? tplText : shareTpl(pl), v = shareVars(t);
+    if (pl !== 'x') return fillShare(tpl, v);
+    // إكس: 280 حرفاً بقواعده؛ نحذف الوسوم ثم نقصّ السطر التعريفي عند الحاجة
+    let txt = fillShare(tpl, v);
+    if (xLen(txt) <= 280) return txt;
+    txt = fillShare(tpl, { ...v, hashtags: '' }); if (xLen(txt) <= 280) return txt;
+    let ti = v.title;
+    while (ti.length > 12 && xLen(fillShare(tpl, { ...v, hashtags: '', title: ti + '…' })) > 280) ti = ti.slice(0, -4).trim();
+    return fillShare(tpl, { ...v, hashtags: '', title: ti + '…' });
   }
   async function shareTo(t, pl) {
     Analytics.event('share');
@@ -596,5 +616,5 @@ const Card = (() => {
     m.el.querySelectorAll('[data-img]').forEach(b => { b.onclick = () => save(t, b.dataset.img); });
   }
 
-  return { full, mini, avatar, symbol, fit, imgStyle, save, share, shareSheet, shareIcons, shareTo, memberPost, render, toJPEG, themeVars };
+  return { full, mini, avatar, symbol, fit, imgStyle, save, share, shareSheet, shareIcons, shareTo, memberPost, xLen, SHARE_DEFAULTS, SHARE_VARS, render, toJPEG, themeVars };
 })();

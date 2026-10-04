@@ -7,6 +7,7 @@ function aTemplates(main) {
   main.innerHTML = `
     <div class="dash-h"><h2>قوالب الرسائل</h2></div>
     <div id="ctpl"></div>
+    <div id="stpl"></div>
     <p class="muted small">الرسائل المرسلة في مراحل طلب التسجيل. انقر على أي متغير ليُدرج في الحقل المحدد، وتُستبدل المتغيرات ببيانات المتقدم عند الإرسال.</p>
     <div class="pbox"><h3><i class="fa-solid fa-building-columns"></i>بيانات السداد</h3>
       <p class="muted small">تظهر في رسالة القبول المبدئي بدل المتغير {bank}. تُحفظ للإدارة فقط ولا تظهر في الموقع.</p>
@@ -23,6 +24,7 @@ function aTemplates(main) {
         <div class="row"><button class="btn primary sm" data-save><i class="fa-solid fa-floppy-disk"></i> حفظ</button><button class="btn sm" data-prev><i class="fa-solid fa-eye"></i> معاينة بيانات تجريبية</button><button class="btn sm ghost" data-reset ${custom ? '' : 'disabled'}><i class="fa-solid fa-rotate-left"></i> القالب الافتراضي</button></div>
       </div>`; }).join('')}`;
   cardTemplateBox($('#ctpl', main));
+  shareTemplatesBox($('#stpl', main));
   let focus = null;
   main.addEventListener('focusin', e => { if (e.target.matches('textarea, input[data-f]')) focus = e.target; });
   $$('.tvar', main).forEach(b => b.addEventListener('mousedown', e => e.preventDefault()));
@@ -93,3 +95,39 @@ function cardTemplateBox(host) {
   });
   draw();
 }
+
+/* قوالب نصوص مشاركة صفحة المدرب (أيقونات المشاركة في الصفحة العامة): لكل منصة نص بلسان المدرب. تُحفظ في content/shareTpl */
+function shareTemplatesBox(host) {
+  const PL = [['linkedin', 'لينكدإن', 'fa-brands fa-linkedin-in'], ['instagram', 'إنستقرام', 'fa-brands fa-instagram'], ['x', 'إكس (280 حرفاً)', 'fa-brands fa-x-twitter'], ['whatsapp', 'واتساب', 'fa-brands fa-whatsapp']];
+  const sample = () => ({ name: 'أ. سارة العتيبي', title: 'مدربة معتمدة في القيادة والتحول الرقمي', gender: 'f', regions: ['riyadh', 'makkah'], region: 'riyadh', years: 8, hours: 1200, programs: 150, slug: 'sarah', id: 'st0001', specs: ['leadership', 'digital'], cardSpecs: ['leadership', 'digital'] });
+  const saved = () => Store.get('content/shareTpl') || {};
+  const draw = () => {
+    host.innerHTML = `<div class="pbox"><h3><i class="fa-solid fa-share-nodes"></i>نصوص مشاركة المدرب ${Object.keys(saved()).length ? '<span class="pill gold">معدَّل</span>' : ''}</h3>
+      <p class="muted small">النص الذي يُنشأ عند ضغط الزائر أيقونة المشاركة تحت بطاقة المدرب، بلسان المدرب نفسه. تُستبدل المتغيرات ببياناته، ويُحذف تلقائياً الجزء الذي متغيره فارغ (مثل «خبرة {years} سنة» إن لم يذكر سنوات). في إكس تُحذف الوسوم ثم يُقصّ السطر التعريفي إن زاد النص عن 280.</p>
+      ${PL.map(([k, name, ic]) => `<div class="stpl-box" data-k="${k}" style="margin-top:14px">
+        <h4><i class="${ic}"></i> ${name} ${saved()[k] ? '<span class="pill gold">معدَّل</span>' : ''}</h4>
+        <div class="tvars">${SHARE_VARS_UI().map(([v, l]) => `<button type="button" class="tvar tvar2" data-v="${v}" title="${l}">{${v}}<small>${l}</small></button>`).join('')}</div>
+        <textarea data-t style="min-height:${k === 'linkedin' ? 220 : 150}px;width:100%">${esc(saved()[k] || Card.SHARE_DEFAULTS[k])}</textarea>
+        <div class="row"><button class="btn primary sm" data-save><i class="fa-solid fa-floppy-disk"></i> حفظ</button><button class="btn sm" data-prev><i class="fa-solid fa-eye"></i> معاينة</button><button class="btn ghost sm" data-reset>استعادة الافتراضي</button></div>
+      </div>`).join('')}</div>`;
+    $$('.stpl-box', host).forEach(box => {
+      const k = box.dataset.k, ta = $('[data-t]', box);
+      $$('.tvar2', box).forEach(b => { b.addEventListener('mousedown', e => e.preventDefault()); b.onclick = () => {
+        const v = `{${b.dataset.v}}`, s0 = ta.selectionStart ?? ta.value.length, e0 = ta.selectionEnd ?? s0;
+        ta.value = ta.value.slice(0, s0) + v + ta.value.slice(e0); ta.focus(); ta.setSelectionRange(s0 + v.length, s0 + v.length);
+      }; });
+      $('[data-save]', box).onclick = () => {
+        const v = ta.value.trim(); if (!v) { toast('النص مطلوب', 'error'); return; }
+        if (!/\{link\}/.test(v)) { toast('أضف المتغير {link} ليظهر رابط الصفحة ومعاينتها', 'error'); return; }
+        Store.set(`content/shareTpl/${k}`, v === Card.SHARE_DEFAULTS[k] ? null : v); Security.log('تعديل نص مشاركة', k); toast('تم حفظ النص'); draw();
+      };
+      $('[data-reset]', box).onclick = async () => { if (!await confirmBox('استعادة النص الافتراضي؟', { ok: 'استعادة' })) return; Store.remove(`content/shareTpl/${k}`); draw(); };
+      $('[data-prev]', box).onclick = () => {
+        const txt = Card.memberPost(sample(), k, ta.value);
+        modal(`<h3><i class="fa-solid fa-eye"></i> معاينة: ${esc(PL.find(p => p[0] === k)[1])}</h3><pre class="mp-text" style="white-space:pre-wrap">${esc(txt)}</pre>${k === 'x' ? `<p class="muted small">طول التغريدة: <b class="num">${Card.xLen(txt)}</b> / 280</p>` : ''}`, { wide: true });
+      };
+    });
+  };
+  draw();
+}
+const SHARE_VARS_UI = () => Card.SHARE_VARS;
