@@ -86,22 +86,24 @@ const Card = (() => {
     img.onload = () => res(img); img.onerror = () => res(null);
     img.src = src;
   });
+  let why = [];   // أسباب فشل تحميل الصورة (للتشخيص)
   async function loadImage(src) {
     if (!src) return null;
     if (!/^https?:/.test(src)) return imgFrom(src, false);
     if (bust) src = bustUrl(src);
     const img = await imgFrom(src, true);
     if (img) return img;
+    why.push('img');
     // Safari: نجلب الملف عبر fetch (CORS) ونحوّله إلى blob محلي لا يلوّث اللوحة
     try {
       const r = await fetch(src, { mode: 'cors', referrerPolicy: 'no-referrer', cache: 'reload' });
-      if (r.ok) { const u = URL.createObjectURL(await r.blob()); const im = await imgFrom(u, false); if (im) return im; }
-    } catch { /* ignore */ }
+      if (r.ok) { const u = URL.createObjectURL(await r.blob()); const im = await imgFrom(u, false); if (im) return im; why.push('blob'); } else why.push('fetch' + r.status);
+    } catch (e) { why.push('fetch:' + (e && e.name)); }
     // سكربت المنصة نفسه (Apps Script) يجلب الصورة العامة ويعيدها data URL
     const gid = typeof driveId === 'function' ? (src.match(/googleusercontent\.com\/d\/([\w-]{10,})/) || [])[1] : '';
     const hook = (window.ST_CONFIG || {}).automationUrl;
     if (gid && hook) {
-      try { const r = await fetch(hook + '?img=' + gid); const d = r.ok ? await r.text() : ''; if (/^data:image\//.test(d)) { const im = await imgFrom(d, false); if (im) return im; } } catch { /* ignore */ }
+      try { const r = await fetch(hook + '?img=' + gid); const d = r.ok ? await r.text() : ''; if (/^data:image\//.test(d)) { const im = await imgFrom(d, false); if (im) return im; why.push('hook-img'); } else why.push('hook-' + (r.status) + '-' + d.slice(0, 20)); } catch (e) { why.push('hook:' + (e && e.name)); }
     }
     // أخيراً: وسيط صور عام يضيف ترويسات CORS (Safari يرفض صور Drive لأنها لا ترسلها)
     return imgFrom('https://wsrv.nl/?w=900&url=' + encodeURIComponent(src.replace(/^https?:\/\//, '')), true);
@@ -291,11 +293,11 @@ const Card = (() => {
       ctx.fillStyle = hex(fg, 0.5); ctx.font = `400 38px ${UI}`; ctx.fillText('|', bxr, y2 - 2); bxr -= ctx.measureText('|').width + 20;
       ctx.fillStyle = hex(fg, 0.85); ctx.font = `700 ${wide ? 30 : 32}px ${BRAND}`; ctx.direction = 'ltr'; ctx.fillText(x0.site, bxr, y2 - 2);
     }
-    cv.photoFailed = !t.noPhoto && !!t.photoUrl && !photo;
+    cv.photoFailed = !t.noPhoto && !!t.photoUrl && !photo; if (!cv.photoFailed) why = [];
     return cv;
   }
 
-  const photoWarn = cv => cv.photoFailed && toast('تعذّر قراءة الصورة من الرابط؛ تأكد أن الملف مشارَك «لأي شخص لديه الرابط» وأنه رابط مباشر لصورة', 'error');
+  const photoWarn = cv => cv.photoFailed && toast('تعذّر قراءة الصورة من الرابط؛ تأكد أن الملف مشارَك «لأي شخص لديه الرابط» وأنه رابط مباشر لصورة' + (why.length ? ` [${[...new Set(why)].join(',')}]` : ''), 'error');
   // رسم قابل للتصدير: إن كانت الصورة تُلوّث اللوحة (سياسة CORS) نعيد المحاولة بتجاوز الكاش، ثم بدون الصورة مع تنبيه
   const exportable = cv => { try { cv.getContext('2d').getImageData(0, 0, 1, 1); return true; } catch { return false; } };
   async function renderSafe(t, format, tpl) {
