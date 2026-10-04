@@ -5,6 +5,8 @@
 (function () {
   var base = location.pathname.split('/').slice(0, location.hostname.endsWith('github.io') ? 2 : 1).join('/') + '/';
   var p = decodeURIComponent(location.pathname.slice(base.length)).replace(/\/+$/, '');
+  var tm = p.match(/^t\/([^\/]+)$/);   // رابط المشاركة /t/<الرابط> قبل أن تُولَّد صفحته الثابتة: نحوّله لصفحة المدرب
+  if (tm) { location.replace(base + '#/t/' + encodeURIComponent(tm[1])); return; }
   var low = p.toLowerCase();
   var map = { about: '#/about', register: '#/join', 'find-major': '#/trainers', book: '#/halls', home: '#/' };
   var regions = { riyadh: 'riyadh', makkah: 'makkah', madinah: 'madinah', eastern: 'eastern', qassim: 'qassim', asir: 'asir', tabuk: 'tabuk', hail: 'hail', northern: 'northern', jazan: 'jazan', najran: 'najran', baha: 'baha', albaha: 'baha', jouf: 'jouf', aljouf: 'jouf' };

@@ -34,7 +34,7 @@ const mailSaveDraft = () => { try { localStorage.setItem(MAIL_DRAFT, JSON.string
 
 function mailVarsFor(r) {
   const name = (r.name || '').trim(), base = siteBase();
-  return { name, first: name.replace(/^(د|م|أ)\.\s*/, '').split(/\s+/)[0] || name, loginUrl: `${base}#/login`, siteUrl: base, profileUrl: r.slug ? `${base}#/t/${encodeURIComponent(r.slug)}` : base };
+  return { name, first: name.replace(/^(د|م|أ)\.\s*/, '').split(/\s+/)[0] || name, loginUrl: `${base}#/login`, siteUrl: base, profileUrl: r.slug ? `${base}t/${encodeURIComponent(r.slug)}/` : base };
 }
 const mailOpts = () => ({ site: siteBase(), assets: siteBase() });
 

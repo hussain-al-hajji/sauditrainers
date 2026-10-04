@@ -36,7 +36,7 @@ function sendCampaignNow(id) {
 }
 function campaignVars(r) {
   const name = String(r.name || '').trim();
-  return { name, first: name.replace(/^(د|م|أ)\.\s*/, '').split(/\s+/)[0] || name, loginUrl: CFG.SITE + '#/login', siteUrl: CFG.SITE, profileUrl: r.slug ? CFG.SITE + '#/t/' + encodeURIComponent(r.slug) : CFG.SITE };
+  return { name, first: name.replace(/^(د|م|أ)\.\s*/, '').split(/\s+/)[0] || name, loginUrl: CFG.SITE + '#/login', siteUrl: CFG.SITE, profileUrl: r.slug ? CFG.SITE + 't/' + encodeURIComponent(r.slug) + '/' : CFG.SITE };
 }
 // يحمّل المرفقات من روابطها (حتى 5 ملفات و20 ميغابايت)، ويفشل بوضوح إن تعذّر أحدها
 function campaignAttachments(list) {

@@ -149,7 +149,8 @@ const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(e || '').tri
 // مفتاح اليوم بتوقيت الرياض (YYYYMMDD) لعدّادات المشاهدات اليومية
 const dayKeyRiyadh = (offsetDays = 0) => new Date(Date.now() + 3 * 3600e3 - offsetDays * 864e5).toISOString().slice(0, 10).replace(/-/g, '');
 const siteBase = () => { const c = window.ST_CONFIG; return c.useCurrentOrigin && /^https?:$/.test(location.protocol) && !/^(localhost|127\.|\[::1\]|0\.0\.0\.0)/.test(location.hostname) ? location.href.split('#')[0] : (c.siteUrl || location.href.split('#')[0]); };
-const profileUrl = t => `${siteBase()}#/t/${encodeURIComponent(t.slug || t.id)}`;
+// رابط المشاركة: صفحة ثابتة بوسوم المعاينة (t/<الرابط>/) تحوّل الزائر لصفحة المدرب؛ وتُولَّد بـ tools/og/build.js
+const profileUrl = t => `${siteBase()}t/${encodeURIComponent(t.slug || t.id)}/`;
 
 /* ===== التنبيهات ===== */
 function toast(msg, kind = 'ok') {
