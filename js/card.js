@@ -76,11 +76,12 @@ const Card = (() => {
   const UI = "'IBM Plex Sans Arabic', 'Noto Sans Arabic', sans-serif";
   const BODY = "'Noto Sans Arabic', 'IBM Plex Sans Arabic', sans-serif";
 
+  let bust = false;   // إعادة المحاولة بمعامل جديد يتجاوز نسخة الصورة المخزّنة في المتصفح دون ترويسات CORS (سبب شائع في Safari)
   function loadImage(src) {
     return new Promise(res => {
       if (!src) return res(null);
       const img = new Image();
-      if (/^https?:/.test(src)) img.crossOrigin = 'anonymous';
+      if (/^https?:/.test(src)) { img.crossOrigin = 'anonymous'; if (bust) src += (src.includes('?') ? '&' : '?') + '_cb=' + Date.now(); }
       img.referrerPolicy = 'no-referrer';
       img.onload = () => res(img); img.onerror = () => res(null);
       img.src = src;
@@ -274,18 +275,36 @@ const Card = (() => {
   }
 
   const photoWarn = cv => cv.photoFailed && toast('تعذّر قراءة الصورة من الرابط؛ تأكد أن الملف مشارَك «لأي شخص لديه الرابط» وأنه رابط مباشر لصورة', 'error');
+  // رسم قابل للتصدير: إن كانت الصورة تُلوّث اللوحة (سياسة CORS) نعيد المحاولة بتجاوز الكاش، ثم بدون الصورة مع تنبيه
+  const exportable = cv => { try { cv.getContext('2d').getImageData(0, 0, 1, 1); return true; } catch { return false; } };
+  async function renderSafe(t, format, tpl) {
+    for (const attempt of ['normal', 'bust', 'nophoto']) {
+      bust = attempt === 'bust';
+      try {
+        const cv = await render(attempt === 'nophoto' ? { ...t, noPhoto: true } : t, format, tpl);
+        if (exportable(cv)) { if (attempt === 'nophoto') cv.photoFailed = true; return cv; }
+      } catch (e) { console.warn('card render', attempt, e); if (attempt === 'nophoto') throw e; }
+      finally { bust = false; }
+    }
+    throw new Error('card render failed');
+  }
   async function toBlob(t, format) {
-    const cv = await render(t, format); photoWarn(cv);
-    return new Promise(r => cv.toBlob(r, 'image/png'));
+    const cv = await renderSafe(t, format); photoWarn(cv);
+    const blob = await new Promise(r => { try { cv.toBlob(r, 'image/png'); } catch { r(null); } });
+    if (blob) return blob;
+    // بعض الجوالات تعيد null عند ضغط لوحة كبيرة: نبني الملف من data URL
+    const d = cv.toDataURL('image/png'), bin = atob(d.split(',')[1]), u8 = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+    return new Blob([u8], { type: 'image/png' });
   }
   async function toJPEG(t, format = 'post') {
-    const cv = await render(t, format);
+    const cv = await renderSafe(t, format);
     return { data: cv.toDataURL('image/jpeg', 0.86), photoFailed: cv.photoFailed };
   }
   async function save(t, format = 'post') {
     toast('جارٍ تجهيز البطاقة بدقة عالية...');
     try { download(`sauditrainers-${(t.slug || 'card')}-${format}.png`, await toBlob(t, format)); toast('تم حفظ البطاقة'); }
-    catch (e) { console.error(e); toast('تعذّر إنشاء صورة البطاقة (تأكد أن رابط الصورة متاح للعامة)', 'error'); }
+    catch (e) { console.error(e); toast(`تعذّر إنشاء صورة البطاقة (${e && e.name ? e.name : 'خطأ'}): حدّث الصفحة وأعد المحاولة، وإن تكرر فأرسل هذه الرسالة للإدارة`, 'error'); }
   }
   async function share(t) {
     Analytics.event('share');
