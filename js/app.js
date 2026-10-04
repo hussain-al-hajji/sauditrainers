@@ -100,6 +100,11 @@ const App = (() => {
   async function start() {
     const mode = await Store.init();
     await Security.restore();
+    if (window.ST_CONFIG.previewMode) {   // معاينة كمدرب: جلسة مدرب افتراضي أو صفحته العامة
+      document.body.classList.add('preview');
+      if (window.ST_CONFIG.previewMode === 'me') { Auth.set({ kind: 'trainer', id: 'st9999' }); if (!location.hash) location.hash = '#/me'; }
+      else if (!location.hash) location.hash = '#/t/preview-trainer';
+    }
     loadSpecialties(); Store.subscribe(loadSpecialties);
     if (mode === 'local' || Auth.current()?.kind === 'admin') await Store.seedOnce(() => ({ content: defaultContent(), counters: { trainer: 0 }, meta: { createdAt: Date.now() } }));
     render();

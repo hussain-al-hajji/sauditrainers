@@ -26,6 +26,8 @@
   <noscript><p style="padding:40px;text-align:center">يتطلب الموقع تفعيل JavaScript.</p></noscript>
 
   <script src="js/config.js?v=20261002-1"></script>
+  <script>/* وضع «معاينة كمدرب» داخل لوحة الإدارة: قاعدة محلية معزولة، بلا Firebase ولا أتمتة ولا تحليلات */
+  (function () { try { var m = new URLSearchParams(location.search).get('preview'); if (m && window.ST_CONFIG) { var c = window.ST_CONFIG; c.firebase = null; c.automationUrl = ''; c.gaId = ''; c.previewMode = m; } } catch (e) {} })();</script>
   <script src="js/pattern.js?v=20261002-1"></script>
   <script src="js/store.js?v=20261002-1"></script>
   <script src="js/data.js?v=20261002-1"></script>
@@ -47,6 +49,7 @@
   <script src="js/mail-render.js?v=20261002-1"></script>
   <script src="js/admin-mail.js?v=20261002-1"></script>
   <script src="js/admin-stats.js?v=20261002-1"></script>
+  <script src="js/admin-preview.js?v=20261002-1"></script>
   <script src="js/analytics.js?v=20261002-1"></script>
   <script src="js/app.js?v=20261002-1"></script>
 </body>

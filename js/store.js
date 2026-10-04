@@ -1,7 +1,8 @@
 /* طبقة البيانات: Firebase Realtime Database (أو localStorage عند عدم إعداد Firebase) */
 const Store = (() => {
   const CFG = window.ST_CONFIG || {};
-  const LOCAL_KEY = 'sauditrainers-db-v1';
+  const PREVIEW = !!window.ST_CONFIG?.previewMode;
+  const LOCAL_KEY = PREVIEW ? 'st-preview-state' : 'sauditrainers-db-v1';
   const FB_VER = '10.12.2';
   let state = {};
   let mode = 'local';
@@ -204,7 +205,8 @@ const Store = (() => {
   }
 
   function initLocal() {
-    try { state = JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}') || {}; } catch { state = {}; }
+    // وضع المعاينة: تُبنى القاعدة من بذرة تكتبها لوحة الإدارة، ولا تُحفظ أي تعديلات خارج المعاينة
+    try { state = JSON.parse(localStorage.getItem(PREVIEW ? 'st-preview-seed' : LOCAL_KEY) || '{}') || {}; } catch { state = {}; }
     window.addEventListener('storage', e => {
       if (e.key !== LOCAL_KEY) return;
       try { state = JSON.parse(e.newValue || '{}') || {}; } catch { state = {}; }

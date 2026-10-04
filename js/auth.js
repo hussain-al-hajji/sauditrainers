@@ -10,8 +10,8 @@ const trainerPaths = id => [...PUBLIC_PATHS, `private/${id}`, `notes/${id}`, { p
 
 const Auth = {
   KEY: 'st-auth',
-  current() { try { return JSON.parse(sessionStorage.getItem(this.KEY) || 'null') || window.__auth || null; } catch { return window.__auth || null; } },
-  set(v) { window.__auth = v; try { v ? sessionStorage.setItem(this.KEY, JSON.stringify(v)) : sessionStorage.removeItem(this.KEY); } catch { /* ignore */ } },
+  current() { if (window.ST_CONFIG.previewMode) return window.__auth || null; try { return JSON.parse(sessionStorage.getItem(this.KEY) || 'null') || window.__auth || null; } catch { return window.__auth || null; } },
+  set(v) { window.__auth = v; if (window.ST_CONFIG.previewMode) return; try { v ? sessionStorage.setItem(this.KEY, JSON.stringify(v)) : sessionStorage.removeItem(this.KEY); } catch { /* ignore */ } },
   async logout() {
     this.set(null);
     if (Store.auth) await Store.auth.signOut().catch(() => {});

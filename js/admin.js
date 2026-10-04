@@ -38,6 +38,7 @@ Pages.admin = {
         <div class="side-nav">${this.menuHTML()}</div>
         <button class="side-sort-m" data-menu-edit title="ترتيب القائمة"><i class="fa-solid fa-arrow-down-up-across-line"></i>ترتيب</button>
         <hr style="border:0;border-top:1px solid rgba(255,255,255,.08)">
+        <button data-preview><i class="fa-solid fa-user-gear"></i>معاينة كمدرب</button>
         <button data-out><i class="fa-solid fa-right-from-bracket"></i>خروج</button>
       </aside>
       <main id="at"></main>
@@ -73,6 +74,7 @@ Pages.admin = {
     this.wireMenu(root);
     $$('[data-menu-edit]', root).forEach(b => b.onclick = () => { this.menuEdit = !this.menuEdit; this.wireMenu(root); });
     $('[data-out]', root).onclick = () => Auth.logout();
+    $('[data-preview]', root).onclick = () => TrainerPreview.open();
     const main = $('#at', root);
     ({ dash: aDash, apps: aApps, trainers: aTrainers, requests: aRequests, mail: aMail, social: aSocial, home: aHome, forms: aForms, templates: aTemplates, specs: aSpecs, halls: aHalls, content: aContent, admins: aAdmins, backup: aBackup })[this.tab](main);
   },
