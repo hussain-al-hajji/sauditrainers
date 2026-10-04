@@ -1,0 +1,18 @@
+Copyright (c) 2026 مدرّبون سعوديّون — Saudi Trainers (https://sauditrainers.sa)
+جميع الحقوق محفوظة. All rights reserved.
+
+هذا المستودع متاح للعرض فقط. لا يُمنح أي ترخيص لنسخ هذا الكود أو تعديله أو توزيعه أو إعادة نشره أو استخدامه
+كلياً أو جزئياً (بما في ذلك التصميم والنصوص والشعار والهوية البصرية وقوالب البطاقات) في أي منتج أو خدمة
+دون إذن كتابي مسبق من مالك المنصة.
+
+This repository is provided for viewing only. No license is granted to copy, modify, distribute, republish,
+or use this code, in whole or in part (including the design, text, logo, brand identity and card templates),
+in any product or service without prior written permission from the platform owner.
+
+الاستثناء الوحيد: الحقوق التي تمنحها شروط خدمة GitHub للمستخدمين لعرض المستودع وعمل Fork له داخل GitHub.
+The only exception: the rights granted by GitHub's Terms of Service to view and fork this repository within GitHub.
+
+المكتبات الخارجية داخل المجلد vendor/ (مثل Font Awesome وqrcode-generator) تخضع لتراخيصها الأصلية.
+Third-party libraries in vendor/ (e.g. Font Awesome, qrcode-generator) remain under their own licenses.
+
+للاستئذان أو الاستفسار: https://sauditrainers.sa
