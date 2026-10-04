@@ -97,7 +97,8 @@ const Card = (() => {
       const r = await fetch(src, { mode: 'cors', referrerPolicy: 'no-referrer', cache: 'reload' });
       if (r.ok) { const u = URL.createObjectURL(await r.blob()); const im = await imgFrom(u, false); if (im) return im; }
     } catch { /* ignore */ }
-    return null;
+    // أخيراً: وسيط صور عام يضيف ترويسات CORS (Safari يرفض صور Drive لأنها لا ترسلها)
+    return imgFrom('https://wsrv.nl/?w=900&url=' + encodeURIComponent(src.replace(/^https?:\/\//, '')), true);
   }
   function loadScript(src) {
     return new Promise(res => { const s = document.createElement('script'); s.src = src; s.onload = () => res(true); s.onerror = () => res(false); document.head.appendChild(s); });
