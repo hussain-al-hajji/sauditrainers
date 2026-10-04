@@ -219,6 +219,9 @@ Pages.profile = {
   mount(root, params, slug) {
     const t = Data.trainer(decodeURIComponent(slug || ''));
     if (!t) return;
+    // رابط قديم (قبل تغيير الاسم الإنجليزي): نحدّث شريط العنوان إلى الرابط الحالي دون إعادة تحميل
+    const asked = decodeURIComponent(slug || '');
+    if (t.slug && asked !== t.slug && asked !== t.id) history.replaceState(null, '', `#/t/${encodeURIComponent(t.slug)}`);
     document.title = `${t.name} | مدرّبون سعوديّون`;
     if (!Auth.current()) Data.track('views', t.id);
     $('#shr', root) && ($('#shr', root).onclick = () => Card.share(t));

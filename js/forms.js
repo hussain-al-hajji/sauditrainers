@@ -10,7 +10,7 @@ const LANG_OPTS = ['العربية', 'الإنجليزية'];
 // الحقول الأساسية: lock = لا تُخفى ولا يُلغى إلزامها، priv = بيانات إدارية لا تظهر لأحد، joinOnly = في طلب التسجيل فقط
 const CORE_FIELDS = {
   name: { label: 'الاسم كما يظهر في البطاقة', type: 'text', max: 60, ph: 'مثال: أ. سارة العتيبي', req: true, lock: true },
-  nameEn: { label: 'الاسم بالإنجليزية', type: 'text', max: 60, ltr: true, ph: 'Sarah Alotaibi', hint: 'يُكتب تلقائياً من اسمك العربي ويمكنك تعديله، ويُستخدم في رابط صفحتك المختصر' },
+  nameEn: { label: 'الاسم بالإنجليزية', type: 'text', max: 60, ltr: true, ph: 'Sarah Alotaibi', hint: 'يُكتب تلقائياً من اسمك العربي ويمكنك تعديله، ويُستخدم في رابط صفحتك المختصر، ويتحدّث الرابط تلقائياً عند تعديله (والرابط القديم يبقى يعمل)' },
   gender: { label: 'الجنس', type: 'gender', req: true },
   region: { label: 'المنطقة (يمكن اختيار أكثر من منطقة)', type: 'region', req: true, lock: true, w: 'full' },
   city: { label: 'المدينة', type: 'text', max: 40 },

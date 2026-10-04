@@ -139,7 +139,7 @@ function portalEdit(main, t) {
   const preview = () => previewCard($('#pvw', main), { ...FormKit.read(form), code: t.code });
   FormKit.wire(form, preview);
   preview();
-  form.onsubmit = e => {
+  form.onsubmit = async e => {
     e.preventDefault();
     const d = FormKit.read(form);
     const err = FormKit.validate(steps.flatMap(s => s.fields), d, form);
@@ -148,7 +148,10 @@ function portalEdit(main, t) {
     upd.updatedAt = Date.now();
     const pub = Data.splitExtra(d.extra).pub;
     upd.extra = Object.keys(pub).length ? { ...(t.extra || {}), ...pub } : (t.extra || null);
+    // تغيير الاسم الإنجليزي يحدّث رابط صفحتك (والرابط القديم يبقى يعمل ويحوّل للجديد)
+    const ns = await Data.refreshSlug(t, upd.nameEn); if (ns) upd.slug = ns;
     Store.update(`trainers/${t.id}`, upd);
+    if (ns) toast(`تحدّث رابط صفحتك إلى: ${profileUrl({ ...t, slug: ns })}`);
     Security.track('edit', 'بيانات البطاقة');
     toast('تم حفظ بطاقتك');
   };

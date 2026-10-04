@@ -22,7 +22,8 @@ const Data = (() => {
   const isLive = t => !!t && t.status === 'active';
   const all = () => Store.list('trainers').sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0) || (b.publishedAt || 0) - (a.publishedAt || 0));
   const live = () => all().filter(isLive);
-  const trainer = idOrSlug => Store.get(`trainers/${idOrSlug}`) || Store.list('trainers').find(t => t.slug === idOrSlug);
+  // البحث بالرقم أو بالرابط الحالي أو بأي رابط سابق للمدرب (slugs/ تحفظ الروابط القديمة بعد تغيير الاسم الإنجليزي)
+  const trainer = idOrSlug => Store.get(`trainers/${idOrSlug}`) || Store.list('trainers').find(t => t.slug === idOrSlug) || Store.get(`trainers/${Store.get(`slugs/${idOrSlug}`)}`) || null;
   const views = id => Number(Store.get(`stats/views/${id}`) || 0);
   const clicks = id => Number(Store.get(`stats/clicks/${id}`) || 0);
 
@@ -71,12 +72,31 @@ const Data = (() => {
     return `ST${String(n).padStart(4, '0')}`;
   }
   // رابط مختصر للمدرب من اسمه اللاتيني إن وُجد وإلا الرقم
+  const slugBase = nameEn => String(nameEn || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+  const slugOwner = s => Store.get(`slugs/${s}`) || Store.list('trainers').find(x => x.slug === s)?.id || '';
   function makeSlug(t) {
-    const base = String(t.nameEn || '').toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40);
+    const base = slugBase(t.nameEn);
     const s = base || 't-' + Math.random().toString(36).slice(2, 8);
-    const taken = Store.list('trainers').some(x => x.slug === s && x.id !== t.id);
-    return taken ? `${s}-${String(t.code || '').toLowerCase().replace(/\D/g, '')}` : s;
+    const o = slugOwner(s);
+    return o && o !== t.id ? `${s}-${String(t.code || '').toLowerCase().replace(/\D/g, '')}` : s;
   }
+  // حجز الرابط للمدرب (الإدارة عند الإنشاء)
+  const claimSlug = (slug, id) => slug && id && Store.set(`slugs/${slug}`, id);
+  // عند تغيير الاسم الإنجليزي: يعيد الرابط الجديد بعد حجزه (الرابط القديم يبقى يعمل ويحوّل للجديد)، أو null إن لم يلزم تغيير
+  async function refreshSlug(t, nameEn) {
+    const base = slugBase(nameEn);
+    if (!base || (t.nameEn || '') === (nameEn || '')) return null;
+    const cur = t.slug || '';
+    if (cur === base || (cur.startsWith(base + '-') && /^\d+$/.test(cur.slice(base.length + 1)))) return null;   // مطابق للاسم الحالي
+    for (const s of [base, `${base}-${String(t.code || '').toLowerCase().replace(/\D/g, '')}`]) {
+      const o = slugOwner(s);
+      if (o && o !== t.id) continue;
+      if (await Store.setConfirmed(`slugs/${s}`, t.id)) return s;
+    }
+    return null;
+  }
+  // ترحيل: يضمن أن لكل مدرب حالي رابطاً محجوزاً في slugs/ (يُشغَّل من لوحة الإدارة)
+  function syncSlugs() { Store.list('trainers').forEach(t => { if (t.slug && Store.get(`slugs/${t.slug}`) !== t.id) Store.set(`slugs/${t.slug}`, t.id); }); }
 
   // الحقول العامة للمدرب (المسموح بتعديلها من صفحته — تطابق القواعد)
   const PUBLIC_FIELDS = ['name', 'nameEn', 'title', 'gender', 'region', 'city', 'bio', 'specs', 'topics', 'modes', 'years', 'hours', 'programs', 'certs', 'langs', 'theme', 'photoUrl', 'photoX', 'photoY', 'photoZ', 'noPhoto', 'cardSpecs', 'regions', 'travel', 'tot', 'proCerts', 'partners'];
@@ -103,7 +123,7 @@ const Data = (() => {
       ...pick(app, PUBLIC_FIELDS), id, code, status: 'active', featured: false,
       publishedAt: Date.now(), updatedAt: Date.now(), appId: app.id
     };
-    t.slug = makeSlug(t);
+    t.slug = makeSlug(t); claimSlug(t.slug, id);
     const ex = splitExtra(app.extra);
     if (Object.keys(ex.pub).length) t.extra = ex.pub;
     Store.set(`trainers/${id}`, t);
@@ -123,7 +143,7 @@ const Data = (() => {
     if (kind === 'views') Store.bump([`stats/vday/${id}/${dayKeyRiyadh()}`]);   // مشاهدات يومية لإحصاءات المدرب
   }
 
-  return { content, photo, specs, cardSpecs, modes, topics, all, live, trainer, isLive, search, match, regionCounts, specCounts, views, clicks, nextCode, makeSlug, addSpecialty, publishFromApplication, track, PUBLIC_FIELDS, pick, splitExtra };
+  return { content, photo, specs, cardSpecs, modes, topics, all, live, trainer, isLive, search, match, regionCounts, specCounts, views, clicks, nextCode, makeSlug, claimSlug, refreshSlug, syncSlugs, addSpecialty, publishFromApplication, track, PUBLIC_FIELDS, pick, splitExtra };
 })();
 
 /* الأتمتة (اختيارية): رابط Google Apps Script يرسل البريد من حساب المنصة وينشر في وسائل التواصل.

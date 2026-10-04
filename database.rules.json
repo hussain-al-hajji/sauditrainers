@@ -26,6 +26,13 @@
       "meta": {
         ".read": true
       },
+      "slugs": {
+        ".read": true,
+        "$s": {
+          ".write": "auth != null && newData.val() == root.child('sauditrainers/uids/' + auth.uid).val() && (!data.exists() || data.val() == newData.val())",
+          ".validate": "$s.matches(/^[a-z0-9-]{1,60}$/) && newData.isString()"
+        }
+      },
       "halls": {
         ".read": true
       },
@@ -169,9 +176,6 @@
           "code": {
             ".validate": "newData.isString() && newData.val().length <= 80"
           },
-          "slug": {
-            ".validate": "newData.isString() && newData.val().length <= 80"
-          },
           "status": {
             ".validate": "newData.isString() && newData.val().length <= 80"
           },
@@ -180,6 +184,10 @@
           },
           "uid": {
             ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "slug": {
+            ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9-]{1,60}$/)",
+            ".write": "(auth != null && root.child('sauditrainers/uids/' + auth.uid).val() == $id) && root.child('sauditrainers/slugs/' + newData.val()).val() == $id"
           },
           "featured": {
             ".validate": "newData.isBoolean()"

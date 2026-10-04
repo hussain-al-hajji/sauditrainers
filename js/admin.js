@@ -150,6 +150,7 @@ function aDash(main) {
       <div class="pbox"><h3><i class="fa-solid fa-clock-rotate-left"></i>آخر النشاطات</h3><div class="log">${Store.list('adminLog').sort((a, b) => b.ts - a.ts).slice(0, 8).map(l => `<div><small>${ago(l.ts)}</small><span><b>${esc(l.action)}</b> ${esc(l.target)} <small>— ${esc(l.by?.name || '')}</small></span></div>`).join('') || '<p class="muted small">لا نشاط بعد</p>'}</div></div>
       ${actHTML}
     </div>`;
+  if (!aDash.synced) { aDash.synced = true; Data.syncSlugs(); }   // ترحيل: حجز روابط المدربين الحاليين
   statsMount(main);
   countUp(main);
 }
@@ -415,7 +416,7 @@ function trainerEditor(t) {
   m.$('#dl') && (m.$('#dl').onclick = async () => {
     if (!await confirmBox(`حذف <b>${esc(t.name)}</b> نهائياً مع حساب دخوله؟`, { ok: 'حذف', danger: true })) return;
     await Security.deleteTrainerAccount(t);
-    ['trainers', 'private', 'notes', 'secrets/codes', 'stats/views', 'stats/clicks', 'activity'].forEach(p => Store.remove(`${p}/${t.id}`));
+    ['trainers', 'private', 'notes', 'secrets/codes', 'stats/views', 'stats/clicks', 'activity'].forEach(p => Store.remove(`${p}/${t.id}`)); Object.entries(Store.get('slugs') || {}).forEach(([sl, v]) => { if (v === t.id) Store.remove(`slugs/${sl}`); });
     Security.log('حذف مدرب', t.name); m.close();
   });
   form.onsubmit = async e => {
@@ -432,9 +433,13 @@ function trainerEditor(t) {
       const code = await Data.nextCode();
       id = code.toLowerCase();
       Object.assign(rec, { id, code, publishedAt: Date.now(), featured: false });
-      rec.slug = Data.makeSlug(rec);
+      rec.slug = Data.makeSlug(rec); Data.claimSlug(rec.slug, id);
       Store.set(`trainers/${id}`, rec);
-    } else Store.update(`trainers/${id}`, rec);
+    } else {
+      // تغيير الاسم الإنجليزي يحدّث رابط الصفحة (والرابط القديم يبقى يعمل)
+      const ns = await Data.refreshSlug(t, rec.nameEn); if (ns) { rec.slug = ns; toast(`تحدّث رابط الصفحة إلى: ${ns}`); }
+      Store.update(`trainers/${id}`, rec);
+    }
     Store.set(`private/${id}`, { phone: d.phone ? phoneDigits(d.phone) : '', email: d.email || '', ...(Object.keys(ex.priv).length ? { extra: ex.priv } : {}) });
     Store.set(`notes/${id}`, d.note ? { text: d.note, ts: Date.now() } : null);
     Security.log(isNew ? 'إضافة مدرب' : 'تعديل مدرب', d.name);
@@ -556,7 +561,7 @@ function importDialog() {
         unknown.forEach(n => { const k = Data.addSpecialty(n); if (k && !rec.specs.includes(k) && rec.specs.length < MAX_SPECS) rec.specs.push(k); });
         const code = await Data.nextCode(); const id = code.toLowerCase();
         Object.assign(rec, { id, code, status: 'active', featured: false, publishedAt: Date.now(), updatedAt: Date.now() });
-        rec.slug = Data.makeSlug(rec);
+        rec.slug = Data.makeSlug(rec); Data.claimSlug(rec.slug, id);
         const a = await Store.setConfirmed(`trainers/${id}`, rec);
         const b = a && await Store.setConfirmed(`private/${id}`, priv);
         if (a && b) done++; else failed++;
@@ -749,7 +754,7 @@ function aBackup(main) {
   $('#dx', main).onclick = async () => {
     const demo = Data.all().filter(t => t.demo);
     if (!demo.length || !await confirmBox(`حذف ${demo.length} مدرب تجريبي؟`, { danger: true, ok: 'حذف' })) return;
-    for (const t of demo) { await Security.deleteTrainerAccount(t); ['trainers', 'private', 'notes', 'secrets/codes', 'stats/views', 'stats/clicks', 'activity'].forEach(p => Store.remove(`${p}/${t.id}`)); }
+    for (const t of demo) { await Security.deleteTrainerAccount(t); ['trainers', 'private', 'notes', 'secrets/codes', 'stats/views', 'stats/clicks', 'activity'].forEach(p => Store.remove(`${p}/${t.id}`)); Object.entries(Store.get('slugs') || {}).forEach(([sl, v]) => { if (v === t.id) Store.remove(`slugs/${sl}`); }); }
     toast('تم الحذف');
   };
   $('#rs', main).onchange = async e => {
@@ -781,7 +786,7 @@ async function seedDemo() {
       bio: `${gender === 'f' ? 'مدربة' : 'مدرب'} سعودي${gender === 'f' ? 'ة' : ''} بخبرة ${years} سنة في التدريب والتطوير، ${gender === 'f' ? 'قدّمت' : 'قدّم'} أكثر من ${programs} برنامجاً تدريبياً لجهات حكومية وخاصة وغير ربحية. (بيانات تجريبية)`,
       certs: 'شهادة إعداد المدربين TOT', status: 'active', featured: years >= 10, demo: true,
       publishedAt: Date.now(), updatedAt: Date.now() };
-    rec.slug = Data.makeSlug(rec);
+    rec.slug = Data.makeSlug(rec); Data.claimSlug(rec.slug, id);
     Store.set(`trainers/${id}`, rec);
     Store.set(`private/${id}`, { phone: '966500000000', email: 'demo@example.com' });
   }

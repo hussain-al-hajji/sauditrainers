@@ -50,8 +50,10 @@ trainer_fields['specs'] = {**str_list(15, 20), '.write': self_trainer}
 trainer_fields['modes'] = {**str_list(3, 10), '.write': self_trainer}
 trainer_fields['extra'] = {**extra, '.write': self_trainer}
 trainer_fields['updatedAt'] = {'.validate': 'newData.isNumber()', '.write': self_trainer}
-for k in ['id', 'code', 'slug', 'status', 'appId', 'uid']:
+for k in ['id', 'code', 'status', 'appId', 'uid']:
     trainer_fields[k] = {'.validate': S(80)}
+# رابط الصفحة: يُعدّله المدرب لنفسه فقط إذا حجزه في slugs/ باسمه (فلا يستولي على رابط غيره)
+trainer_fields['slug'] = {'.validate': "newData.isString() && newData.val().matches(/^[a-z0-9-]{1,60}$/)", '.write': f"{self_trainer} && root.child('{ROOT}/slugs/' + newData.val()).val() == $id"}
 for k in ['featured', 'demo']:
     trainer_fields[k] = {'.validate': 'newData.isBoolean()'}
 for k in ['publishedAt', 'expiresAt']:
@@ -105,6 +107,11 @@ rules = {
                 }}},
             },
             'meta': {'.read': True},
+            # حجز روابط صفحات المدربين (الرابط ← رقم المدرب): قراءة عامة؛ يحجز المدرب رابطاً حراً أو رابطه نفسه فقط، ولا يحذف أحد غير الإدارة
+            'slugs': {'.read': True, '$s': {
+                '.write': f"auth != null && newData.val() == {me} && (!data.exists() || data.val() == newData.val())",
+                '.validate': "$s.matches(/^[a-z0-9-]{1,60}$/) && newData.isString()",
+            }},
             'halls': {'.read': True},
             'trainers': {'.read': True, '$id': {'.validate': "newData.hasChildren(['name', 'code'])", **trainer_fields}},
             # بطاقات «من طلبات هذا الشهر» في الرئيسية (دون بيانات تواصل)
