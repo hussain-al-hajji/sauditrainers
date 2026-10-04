@@ -92,6 +92,8 @@ const Card = (() => {
   }
   async function ensureQR() {
     if (window.qrcode) return true;
+    // نسخة محلية أولاً (لا تعتمد على CDN قد يُحجب على بعض الشبكات)، ثم CDN احتياطاً
+    if (await loadScript('vendor/qrcode/qrcode.js') && window.qrcode) return true;
     return Promise.race([loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'), new Promise(r => setTimeout(() => r(false), 5000))]).then(() => !!window.qrcode);
   }
   async function ensureFonts(tp = cardTemplate()) {
