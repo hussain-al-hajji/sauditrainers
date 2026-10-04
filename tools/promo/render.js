@@ -27,7 +27,7 @@ const SAMPLE = [
   }, SAMPLE);
   const q = await b.newPage({ viewport: { width: 1200, height: 1400 } });
   // posts.html: منشورات ترويجية للجمهور، updates.html: صور إعلام المدربين بتحديث المنصة
-  for (const [file, pre, n, dir] of [['posts', 'p', 6, ''], ['updates', 'u', 10, 'updates/']]) {
+  for (const [file, pre, n, dir] of [['posts', 'p', 7, ''], ['updates', 'u', 10, 'updates/']]) {
     await q.goto(`${BASE}/tools/promo/${file}.html`); await q.evaluate(c => window.setCards(c), cards);
     await q.evaluate(() => document.fonts.ready); await q.waitForTimeout(800);
     if (dir) require('fs').mkdirSync(path.join(OUT, dir), { recursive: true });
