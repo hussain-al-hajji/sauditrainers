@@ -293,7 +293,7 @@ const Card = (() => {
       ctx.fillStyle = hex(fg, 0.5); ctx.font = `400 38px ${UI}`; ctx.fillText('|', bxr, y2 - 2); bxr -= ctx.measureText('|').width + 20;
       ctx.fillStyle = hex(fg, 0.85); ctx.font = `700 ${wide ? 30 : 32}px ${BRAND}`; ctx.direction = 'ltr'; ctx.fillText(x0.site, bxr, y2 - 2);
     }
-    cv.photoFailed = !t.noPhoto && !!t.photoUrl && !photo; if (!cv.photoFailed) why = [];
+    cv.photoFailed = !t.noPhoto && !!t.photoUrl && !photo;
     return cv;
   }
 
@@ -302,6 +302,7 @@ const Card = (() => {
   const exportable = cv => { try { cv.getContext('2d').getImageData(0, 0, 1, 1); return true; } catch { return false; } };
   async function renderSafe(t, format, tpl) {
     // 4 محاولات: عادي، تجاوز الكاش، بلا صورة، ثم نسخة مبسّطة (بلا صورة ولا نقش) للمتصفحات الأضعف (Safari)
+    why = [];
     let fallback = null;   // أفضل نتيجة صالحة للتصدير حتى الآن (قد تكون بلا صورة)
     for (const attempt of ['normal', 'bust', 'nophoto', 'plain']) {
       bust = attempt === 'bust'; plain = attempt === 'plain';
@@ -312,7 +313,8 @@ const Card = (() => {
           if (cv.photoFailed && attempt === 'normal') { fallback = cv; continue; }   // فشلت الصورة فقط: نجرّب تجاوز الكاش
           return cv;
         }
-      } catch (e) { console.warn('card render', attempt, e); if (attempt === 'plain') throw e; }
+        why.push('taint-' + attempt + (cv.photoFailed ? '(nophoto)' : ''));
+      } catch (e) { console.warn('card render', attempt, e); why.push(attempt + ':' + (e && e.name) + ':' + String(e && e.message || '').slice(0, 50)); if (attempt === 'plain') throw e; }
       finally { bust = false; plain = false; }
     }
     if (fallback) return fallback;
