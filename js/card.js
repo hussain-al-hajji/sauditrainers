@@ -517,6 +517,65 @@ const Card = (() => {
     } catch (e) { if (e && e.name === 'AbortError') return; }
     shareSheet(t);
   }
+
+  /* ===================== مشاركة صفحة المدرب بلسانه (أيقونات المنصات) ===================== */
+  const SHARE_PL = [
+    { k: 'linkedin', name: 'لينكدإن', icon: 'fa-brands fa-linkedin-in' },
+    { k: 'instagram', name: 'إنستقرام', icon: 'fa-brands fa-instagram' },
+    { k: 'x', name: 'إكس', icon: 'fa-brands fa-x-twitter' },
+    { k: 'whatsapp', name: 'واتساب', icon: 'fa-brands fa-whatsapp' }
+  ];
+  // أيقونات تُوضع تحت البطاقة؛ علامة المشاركة الصغيرة على كل أيقونة توضّح أنها مشاركة لا رابط حساب المدرب
+  const shareIcons = () => `<div class="share-pl" role="group" aria-label="شارك صفحة المدرب">
+      <span class="sp-l"><i class="fa-solid fa-share-nodes"></i> شارك صفحة المدرب</span>
+      ${SHARE_PL.map(x => `<button type="button" class="spb ${x.k}" data-sp="${x.k}" title="مشاركة عبر ${x.name}" aria-label="مشاركة عبر ${x.name}"><i class="${x.icon}"></i><b class="spb-b"><i class="fa-solid fa-share"></i></b></button>`).join('')}
+    </div>`;
+  // طول التغريدة بحسب قواعد إكس: الرابط 23، والإيموجي وما بعد U+10FF بوزن 2
+  const xLen = str => { let n = 0; String(str).replace(/https?:\/\/\S+/g, () => { n += 23; return ''; }).split('').forEach(ch => { n += ch.codePointAt(0) > 0x10FF && !/[ -⁯]/.test(ch) ? 2 : 1; }); return n; };
+  // نص المنشور بلسان المدرب نفسه، مخصّص لكل منصة
+  function memberPost(t, pl) {
+    const link = profileUrl(t), name = t.name || '', title = (t.title || '').trim(), region = regionsLabel(t, true, 2);
+    const sp = Data.cardSpecs(t).slice(0, 4).map(specName).filter(Boolean);
+    const yrs = Number(t.years) ? `${fmtNum(t.years)} سنة` : '', hrs = Number(t.hours) ? `${fmtNum(t.hours)}+ ساعة تدريبية` : '', prg = Number(t.programs) ? `${fmtNum(t.programs)}+ برنامج ودورة` : '';
+    const tags = '#مدرّبون_سعوديّون #تدريب';
+    if (pl === 'x') {
+      const build = ti => ['تعرّفوا على مسيرتي في عالم التدريب عبر منصة «مدرّبون سعوديّون» 🌟', ti, [region && `📍 ${region}`, yrs && `⏳ خبرة ${yrs}`].filter(Boolean).join(' · '), `بطاقتي وطلب التدريب 👇\n${link}`].filter(Boolean).join('\n\n').replace(/\n\n(📍|⏳)/, '\n\n$1');
+      let ti = title, txt = build(ti);
+      if (xLen(txt + '\n' + tags) <= 280) return txt + '\n' + tags;
+      while (ti.length > 12 && xLen(build(ti + '…')) > 280) ti = ti.slice(0, -4).trim();
+      return build(ti === title ? ti : ti + '…');
+    }
+    if (pl === 'linkedin') {
+      const nums = [yrs && `خبرة ${yrs} في التدريب`, hrs, prg].filter(Boolean).join(' · ');
+      return ['يسعدني أن أشارككم بطاقتي التعريفية في منصة «مدرّبون سعوديّون» 🌟', `أنا ${name}${title ? ' — ' + title : ''}.`, nums && `📊 ${nums}`, sp.length && `🎯 تخصصاتي: ${sp.join('، ')}`, region && `📍 ${region}`, `تعرّفوا على مسيرتي وتواصلوا معي لطلب التدريب عبر المنصة:\n${link}`, `${tags} #تطوير_المهارات`].filter(Boolean).join('\n\n');
+    }
+    if (pl === 'instagram') {
+      return ['تعرّفوا على مسيرتي في عالم التدريب عبر منصة «مدرّبون سعوديّون» 🌟', `${name}${title ? '\n' + title : ''}`, [region && `📍 ${region}`, yrs && `⏳ خبرة ${yrs}`].filter(Boolean).join(' · '), sp.length && `🎯 ${sp.join(' | ')}`, `بطاقتي وطلب التدريب 👇\n${link}`, `${tags} #تطوير_الذات`].filter(Boolean).join('\n\n');
+    }
+    return `السلام عليكم 👋\nتعرّف على مسيرتي في عالم التدريب عبر منصة «مدرّبون سعوديّون»${title ? '\n' + title : ''}\nبطاقتي وطلب التدريب 👇\n${link}`;
+  }
+  async function shareTo(t, pl) {
+    Analytics.event('share');
+    const text = memberPost(t, pl), enc = encodeURIComponent;
+    if (pl === 'whatsapp') { window.open(`https://wa.me/?text=${enc(text)}`, '_blank', 'noopener'); return; }
+    if (pl === 'x') { window.open(`https://x.com/intent/post?text=${enc(text)}`, '_blank', 'noopener'); return; }
+    if (pl === 'linkedin') { copyText(text, 'نُسخ النص أيضاً — إن لم يظهر في نافذة لينكدإن فالصقه'); window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${enc(text)}`, '_blank', 'noopener'); return; }
+    // إنستقرام لا يوفّر رابط مشاركة ويب: على الجوال نرسل الصورة والنص عبر قائمة المشاركة، وإلا ننسخ النص ونعرض الصور للتنزيل
+    try {
+      if (navigator.canShare) {
+        const file = new File([await toBlob(t, 'post')], `${t.slug || 'trainer'}.png`, { type: 'image/png' });
+        if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text }); return; }
+      }
+    } catch (e) { if (e && e.name === 'AbortError') return; }
+    copyText(text, 'نُسخ نص المنشور');
+    const m = modal(`<h3><i class="fa-brands fa-instagram"></i> المشاركة على إنستقرام</h3>
+      <p class="muted small">نُسخ نص المنشور إلى الحافظة. نزّل الصورة ثم أنشئ منشوراً أو قصة في إنستقرام وألصق النص.</p>
+      <div class="share-grid"><button class="sh im" data-img="post"><i class="fa-solid fa-image"></i>صورة منشور</button><button class="sh st" data-img="story"><i class="fa-solid fa-mobile-screen"></i>صورة قصة</button><button class="sh cp" data-copy><i class="fa-solid fa-copy"></i>نسخ النص</button></div>
+      <a class="btn wide" target="_blank" rel="noopener" href="https://www.instagram.com/"><i class="fa-brands fa-instagram"></i> فتح إنستقرام</a>`);
+    m.el.querySelectorAll('[data-img]').forEach(b => { b.onclick = () => save(t, b.dataset.img); });
+    m.$('[data-copy]').onclick = () => copyText(text, 'نُسخ نص المنشور');
+  }
+
   function shareSheet(t) {
     const url = profileUrl(t);
     const text = `تعرّف على المدرب ${t.name}${t.title ? ' — ' + t.title : ''}`;
@@ -537,5 +596,5 @@ const Card = (() => {
     m.el.querySelectorAll('[data-img]').forEach(b => { b.onclick = () => save(t, b.dataset.img); });
   }
 
-  return { full, mini, avatar, symbol, fit, imgStyle, save, share, shareSheet, render, toJPEG, themeVars };
+  return { full, mini, avatar, symbol, fit, imgStyle, save, share, shareSheet, shareIcons, shareTo, memberPost, render, toJPEG, themeVars };
 })();

@@ -180,6 +180,7 @@ Pages.profile = {
     <div class="wrap profile">
       <aside class="profile-side">
         ${Card.full(t)}
+        ${Card.shareIcons()}
         <div class="profile-actions">
           <button class="btn primary wide lg" id="ask"><i class="fa-solid fa-paper-plane"></i> تواصل مع المدرب</button>
           <p class="wide small muted center" style="margin:0"><i class="fa-solid fa-lock"></i> يصل طلبك للمدرب عبر المنصة</p>
@@ -224,6 +225,7 @@ Pages.profile = {
     if (t.slug && asked !== t.slug && asked !== t.id) history.replaceState(null, '', `#/t/${encodeURIComponent(t.slug)}`);
     document.title = `${t.name} | مدرّبون سعوديّون`;
     if (!Auth.current()) Data.track('views', t.id);
+    $$('[data-sp]', root).forEach(b => b.onclick = () => Card.shareTo(t, b.dataset.sp));
     $('#shr', root) && ($('#shr', root).onclick = () => Card.share(t));
     $('#sv', root) && ($('#sv', root).onclick = () => Card.shareSheet(t));
     $('#ask', root) && ($('#ask', root).onclick = () => leadForm(t));
