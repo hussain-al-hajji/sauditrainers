@@ -1069,3 +1069,5 @@ input:checked + .cdot { box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--g600); }
 .ts-spark span { flex: 1; background: linear-gradient(180deg, var(--g600), var(--g800)); border-radius: 4px 4px 0 0; min-height: 4px; opacity: .85; }
 .field small.cc { align-self: flex-end; font-family: var(--f-ui); font-variant-numeric: tabular-nums; }
 .field small.cc.near { color: var(--warn); font-weight: 700; }
+.field small.dup-warn { color: #8A4B00; background: #FDF3E1; border-radius: 10px; padding: 8px 12px; line-height: 1.7; font-weight: 600; }
+.field small.dup-warn.hidden { display: none; }

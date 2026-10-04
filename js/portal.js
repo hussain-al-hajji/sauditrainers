@@ -137,6 +137,7 @@ function portalEdit(main, t) {
     </div>`;
   const form = $('#ef', main);
   const preview = () => previewCard($('#pvw', main), { ...FormKit.read(form), code: t.code });
+  form.dataset.tid = t.id;
   FormKit.wire(form, preview);
   preview();
   form.onsubmit = async e => {

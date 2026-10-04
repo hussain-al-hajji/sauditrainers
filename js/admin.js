@@ -411,6 +411,7 @@ function trainerEditor(t) {
     </form><div class="preview" id="pvw"></div></div>`, { wide: true });
   const form = m.$('#te');
   const preview = () => previewCard(m.$('#pvw'), { ...FormKit.read(form), code: t.code });
+  if (!isNew) form.dataset.tid = t.id;
   FormKit.wire(form, preview);
   preview();
   m.$('#dl') && (m.$('#dl').onclick = async () => {

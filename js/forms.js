@@ -263,6 +263,19 @@ const FormKit = (() => {
       nAr.addEventListener('input', () => { if (!auto) return; nEn.value = arToEn(nAr.value); nEn.dispatchEvent(new Event('input', { bubbles: true })); });
       nEn.addEventListener('input', e => { if (e.isTrusted) auto = !nEn.value; });
     }
+    // تنبيه إن كان الاسم الإنجليزي مطابقاً لمدرب آخر: يتحدد رابط الصفحة منه، ويُضاف رقم المدرب إن تكرر
+    if (nEn) {
+      const warn = document.createElement('small'); warn.className = 'dup-warn hidden';
+      (nEn.closest('.field') || nEn.parentNode).appendChild(warn);
+      const norm = v => String(v || '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+      const check = () => {
+        const k = norm(nEn.value), self = form.dataset.tid || '';
+        const dup = k.length > 1 && Store.list('trainers').find(x => x.id !== self && norm(x.nameEn) === k);
+        warn.classList.toggle('hidden', !dup);
+        warn.innerHTML = dup ? `<i class="fa-solid fa-triangle-exclamation"></i> هذا الاسم مستخدم لمدرب آخر (${esc(dup.name || dup.nameEn)}). غيّره قليلاً ليتميّز رابط صفحتك، مثل إضافة اسم العائلة كاملاً أو حرف من اسم الأب، وإلا أُضيف رقمك لآخر الرابط.` : '';
+      };
+      nEn.addEventListener('input', check); check();
+    }
     $$('[data-pro]', form).forEach(cb => cb.addEventListener('change', () => { // «نعم» تُظهر مربع الشهادات، والضغط عليها ثانية يُلغيها ويمسح ما كُتب
       const box = $('.pro-list', cb.closest('.pro-box')), ta = $('textarea', box);
       box.classList.toggle('hidden', !cb.checked); if (cb.checked) ta.focus(); else ta.value = '';
