@@ -222,10 +222,10 @@ const Store = (() => {
     return mode;
   }
 
-  function track(promise) {
+  function track(promise, path = '') {
     pending++;
     notify();
-    return promise.then(() => { lastError = null; }, writeFailed).finally(() => { pending = Math.max(0, pending - 1); notify(); });
+    return promise.then(() => { lastError = null; }, e => writeFailed(e, path)).finally(() => { pending = Math.max(0, pending - 1); notify(); });
   }
 
   // تعبئة المحتوى الافتراضي مرة واحدة فقط، ولا تكتب فوق أي بيانات موجودة
@@ -246,11 +246,11 @@ const Store = (() => {
 
   let lastError = null;
   // عند رفض الحفظ نعيد تحميل البيانات من الخادم حتى لا تُعرض تغييرات لم تُحفظ فعلياً
-  function writeFailed(err) {
+  function writeFailed(err, path = '') {
     console.error(err);
     lastError = { message: err.message || String(err), ts: Date.now() };
     const denied = /permission[_ ]denied/i.test(lastError.message) || err.code === 'PERMISSION_DENIED';
-    window.toast && toast(denied ? 'رفضت قواعد Firebase الحفظ (PERMISSION_DENIED). تأكد من نشر أحدث ملف database.rules.json في Realtime Database ← Rules.' : 'لم يتم الحفظ في قاعدة البيانات: ' + lastError.message, 'error');
+    window.toast && toast(denied ? `رفضت قواعد Firebase الحفظ (PERMISSION_DENIED) في [${path || '؟'}] بحساب [${(window.firebase && firebase.auth && firebase.auth().currentUser && (firebase.auth().currentUser.email || firebase.auth().currentUser.uid)) || 'غير مسجّل'}]. تأكد من نشر أحدث ملف database.rules.json في Realtime Database ← Rules.` : 'لم يتم الحفظ في قاعدة البيانات: ' + lastError.message, 'error');
     if (rootRef) listeners.forEach((l, key) => l.ref.once('value').then(snap => {
       if (l.isQ) { const q = queryData.get(key); if (q) { q.data = snap.val() || {}; mergeQueries(l.path); } }
       else if (l.path) state = setIn(state, l.path, snap.val()); else state = snap.val() || {};
@@ -264,7 +264,7 @@ const Store = (() => {
     if (rootRef) {
       const p = parts(path).join('/');
       if (!p) throw new Error('refusing to overwrite database root');
-      track(rootRef.child(p).set(val));
+      track(rootRef.child(p).set(val), p);
     } else saveLocal();
     notify();
   }
@@ -278,7 +278,7 @@ const Store = (() => {
     state = setIn(state, path, val); notify();
     pending++; notify();
     try { await rootRef.child(p).set(val); lastError = null; return true; }
-    catch (e) { writeFailed(e); state = setIn(state, path, null); notify(); return false; }
+    catch (e) { writeFailed(e, p); state = setIn(state, path, null); notify(); return false; }
     finally { pending = Math.max(0, pending - 1); notify(); }
   }
   async function pushConfirmed(path, obj) {
@@ -292,7 +292,7 @@ const Store = (() => {
     if (rootRef) {
       const p = parts(path).join('/');
       if (!p) throw new Error('refusing to update database root');
-      track(rootRef.child(p).update(obj));
+      track(rootRef.child(p).update(obj), p);
     } else saveLocal();
     notify();
   }
