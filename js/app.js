@@ -48,19 +48,20 @@ const App = (() => {
   }
 
   function footer() {
-    const c = Data.content();
-    const so = [['instagram', 'fa-instagram'], ['x', 'fa-x-twitter'], ['linkedin', 'fa-linkedin-in']].filter(([k]) => safeUrl(c.contact[k]));
+    const f = siteFooter(), A = (h, l, extra = '') => { const href = footerHref(h); return href ? `<a href="${esc(href)}" ${/^https?:/.test(href) ? 'target="_blank" rel="noopener"' : ''} ${extra}>${l}</a>` : ''; };
+    const cols = f.cols.filter(c => c.vis !== false && (c.title || (c.links || []).length));
+    const col = c => `<div><h4>${esc(c.title || '')}</h4>${c.kind === 'regions' ? REGIONS.slice(0, 6).map(r => `<a href="#/trainers?region=${r.k}">${esc(r.name)}</a>`).join('') : (c.links || []).filter(l => l.vis !== false && l.label).map(l => A(l.href, esc(l.label))).join('')}</div>`;
+    const soc = f.socials.filter(x => x.vis !== false && x.url).map(x => { const ic = (FOOTER_ICONS.find(i => i[0] === x.icon) || FOOTER_ICONS[11])[2]; return A(x.url, `<i class="${ic}"></i>`, `aria-label="${esc(x.icon)}"`); }).join('');
+    const bottom = f.bottom.filter(l => l.vis !== false && l.label).map(l => A(l.href, `${l.href === '#/admin' ? '<i class="fa-solid fa-shield-halved"></i> ' : ''}${esc(l.label)}`, 'style="display:inline"')).join('<span class="sep">·</span>');
     return `<footer class="footer"><div class="wrap">
-      <div class="foot-grid">
+      <div class="foot-grid" style="--fc:${cols.length}">
         <div><a class="logo" href="#/" aria-label="مدرّبون سعوديّون — الرئيسية">${logoImg('green', 'on-light')}${logoImg('cream', 'on-dark')}</a>
-          <p style="margin-top:12px">${esc(c.brand.tagline)}</p>
-          <div class="socials">${so.map(([k, i]) => `<a href="${esc(safeUrl(c.contact[k]))}" target="_blank" rel="noopener" aria-label="${k}"><i class="fa-brands ${i}"></i></a>`).join('')}${c.contact.email ? `<a href="mailto:${esc(c.contact.email)}" aria-label="email"><i class="fa-solid fa-envelope"></i></a>` : ''}${c.contact.whatsapp ? `<a href="${esc(waLink(c.contact.whatsapp))}" target="_blank" rel="noopener" aria-label="whatsapp"><i class="fa-brands fa-whatsapp"></i></a>` : ''}</div>
+          ${f.tagline ? `<p style="margin-top:12px">${esc(f.tagline)}</p>` : ''}
+          ${soc ? `<div class="socials">${soc}</div>` : ''}
         </div>
-        <div><h4>للجهات التدريبية</h4><a href="#/trainers">دليل المدربين</a><a href="#/request">اطلب مدرباً</a><a href="#/halls">قاعات التدريب</a></div>
-        <div><h4>للمدربين</h4><a href="#/join">سجّل كمدرب</a><a href="#/status">متابعة الطلب</a><a href="#/login">دخول المدربين</a></div>
-        <div><h4>المناطق</h4>${REGIONS.slice(0, 6).map(r => `<a href="#/trainers?region=${r.k}">${r.name}</a>`).join('')}</div>
+        ${cols.map(col).join('')}
       </div>
-      <div class="copy"><span>© ${new Date().getFullYear()} مدرّبون سعوديّون · جميع الحقوق محفوظة</span><a href="#/admin" style="display:inline"><i class="fa-solid fa-shield-halved"></i> الإدارة</a></div>
+      <div class="copy"><span>${esc(String(f.copy || '').replace('{year}', new Date().getFullYear()))}</span><span class="fb">${bottom}</span></div>
     </div></footer>`;
   }
 

@@ -75,6 +75,15 @@ const TICKER_SCHEMA = [{ k: 'on', label: 'تفعيل شريط الإعلانات
   { k: 'style', label: 'اللون', t: 'select', opts: [['green', 'أخضر الهوية'], ['cream', 'كريمي'], ['dark', 'أخضر داكن']] },
   { k: 'speed', label: 'زمن الدورة بالثواني (أكبر = أبطأ)', t: 'number' }, { k: 'closable', label: 'السماح للزائر بإغلاقه', t: 'check' }];
 
+const FOOTER_SCHEMA = [
+  { k: 'tagline', label: 'وصف المنصة تحت الشعار', t: 'area' },
+  { k: 'socials', label: 'حسابات التواصل (أيقونات)', t: 'list', add: 'حساب', sub: [{ k: 'icon', label: 'الأيقونة', t: 'select', opts: FOOTER_ICONS.map(i => [i[0], i[1]]) }, { k: 'url', label: 'الرابط (https:// أو mailto: أو tel:)', t: 'text' }, { k: 'vis', label: 'ظاهر في الموقع', t: 'check' }] },
+  { k: 'cols', label: 'أعمدة الروابط', t: 'list', add: 'عمود', sub: [{ k: 'title', label: 'عنوان العمود', t: 'text' }, { k: 'kind', label: 'نوع المحتوى', t: 'select', opts: [['links', 'روابط أدخلها بنفسي'], ['regions', 'مناطق المملكة (تلقائي)']] }, { k: 'vis', label: 'ظاهر في الموقع', t: 'check' },
+    { k: 'links', label: 'روابط العمود (للنوع «روابط»)', t: 'list', add: 'رابط', sub: [{ k: 'label', label: 'النص', t: 'text' }, { k: 'href', label: 'الرابط', t: 'text' }, { k: 'vis', label: 'ظاهر', t: 'check' }] }] },
+  { k: 'copy', label: 'نص الحقوق (يُستبدل {year} بالسنة الحالية)', t: 'text' },
+  { k: 'bottom', label: 'روابط أسفل التذييل (سياسة الخصوصية، الإدارة...)', t: 'list', add: 'رابط', sub: [{ k: 'label', label: 'النص', t: 'text' }, { k: 'href', label: 'الرابط (#/صفحة أو https:// أو privacy.html)', t: 'text' }, { k: 'vis', label: 'ظاهر', t: 'check' }] }
+];
+
 function homeSettings(box) {
   const nav = arr(Store.get('content/nav/list')).length ? arr(Store.get('content/nav/list')) : defaultNav();
   const tk = { ...defaultTicker(), ...(Store.get('content/ticker') || {}) }; tk.items = arr(tk.items);
@@ -87,8 +96,12 @@ function homeSettings(box) {
     <details class="set-panel" ${tk.on ? 'open' : ''}><summary><i class="fa-solid fa-bullhorn"></i>شريط الإعلانات المتحرك ${tk.on ? '<span class="pill ok">مفعّل</span>' : '<span class="pill gray">متوقف</span>'}</summary>
       <div class="set-body"><p class="muted small">شريط نصي متحرك يظهر أعلى كل صفحات الموقع عند تفعيله. توقف حركته عند مرور المؤشر.</p>
         <div id="tkf">${SchemaForm.render(TICKER_SCHEMA, tk)}</div>
-        <div class="row"><button class="btn primary sm" id="tks"><i class="fa-solid fa-floppy-disk"></i> حفظ الشريط</button><a class="btn sm" href="#/" target="_blank"><i class="fa-solid fa-eye"></i> معاينة</a></div></div></details>`;
-  SchemaForm.wire($('#navf', box)); SchemaForm.wire($('#tkf', box));
+        <div class="row"><button class="btn primary sm" id="tks"><i class="fa-solid fa-floppy-disk"></i> حفظ الشريط</button><a class="btn sm" href="#/" target="_blank"><i class="fa-solid fa-eye"></i> معاينة</a></div></div></details>
+    <details class="set-panel"><summary><i class="fa-solid fa-shoe-prints"></i>تذييل الموقع <span class="pill ${Store.get('content/footer') ? 'gold' : 'gray'}">${Store.get('content/footer') ? 'معدَّل' : 'الافتراضي'}</span></summary>
+      <div class="set-body"><p class="muted small">يظهر أسفل كل صفحات الموقع. عُبّئ بالمحتوى الحالي ويمكنك إضافة أعمدة وروابط وحسابات وتعديلها أو حذفها أو إخفاؤها وترتيبها. «مناطق المملكة» عمود تلقائي. يتضمن الآن رابط <b>سياسة الخصوصية</b> (<span dir="ltr">privacy.html</span>).</p>
+        <div id="ftf">${SchemaForm.render(FOOTER_SCHEMA, siteFooter())}</div>
+        <div class="row"><button class="btn primary sm" id="fts"><i class="fa-solid fa-floppy-disk"></i> حفظ التذييل</button><a class="btn sm" href="#/" target="_blank"><i class="fa-solid fa-eye"></i> معاينة</a><button class="btn sm ghost" id="ftr"><i class="fa-solid fa-rotate-left"></i> الافتراضي</button></div></div></details>`;
+  SchemaForm.wire($('#navf', box)); SchemaForm.wire($('#tkf', box)); SchemaForm.wire($('#ftf', box));
   $$('[data-preset]', box).forEach(b => b.onclick = () => {
     const list = $('#navf .sf-list', box); list.insertAdjacentHTML('beforeend', $('#navf > .sf-level > .sf-list-wrap > template', box).innerHTML);
     const it = list.lastElementChild; it.querySelector('[data-f=label]').value = b.dataset.l; it.querySelector('[data-f=href]').value = b.dataset.preset;
@@ -101,6 +114,20 @@ function homeSettings(box) {
     Store.set('content/nav', { list }); Security.log('تعديل قائمة الصفحات'); toast('تم حفظ القائمة'); homeSettings(box);
   };
   $('#navr', box).onclick = async () => { if (!await confirmBox('استعادة قائمة الصفحات الافتراضية؟', { ok: 'استعادة' })) return; Store.remove('content/nav'); homeSettings(box); };
+  $('#fts', box).onclick = () => {
+    const d = SchemaForm.read($('#ftf > .sf-level', box), FOOTER_SCHEMA);
+    const bad = [];
+    const fixLink = l => { const href = footerHref(l.href); if (l.href && !href) bad.push(l.href); return { label: l.label, href, vis: l.vis !== false }; };
+    const out = {
+      tagline: d.tagline, copy: d.copy,
+      socials: d.socials.filter(x => x.url).map(x => { const u = footerHref(x.url); if (!u) bad.push(x.url); return { icon: x.icon, url: u, vis: x.vis !== false }; }),
+      cols: d.cols.filter(c => c.title || c.links.some(l => l.label)).map(c => ({ title: c.title, kind: c.kind === 'regions' ? 'regions' : 'links', vis: c.vis !== false, links: c.kind === 'regions' ? [] : c.links.filter(l => l.label && l.href).map(fixLink) })),
+      bottom: d.bottom.filter(l => l.label && l.href).map(fixLink)
+    };
+    if (bad.length) { toast(`رابط غير صالح: ${bad[0]} (يبدأ بـ #/ أو https:// أو mailto: أو privacy.html)`, 'error'); return; }
+    Store.set('content/footer', out); Security.log('تعديل تذييل الموقع'); toast('تم حفظ التذييل'); homeSettings(box);
+  };
+  $('#ftr', box).onclick = async () => { if (!await confirmBox('استعادة التذييل الافتراضي؟ تُحذف تعديلاتك عليه.', { ok: 'استعادة', danger: true })) return; Store.remove('content/footer'); toast('تمت الاستعادة'); homeSettings(box); };
   $('#tks', box).onclick = () => {
     const d = SchemaForm.read($('#tkf > .sf-level', box), TICKER_SCHEMA);
     d.items = d.items.filter(i => i.text); d.speed = Math.min(300, Math.max(10, Number(d.speed) || 40));

@@ -181,4 +181,29 @@ const Tpl = {
 
 // الاسم القديم «القاعات» المحفوظ في إعدادات القائمة يُعرض «قاعات التدريب»
 const siteNav = () => { const l = arr(Store.get('content/nav/list')); return (l.length ? l : defaultNav()).filter(x => x.vis !== false && x.label && x.href).map(x => x.href === '#/halls' && x.label === 'القاعات' ? { ...x, label: 'قاعات التدريب' } : x); };
+/* تذييل الموقع: يُعدَّل من لوحة الإدارة ← الصفحة الرئيسية ← تذييل الموقع (content/footer)، وإلا يُبنى من الافتراضي (يشمل حسابات المنصة من «المحتوى العام ← تواصل المنصة») */
+const FOOTER_ICONS = [['instagram', 'إنستقرام', 'fa-brands fa-instagram'], ['x-twitter', 'إكس', 'fa-brands fa-x-twitter'], ['linkedin-in', 'لينكدإن', 'fa-brands fa-linkedin-in'], ['whatsapp', 'واتساب', 'fa-brands fa-whatsapp'], ['facebook-f', 'فيسبوك', 'fa-brands fa-facebook-f'], ['youtube', 'يوتيوب', 'fa-brands fa-youtube'], ['tiktok', 'تيك توك', 'fa-brands fa-tiktok'], ['snapchat', 'سناب شات', 'fa-brands fa-snapchat'], ['telegram', 'تيليجرام', 'fa-brands fa-telegram'], ['envelope', 'بريد إلكتروني', 'fa-solid fa-envelope'], ['phone', 'هاتف', 'fa-solid fa-phone'], ['globe', 'موقع', 'fa-solid fa-globe']];
+const defaultFooter = () => {
+  const c = Data.content(), ct = c.contact || {}, socials = [];
+  [['instagram', 'instagram'], ['x', 'x-twitter'], ['linkedin', 'linkedin-in']].forEach(([k, ic]) => { if (safeUrl(ct[k])) socials.push({ icon: ic, url: safeUrl(ct[k]), vis: true }); });
+  if (ct.email) socials.push({ icon: 'envelope', url: `mailto:${ct.email}`, vis: true });
+  if (ct.whatsapp && waLink(ct.whatsapp)) socials.push({ icon: 'whatsapp', url: waLink(ct.whatsapp), vis: true });
+  return {
+    tagline: (c.brand && c.brand.tagline) || '', socials,
+    cols: [
+      { title: 'للجهات التدريبية', kind: 'links', vis: true, links: [{ label: 'دليل المدربين', href: '#/trainers', vis: true }, { label: 'اطلب مدرباً', href: '#/request', vis: true }, { label: 'قاعات التدريب', href: '#/halls', vis: true }] },
+      { title: 'للمدربين', kind: 'links', vis: true, links: [{ label: 'سجّل كمدرب', href: '#/join', vis: true }, { label: 'متابعة الطلب', href: '#/status', vis: true }, { label: 'دخول المدربين', href: '#/login', vis: true }] },
+      { title: 'المناطق', kind: 'regions', vis: true, links: [] }
+    ],
+    copy: '© {year} مدرّبون سعوديّون · جميع الحقوق محفوظة',
+    bottom: [{ label: 'سياسة الخصوصية', href: 'privacy.html', vis: true }, { label: 'الإدارة', href: '#/admin', vis: true }]
+  };
+};
+const footerHref = h => { h = String(h || '').trim(); return /^(#\/[\w\-/?=&%.]*|https?:\/\/[^\s"'<>]+|mailto:[^\s"'<>]+|tel:[+\d]+|[\w\-/]+\.html(#[\w-]*)?|\/[\w\-/.]*)$/.test(h) ? h : ''; };
+const siteFooter = () => {
+  const d = defaultFooter(), s = Store.get('content/footer');
+  if (!s || typeof s !== 'object') return d;
+  const norm = o => ({ ...o, links: arr(o.links) });
+  return { tagline: s.tagline ?? d.tagline, socials: arr(s.socials), cols: arr(s.cols).map(norm), copy: s.copy ?? d.copy, bottom: arr(s.bottom) };
+};
 const siteTicker = () => { const t = { ...defaultTicker(), ...(Store.get('content/ticker') || {}) }; t.items = arr(t.items).filter(i => i.text); return t; };
