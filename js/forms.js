@@ -6,12 +6,16 @@
 const MAX_SPECS = 15;   // أقصى عدد تخصصات يختارها المدرب
 const MAX_CARD_SPECS = 6; // أقصى ما يظهر منها في البطاقة التعريفية
 const LANG_OPTS = ['العربية', 'الإنجليزية'];
+// الجنسية: الدول العربية، وتبدأ بالمملكة العربية السعودية
+const NATIONALITIES = ['المملكة العربية السعودية', 'الأردن', 'الإمارات العربية المتحدة', 'البحرين', 'تونس', 'الجزائر', 'جيبوتي', 'السودان', 'سوريا', 'الصومال', 'العراق', 'سلطنة عُمان', 'فلسطين', 'قطر', 'جزر القمر', 'الكويت', 'لبنان', 'ليبيا', 'مصر', 'المغرب', 'موريتانيا', 'اليمن'];
 
 // الحقول الأساسية: lock = لا تُخفى ولا يُلغى إلزامها، priv = بيانات إدارية لا تظهر لأحد، joinOnly = في طلب التسجيل فقط
 const CORE_FIELDS = {
   name: { label: 'الاسم كما يظهر في البطاقة', type: 'text', max: 60, ph: 'مثال: أ. سارة العتيبي', req: true, lock: true },
   nameEn: { label: 'الاسم بالإنجليزية', type: 'text', max: 60, ltr: true, ph: 'Sarah Alotaibi', hint: 'يُكتب تلقائياً من اسمك العربي ويمكنك تعديله، ويُستخدم في رابط صفحتك المختصر، ويتحدّث الرابط تلقائياً عند تعديله (والرابط القديم يبقى يعمل)' },
   gender: { label: 'الجنس', type: 'gender', req: true },
+  // تُحفظ إجابتها في extra/nationality (بيانات إدارية لا تظهر في البطاقة) فلا تحتاج تعديل قواعد قاعدة البيانات
+  nationality: { label: 'الجنسية', type: 'select', opts: NATIONALITIES, req: true, priv: true, asExtra: true, hint: 'بيانات إدارية لا تظهر في البطاقة' },
   region: { label: 'المنطقة (يمكن اختيار أكثر من منطقة)', type: 'region', req: true, lock: true, w: 'full' },
   city: { label: 'المدينة', type: 'text', max: 40 },
   travel: { label: 'مستعد للسفر حسب الاحتياجات التدريبية', type: 'consent', w: 'full' },
@@ -53,13 +57,13 @@ function defaultForms() {
   const f = ks => ks.map(k => ({ k }));
   return {
     join: { steps: [
-      { id: 's1', title: 'البيانات', icon: 'fa-id-card', desc: 'بيانات التواصل الإداري لا تظهر لأحد في المنصة.', fields: f(['name', 'nameEn', 'gender', 'region', 'city', 'travel', 'phone', 'email']) },
+      { id: 's1', title: 'البيانات', icon: 'fa-id-card', desc: 'بيانات التواصل الإداري لا تظهر لأحد في المنصة.', fields: f(['name', 'nameEn', 'gender', 'nationality', 'region', 'city', 'travel', 'phone', 'email']) },
       { id: 's2', title: 'التخصص', icon: 'fa-layer-group', desc: 'اختر ما تمارس التدريب فيه فعلياً؛ تظهر بطاقتك في نتائج هذه التخصصات.', fields: f(['title', 'specs', 'topics', 'modes']) },
       { id: 's3', title: 'الخبرة', icon: 'fa-award', desc: 'الأرقام تظهر في بطاقتك كمؤشرات بارزة.', fields: [{ k: 'cvUrl', hidden: true }, ...f(['years', 'hours', 'programs', 'certs', 'proCerts', 'partners', 'bio', 'langs', 'tot'])] },
       { id: 's4', title: 'الصورة والتصميم', icon: 'fa-camera', desc: 'هذه الخطوة اختيارية: عند الرغبة في نشر صورتك أضف رابط مشاركتها من Google Drive أو أي مساحة تخزين سحابية ونسّقها داخل الدائرة، أو أجّلها الآن وأضفها لاحقاً من لوحتك. واختر تصميم بطاقتك.', fields: f(['photoUrl', 'theme']) }
     ] },
     admin: { steps: [
-      { id: 'a1', title: 'البيانات الأساسية', icon: 'fa-id-card', fields: f(['name', 'nameEn', 'gender', 'region', 'city', 'travel', 'phone', 'email']) },
+      { id: 'a1', title: 'البيانات الأساسية', icon: 'fa-id-card', fields: f(['name', 'nameEn', 'gender', 'nationality', 'region', 'city', 'travel', 'phone', 'email']) },
       { id: 'a2', title: 'التخصص', icon: 'fa-layer-group', fields: f(['title', 'specs', 'bio', 'topics', 'modes']) },
       { id: 'a3', title: 'الخبرة', icon: 'fa-award', fields: f(['years', 'hours', 'programs', 'certs', 'proCerts', 'partners', 'langs', 'tot']) },
       { id: 'a4', title: 'الصورة والتصميم', icon: 'fa-camera', fields: f(['photoUrl', 'theme']) }
@@ -74,11 +78,12 @@ const FormKit = (() => {
     const stored = Store.get(`content/form/${kind}`);
     let steps = stored && arr(stored.steps).length ? arr(stored.steps).map(s => ({ ...s, fields: arr(s.fields) })) : JSON.parse(JSON.stringify(def.steps));
     const have = new Set(steps.flatMap(s => s.fields.map(f => f.k)));
-    def.steps.forEach(ds => ds.fields.forEach(df => {
+    def.steps.forEach(ds => ds.fields.forEach((df, i) => {
       if (have.has(df.k)) return;
-      (steps.find(s => s.id === ds.id) || steps[0]).fields.push({ k: df.k });
+      const tgt = steps.find(s => s.id === ds.id) || steps[0], prev = ds.fields[i - 1], at = prev ? tgt.fields.findIndex(f => f.k === prev.k) : -1;
+      if (at >= 0) tgt.fields.splice(at + 1, 0, { k: df.k }); else tgt.fields.push({ k: df.k });   // يوضع بعد الحقل الذي يسبقه في الإعداد الافتراضي
     }));
-    return steps.map(s => ({ ...s, fields: s.fields.map(f => (f.custom ? { w: ['textarea', 'multi', 'consent'].includes(f.type) ? 'full' : '', ...f } : CORE_FIELDS[f.k] ? { ...CORE_FIELDS[f.k], ...f, core: true, lock: CORE_FIELDS[f.k].lock, priv: CORE_FIELDS[f.k].priv, joinOnly: CORE_FIELDS[f.k].joinOnly, type: CORE_FIELDS[f.k].type } : null)).filter(Boolean) }));
+    return steps.map(s => ({ ...s, fields: s.fields.map(f => (f.custom ? { w: ['textarea', 'multi', 'consent'].includes(f.type) ? 'full' : '', ...f } : CORE_FIELDS[f.k]?.asExtra ? { ...CORE_FIELDS[f.k], ...f, custom: true, core: true, priv: true, ...(kind === 'admin' ? { req: false } : {}) } : CORE_FIELDS[f.k] ? { ...CORE_FIELDS[f.k], ...f, core: true, lock: CORE_FIELDS[f.k].lock, priv: CORE_FIELDS[f.k].priv, joinOnly: CORE_FIELDS[f.k].joinOnly, type: CORE_FIELDS[f.k].type } : null)).filter(Boolean) }));
   }
   const required = f => !!(f.lock ? CORE_FIELDS[f.k].req : f.req);
 
