@@ -738,7 +738,7 @@ function aAdmins(main) {
     </tbody></table></div>
     ${owner ? `<div class="pbox"><h3><i class="fa-solid fa-user-plus"></i>دعوة مشرف بحساب Google</h3><form id="inv" class="grid3"><input type="email" name="email" required placeholder="example@gmail.com" dir="ltr"><input type="text" name="name" placeholder="الاسم"><button class="btn primary">إرسال الدعوة</button></form><p class="small muted">يدخل المدعو من صفحة الإدارة بزر «الدخول بحساب Google» فتُفعَّل الدعوة تلقائياً.</p></div>` : '<p class="muted">إدارة المشرفين متاحة للحسابات الرئيسية فقط.</p>'}`;
   $('#inv', main) && ($('#inv', main).onsubmit = e => { e.preventDefault(); const d = formData(e.target); if (!validEmail(d.email)) { toast('بريد غير صحيح', 'error'); return; } Security.inviteAdmin(d.email, d.name); toast('تم إرسال الدعوة'); });
-  $$('[data-rm]', main).forEach(b => b.onclick = async () => { if (await confirmBox('إزالة صلاحية هذا المشرف؟', { danger: true, ok: 'إزالة' })) { Security.log('إزالة مشرف', Store.get(`admins/${b.dataset.rm}`)?.email); Store.remove(`admins/${b.dataset.rm}`); } });
+  $$('[data-rm]', main).forEach(b => b.onclick = async () => { if (await confirmBox('إزالة صلاحية هذا المشرف؟', { danger: true, ok: 'إزالة' })) { const em = Store.get(`admins/${b.dataset.rm}`)?.email; Security.log('إزالة مشرف', em); Store.remove(`admins/${b.dataset.rm}`); if (em) Store.remove(`adminInvites/${Security.inviteKey(em)}`); } });
   $$('[data-ci]', main).forEach(b => b.onclick = () => Store.remove(`adminInvites/${b.dataset.ci}`));
 }
 
