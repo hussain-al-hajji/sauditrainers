@@ -626,6 +626,7 @@ function aRequests(main) {
         ${tp?.email ? `<a class="btn sm" target="_blank" rel="noopener" href="${esc(gmailCompose(tp.email, 'طلب تواصل جديد — ' + r.topic, leadDraft(r, t), ''))}" title="بريد للمدرب (Gmail)"><i class="fa-solid fa-envelope"></i> للمدرب</a>` : ''}
         ${Automation.on ? `<button class="btn sm" data-mail="${esc(r.id)}" title="إعادة إرسال البريد الآلي"><i class="fa-solid fa-rotate"></i> البريد</button>` : ''}` : ''}
         <a class="btn sm" target="_blank" rel="noopener" href="${esc(waLink(r.phone, `السلام عليكم ${r.person}، معك فريق منصة مدرّبون سعوديّون بخصوص طلبكم: ${r.topic}`))}" title="واتساب الجهة"><i class="fa-brands fa-whatsapp"></i> للجهة</a>
+        ${r.kind === 'req' ? (Broadcast.forwarded(r.id) ? `<button class="btn sm gold" data-fwx="${esc(r.id)}" title="أُعيد توجيهه للمدربين ${ago(Broadcast.forwarded(r.id).ts)} — اضغط لإلغاء التوجيه"><i class="fa-solid fa-share"></i> أُعيد توجيهه</button>` : `<button class="btn sm" data-fw="${esc(r.id)}" title="إعادة توجيه الطلب إلى كل المدربين (إشعار ونافذة وتبويب «طلبات عامة»)"><i class="fa-solid fa-share"></i> للمدربين</button>`) : ''}
         <button class="btn sm" data-show="${r.kind}" data-id="${esc(r.id)}" title="عرض في «من طلبات هذا الشهر»"><i class="fa-solid fa-table-cells-large"></i></button>
         <button class="btn sm" data-t="${r.kind}" data-id="${esc(r.id)}" title="تبديل الحالة"><i class="fa-solid fa-check"></i></button>
         <button class="btn sm ghost" data-del="${r.kind}" data-id="${esc(r.id)}" title="حذف"><i class="fa-solid fa-trash"></i></button>
@@ -640,6 +641,8 @@ function aRequests(main) {
   $$('[data-mail]', main).forEach(b => b.onclick = async () => { await Automation.notify('lead', b.dataset.mail); toast('طُلب إرسال البريد، ويظهر التأكيد عند وصوله'); });
   $$('[data-t]', main).forEach(b => b.onclick = () => { const p = `${path(b.dataset.t)}/${b.dataset.id}`; Store.update(p, { status: Store.get(p)?.status === 'new' ? 'done' : 'new' }); });
   $$('[data-del]', main).forEach(b => b.onclick = async () => { if (await confirmBox('حذف الطلب؟', { ok: 'حذف', danger: true })) Store.remove(`${path(b.dataset.del)}/${b.dataset.id}`); });
+  $$('[data-fw]', main).forEach(b => b.onclick = () => { const r = Store.get(`requests/${b.dataset.fw}`); r && Broadcast.forward(r); });
+  $$('[data-fwx]', main).forEach(b => b.onclick = () => Broadcast.revoke(b.dataset.fwx));
   $$('[data-show]', main).forEach(b => b.onclick = () => {
     const r = Store.get(`${path(b.dataset.show)}/${b.dataset.id}`); const t = r.trainerId ? Store.get(`trainers/${r.trainerId}`) : null;
     showcaseEditor(Store.list('showcase').find(x => x.src === r.id) || { src: r.id, title: r.topic, org: r.org, region: r.region || t?.region || '', spec: r.spec || Data.specs(t || {})[0] || '', trainerName: r.trainerName || '', ts: r.ts });

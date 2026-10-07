@@ -159,6 +159,18 @@ rules = {
                 '.indexOn': ['trainerId'],
                 '$id': lead,
             },
+            # طلبات «اطلب مدرباً» التي تعيد الإدارة توجيهها لكل المدربين: يقرؤها كل مدرب لديه حساب، وتكتبها الإدارة فقط (من قاعدة الجذر)
+            'broadcasts': {
+                '.read': f"auth != null && root.child('{ROOT}/uids/' + auth.uid).exists()",
+                '$id': {
+                    '.validate': "$id.matches(/^[A-Za-z0-9_-]{1,40}$/) && newData.hasChildren(['ts', 'topic'])",
+                    'id': {'.validate': S(40)}, 'requestId': {'.validate': S(40)}, 'ts': {'.validate': 'newData.isNumber()'},
+                    'org': {'.validate': S(120)}, 'topic': {'.validate': S(160)}, 'when': {'.validate': S(120)}, 'msg': {'.validate': S(2000)}, 'note': {'.validate': S(500)},
+                    'spec': {'.validate': S(20)}, 'region': {'.validate': S(20)}, 'size': {'.validate': N(100000)}, 'contact': {'.validate': 'newData.isBoolean()'},
+                    'person': {'.validate': S(80)}, 'phone': {'.validate': S(20)}, 'email': {'.validate': S(120)},
+                    '$other': {'.validate': False},
+                },
+            },
             'requests': {'$id': public_form(['org', 'person', 'phone', 'topic', 'ts', 'status'], req_spec)},
             'hallReqs': {'$id': public_form(['type', 'name', 'phone', 'region', 'ts', 'status'], hall_spec)},
             'applications': {'$id': {**app, '.validate': '$id.matches(/^A[0-9A-Z]{7}$/)'}},

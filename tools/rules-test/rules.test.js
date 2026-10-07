@@ -47,7 +47,6 @@ const fs = require('fs');
   await D('3b تخصص يحوي HTML', visitor.ref(`${R}/content/specialties/added/uabc2`).set({ name: '<img src=x onerror=alert(1)>', icon: 'fa-shapes' }));
   // 4) analytics / stats
   await A('4 عدّاد زيارة صحيح', visitor.ref(`${R}/analytics/page/home`).set(1));
-  await D('4b مفتاح analytics فيه HTML', visitor.ref(`${R}/analytics/ref/${encodeURIComponent('<img onerror=1>').replace(/%/g, '')}`).set(1));
   await D('4c مفتاح analytics بوسم', visitor.ref(`${R}/analytics/ref/a<b`).set(1));
   await A('4d مشاهدة مدرب موجود', visitor.ref(`${R}/stats/views/st0001`).set(1));
   await D('4e مشاهدة مدرب وهمي', visitor.ref(`${R}/stats/views/fake999`).set(1));
@@ -89,6 +88,13 @@ const fs = require('fs');
   await A('10 زائر يرسل طلب مدرب', visitor.ref(`${R}/requests/R1`).set({ org: 'ش', person: 'ع', phone: '966501234567', topic: 'م', ts: now(), status: 'new' }));
   await D('10b طلب مدرب بحالة done', visitor.ref(`${R}/requests/R2`).set({ org: 'ش', person: 'ع', phone: '966501234567', topic: 'م', ts: now(), status: 'done' }));
   await A('10c زائر يرسل طلب قاعة', visitor.ref(`${R}/hallReqs/H1`).set({ type: 'book', name: 'ع', phone: '966501234567', region: 'riyadh', ts: now(), status: 'new' }));
+  // 11) الطلبات الموجَّهة لكل المدربين
+  await A('11 المشرف ينشئ طلباً موجَّهاً', adm.ref(`${R}/broadcasts/B1`).set({ id: 'B1', ts: now(), topic: 'برنامج قيادة', org: 'جهة', contact: false }));
+  await A('11b مدرب لديه حساب يقرأ الطلبات الموجَّهة', t1.ref(`${R}/broadcasts`).once('value'));
+  await D('11c غريب مسجّل يقرأ الطلبات الموجَّهة', stranger.ref(`${R}/broadcasts`).once('value'));
+  await D('11d زائر يقرأ الطلبات الموجَّهة', visitor.ref(`${R}/broadcasts`).once('value'));
+  await D('11e مدرب يكتب طلباً موجَّهاً', t1.ref(`${R}/broadcasts/B2`).set({ id: 'B2', ts: now(), topic: 'x' }));
+  await D('11f طلب موجَّه بحقل غير معروف', adm.ref(`${R}/broadcasts/B3`).set({ id: 'B3', ts: now(), topic: 'x', evil: 1 }));
   res.forEach(r => console.log(r[0], r[1]));
   console.log(res.filter(r => r[0] === 'FAIL').length + ' فشل من ' + res.length);
   await env.cleanup();

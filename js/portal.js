@@ -9,10 +9,11 @@ Pages.me = {
     if (!t) return `<div class="wrap empty"><i class="fa-solid fa-circle-exclamation"></i><h3>تعذّر تحميل بياناتك</h3><button class="btn" onclick="Auth.logout()">خروج</button></div>`;
     const leads = Store.list('leads').filter(l => l.trainerId === t.id);
     const fresh = leads.filter(l => l.status === 'new').length;
-    const tabs = [['home', 'fa-id-card', 'بطاقتي'], ['edit', 'fa-pen-to-square', 'تعديل البيانات'], ['leads', 'fa-inbox', 'الطلبات الواردة', fresh]];
+    const bcNew = Broadcast.unread(t.id).length;
+    const tabs = [['home', 'fa-id-card', 'بطاقتي'], ['edit', 'fa-pen-to-square', 'تعديل البيانات'], ['leads', 'fa-inbox', 'الطلبات الواردة', fresh], ['bc', 'fa-bullhorn', 'طلبات عامة', bcNew]];
     return `<div class="wrap dash">
       <aside class="side">
-        <div class="who">${Card.avatar(t, 'av')}<div><b>${esc(t.name)}</b><small class="num">${esc(t.code)}</small></div></div>
+        <div class="who">${Card.avatar(t, 'av')}<div class="grow"><b>${esc(t.name)}</b><small class="num">${esc(t.code)}</small></div><button type="button" class="bell" id="bell" title="الإشعارات" aria-label="الإشعارات"><i class="fa-solid fa-bell"></i>${fresh + bcNew ? `<span class="bdg num">${fresh + bcNew}</span>` : ''}</button></div>
         ${tabs.map(([k, i, l, b]) => `<button data-tab="${k}" class="${this.tab === k ? 'on' : ''}"><i class="fa-solid ${i}"></i>${l}${b ? `<span class="badge num">${b}</span>` : ''}</button>`).join('')}
         <hr style="border:0;border-top:1px solid rgba(255,255,255,.08)">
         <button data-go="#/t/${esc(encodeURIComponent(t.slug || t.id))}"><i class="fa-solid fa-arrow-up-right-from-square"></i>صفحتي العامة</button>
@@ -32,7 +33,10 @@ Pages.me = {
     // تنبيه بالطلبات الجديدة مرة واحدة في الجلسة
     const fresh = Store.list('leads').filter(l => l.trainerId === t.id && l.status === 'new').length;
     try { if (fresh && sessionStorage.getItem('st-leads-seen') !== String(fresh)) { sessionStorage.setItem('st-leads-seen', String(fresh)); toast(`لديك ${fresh} ${fresh === 1 ? 'طلب تواصل جديد' : 'طلبات تواصل جديدة'} من جهات تدريبية`); } } catch { /* ignore */ }
-    ({ home: portalHome, edit: portalEdit, leads: portalLeads })[this.tab](main, t);
+    const go = k => { this.tab = k; App.render(); };
+    $('#bell', root) && ($('#bell', root).onclick = () => Broadcast.notifications(t, go));
+    ({ home: portalHome, edit: portalEdit, leads: portalLeads, bc: Broadcast.tab })[this.tab](main, t);
+    if (this.tab !== 'bc') Broadcast.popup(t, go);
   },
   // لا نعيد رسم نموذج التعديل أثناء الكتابة
   get static() { return this.tab === 'edit'; }

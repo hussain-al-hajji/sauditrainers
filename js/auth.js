@@ -6,7 +6,7 @@
  */
 
 const PUBLIC_PATHS = ['content', 'trainers', 'showcase', 'stats', 'meta', 'halls', 'slugs'];
-const trainerPaths = id => [...PUBLIC_PATHS, `private/${id}`, `notes/${id}`, { path: 'leads', child: 'trainerId', equalTo: id }];
+const trainerPaths = id => [...PUBLIC_PATHS, `private/${id}`, `notes/${id}`, 'broadcasts', { path: 'leads', child: 'trainerId', equalTo: id }];
 
 const Auth = {
   KEY: 'st-auth',

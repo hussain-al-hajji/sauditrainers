@@ -421,6 +421,60 @@
           }
         }
       },
+      "broadcasts": {
+        ".read": "auth != null && root.child('sauditrainers/uids/' + auth.uid).exists()",
+        "$id": {
+          ".validate": "$id.matches(/^[A-Za-z0-9_-]{1,40}$/) && newData.hasChildren(['ts', 'topic'])",
+          "id": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "requestId": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "ts": {
+            ".validate": "newData.isNumber()"
+          },
+          "org": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "topic": {
+            ".validate": "newData.isString() && newData.val().length <= 160"
+          },
+          "when": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "msg": {
+            ".validate": "newData.isString() && newData.val().length <= 2000"
+          },
+          "note": {
+            ".validate": "newData.isString() && newData.val().length <= 500"
+          },
+          "spec": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "region": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "size": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100000"
+          },
+          "contact": {
+            ".validate": "newData.isBoolean()"
+          },
+          "person": {
+            ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "phone": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "email": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
       "requests": {
         "$id": {
           ".write": "(!data.exists() && newData.hasChildren([\"org\", \"person\", \"phone\", \"topic\", \"ts\", \"status\"]) && newData.child('status').val() == 'new') || ((auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com')) || (auth != null && root.child('sauditrainers/admins/' + auth.uid).exists()))",
