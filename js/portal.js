@@ -10,7 +10,7 @@ Pages.me = {
     const leads = Store.list('leads').filter(l => l.trainerId === t.id);
     const fresh = leads.filter(l => l.status === 'new').length;
     const bcNew = Broadcast.unread(t.id).length;
-    const tabs = [['home', 'fa-id-card', 'بطاقتي'], ['edit', 'fa-pen-to-square', 'تعديل البيانات'], ['leads', 'fa-inbox', 'الطلبات الواردة', fresh], ['bc', 'fa-bullhorn', 'طلبات عامة', bcNew]];
+    const tabs = [['home', 'fa-id-card', 'بطاقتي'], ['edit', 'fa-pen-to-square', 'تعديل البيانات'], ['leads', 'fa-inbox', 'طلبات موجهة لك', fresh], ['bc', 'fa-bullhorn', 'طلبات عامة', bcNew]];
     return `<div class="wrap dash">
       <aside class="side">
         <div class="who">${Card.avatar(t, 'av')}<div class="grow"><b>${esc(t.name)}</b><small class="num">${esc(t.code)}</small></div><button type="button" class="bell" id="bell" title="الإشعارات" aria-label="الإشعارات"><i class="fa-solid fa-bell"></i>${fresh + bcNew ? `<span class="bdg num">${fresh + bcNew}</span>` : ''}</button></div>
@@ -165,7 +165,7 @@ function portalEdit(main, t) {
 
 function portalLeads(main, t) {
   const leads = Store.list('leads').filter(l => l.trainerId === t.id).sort((a, b) => b.ts - a.ts);
-  main.innerHTML = `<div class="dash-h"><h2>الطلبات الواردة</h2><span class="muted small">طلبات الجهات التدريبية من صفحتك</span></div>
+  main.innerHTML = `<div class="dash-h"><h2>طلبات موجهة لك</h2><span class="muted small">طلبات الجهات التدريبية من صفحتك</span></div>
     ${leads.length ? leads.map(l => `<div class="lead">
       <span class="ic"><i class="fa-solid fa-building"></i></span>
       <div><b>${esc(l.org)}</b> <span class="pill ${l.status === 'new' ? 'gold' : 'gray'}">${l.status === 'new' ? 'جديد' : 'تم التواصل'}</span><br>
