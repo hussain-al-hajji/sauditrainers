@@ -180,7 +180,8 @@ const Tpl = {
 };
 
 // الاسم القديم «القاعات» المحفوظ في إعدادات القائمة يُعرض «قاعات التدريب»
-const siteNav = () => { const l = arr(Store.get('content/nav/list')); return (l.length ? l : defaultNav()).filter(x => x.vis !== false && x.label && x.href).map(x => x.href === '#/halls' && x.label === 'القاعات' ? { ...x, label: 'قاعات التدريب' } : x); };
+const featureOn = k => Store.get(`content/features/${k}`) === true;
+const siteNav = () => { const l = arr(Store.get('content/nav/list')); return (l.length ? l : defaultNav()).filter(x => x.vis !== false && x.label && x.href && (x.href !== '#/news' || featureOn('news'))).map(x => x.href === '#/halls' && x.label === 'القاعات' ? { ...x, label: 'قاعات التدريب' } : x); };
 /* تذييل الموقع: يُعدَّل من لوحة الإدارة ← الصفحة الرئيسية ← تذييل الموقع (content/footer)، وإلا يُبنى من الافتراضي (يشمل حسابات المنصة من «المحتوى العام ← تواصل المنصة») */
 const FOOTER_ICONS = [['instagram', 'إنستقرام', 'fa-brands fa-instagram'], ['x-twitter', 'إكس', 'fa-brands fa-x-twitter'], ['linkedin-in', 'لينكدإن', 'fa-brands fa-linkedin-in'], ['whatsapp', 'واتساب', 'fa-brands fa-whatsapp'], ['facebook-f', 'فيسبوك', 'fa-brands fa-facebook-f'], ['youtube', 'يوتيوب', 'fa-brands fa-youtube'], ['tiktok', 'تيك توك', 'fa-brands fa-tiktok'], ['snapchat', 'سناب شات', 'fa-brands fa-snapchat'], ['telegram', 'تيليجرام', 'fa-brands fa-telegram'], ['envelope', 'بريد إلكتروني', 'fa-solid fa-envelope'], ['phone', 'هاتف', 'fa-solid fa-phone'], ['globe', 'موقع', 'fa-solid fa-globe']];
 const defaultFooter = () => {

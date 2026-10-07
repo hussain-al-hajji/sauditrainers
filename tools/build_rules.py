@@ -171,6 +171,34 @@ rules = {
                     '$other': {'.validate': False},
                 },
             },
+            # أخبار المدربين: قراءة عامة؛ يكتب المدرب أخباره فقط وبشرط أن تكون الميزة مفعّلة من الإدارة (content/features/news)، وله حذفها دائماً
+            'news': {'.read': True, '$id': {
+                '.write': f"{admin} || (auth != null && {me} != null && (!data.exists() || data.child('trainerId').val() == {me}) && ((newData.exists() && newData.child('trainerId').val() == {me} && root.child('{ROOT}/content/features/news').val() == true) || !newData.exists()))",
+                '.validate': "$id.matches(/^[A-Za-z0-9_-]{1,40}$/) && newData.hasChildren(['trainerId', 'title', 'ts']) && root.child('" + ROOT + "/trainers/' + newData.child('trainerId').val()).exists()",
+                'id': {'.validate': S(40)}, 'trainerId': {'.validate': S(40)},
+                'title': {'.validate': 'newData.isString() && newData.val().length >= 3 && newData.val().length <= 120'},
+                'body': {'.validate': S(5000)},
+                'kind': {'.validate': "newData.isString() && newData.val().matches(/^(news|achievement|participation|course)$/)"},
+                'ts': {'.validate': 'newData.isNumber() && (data.exists() ? newData.val() == data.val() : (newData.val() >= now - 172800000 && newData.val() <= now + 60000))'},
+                'editedAt': {'.validate': 'newData.isNumber()'},
+                'links': {'.validate': 'newData.hasChildren()', '$i': {
+                    '.validate': f"$i.matches(/{idx_re(3)}/) && newData.hasChildren(['url'])",
+                    'url': {'.validate': URL(500)}, 'title': {'.validate': S(200)}, 'desc': {'.validate': S(400)}, 'img': {'.validate': URL(500)}, 'site': {'.validate': S(80)},
+                    '$other': {'.validate': False},
+                }},
+                '$other': {'.validate': False},
+            }},
+            # إعلانات الإدارة لحسابات المدربين: يقرؤها كل مدرب لديه حساب، وتكتبها الإدارة فقط
+            'announcements': {
+                '.read': f"auth != null && root.child('{ROOT}/uids/' + auth.uid).exists()",
+                '$id': {
+                    '.validate': "$id.matches(/^[A-Za-z0-9_-]{1,40}$/) && newData.hasChildren(['ts', 'title'])",
+                    'id': {'.validate': S(40)}, 'ts': {'.validate': 'newData.isNumber()'},
+                    'title': {'.validate': S(160)}, 'body': {'.validate': S(3000)},
+                    'link': {'.validate': URL(500)}, 'linkLabel': {'.validate': S(60)},
+                    '$other': {'.validate': False},
+                },
+            },
             'requests': {'$id': public_form(['org', 'person', 'phone', 'topic', 'ts', 'status'], req_spec)},
             'hallReqs': {'$id': public_form(['type', 'name', 'phone', 'region', 'ts', 'status'], hall_spec)},
             'applications': {'$id': {**app, '.validate': '$id.matches(/^A[0-9A-Z]{7}$/)'}},

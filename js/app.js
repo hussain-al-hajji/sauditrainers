@@ -4,7 +4,7 @@ const App = (() => {
   let timers = [], dataHooks = [], dirty = false;
   const ROUTES = {
     '': 'home', trainers: 'trainers', t: 'profile', join: 'join', status: 'status', request: 'request',
-    halls: 'halls', about: 'about', login: 'login', me: 'me', admin: 'admin'
+    halls: 'halls', news: 'news', about: 'about', login: 'login', me: 'me', admin: 'admin'
   };
 
   function parse() {
@@ -28,7 +28,7 @@ const App = (() => {
 
   function header(page) {
     const s = Auth.current();
-    const dark = Pages[page]?.dark || ['trainers', 'profile', 'join', 'status', 'request', 'halls', 'about', 'login'].includes(page) || (page === 'admin' && s?.kind !== 'admin');
+    const dark = Pages[page]?.dark || ['trainers', 'profile', 'join', 'status', 'request', 'halls', 'news', 'about', 'login'].includes(page) || (page === 'admin' && s?.kind !== 'admin');
     // الصفحة الحالية: مقطع المسار الأول من الرابط (والمدرب t يتبع «المدربون»)
     const seg = h => (String(h).replace(/^#\/?/, '').split(/[?/]/)[0]) || '';
     const cur = page === 'profile' ? 'trainers' : parse().seg;

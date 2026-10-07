@@ -1205,3 +1205,19 @@ body.preview .local-flag { display: none; }
 .bc-row.new { border-color: var(--gold); background: #fffaea; } .bc-row i { color: var(--g700); font-size: 1.1rem; } .bc-row span { display: grid; gap: 2px; } .bc-row small { color: var(--muted); }
 .bc-pop { padding: 10px 14px; margin-bottom: 8px; border-radius: 14px; background: var(--paper); border: 1px solid var(--line); display: grid; gap: 2px; } .bc-pop small { color: var(--muted); }
 .lead.bc { border-inline-start: 4px solid var(--gold); }
+
+/* أخبار المدربين */
+.ngrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 16px; }
+.ncard { background: #fff; border: 1px solid var(--line); border-radius: 22px; padding: 18px; display: grid; gap: 8px; align-content: start; box-shadow: var(--shadow-s, 0 6px 22px rgba(0, 0, 0, .05)); }
+.ncard h3 { margin: 0; font-size: 1.12rem; line-height: 1.5; } .ncard h3 a { color: inherit; }
+.ncard p { margin: 0; color: var(--ink2); line-height: 1.8; }
+.ncard .more { font-weight: 700; color: var(--green, #0e5b43); font-size: .92rem; }
+.n-who { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; } .n-who > div { flex: 1; min-width: 0; display: grid; } .n-who small { color: var(--muted); }
+.n-who .av { width: 44px; height: 44px; border-radius: 50%; }
+.news-one .ncard { max-width: 780px; margin-inline: auto; }
+.nlink { display: grid; grid-template-columns: 96px 1fr; gap: 12px; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--paper); color: inherit; text-decoration: none; margin-top: 6px; }
+.nlink .nl-img { background: var(--gold-l); display: grid; place-content: center; min-height: 80px; color: var(--gold-d); font-size: 1.4rem; } .nlink .nl-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.nlink .nl-t { display: grid; gap: 3px; padding: 10px 12px 10px 4px; min-width: 0; } .nlink .nl-t small { color: var(--ink2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; } .nlink em { font-style: normal; color: var(--muted); font-size: .78rem; text-align: end; }
+.nl-edit { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; } .chips .chip { padding: 7px 14px; border-radius: 99px; border: 1px solid var(--line); background: #fff; color: var(--ink2); font-weight: 600; font-size: .9rem; } .chips .chip.on { background: var(--green, #0e5b43); border-color: transparent; color: #fff; }
+.lead.new { background: var(--gold-l); }

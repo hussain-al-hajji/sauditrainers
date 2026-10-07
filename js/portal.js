@@ -11,6 +11,10 @@ Pages.me = {
     const fresh = leads.filter(l => l.status === 'new').length;
     const bcNew = Broadcast.unread(t.id).length;
     const tabs = [['home', 'fa-id-card', 'بطاقتي'], ['edit', 'fa-pen-to-square', 'تعديل البيانات'], ['leads', 'fa-inbox', 'طلبات موجهة لك', fresh], ['bc', 'fa-bullhorn', 'طلبات عامة', bcNew]];
+    const annNew = News.unread(t.id).length;
+    if (featureOn('news')) tabs.push(['news', 'fa-newspaper', 'أخباري']);
+    if (featureOn('announcements')) tabs.push(['ann', 'fa-bell-concierge', 'إعلانات', annNew]);
+    if (!tabs.some(x => x[0] === this.tab)) this.tab = 'home';
     return `<div class="wrap dash">
       <aside class="side">
         <div class="who">${Card.avatar(t, 'av')}<div class="grow"><b>${esc(t.name)}</b><small class="num">${esc(t.code)}</small></div><button type="button" class="bell" id="bell" title="الإشعارات" aria-label="الإشعارات"><i class="fa-solid fa-bell"></i>${fresh + bcNew ? `<span class="bdg num">${fresh + bcNew}</span>` : ''}</button></div>
@@ -35,7 +39,8 @@ Pages.me = {
     try { if (fresh && sessionStorage.getItem('st-leads-seen') !== String(fresh)) { sessionStorage.setItem('st-leads-seen', String(fresh)); toast(`لديك ${fresh} ${fresh === 1 ? 'طلب تواصل جديد' : 'طلبات تواصل جديدة'} من جهات تدريبية`); } } catch { /* ignore */ }
     const go = k => { this.tab = k; App.render(); };
     $('#bell', root) && ($('#bell', root).onclick = () => Broadcast.notifications(t, go));
-    ({ home: portalHome, edit: portalEdit, leads: portalLeads, bc: Broadcast.tab })[this.tab](main, t);
+    ({ home: portalHome, edit: portalEdit, leads: portalLeads, bc: Broadcast.tab, news: News.tab, ann: News.annTab })[this.tab](main, t);
+    if (this.tab !== 'ann') News.annPopup(t, go);
     if (this.tab !== 'bc') Broadcast.popup(t, go);
   },
   // لا نعيد رسم نموذج التعديل أثناء الكتابة

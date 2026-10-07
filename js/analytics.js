@@ -17,7 +17,7 @@ const Analytics = (() => {
   const browser = () => { const u = navigator.userAgent || ''; return /SamsungBrowser/i.test(u) ? 'samsung' : /Edg\//.test(u) ? 'edge' : /OPR\/|Opera/.test(u) ? 'opera' : /Firefox\//.test(u) ? 'firefox' : /CriOS|Chrome\//.test(u) ? 'chrome' : /Safari\//.test(u) ? 'safari' : 'other'; };
 
   // اسم الصفحة المجمّع (دون هوية المدرب أو رموز الطلبات)
-  const pageName = h => { const seg = String(h || '').replace(/^#\/?/, '').split(/[/?]/)[0]; return ({ '': 'home', trainers: 'trainers', t: 'profile', join: 'join', status: 'status', request: 'request', halls: 'halls', about: 'about', login: 'login' })[seg] || (seg === 'me' || seg === 'admin' ? '' : 'home'); };
+  const pageName = h => { const seg = String(h || '').replace(/^#\/?/, '').split(/[/?]/)[0]; return ({ '': 'home', trainers: 'trainers', t: 'profile', join: 'join', status: 'status', request: 'request', halls: 'halls', news: 'news', about: 'about', login: 'login' })[seg] || (seg === 'me' || seg === 'admin' ? '' : 'home'); };
 
   function bumpAll(paths) { try { Store.bump(paths); } catch { /* ignore */ } }
 
