@@ -197,6 +197,7 @@ Pages.profile = {
           <div class="t">${esc(t.title || '')}</div>
           ${t.tot ? '<span class="tot-badge"><i class="fa-solid fa-award"></i> حاصل على شهادة تدريب المدربين</span>' : ''}
         </div>
+        ${typeof News !== 'undefined' ? News.profileBox(t) : ''}
         ${t.bio ? `<div class="pbox reveal"><h3><i class="fa-solid fa-user"></i>نبذة تعريفية</h3><p>${nl2br(t.bio)}</p></div>` : ''}
         ${sp.length ? `<div class="pbox reveal"><h3><i class="fa-solid fa-layer-group"></i>التخصصات التدريبية</h3><div class="checks">${sp.map(k => `<a class="chk" href="#/trainers?spec=${k}"><span><i class="fa-solid ${specOf(k)?.icon || 'fa-shapes'}"></i>${esc(specName(k))}</span></a>`).join('')}</div></div>` : ''}
         ${tp.length ? `<div class="pbox reveal"><h3><i class="fa-solid fa-chalkboard"></i>دورات تم تقديمها سابقاً</h3><div class="topics">${tp.map(x => `<span>${esc(x)}</span>`).join('')}</div></div>` : ''}

@@ -1221,3 +1221,8 @@ body.preview .local-flag { display: none; }
 .nl-edit { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
 .chips { display: flex; gap: 8px; flex-wrap: wrap; } .chips .chip { padding: 7px 14px; border-radius: 99px; border: 1px solid var(--line); background: #fff; color: var(--ink2); font-weight: 600; font-size: .9rem; } .chips .chip.on { background: var(--green, #0e5b43); border-color: transparent; color: #fff; }
 .lead.new { background: var(--gold-l); }
+.pn-item { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px dashed var(--line); color: inherit; } .pn-item:last-of-type { border-bottom: 0; } .pn-item b { flex: 1; min-width: 160px; }
+.bl-bar { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; margin-bottom: 12px; } .bl-bar label { display: grid; gap: 4px; font-size: .85rem; color: var(--ink2); } .bl-bar input[type=date], .bl-bar select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 12px; font: inherit; }
+.bl-ck { display: grid; place-content: center; width: 42px; height: 42px; } .bl-ck input { width: 22px; height: 22px; accent-color: var(--g800); }
+.bl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; max-height: 58vh; overflow: auto; }
+.bl-th { position: relative; padding: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; cursor: pointer; } .bl-th img { display: block; width: 100%; } .bl-th span { position: absolute; top: 6px; inset-inline-start: 6px; background: var(--g800); color: #fff; border-radius: 99px; min-width: 24px; padding: 1px 7px; font-size: .78rem; }
