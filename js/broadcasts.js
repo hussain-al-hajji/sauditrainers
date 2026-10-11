@@ -70,15 +70,15 @@ const Broadcast = (() => {
   function forward(r) {
     const trainers = Store.list('trainers').filter(t => Data.isLive(t)).length;
     const m = modal(`<h3><i class="fa-solid fa-share"></i> إعادة توجيه الطلب لكل المدربين</h3>
-      <p class="muted small">يظهر في لوحة كل مدرب كإشعار ونافذة منبثقة عند دخوله، ويُحفظ في تبويب «طلبات عامة» داخل حسابه. عدد المدربين الظاهرين حالياً: <b class="num">${trainers}</b>.</p>
+      <p class="muted small">يظهر في لوحة كل مدرب (مع بيانات تواصل الجهة) كإشعار ونافذة منبثقة عند دخوله، ويُحفظ في تبويب «طلبات عامة» داخل حسابه. عدد المدربين الظاهرين حالياً: <b class="num">${trainers}</b>.</p>
       <div class="pbox" style="margin:0 0 10px"><b>${esc(r.org || 'جهة تدريبية')}</b><br><span class="small">${esc(r.topic)}${r.spec ? ` · ${esc(specName(r.spec))}` : ''}${r.region ? ` · ${esc(regionName(r.region))}` : ''}</span></div>
       <form id="bf" style="display:grid;gap:10px">
-        <label class="chk"><input type="checkbox" name="contact"><span>إظهار بيانات التواصل (الاسم والجوال والبريد) للمدربين <small class="muted">— الافتراضي إخفاؤها وإبقاؤها لدى الإدارة</small></span></label>
+        <p class="small"><i class="fa-solid fa-address-card"></i> يُمرَّر الطلب كاملاً إلى المدربين بما فيه بيانات تواصل الجهة (الاسم والجوال والبريد) ليتواصلوا معها مباشرة.${r.person || r.phone || r.email ? '' : ' <b>لا توجد بيانات تواصل في هذا الطلب.</b>'}</p>
         ${field('ملاحظة من الإدارة (اختياري)', '<textarea name="note" maxlength="500" placeholder="مثال: الطلب عاجل، ويُفضّل التقديم خلال أسبوع"></textarea>')}
         <div class="row end"><button type="button" class="btn ghost" data-close>إلغاء</button><button class="btn primary" type="submit"><i class="fa-solid fa-share"></i> إعادة التوجيه الآن</button></div>
       </form>`);
     $('#bf', m.el).onsubmit = e => {
-      e.preventDefault(); const f = e.target, inc = f.contact.checked;
+      e.preventDefault(); const f = e.target, inc = true;
       const rec = { ts: Date.now(), requestId: r.id, org: r.org || '', topic: r.topic || '', when: r.when || '', msg: r.msg || '', note: f.note.value.trim(), spec: r.spec || '', region: r.region || '', size: Number(r.size) || 0, contact: inc };
       if (inc) { rec.person = r.person || ''; rec.phone = r.phone || ''; rec.email = r.email || ''; }
       Store.push('broadcasts', rec); Security.log('إعادة توجيه طلب للمدربين', r.org || r.topic);
