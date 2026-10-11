@@ -54,14 +54,14 @@ const Bulletin = (() => {
 
   /* ---------- تخطيط الأخبار ---------- */
   const HDR = { s: 132, big: 214 };
-  function layoutItem(ctx, n, mode, availH) {
+  function layoutItem(ctx, n, mode, availH, hh = HDR.big) {
     const big = mode === 'single', f = big ? { tf: 50, tl: 68, tm: 4, bf: 30, bl: 52 } : { tf: 32, tl: 46, tm: 2, bf: 25, bl: 40 };
     const pad = big ? 44 : 28, inner = CW - 2 * pad - 14, links = arr(n.links).slice(0, 3);
     ctx.font = `900 ${f.tf}px ${FONT.head}`; const title = clip(ctx, K().wrap(ctx, n.title, inner, f.tm), inner);
     const linksH = !links.length ? 0 : big ? links.length * 106 + 6 : 62;
     const body = collapse(n.body);
-    let bodyMax = big ? 0 : (mode === 'trainer' ? 6 : 3);
-    if (big) { const used = HDR.big + 20 + pad + 46 + 14 + title.length * f.tl + (linksH ? 14 + linksH : 0) + pad; bodyMax = Math.max(3, Math.min(14, Math.floor((availH - used - 10) / f.bl))); }
+    let bodyMax = big ? 0 : (mode === 'trainer' ? 4 : 3);
+    if (big) { const used = hh + 20 + pad + 46 + 14 + title.length * f.tl + (linksH ? 14 + linksH : 0) + pad; bodyMax = Math.max(3, Math.min(14, Math.floor((availH - used - 10) / f.bl))); }
     ctx.font = `400 ${f.bf}px ${FONT.body}`; const lines = body ? clip(ctx, K().wrap(ctx, body, inner, bodyMax), inner) : [];
     const h = pad + 46 + 14 + title.length * f.tl + (lines.length ? 10 + lines.length * f.bl : 0) + (linksH ? 14 + linksH : 0) + pad;
     return { n, h, f, pad, big, title, lines, links, inner };
@@ -96,16 +96,23 @@ const Bulletin = (() => {
       }
     }
   }
-  function drawHeader(ctx, t, img, x, y, cont, big) {
-    const h = big ? HDR.big : HDR.s, w = CW, R = big ? 74 : 46, qs = big ? 120 : 76;
+  // السطر التعريفي يُعرض كاملاً: يلتف على عدة أسطر ويكبر ارتفاع الترويسة بحسب عدد الأسطر
+  function hdrLayout(ctx, t, big) {
+    const R = big ? 74 : 46, qs = big ? 120 : 76, avail = CW - 26 - 2 * R - 24 - (26 + qs + 16 + 20), tfs = big ? 28 : 22, lh = big ? 38 : 30;
+    ctx.font = `600 ${tfs}px ${FONT.body}`; const lines = K().wrap(ctx, t.title || '', avail, 6);
+    const nameH = big ? 62 : 46, h = Math.max(big ? HDR.big : HDR.s, 2 * 24 + nameH + lines.length * lh);
+    return { h, lines, tfs, lh, nameH, avail };
+  }
+  function drawHeader(ctx, t, img, x, y, cont, big, H) {
+    const h = H.h, w = CW, R = big ? 74 : 46, qs = big ? 120 : 76;
     const g = ctx.createLinearGradient(x, y, x + w, y + h); g.addColorStop(0, C.g900); g.addColorStop(1, C.g800); rrect(ctx, x, y, w, h, 30, g);
     try { ctx.save(); K().rr(ctx, x, y, w, h, 30); ctx.clip(); ctx.fillStyle = ctx.createPattern(K().patternTile(C.sage, 0.1), 'repeat'); ctx.fillRect(x, y, w, h); ctx.restore(); } catch { /* */ }
     avatar(ctx, t, img, x + w - 26 - R - 4, y + h / 2, R);
-    const tr = x + w - 26 - 2 * R - 24, avail = tr - (x + 26 + qs + 16 + 20);
+    const tr = x + w - 26 - 2 * R - 24, avail = H.avail;
     const fs = fitFont(ctx, t.name || '', 900, big ? 50 : 36, 24, avail, FONT.head);
-    txt(ctx, t.name || '', tr, y + h / 2 - (big ? 8 : 4), { font: `900 ${fs}px ${FONT.head}`, color: '#fff' });
-    ctx.font = `600 ${big ? 28 : 22}px ${FONT.body}`; const ttl = K().wrap(ctx, t.title || '', avail, 1)[0] || '';
-    txt(ctx, ttl, tr, y + h / 2 + (big ? 40 : 30), { font: ctx.font, color: C.sage });
+    const top = y + (h - (H.nameH + H.lines.length * H.lh)) / 2;
+    txt(ctx, t.name || '', tr, top + H.nameH - 14, { font: `900 ${fs}px ${FONT.head}`, color: '#fff' });
+    H.lines.forEach((l, i) => txt(ctx, l, tr, top + H.nameH + H.lh * (i + 1) - 8, { font: `600 ${H.tfs}px ${FONT.body}`, color: C.sage }));
     if (cont) pill(ctx, 'تتمة', tr, y + 22, { bg: 'rgba(255,255,255,.14)', fg: C.cream, fs: 18 });
     qr(ctx, profileUrl(t), x + 26, y + (h - qs - 16) / 2, qs);
     return h;
@@ -153,14 +160,14 @@ const Bulletin = (() => {
 
   function paginate(ctx, groups, mode) {
     const avail = BOT - TOP, pages = [];
-    if (mode === 'single') { groups.forEach(g => g.items.forEach(n => pages.push([{ t: g.t, big: true, L: [layoutItem(ctx, n, 'single', avail)], cont: false }]))); return pages; }
+    if (mode === 'single') { groups.forEach(g => { const H = hdrLayout(ctx, g.t, true); g.items.forEach(n => pages.push([{ t: g.t, big: true, H, L: [layoutItem(ctx, n, 'single', avail, H.h)], cont: false }])); }); return pages; }
     let cur = null, used = 0; const newPage = () => { cur = []; pages.push(cur); used = 0; };
     groups.forEach(g => {
       if (mode === 'trainer' || !cur) newPage();
-      const rest = g.items.map(n => layoutItem(ctx, n, mode, avail)); let first = true;
+      const rest = g.items.map(n => layoutItem(ctx, n, mode, avail)), H = hdrLayout(ctx, g.t, false); let first = true;
       while (rest.length) {
-        if (used && used + GAP + HDR.s + 14 + rest[0].h > avail) newPage();
-        const start = used ? used + GAP : 0, sec = { t: g.t, big: false, L: [], cont: !first, y: start }; let h = HDR.s;
+        if (used && used + GAP + H.h + 14 + rest[0].h > avail) newPage();
+        const start = used ? used + GAP : 0, sec = { t: g.t, big: false, H, L: [], cont: !first, y: start }; let h = H.h;
         cur.push(sec);
         while (rest.length && start + h + 14 + rest[0].h <= avail) { h += 14 + rest[0].h; sec.L.push(rest.shift()); }
         if (!sec.L.length) { sec.L.push(rest.shift()); h += 14 + sec.L[0].h; }
@@ -191,7 +198,7 @@ const Bulletin = (() => {
         const [cv, c] = mk(); chrome(c, pi + 1 + (withCover ? 1 : 0), total, from, to);
         let y = TOP; if (layout === 'single') y = TOP;
         secs.forEach(sec => {
-          y = TOP + (sec.y || 0); const hh = drawHeader(c, sec.t, photos.get(sec.t.id), PX, y, sec.cont, sec.big); y += hh + (sec.big ? 20 : 14);
+          y = TOP + (sec.y || 0); const hh = drawHeader(c, sec.t, photos.get(sec.t.id), PX, y, sec.cont, sec.big, sec.H); y += hh + (sec.big ? 20 : 14);
           sec.L.forEach(L => { drawItem(c, L, PX, y); y += L.h + 14; });
         });
         out.push(cv);
