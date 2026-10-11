@@ -1226,3 +1226,5 @@ body.preview .local-flag { display: none; }
 .bl-ck { display: grid; place-content: center; width: 42px; height: 42px; } .bl-ck input { width: 22px; height: 22px; accent-color: var(--g800); }
 .bl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; max-height: 58vh; overflow: auto; }
 .bl-th { position: relative; padding: 0; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: #fff; cursor: pointer; } .bl-th img { display: block; width: 100%; } .bl-th span { position: absolute; top: 6px; inset-inline-start: 6px; background: var(--g800); color: #fff; border-radius: 99px; min-width: 24px; padding: 1px 7px; font-size: .78rem; }
+.tpl-send { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 14px; padding-top: 14px; border-top: 1px dashed var(--line); } .tpl-send select { flex: 1; min-width: 200px; padding: 9px 12px; border: 1px solid var(--line); border-radius: 12px; font: inherit; background: #fff; }
+.pv-mail input, .pv-mail textarea, .pv-wa textarea { width: 100%; margin-top: 6px; font: inherit; border: 1px solid var(--line); border-radius: 12px; padding: 10px; }

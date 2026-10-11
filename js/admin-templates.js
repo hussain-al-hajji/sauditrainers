@@ -4,6 +4,7 @@
 function aTemplates(main) {
   const chip = ([k, l]) => `<button type="button" class="tvar" data-v="${k}" title="${l}">{${k}}<small>${l}</small></button>`;
   const sample = () => Tpl.vars({ a: { id: 'ABCD1234', name: 'أ. سارة العتيبي' }, t: { name: 'أ. سارة العتيبي', code: 'ST0012', slug: 'sarah' }, secret: 'ST0012-7K4Q9P' });
+  const trainerOpts = Store.list('trainers').filter(t => t.name).sort((x, y) => String(x.name).localeCompare(String(y.name), 'ar')).map(t => `<option value="${esc(t.id)}">${esc(t.name)} — ${esc(t.code || '')}${Data.isLive(t) ? '' : ' (مخفي)'}</option>`).join('');
   main.innerHTML = `
     <div class="dash-h"><h2>قوالب الرسائل</h2></div>
     <div id="ctpl"></div>
@@ -22,6 +23,9 @@ function aTemplates(main) {
         <label class="field"><span><i class="fa-solid fa-envelope"></i> نص البريد</span><textarea data-f="body" style="min-height:230px">${esc(t.body)}</textarea></label>
         ${mt.wa ? `<label class="field"><span><i class="fa-brands fa-whatsapp"></i> نص الواتساب <small>(*نص* للخط العريض)</small></span><textarea data-f="wa" style="min-height:200px">${esc(t.wa)}</textarea></label>` : ''}
         <div class="row"><button class="btn primary sm" data-save><i class="fa-solid fa-floppy-disk"></i> حفظ</button><button class="btn sm" data-prev><i class="fa-solid fa-eye"></i> معاينة بيانات تجريبية</button><button class="btn sm ghost" data-reset ${custom ? '' : 'disabled'}><i class="fa-solid fa-rotate-left"></i> القالب الافتراضي</button></div>
+        <div class="tpl-send"><b><i class="fa-solid fa-paper-plane"></i> إرسال هذا القالب لمدرب</b>
+          <select data-trainer><option value="">— اختر المدرب —</option>${trainerOpts}</select>
+          <button class="btn primary sm" data-send><i class="fa-solid fa-paper-plane"></i> إرسال</button></div>
       </div>`; }).join('')}`;
   cardTemplateBox($('#ctpl', main));
   shareTemplatesBox($('#stpl', main));
@@ -42,6 +46,10 @@ function aTemplates(main) {
       Store.set(`settings/templates/${k}`, o); Security.log('تعديل قالب', TPL_META[k].name); toast('تم حفظ القالب'); aTemplates(main);
     };
     $('[data-reset]', box).onclick = async () => { if (!await confirmBox('استعادة القالب الافتراضي؟', { ok: 'استعادة' })) return; Store.remove(`settings/templates/${k}`); aTemplates(main); };
+    $('[data-send]', box).onclick = () => {
+      const tid = $('[data-trainer]', box).value; if (!tid) return toast('اختر المدرب أولاً', 'error');
+      sendToTrainer(k, tid, f => $(`[data-f=${f}]`, box)?.value || '');
+    };
     $('[data-prev]', box).onclick = () => {
       const v = sample(), r = t => Tpl.render(t, v);
       const val = f => $(`[data-f=${f}]`, box)?.value || '';
@@ -131,3 +139,28 @@ function shareTemplatesBox(host) {
   draw();
 }
 const SHARE_VARS_UI = () => Card.SHARE_VARS;
+
+/* إرسال قالب لمدرب بعينه: تُملأ متغيرات الرسالة من بياناته (الاسم، رقم العضوية، الرمز السري، الروابط…) وتُعرض في نافذة قابلة للتعديل قبل الإرسال بالبريد أو الواتساب.
+ * يُؤخذ النص من الحقول المعروضة (حتى لو لم تُحفظ بعد). */
+function sendToTrainer(k, tid, val) {
+  const t = Store.get(`trainers/${tid}`); if (!t) return toast('المدرب غير موجود', 'error');
+  const meta = TPL_META[k], priv = Store.get(`private/${tid}`) || {}, secret = Store.get(`secrets/codes/${tid}`) || '';
+  const app = Store.list('applications').find(a => a.trainerId === tid) || null, a = app || { id: t.appId || '', name: t.name };
+  const v = Tpl.vars({ a, t, secret }), to = priv.email || app?.email || '', phone = priv.phone || app?.phone || '';
+  const wa = meta.wa ? String(val('wa')).replace(/\{(\w+)\}/g, (_, x) => v[x] ?? '').trim() : '';
+  const needsSecret = meta.vars.includes('secret') && !secret;
+  const m = modal(`<h3><i class="fa-solid fa-paper-plane"></i> إرسال «${esc(meta.name)}» إلى ${esc(t.name)}</h3>
+    <p class="muted small">الرسالة مخصّصة للمدرب (${esc(t.code || '')}). يمكنك تعديلها قبل الإرسال.</p>
+    ${needsSecret ? '<p class="small" style="color:var(--bad)"><i class="fa-solid fa-triangle-exclamation"></i> لا يتوفر رمز دخول محفوظ لهذا المدرب؛ جدّد الرمز من تبويب المدربين ثم أعد المحاولة، وإلا ستظهر الرسالة بلا رمز.</p>' : ''}
+    <div class="pv-mail"><small class="muted"><i class="fa-solid fa-envelope"></i> البريد ${to ? `إلى <b dir="ltr">${esc(to)}</b>` : '<b style="color:var(--bad)">— لا يوجد بريد مسجّل</b>'}</small>
+      <input id="ts-sub" type="text" value="${esc(Tpl.render(val('subject'), v))}"><textarea id="ts-body" style="min-height:240px">${esc(Tpl.render(val('body'), v))}</textarea></div>
+    ${meta.wa ? `<div class="pv-wa"><small class="muted"><i class="fa-brands fa-whatsapp"></i> واتساب ${phone ? `إلى <b dir="ltr">${esc(phone)}</b>` : '<b style="color:var(--bad)">— لا يوجد جوال مسجّل</b>'}</small><textarea id="ts-wa" style="min-height:200px">${esc(wa)}</textarea></div>` : ''}
+    <div class="row end" style="gap:8px;flex-wrap:wrap"><button class="btn ghost" data-close>إغلاق</button>
+      <button class="btn" id="ts-copy"><i class="fa-solid fa-copy"></i> نسخ</button>
+      <button class="btn primary" id="ts-mail"><i class="fa-solid fa-envelope"></i> إرسال بريد</button>
+      ${meta.wa ? '<button class="btn primary" id="ts-wa-send"><i class="fa-brands fa-whatsapp"></i> إرسال واتساب</button>' : ''}</div>`, { wide: true });
+  const log = ch => (app && (k === 'initial' || k === 'final') ? { id: app.id, key: `notice${k === 'initial' ? 'Initial' : 'Final'}${ch}` } : null);
+  $('#ts-mail', m.el).onclick = async () => { if (await sendMailNotice(to, { subject: $('#ts-sub', m.el).value, body: $('#ts-body', m.el).value }, log('Mail'))) Security.log('إرسال قالب لمدرب', `${meta.name} ← ${t.name}`); };
+  if (meta.wa) $('#ts-wa-send', m.el).onclick = () => { if (sendWaNotice(phone, $('#ts-wa', m.el).value, log('Wa'))) Security.log('إرسال قالب لمدرب (واتساب)', `${meta.name} ← ${t.name}`); };
+  $('#ts-copy', m.el).onclick = () => copyText((meta.wa ? $('#ts-wa', m.el).value : $('#ts-body', m.el).value), 'تم النسخ');
+}
