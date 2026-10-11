@@ -224,6 +224,28 @@ const SECTION_TYPES = (() => {
     }
   };
 
+  T.visits = {
+    name: 'عدّاد الزيارات', icon: 'fa-hand-peace',
+    tpls: [['band', 'شريط ترحيب']],
+    schema: [{ k: 'text', label: 'نص الترحيب (قبل الرقم)' }, { k: 'textEnd', label: 'نص بعد الرقم' }, { k: 'textTotal', label: 'نص الإجمالي (للمشرفين والمدربين المسجّلين)' }, { k: 'base', label: 'رقم يُضاف للعدّاد (لبدء العدّ من رقم سابق)', t: 'number' }],
+    def: () => ({ text: 'نرحب بك، هذه الزيارة رقم', textEnd: 'للمنصة', textTotal: 'إجمالي زيارات المنصة', base: 0 }),
+    render(sec) {
+      const d = sec.d;
+      return `<div class="wrap"><div class="visit reveal"><span class="v-ic"><i class="fa-solid fa-hand-peace"></i></span><div class="v-t"><span class="v-l">${esc(d.text)}</span><b class="num v-n" dir="ltr">···</b><span class="v-e">${esc(d.textEnd)}</span></div></div></div>`;
+    },
+    mount(el, sec) {
+      const d = { ...T.visits.def(), ...(sec?.d || {}) }, n = el.querySelector('.v-n'); if (!n) return;
+      Analytics.visit().then(({ n: v, mine }) => {
+        if (!el.isConnected) return;
+        const target = v + (Number(d.base) || 0), l = el.querySelector('.v-l'), e = el.querySelector('.v-e');
+        if (!mine) { l.textContent = d.textTotal; e.textContent = ''; }
+        const t0 = performance.now(), dur = 1100;
+        const step = t => { const k = Math.min(1, (t - t0) / dur); n.textContent = Math.round(target * (1 - Math.pow(1 - k, 3))).toLocaleString('en-US'); if (k < 1 && el.isConnected) requestAnimationFrame(step); };
+        requestAnimationFrame(step);
+      });
+    }
+  };
+
   T.stats = {
     name: 'أرقام وإحصاءات', icon: 'fa-chart-simple', custom: true,
     tpls: [['row', 'صف أرقام'], ['tiles', 'مربعات']],
@@ -268,7 +290,12 @@ function defaultHome() {
     mk('cards', 'c3', 'light'), mk('faq', 'list', 'light')
   ];
 }
-const homeSections = () => { const l = arr(Store.get('content/home/list')); return l.length ? l : defaultHome(); };
+const homeSections = () => {
+  const l = arr(Store.get('content/home/list')), list = l.length ? l : defaultHome();
+  // عدّاد الزيارات يُضاف تحت الواجهة الرئيسية تلقائياً إن لم يكن في القائمة (تخفيه الإدارة من تبويب الصفحة الرئيسية)
+  if (!list.some(s => s.type === 'visits')) { const i = list.findIndex(s => s.type === 'hero'); list.splice(i + 1, 0, { id: 'visits', type: 'visits', tpl: 'band', bg: 'tint', vis: true, d: SECTION_TYPES.visits.def() }); }
+  return list;
+};
 
 function renderSection(sec) {
   const T = SECTION_TYPES[sec.type];

@@ -36,6 +36,16 @@ const Analytics = (() => {
     bumpAll(p);
   }
 
+  // رقم هذه الزيارة للمنصة: عدّاد ذرّي في stats/visits يزيد مرة لكل جلسة (بلا مشرفين ومدربين مسجّلين وروبوتات) ويُحفظ رقم الجلسة
+  let vp = null;
+  function visit() {
+    if (vp) return vp;
+    const cached = Number(sess('st-vn')), total = () => Number(Store.get('stats/visits')) || 0;
+    if (cached) return (vp = Promise.resolve({ n: cached, mine: true }));
+    if (skip()) return (vp = new Promise(res => { let i = 0; const t = setInterval(() => { if (Store.get('stats/visits') != null || ++i > 12) { clearInterval(t); res({ n: total(), mine: false }); } }, 250); }));
+    return (vp = Store.transaction('stats/visits', n => (Number(n) || 0) + 1).then(v => { sess('st-vn', String(v)); return { n: v, mine: true }; }, () => ({ n: total(), mine: false })));
+  }
+
   let last = '';
   function page() {
     const name = pageName(location.hash);
@@ -76,5 +86,5 @@ const Analytics = (() => {
     window.addEventListener('hashchange', () => setTimeout(page, 50));
     setTimeout(page, 400);   // بعد استعادة الجلسة، حتى لا تُحسب جلسة المشرف
   }
-  return { start, page, event, gaOn, dayKey, safe };
+  return { start, page, event, gaOn, dayKey, safe, visit };
 })();

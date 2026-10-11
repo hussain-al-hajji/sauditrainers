@@ -124,7 +124,7 @@ rules = {
             'showcase': {'.read': True},
             # منشورات التواصل الاجتماعي وصورها وإعدادات الأتمتة: للإدارة فقط (القاعدة العامة أعلاه)
             # عدّادات المشاهدات (زيادة بمقدار 1 فقط) + مشاهدات كل مدرب يومياً + ملخص المنصة العام الذي يكتبه سكربت الأتمتة (للإدارة فقط كتابةً)
-            'stats': {'.read': True, **{k: {'$id': {'.write': INC, '.validate': f"root.child('{ROOT}/trainers/' + $id).exists()"}} for k in ('views', 'clicks')},
+            'stats': {'.read': True, 'visits': {'.write': INC, '.validate': 'newData.isNumber()'}, **{k: {'$id': {'.write': INC, '.validate': f"root.child('{ROOT}/trainers/' + $id).exists()"}} for k in ('views', 'clicks')},
                 'vday': {'$id': {'.validate': f"root.child('{ROOT}/trainers/' + $id).exists()", '$d': {'.write': INC, '.validate': "$d.matches(/^[0-9]{8}$/)"}}}},
             # إحصاءات الزوار (زيادة بمقدار 1 فقط، دون أي بيانات شخصية): يقرؤها المشرفون
             'analytics': {

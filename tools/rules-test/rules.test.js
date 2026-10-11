@@ -117,6 +117,13 @@ const fs = require('fs');
   await D('13c زائر يقرأ الإعلانات', visitor.ref(`${R}/announcements`).once('value'));
   await D('13d غريب مسجّل يقرأ الإعلانات', stranger.ref(`${R}/announcements`).once('value'));
   await D('13e مدرب يكتب إعلاناً', t1.ref(`${R}/announcements/A2`).set({ id: 'A2', ts: now(), title: 'x' }));
+  // عدّاد زيارات المنصة
+  await A('14 زائر يرفع عدّاد الزيارات من الصفر إلى 1', visitor.ref(`${R}/stats/visits`).set(1));
+  await A('14b زائر يزيد العدّاد بمقدار 1', visitor.ref(`${R}/stats/visits`).set(2));
+  await D('14c زيادة بمقدار 5', visitor.ref(`${R}/stats/visits`).set(7));
+  await D('14d إنقاص العدّاد', visitor.ref(`${R}/stats/visits`).set(1));
+  await D('14e قيمة نصية', visitor.ref(`${R}/stats/visits`).set('x'));
+  await A('14f الجميع يقرأ العدّاد', visitor.ref(`${R}/stats/visits`).once('value'));
   res.forEach(r => console.log(r[0], r[1]));
   console.log(res.filter(r => r[0] === 'FAIL').length + ' فشل من ' + res.length);
   await env.cleanup();

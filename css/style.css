@@ -1230,3 +1230,9 @@ body.preview .local-flag { display: none; }
 .pv-mail input, .pv-mail textarea, .pv-wa textarea { width: 100%; margin-top: 6px; font: inherit; border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
 .avw.ph-full .ph-n { font-size: .78em; line-height: 1.3; text-align: center; padding: 0 8%; word-break: keep-all; }
 .tc-photo.ph-full { font-size: 2.1rem; } .tm-photo.ph-full { font-size: 1.05rem; }
+/* عدّاد الزيارات */
+.t-visits { padding-block: 22px !important; }
+.visit { display: flex; align-items: center; justify-content: center; gap: 16px; flex-wrap: wrap; padding: 16px 26px; border-radius: 99px; background: #fff; border: 1.5px solid var(--line); box-shadow: var(--sh1); max-width: max-content; margin-inline: auto; }
+.visit .v-ic { width: 46px; height: 46px; border-radius: 50%; display: grid; place-content: center; background: linear-gradient(135deg, var(--g700), var(--g900)); color: var(--gold2); font-size: 1.2rem; flex: none; }
+.visit .v-t { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; justify-content: center; font-weight: 600; color: var(--ink2); }
+.visit .v-n { font-family: var(--f-display); font-weight: 900; font-size: 1.9rem; color: var(--g800); min-width: 3ch; text-align: center; line-height: 1; }

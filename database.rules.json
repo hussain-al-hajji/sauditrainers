@@ -211,6 +211,10 @@
       },
       "stats": {
         ".read": true,
+        "visits": {
+          ".write": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
+          ".validate": "newData.isNumber()"
+        },
         "views": {
           "$id": {
             ".write": "newData.isNumber() && newData.val() == (data.exists() ? data.val() : 0) + 1",
