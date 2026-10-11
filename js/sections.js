@@ -227,7 +227,7 @@ const SECTION_TYPES = (() => {
   T.visits = {
     name: 'عدّاد الزيارات', icon: 'fa-hand-peace',
     tpls: [['band', 'شريط ترحيب']],
-    schema: [{ k: 'text', label: 'نص الترحيب (قبل الرقم)' }, { k: 'textEnd', label: 'نص بعد الرقم' }, { k: 'textTotal', label: 'نص الإجمالي (للمشرفين والمدربين المسجّلين)' }, { k: 'base', label: 'رقم يُضاف للعدّاد (لبدء العدّ من رقم سابق)', t: 'number' }],
+    schema: [{ k: 'text', label: 'نص الترحيب (قبل الرقم)' }, { k: 'textEnd', label: 'نص بعد الرقم' }, { k: 'textTotal', label: 'نص الإجمالي (للمشرفين والمدربين المسجّلين)' }, { k: 'base', label: 'رقم إضافي يُضاف للعدّاد (اختياري؛ الأساس هو إجمالي الزيارات التاريخية من المؤشرات)', t: 'number' }],
     def: () => ({ text: 'نرحب بك، هذه الزيارة رقم', textEnd: 'للمنصة', textTotal: 'إجمالي زيارات المنصة', base: 0 }),
     render(sec) {
       const d = sec.d;
@@ -237,7 +237,7 @@ const SECTION_TYPES = (() => {
       const d = { ...T.visits.def(), ...(sec?.d || {}) }, n = el.querySelector('.v-n'); if (!n) return;
       Analytics.visit().then(({ n: v, mine }) => {
         if (!el.isConnected) return;
-        const target = v + (Number(d.base) || 0), l = el.querySelector('.v-l'), e = el.querySelector('.v-e');
+        const P = Store.get('stats/platform') || {}, target = (Number(P.sessionsAll) || 0) + Math.max(0, v - (Number(P.visitsAtSync) || 0)) + (Number(d.base) || 0), l = el.querySelector('.v-l'), e = el.querySelector('.v-e');
         if (!mine) { l.textContent = d.textTotal; e.textContent = ''; }
         const t0 = performance.now(), dur = 1100;
         const step = t => { const k = Math.min(1, (t - t0) / dur); n.textContent = Math.round(target * (1 - Math.pow(1 - k, 3))).toLocaleString('en-US'); if (k < 1 && el.isConnected) requestAnimationFrame(step); };

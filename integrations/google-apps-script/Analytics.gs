@@ -128,7 +128,7 @@ let gaOk = false;
 function platformFromGa(d) {
   const all = d.periods.all.overview, l30 = d.last30 || d.periods['28'].overview;
   gaOk = true;
-  db('stats/platform', 'put', { updatedAt: Date.now(), source: 'ga', since: d.firstDate || '', sessionsAll: all.sessions, usersAll: all.activeUsers, viewsAll: all.pageViews, users30: l30.activeUsers, sessions30: l30.sessions, views30: l30.pageViews });
+  db('stats/platform', 'put', { updatedAt: Date.now(), visitsAtSync: Number(db('stats/visits')) || 0, source: 'ga', since: d.firstDate || '', sessionsAll: all.sessions, usersAll: all.activeUsers, viewsAll: all.pageViews, users30: l30.activeUsers, sessions30: l30.sessions, views30: l30.pageViews });
 }
 // بديل عند عدم ربط Google Analytics: من عدّادات المنصة الذاتية
 function platformFromOwn() {
@@ -137,7 +137,7 @@ function platformFromOwn() {
   const cut = Utilities.formatDate(new Date(Date.now() - 29 * 864e5), 'Asia/Riyadh', 'yyyyMMdd');
   let s = 0, v = 0, u30 = 0, s30 = 0, v30 = 0;
   keys.forEach(k => { const x = days[k] || {}; s += x.visits || 0; v += x.views || 0; if (k >= cut) { u30 += x.visitors || 0; s30 += x.visits || 0; v30 += x.views || 0; } });
-  db('stats/platform', 'put', { updatedAt: Date.now(), source: 'own', since: keys[0], sessionsAll: s, usersAll: 0, viewsAll: v, users30: u30, sessions30: s30, views30: v30 });
+  db('stats/platform', 'put', { updatedAt: Date.now(), visitsAtSync: Number(db('stats/visits')) || 0, source: 'own', since: keys[0], sessionsAll: s, usersAll: 0, viewsAll: v, users30: u30, sessions30: s30, views30: v30 });
 }
 
 /* ===================== اللقطة الشهرية ===================== */
