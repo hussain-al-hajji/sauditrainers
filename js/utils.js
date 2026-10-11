@@ -109,8 +109,16 @@ function arToEn(name) {
 }
 // الكلمة الأولى من الاسم دون اللقب المختصر (أ. / م. / د.) أو الصفة
 const firstName = name => String(name || '').trim().replace(/^(?:(?:د|م|أ|ا)\.|دكتور|الدكتور|مهندس|المهندس|أستاذ|الأستاذ)\s*/, '').split(/\s+/)[0] || '';
+// كلمات الاسم دون اللقب المختصر، و«عبد» تُربط بما بعدها (عبد الله = عبدالله) فتُعامل كاسم واحد
+function nameWords(name) {
+  const w = String(name || '').replace(/^(د|م|أ|ا)\.\s*/, '').split(/\s+/).filter(Boolean), out = [];
+  for (let i = 0; i < w.length; i++) { if (w[i] === 'عبد' && w[i + 1]) { out.push('عبد' + w[i + 1]); i++; } else out.push(w[i]); }
+  return out;
+}
+// الاسم الأول والأخير (للصورة البديلة حين لا توجد صورة)
+const nameFL = name => { const w = nameWords(name); return w.length > 1 ? [w[0], w[w.length - 1]] : w; };
 function initials(name) {
-  const w = String(name || '').replace(/^(د|م|أ|ا)\.\s*/, '').split(/\s+/).filter(Boolean).map(x => x.replace(/^ال(?=..)/, ''));
+  const w = nameWords(name).map(x => x.replace(/^ال(?=..)/, ''));
   return esc((w[0]?.[0] || '') + (w.length > 1 ? ' ' + w[w.length - 1][0] : ''));
 }
 

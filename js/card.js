@@ -20,9 +20,10 @@ const Card = (() => {
   function avatar(t, cls = '') {
     if (t.noPhoto) return `<span class="${cls} avw sym" role="img" aria-label="${t.gender === 'f' ? 'صورة رمزية لمدربة' : 'صورة رمزية'}">${symbol(t.gender)}</span>`;
     const p = Data.photo(t), ini = initials(t.name);
-    if (!p) return `<span class="${cls} avw ph">${ini}</span>`;
+    const big = /^t[cm]-photo$/.test(cls), full = nameFL(t.name).map(esc).join('<br>');
+    if (!p) return big ? `<span class="${cls} avw ph ph-full"><span class="ph-n">${full}</span></span>` : `<span class="${cls} avw ph">${ini}</span>`;
     const f = fit(t);
-    return `<span class="${cls} avw" data-i="${ini}"><img src="${esc(p)}" alt="${esc(t.name)}" loading="lazy" referrerpolicy="no-referrer" style="${imgStyle(f)}" onerror="const s=this.parentNode;s.classList.add('ph');s.textContent=s.dataset.i"></span>`;
+    return `<span class="${cls} avw" data-i="${ini}"><img src="${esc(p)}" alt="${esc(t.name)}" loading="lazy" referrerpolicy="no-referrer" style="${imgStyle(f)}" onerror="const s=this.parentNode;s.classList.add('ph');${big ? `s.classList.add('ph-full');s.innerHTML='<span class=ph-n>${full}</span>'` : 's.textContent=s.dataset.i'}"></span>`;
   }
   // ألوان البطاقة: ثيم المدرب، أو ألوان القالب إن فعّلتها الإدارة
   const lum = h => { const n = parseInt(h.slice(1), 16); return (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255; };
@@ -127,6 +128,15 @@ const Card = (() => {
     for (let i = 0; i < 24; i++) { const a = -Math.PI / 2 + i * Math.PI / 12; const d = i % 2 ? r : R; ctx.lineTo(cx + d * Math.cos(a), cy + d * Math.sin(a)); }
     ctx.closePath();
   }
+  // الصورة البديلة على اللوحة: الاسم الأول والأخير كاملين (سطران) بدل الحروف الأولى
+  function nameInCircle(ctx, name, cx, cy, D, color, family) {
+    const ls = nameFL(name); if (!ls.length) return;
+    let fs = Math.round(D * 0.3);
+    for (; fs > 24; fs -= 2) { ctx.font = `900 ${fs}px ${family}`; if (Math.max(...ls.map(l => ctx.measureText(l).width)) <= D * 0.74) break; }
+    const lh = fs * 1.3, y0 = cy - (ls.length - 1) * lh / 2;
+    ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ls.forEach((l, i) => ctx.fillText(l, cx, y0 + i * lh + fs * 0.04)); ctx.textBaseline = 'alphabetic';
+  }
   function wrap(ctx, text, maxW, maxLines = 3) {
     const out = []; let line = '';
     String(text || '').split(/\s+/).filter(Boolean).forEach(w => {
@@ -215,8 +225,7 @@ const Card = (() => {
       ctx.drawImage(photo, cx - D / 2 + (D - iw) * f.x / 100, cy - D / 2 + (D - ih) * f.y / 100, iw, ih);
     } else {
       ctx.fillStyle = pg; ctx.fillRect(cx - D / 2, cy - D / 2, D, D);
-      const tmp = document.createElement('div'); tmp.innerHTML = initials(t.name);
-      ctx.fillStyle = fg; ctx.font = `900 130px ${HEAD}`; ctx.textBaseline = 'middle'; ctx.fillText(tmp.textContent, cx, cy + 6); ctx.textBaseline = 'alphabetic';
+      nameInCircle(ctx, t.name, cx, cy, D, fg, HEAD);
     }
     ctx.restore();
     if (tp.show.badge) {
@@ -367,8 +376,7 @@ const Card = (() => {
     } else {
       const pg = ctx.createLinearGradient(cx - D / 2, cy - D / 2, cx + D / 2, cy + D / 2); pg.addColorStop(0, th.c); pg.addColorStop(1, th.a);
       ctx.fillStyle = pg; ctx.fillRect(cx - D / 2, cy - D / 2, D, D);
-      const tmp = document.createElement('div'); tmp.innerHTML = initials(t.name);
-      ctx.fillStyle = fg; ctx.font = `900 140px ${HEAD}`; ctx.textBaseline = 'middle'; ctx.fillText(tmp.textContent, cx, cy + 6); ctx.textBaseline = 'alphabetic';
+      nameInCircle(ctx, t.name, cx, cy, D, fg, HEAD);
     }
     ctx.restore();
     // شارة التوثيق
