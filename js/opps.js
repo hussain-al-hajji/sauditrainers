@@ -3,8 +3,8 @@
  * ويراها المدرب في تبويب «فرص التدريب» داخل حسابه فقط (لا تظهر للزوار ولا في صفحته التعريفية). */
 
 const Opps = (() => {
-  const approved = () => Store.list('opportunities').filter(o => o && o.title && o.url).sort((a, b) => (b.ts || 0) - (a.ts || 0));
-  const inbox = () => Store.list('oppInbox').filter(o => o && o.title && o.url).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  const approved = () => Store.list('opportunities').filter(o => o && o.title).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  const inbox = () => Store.list('oppInbox').filter(o => o && o.title).sort((a, b) => (b.ts || 0) - (a.ts || 0));
   const isOpen = o => !o.deadline || o.deadline >= Date.now() - 86400000;
   const KIND = { tender: ['منافسة حكومية', 'fa-landmark'], post: ['منشور عام', 'fa-bullhorn'] };
   const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } };
@@ -20,8 +20,9 @@ const Opps = (() => {
     const k = KIND[o.kind] || KIND.post, u = safeUrl(o.url), closed = !isOpen(o);
     return `<div class="lead opp ${fresh ? 'new' : ''} ${closed ? 'closed' : ''}"><span class="ic"><i class="fa-solid ${k[1]}"></i></span>
       <div><b>${esc(o.title)}</b> <span class="pill ${o.kind === 'tender' ? 'gold' : ''}">${k[0]}</span> ${fresh ? '<span class="pill ok">جديد</span>' : ''}${closed ? ' <span class="pill gray">انتهى الموعد</span>' : ''}
-        <div class="small muted">${o.org ? `${esc(o.org)} · ` : ''}${esc(o.site || host(o.url))} · نُشرت في المنصة ${ago(o.ts)}${o.deadline ? ` · آخر موعد: <b>${fmtDate(o.deadline)}</b>` : ''}</div>
-        ${o.desc ? `<p>${esc(o.desc)}</p>` : ''}
+        <div class="small muted">${o.org ? `${esc(o.org)} · ` : ''}${esc(o.site || host(o.url) || '')}${o.site || o.url ? ' · ' : ''}<span title="تاريخ النشر في المنصة"><i class="fa-regular fa-calendar"></i> نُشرت في ${fmtDate(o.ts)} (${ago(o.ts)})</span>${o.deadline ? ` · آخر موعد: <b>${fmtDate(o.deadline)}</b>` : ''}</div>
+        ${o.desc ? `<p>${nl2br(o.desc)}</p>` : ''}
+        ${u ? `<a class="nlink" href="${esc(u)}" target="_blank" rel="noopener nofollow">${/^https:\/\//.test(o.img || '') ? `<span class="nl-img"><img src="${esc(o.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.nlink').classList.add('noimg');this.parentNode.remove()"></span>` : '<span class="nl-img ph"><i class="fa-solid fa-link"></i></span>'}<span class="nl-t"><b>${esc(o.lt || o.title)}</b>${o.ld ? `<small>${esc(o.ld)}</small>` : ''}<em dir="ltr">${esc(host(o.url))}</em></span></a>` : ''}
         <div class="small">${o.spec ? `<span class="pill">${esc(specName(o.spec))}</span> ` : ''}${o.region ? `<span class="pill">${esc(regionName(o.region))}</span>` : ''}</div>
         ${o.note ? `<p class="small"><i class="fa-solid fa-circle-info"></i> <b>ملاحظة الإدارة:</b> ${nl2br(o.note)}</p>` : ''}</div>
       <div class="acts" style="flex-direction:column">${u ? `<a class="btn sm primary" href="${esc(u)}" target="_blank" rel="noopener nofollow"><i class="fa-solid fa-arrow-up-right-from-square"></i> فتح الأصل</a>` : ''}</div></div>`;
@@ -46,11 +47,12 @@ const Opps = (() => {
   // نافذة المراجعة والاعتماد (رابط جديد أو عنصر من الوارد)
   function editor(rec, { fromInbox = false, onDone } = {}) {
     const m = modal(`<h3><i class="fa-solid fa-handshake-angle"></i> ${rec.pub ? 'تعديل الفرصة' : 'مراجعة واعتماد الفرصة'}</h3>
-      <p class="small"><a href="${esc(safeUrl(rec.url) || '#')}" target="_blank" rel="noopener nofollow" dir="ltr">${esc(rec.url)}</a></p>
+      ${rec.url ? `<p class="small"><a href="${esc(safeUrl(rec.url) || '#')}" target="_blank" rel="noopener nofollow" dir="ltr">${esc(rec.url)}</a></p>` : '<p class="small muted">إعلان نصي بلا رابط</p>'}
       <form id="of" style="display:grid;gap:10px">
         ${field('العنوان', `<input name="title" required maxlength="200" value="${esc(rec.title || '')}">`)}
         ${field('الجهة (اختياري)', `<input name="org" maxlength="160" value="${esc(rec.org || '')}">`)}
-        ${field('الوصف (اختياري)', `<textarea name="desc" rows="3" maxlength="600">${esc(rec.desc || '')}</textarea>`)}
+        ${field('نص الإعلان / الوصف (يظهر للمدربين كما هو)', `<textarea name="desc" rows="7" maxlength="2000">${esc(rec.desc || '')}</textarea>`)}
+        ${field('المصدر (اختياري، مثل: واتساب، لينكدإن)', `<input name="site" maxlength="80" value="${esc(rec.site || host(rec.url))}">`)}
         <div class="row" style="gap:10px;flex-wrap:wrap">
           <div style="flex:1;min-width:150px">${field('التخصص', `<select name="spec"><option value="">—</option>${SPECIALTIES.map(x => `<option value="${esc(x.k)}" ${rec.spec === x.k ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>`)}</div>
           <div style="flex:1;min-width:150px">${field('المنطقة', `<select name="region"><option value="">—</option>${REGIONS.map(x => `<option value="${esc(x.k)}" ${rec.region === x.k ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select>`)}</div>
@@ -62,10 +64,13 @@ const Opps = (() => {
       </form>`, { wide: true });
     $('#of', m.el).onsubmit = e => {
       e.preventDefault(); const f = e.target, id = rec.id || Store.newId();
-      const out = { id, ts: rec.pub ? rec.ts : Date.now(), title: f.title.value.trim(), url: String(rec.url).slice(0, 500), kind: f.kind.value };
+      const out = { id, ts: rec.pub ? rec.ts : Date.now(), title: f.title.value.trim(), kind: f.kind.value };
+      if (rec.url) out.url = String(rec.url).slice(0, 500);
+      if (rec.url && rec.lt) out.lt = String(rec.lt).slice(0, 200);
+      if (rec.url && rec.ld) out.ld = String(rec.ld).slice(0, 400);
       ['org', 'desc', 'note'].forEach(k => { const v = f[k].value.trim(); if (v) out[k] = v; });
       ['spec', 'region'].forEach(k => { if (f[k].value) out[k] = f[k].value; });
-      const site = rec.site || host(rec.url); if (site) out.site = String(site).slice(0, 80);
+      const site = f.site.value.trim(); if (site) out.site = site.slice(0, 80);
       if (/^https:\/\//.test(rec.img || '')) out.img = String(rec.img).slice(0, 500);
       if (f.deadline.value) out.deadline = new Date(`${f.deadline.value}T23:59:59`).getTime();
       Store.set(`opportunities/${id}`, out);
@@ -79,9 +84,10 @@ const Opps = (() => {
     const ets = (arr(set.etimadTerms).length ? arr(set.etimadTerms) : ['تدريب', 'دورات تدريبية', 'برنامج تدريبي']).join('\n');
     const row = (o, btns) => `<div class="lead"><span class="ic"><i class="fa-solid ${(KIND[o.kind] || KIND.post)[1]}"></i></span><div><b><a href="${esc(safeUrl(o.url) || '#')}" target="_blank" rel="noopener nofollow">${esc(o.title)}</a></b> <small class="muted">${esc(o.site || host(o.url))} · ${ago(o.ts)}${o.src === 'etimad' ? ' · اعتماد' : o.src === 'google' ? ' · بحث Google' : ''}${o.deadline ? ' · آخر موعد ' + fmtDate(o.deadline) : ''}</small>${o.desc ? `<p class="small">${esc(String(o.desc).slice(0, 220))}</p>` : ''}</div><div class="acts" style="flex-direction:column">${btns}</div></div>`;
     main.innerHTML = `<div class="dash-h"><h2>فرص التدريب</h2><span class="muted small">طلبات بحث عن مدربين: تُجلب أو تُضاف، ثم تُعتمد لتظهر في حسابات المدربين فقط</span></div>
-      <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-link"></i> إضافة فرصة برابط</h3>
-        <p class="small muted">للمنشورات التي لا يجلبها البحث الآلي (لينكدإن، إنستقرام، تيك توك…): الصق الرابط، وتُجلب المعاينة تلقائياً ثم تراجعها وتعتمدها.</p>
-        <div class="row" style="gap:8px"><input id="op-url" type="url" dir="ltr" placeholder="https://…" style="flex:1"><button class="btn primary" id="op-add"><i class="fa-solid fa-plus"></i> جلب المعاينة</button></div></div>
+      <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-plus"></i> إضافة فرصة (إعلان نصي · إعلان نصي برابط · رابط)</h3>
+        <p class="small muted">الصق نص الإعلان كما وصلك (من واتساب مثلاً) و/أو رابطه (لينكدإن، إنستقرام، تيك توك…). يظهر للمدربين كما هو، ومع الرابط تظهر لهم معاينته. اكتب نصاً أو رابطاً أو الاثنين.</p>
+        <textarea id="op-text" rows="5" maxlength="2000" placeholder="نص الإعلان (اختياري إن وضعت رابطاً)" style="width:100%;margin-bottom:8px"></textarea>
+        <div class="row" style="gap:8px"><input id="op-url" type="url" dir="ltr" placeholder="رابط (اختياري) https://…" style="flex:1"><button class="btn primary" id="op-add"><i class="fa-solid fa-plus"></i> إضافة ومراجعة</button></div></div>
       <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-robot"></i> الجلب الآلي</h3>
         <p class="small muted">${last.ts ? `آخر تشغيل: ${ago(last.ts)} — ${last.found ?? 0} نتيجة، ${last.added ?? 0} جديدة.${arr(last.log).length ? ' <span style="color:var(--warn)">' + esc(arr(last.log).join(' | ')) + '</span>' : ''}` : 'لم يُشغَّل بعد.'} يعمل يومياً بعد تفعيل المشغّل في سكربت Google، أو اضغط «جلب الآن».</p>
         <div class="row" style="gap:10px;flex-wrap:wrap">
@@ -94,11 +100,14 @@ const Opps = (() => {
         ${ap.length ? ap.map(o => row(o, `<button class="btn sm" data-ed="${esc(o.id)}"><i class="fa-solid fa-pen"></i> تعديل</button><button class="btn sm danger" data-dl="${esc(o.id)}"><i class="fa-solid fa-trash"></i> سحب</button>`)).join('') : '<p class="muted small">لم تُعتمد فرص بعد.</p>'}</div>`;
     const again = () => admin(main);
     $('#op-add', main).onclick = async e => {
-      const u = safeUrl($('#op-url', main).value.trim()); if (!u || !/^https:\/\//i.test(u)) return toast('أدخل رابطاً يبدأ بـ https://', 'error');
-      if (ap.some(o => o.url === u) || ib.some(o => o.url === u)) return toast('الرابط موجود مسبقاً', 'error');
-      const b = e.currentTarget; b.disabled = true; b.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-      const p = await News.fetchPreview(u.slice(0, 500)); b.disabled = false; b.innerHTML = '<i class="fa-solid fa-plus"></i> جلب المعاينة';
-      editor({ url: p.url, title: p.title, desc: p.desc, img: p.img, site: p.site, kind: 'post' }, { onDone: again });
+      const text = $('#op-text', main).value.trim(), raw = $('#op-url', main).value.trim(), u = raw ? safeUrl(raw) : '';
+      if (!text && !raw) return toast('اكتب نص الإعلان أو ضع رابطاً', 'error');
+      if (raw && (!u || !/^https:\/\//i.test(u))) return toast('الرابط يجب أن يبدأ بـ https://', 'error');
+      if (u && (ap.some(o => o.url === u) || ib.some(o => o.url === u))) return toast('الرابط موجود مسبقاً', 'error');
+      const first = text.split('\n').map(x => x.trim()).find(Boolean) || '';
+      const b = e.currentTarget, h = b.innerHTML; b.disabled = true; b.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+      const p = u ? await News.fetchPreview(u.slice(0, 500)) : null; b.disabled = false; b.innerHTML = h;
+      editor({ url: u || '', title: (first || p?.title || '').slice(0, 200), desc: text || p?.desc || '', lt: p?.title || '', ld: p?.desc || '', img: p?.img || '', site: p?.site || '', kind: 'post' }, { onDone: () => { $('#op-text', main).value = ''; $('#op-url', main).value = ''; again(); } });
     };
     $('#op-save', main).onclick = () => {
       const lines = id => $(id, main).value.split('\n').map(x => x.trim()).filter(Boolean).slice(0, 12);

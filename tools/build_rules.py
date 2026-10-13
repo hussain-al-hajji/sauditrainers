@@ -203,9 +203,9 @@ rules = {
             'opportunities': {
                 '.read': f"auth != null && root.child('{ROOT}/uids/' + auth.uid).exists()",
                 '$id': {
-                    '.validate': "$id.matches(/^[A-Za-z0-9_-]{1,40}$/) && newData.hasChildren(['title', 'url', 'ts'])",
+                    '.validate': "$id.matches(/^[A-Za-z0-9_-]{1,40}$/) && newData.hasChildren(['title', 'ts'])",
                     'id': {'.validate': S(40)}, 'ts': {'.validate': 'newData.isNumber()'},
-                    'title': {'.validate': S(200)}, 'url': {'.validate': URL(500)}, 'desc': {'.validate': S(600)}, 'org': {'.validate': S(160)}, 'site': {'.validate': S(80)},
+                    'title': {'.validate': S(200)}, 'url': {'.validate': URL(500)}, 'desc': {'.validate': S(2000)}, 'org': {'.validate': S(160)}, 'site': {'.validate': S(80)}, 'lt': {'.validate': S(200)}, 'ld': {'.validate': S(400)},
                     'img': {'.validate': URL(500)}, 'kind': {'.validate': "newData.isString() && newData.val().matches(/^(post|tender)$/)"},
                     'spec': {'.validate': S(20)}, 'region': {'.validate': S(20)}, 'deadline': {'.validate': 'newData.isNumber()'}, 'note': {'.validate': S(500)},
                     '$other': {'.validate': False},

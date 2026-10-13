@@ -24,7 +24,7 @@ const News = (() => {
     return base;
   }
   const linkCard = l => { const u = safeUrl(l.url); if (!u) return ''; return `<a class="nlink" href="${esc(u)}" target="_blank" rel="noopener nofollow ugc">
-      ${l.img ? `<span class="nl-img"><img src="${esc(l.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.parentNode.remove()"></span>` : '<span class="nl-img ph"><i class="fa-solid fa-link"></i></span>'}
+      ${l.img ? `<span class="nl-img"><img src="${esc(l.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.nlink').classList.add('noimg');this.parentNode.remove()"></span>` : '<span class="nl-img ph"><i class="fa-solid fa-link"></i></span>'}
       <span class="nl-t"><b>${esc(l.title || host(u))}</b>${l.desc ? `<small>${esc(l.desc)}</small>` : ''}<em dir="ltr">${esc(l.site || host(u))}</em></span></a>`; };
 
   /* ---------- بطاقة خبر ---------- */
