@@ -124,6 +124,17 @@ const fs = require('fs');
   await D('14d إنقاص العدّاد', visitor.ref(`${R}/stats/visits`).set(1));
   await D('14e قيمة نصية', visitor.ref(`${R}/stats/visits`).set('x'));
   await A('14f الجميع يقرأ العدّاد', visitor.ref(`${R}/stats/visits`).once('value'));
+  // فرص التدريب
+  const opp = (o = {}) => ({ id: 'P1', ts: now(), title: 'مطلوب مدرب قيادة', url: 'https://example.com/p', kind: 'post', ...o });
+  await A('15 الإدارة تنشئ فرصة', adm.ref(`${R}/opportunities/P1`).set(opp()));
+  await A('15b مدرب يقرأ الفرص', t1.ref(`${R}/opportunities`).once('value'));
+  await D('15c زائر يقرأ الفرص', visitor.ref(`${R}/opportunities`).once('value'));
+  await D('15d غريب مسجّل يقرأ الفرص', stranger.ref(`${R}/opportunities`).once('value'));
+  await D('15e مدرب يكتب فرصة', t1.ref(`${R}/opportunities/P2`).set(opp({ id: 'P2' })));
+  await D('15f رابط javascript', adm.ref(`${R}/opportunities/P3`).set(opp({ id: 'P3', url: 'javascript:alert(1)' })));
+  await D('15g حقل غير معروف', adm.ref(`${R}/opportunities/P4`).set(opp({ id: 'P4', evil: 1 })));
+  await D('15h وارد الجلب الآلي لا يقرؤه مدرب', t1.ref(`${R}/oppInbox`).once('value'));
+  await A('15i الإدارة تكتب في الوارد', adm.ref(`${R}/oppInbox/I1`).set({ id: 'I1', url: 'https://x.com/a', title: 't', status: 'new' }));
   res.forEach(r => console.log(r[0], r[1]));
   console.log(res.filter(r => r[0] === 'FAIL').length + ' فشل من ' + res.length);
   await env.cleanup();

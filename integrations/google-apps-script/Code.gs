@@ -27,7 +27,7 @@ const PROPS = PropertiesService.getScriptProperties();
 /* ===================== التحقق من هوية المشرف =====================
  * إجراءات الإدارة (إرسال الحملات والبريد، النشر، الإحصاءات...) لا تُنفَّذ إلا إن أرفق الموقع معها رمز دخول Firebase (ID token)
  * يعود لحساب مالك أو مشرف مسجّل. الإجراءات العامة (طلب تواصل، تسجيل، طلب مدرب) لا تحتاج رمزاً. */
-const ADMIN_ACTIONS = ['campaign', 'outbox', 'publish', 'ping', 'snapshot', 'backfill', 'analytics'];
+const ADMIN_ACTIONS = ['campaign', 'outbox', 'publish', 'ping', 'snapshot', 'backfill', 'analytics', 'opps'];
 function isAdmin(token) {
   if (!token || typeof token !== 'string' || token.length > 4096) return false;
   const cache = CacheService.getScriptCache();
@@ -62,6 +62,7 @@ function doPost(e) {
     else if (body.action === 'outbox' && id) sendOutbox(id);
     else if (body.action === 'campaign' && id) sendCampaign(id);
     else if (body.action === 'analytics') refreshAnalyticsThrottled();
+    else if (body.action === 'opps') collectOpps();
     else if (body.action === 'snapshot') monthlySnapshot();
     else if (body.action === 'backfill') backfillMonthly();
     else if (body.action === 'publish' && id) publishPost(id);

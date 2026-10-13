@@ -1236,3 +1236,4 @@ body.preview .local-flag { display: none; }
 .visit .v-ic { width: 46px; height: 46px; border-radius: 50%; display: grid; place-content: center; background: linear-gradient(135deg, var(--g700), var(--g900)); color: var(--gold2); font-size: 1.2rem; flex: none; }
 .visit .v-t { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; justify-content: center; font-weight: 600; color: var(--ink2); }
 .visit .v-n { font-family: var(--f-display); font-weight: 900; font-size: 1.9rem; color: var(--g800); min-width: 3ch; text-align: center; line-height: 1; }
+.lead.closed { opacity: .6; }

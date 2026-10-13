@@ -152,7 +152,7 @@ const Automation = {
   get url() { return window.ST_CONFIG.automationUrl || ''; },
   get on() { return /^https:\/\/script\.google\.com\//.test(this.url); },
   // إجراءات الإدارة تُرفق رمز دخول المشرف (Firebase ID token) ليتحقق منه السكربت؛ الإجراءات العامة (طلب تواصل/تسجيل) بلا رمز
-  ADMIN: ['campaign', 'outbox', 'publish', 'ping', 'snapshot', 'backfill', 'analytics'],
+  ADMIN: ['campaign', 'outbox', 'publish', 'ping', 'snapshot', 'backfill', 'analytics', 'opps'],
   async notify(action, id) {
     if (!this.on) return false;
     const body = { action, id, root: window.ST_CONFIG.dbRoot || 'sauditrainers' };

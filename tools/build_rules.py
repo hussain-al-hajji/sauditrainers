@@ -199,6 +199,18 @@ rules = {
                     '$other': {'.validate': False},
                 },
             },
+            # فرص التدريب (منشورات ومنافسات تبحث عن مدربين) اعتمدتها الإدارة: يقرؤها كل مدرب لديه حساب فقط، وتكتبها الإدارة. وارد الجلب الآلي oppInbox للإدارة فقط (القاعدة العامة)
+            'opportunities': {
+                '.read': f"auth != null && root.child('{ROOT}/uids/' + auth.uid).exists()",
+                '$id': {
+                    '.validate': "$id.matches(/^[A-Za-z0-9_-]{1,40}$/) && newData.hasChildren(['title', 'url', 'ts'])",
+                    'id': {'.validate': S(40)}, 'ts': {'.validate': 'newData.isNumber()'},
+                    'title': {'.validate': S(200)}, 'url': {'.validate': URL(500)}, 'desc': {'.validate': S(600)}, 'org': {'.validate': S(160)}, 'site': {'.validate': S(80)},
+                    'img': {'.validate': URL(500)}, 'kind': {'.validate': "newData.isString() && newData.val().matches(/^(post|tender)$/)"},
+                    'spec': {'.validate': S(20)}, 'region': {'.validate': S(20)}, 'deadline': {'.validate': 'newData.isNumber()'}, 'note': {'.validate': S(500)},
+                    '$other': {'.validate': False},
+                },
+            },
             'requests': {'$id': public_form(['org', 'person', 'phone', 'topic', 'ts', 'status'], req_spec)},
             'hallReqs': {'$id': public_form(['type', 'name', 'phone', 'region', 'ts', 'status'], hall_spec)},
             'applications': {'$id': {**app, '.validate': '$id.matches(/^A[0-9A-Z]{7}$/)'}},

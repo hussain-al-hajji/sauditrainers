@@ -235,7 +235,7 @@ const News = (() => {
     $$('[data-dn]', main).forEach(b => b.onclick = async () => { if (await confirmBox('حذف هذا الخبر؟', { ok: 'حذف', danger: true })) { Store.remove(`news/${b.dataset.dn}`); Security.log('حذف خبر مدرب', b.dataset.dn); } });
   }
 
-  return { all, visible, card, profileBox, kinds: KINDS, Page, section, tab, annTab, annPopup, unread, admin };
+  return { fetchPreview, all, visible, card, profileBox, kinds: KINDS, Page, section, tab, annTab, annPopup, unread, admin };
 })();
 
 Pages.news = News.Page;

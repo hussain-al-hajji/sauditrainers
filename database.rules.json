@@ -561,6 +561,54 @@
           }
         }
       },
+      "opportunities": {
+        ".read": "auth != null && root.child('sauditrainers/uids/' + auth.uid).exists()",
+        "$id": {
+          ".validate": "$id.matches(/^[A-Za-z0-9_-]{1,40}$/) && newData.hasChildren(['title', 'url', 'ts'])",
+          "id": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "ts": {
+            ".validate": "newData.isNumber()"
+          },
+          "title": {
+            ".validate": "newData.isString() && newData.val().length <= 200"
+          },
+          "url": {
+            ".validate": "newData.isString() && newData.val().length <= 500 && (newData.val() == '' || newData.val().matches(/^(https:\\/\\/)/))"
+          },
+          "desc": {
+            ".validate": "newData.isString() && newData.val().length <= 600"
+          },
+          "org": {
+            ".validate": "newData.isString() && newData.val().length <= 160"
+          },
+          "site": {
+            ".validate": "newData.isString() && newData.val().length <= 80"
+          },
+          "img": {
+            ".validate": "newData.isString() && newData.val().length <= 500 && (newData.val() == '' || newData.val().matches(/^(https:\\/\\/)/))"
+          },
+          "kind": {
+            ".validate": "newData.isString() && newData.val().matches(/^(post|tender)$/)"
+          },
+          "spec": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "region": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "deadline": {
+            ".validate": "newData.isNumber()"
+          },
+          "note": {
+            ".validate": "newData.isString() && newData.val().length <= 500"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
       "requests": {
         "$id": {
           ".write": "(!data.exists() && newData.hasChildren([\"org\", \"person\", \"phone\", \"topic\", \"ts\", \"status\"]) && newData.child('status').val() == 'new') || ((auth != null && auth.token.email_verified == true && (auth.token.email.toLowerCase() == 'g.hussainalhajji@gmail.com' || auth.token.email.toLowerCase() == 'trainers.sa3@gmail.com')) || (auth != null && root.child('sauditrainers/admins/' + auth.uid).exists()))",
