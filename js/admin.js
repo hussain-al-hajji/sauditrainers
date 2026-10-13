@@ -11,7 +11,7 @@ Pages.admin = {
     const newReq = Store.list('requests').filter(r => r.status === 'new').length + Store.list('leads').filter(r => r.status === 'new').length;
     const all = [
       ['dash', 'fa-chart-pie', 'المؤشرات'], ['apps', 'fa-user-plus', 'طلبات التسجيل', apps.filter(a => a.status === 'new').length], ['trainers', 'fa-id-card', 'المدربون'],
-      ['requests', 'fa-inbox', 'طلبات الجهات', newReq], ['mail', 'fa-envelope', 'المراسلة'], ['news', 'fa-newspaper', 'الأخبار والإعلانات'], ['opps', 'fa-handshake-angle', 'فرص التدريب', Opps.inbox().filter(o => o.status === 'new').length], ['social', 'fa-share-nodes', 'النشر الاجتماعي', Store.list('social').filter(p => p.status === 'failed').length],
+      ['requests', 'fa-inbox', 'طلبات الجهات', newReq], ['mail', 'fa-envelope', 'المراسلة'], ['news', 'fa-newspaper', 'الأخبار والإعلانات'], ['opps', 'fa-handshake-angle', 'إعلانات عبر الإنترنت', Opps.inbox().filter(o => o.status === 'new').length], ['social', 'fa-share-nodes', 'النشر الاجتماعي', Store.list('social').filter(p => p.status === 'failed').length],
       ['home', 'fa-house', 'الصفحة الرئيسية'], ['forms', 'fa-rectangle-list', 'النماذج'], ['templates', 'fa-envelope-open-text', 'قوالب'], ['seo', 'fa-magnifying-glass-chart', 'SEO'], ['specs', 'fa-shapes', 'التخصصات'], ['halls', 'fa-building-columns', 'القاعات', Store.list('hallReqs').filter(r => r.status === 'new').length],
       ['content', 'fa-pen-ruler', 'المحتوى العام'], ['admins', 'fa-user-shield', 'المشرفون'], ['backup', 'fa-database', 'البيانات والسجل']
     ];

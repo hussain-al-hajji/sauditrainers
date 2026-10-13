@@ -1,6 +1,6 @@
-/* فرص التدريب: منشورات ومنافسات (منها منافسات اعتماد) تبحث عن مدربين.
+/* إعلانات عبر الإنترنت (فرص التدريب): منشورات ومنافسات (منها منافسات اعتماد) تبحث عن مدربين.
  * الجلب: سكربت Google يملأ oppInbox/ (للإدارة فقط) أو تضيف الإدارة رابطاً يدوياً؛ الإدارة تراجع وتعتمد، فتنتقل إلى opportunities/
- * ويراها المدرب في تبويب «فرص التدريب» داخل حسابه فقط (لا تظهر للزوار ولا في صفحته التعريفية). */
+ * ويراها المدرب في تبويب «إعلانات عبر الإنترنت» داخل حسابه فقط (لا تظهر للزوار ولا في صفحته التعريفية). */
 
 const Opps = (() => {
   const approved = () => Store.list('opportunities').filter(o => o && o.title).sort((a, b) => (b.ts || 0) - (a.ts || 0));
@@ -29,7 +29,7 @@ const Opps = (() => {
   function tab(main, t) {
     const s = seenTs(t.id), all = approved();
     const list = all.filter(isOpen);
-    main.innerHTML = `<div class="dash-h"><h2>فرص التدريب</h2><span class="muted small">إعلانات عامة تبحث عن مدربين، تصلك من عدة مصادر</span></div>
+    main.innerHTML = `<div class="dash-h"><h2>إعلانات عبر الإنترنت</h2><span class="muted small">إعلانات عامة تبحث عن مدربين، تصلك من عدة مصادر</span></div>
       <div class="banner info" style="margin-bottom:12px"><i class="fa-solid fa-circle-info"></i><span>هذه الفرص منقولة من مصادر عامة في الإنترنت ومنصات التواصل الاجتماعي، وبعضها يرسل لنا مباشرة. نحاول قدر الإمكان التحقق من صحة الإعلان وسلامة المصدر، ونهيب بجميع المدربين التحقق دائماً عند إجراء التعاملات عبر الإنترنت.</span></div>
       ${list.length ? list.map(o => card(o, (o.ts || 0) > s)).join('') : `<div class="empty"><i class="fa-solid fa-handshake-angle"></i><h3>لا توجد فرص حالياً</h3><p>حين تعتمد الإدارة فرصة جديدة تظهر هنا وتصلك بشارة.</p></div>`}`;
     markSeen(t.id); $$('[data-tab="opps"] .badge').forEach(x => x.remove());
@@ -76,7 +76,7 @@ const Opps = (() => {
     const set = Store.get('settings/opps') || {}, last = set.lastRun || {}, ib = inbox(), news = ib.filter(o => o.status === 'new'), ap = approved();
     const ets = (arr(set.etimadTerms).length ? arr(set.etimadTerms) : ['تدريب', 'دورات تدريبية', 'برنامج تدريبي']).join('\n');
     const row = (o, btns) => `<div class="lead"><span class="ic"><i class="fa-solid ${(KIND[o.kind] || KIND.post)[1]}"></i></span><div><b><a href="${esc(safeUrl(o.url) || '#')}" target="_blank" rel="noopener nofollow">${esc(o.title)}</a></b> <small class="muted">${esc(o.site || host(o.url))} · ${ago(o.ts)}${o.src === 'etimad' ? ' · اعتماد' : o.src === 'google' ? ' · بحث Google' : ''}${o.deadline ? ' · آخر موعد ' + fmtDate(o.deadline) : ''}</small>${o.desc ? `<p class="small">${esc(String(o.desc).slice(0, 220))}</p>` : ''}</div><div class="acts" style="flex-direction:column">${btns}</div></div>`;
-    main.innerHTML = `<div class="dash-h"><h2>فرص التدريب</h2><span class="muted small">طلبات بحث عن مدربين: تُجلب أو تُضاف، ثم تُعتمد لتظهر في حسابات المدربين فقط</span></div>
+    main.innerHTML = `<div class="dash-h"><h2>إعلانات عبر الإنترنت</h2><span class="muted small">طلبات بحث عن مدربين: تُجلب أو تُضاف، ثم تُعتمد لتظهر في حسابات المدربين فقط</span></div>
       <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-plus"></i> إضافة فرصة (إعلان نصي · إعلان نصي برابط · رابط)</h3>
         <p class="small muted">الصق نص الإعلان كما وصلك (من واتساب مثلاً) و/أو رابطه (لينكدإن، إنستقرام، تيك توك…). يظهر للمدربين كما هو، ومع الرابط تظهر لهم معاينته. اكتب نصاً أو رابطاً أو الاثنين.</p>
         <textarea id="op-text" rows="5" maxlength="2000" placeholder="نص الإعلان (اختياري إن وضعت رابطاً)" style="width:100%;margin-bottom:8px"></textarea>

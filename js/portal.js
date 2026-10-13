@@ -12,7 +12,7 @@ Pages.me = {
     const bcNew = Broadcast.unread(t.id).length;
     const tabs = [['home', 'fa-id-card', 'بطاقتي'], ['edit', 'fa-pen-to-square', 'تعديل البيانات'], ['leads', 'fa-inbox', 'طلبات موجهة لك', fresh], ['bc', 'fa-bullhorn', 'طلبات عامة', bcNew]];
     const annNew = News.unread(t.id).length;
-    tabs.push(['opps', 'fa-handshake-angle', 'فرص التدريب', Opps.unread(t.id).length]);
+    tabs.push(['opps', 'fa-handshake-angle', 'إعلانات عبر الإنترنت', Opps.unread(t.id).length]);
     if (featureOn('news')) tabs.push(['news', 'fa-newspaper', 'أخباري']);
     if (featureOn('announcements')) tabs.push(['ann', 'fa-bell-concierge', 'إعلانات', annNew]);
     if (!tabs.some(x => x[0] === this.tab)) this.tab = 'home';
