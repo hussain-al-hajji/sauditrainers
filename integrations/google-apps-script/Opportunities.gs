@@ -3,7 +3,8 @@
  * ولا يصل شيء للمدربين إلا بعد اعتماد الإدارة (ينتقل إلى opportunities/).
  *
  * المصادر (مشروعة، دون الجلب من المنصات المغلقة):
- *  1) Google Custom Search API: يبحث في الإنترنت العام (وتظهر فيه منشورات عامة من لينكدإن وإكس وغيرها تفهرسها Google).
+ *  0) (الموصى به الآن) تنبيهات Google عبر RSS + أخبار Google: بلا مفاتيح. واجهة Custom Search JSON أُغلقت عن المشاريع الجديدة (PERMISSION_DENIED).
+ *  1) Google Custom Search API (اختياري، للحسابات التي تملك صلاحيتها): يبحث في الإنترنت العام (وتظهر فيه منشورات عامة من لينكدإن وإكس وغيرها تفهرسها Google).
  *     خصائص السكربت (Project Settings ← Script properties): CSE_KEY (مفتاح API) و CSE_CX (معرّف محرك البحث، وفعّل فيه «البحث في الويب بأكمله»).
  *  2) منصة اعتماد (منافسات التدريب): يحاول قراءة قائمة المنافسات العامة للزوار. إن حظرت الواجهة الطلب سُجّل ذلك في السجل ولا يتعطل بقية الجلب.
  * إعدادات العبارات تُحفظ من لوحة الإدارة في settings/opps. */
@@ -36,6 +37,15 @@ function collectOpps() {
       } catch (e) { if (e.message !== 'STOP') log.push('بحث «' + q.slice(0, 25) + '»: ' + e.message); }
     });
   } else log.push('لم تُضبط CSE_KEY وCSE_CX في خصائص السكربت: تخطّي بحث Google');
+  // تنبيهات Google (خلاصات RSS يضعها المشرف) وأخبار Google: بلا مفاتيح، وتعمل من خوادم Google
+  (set.feeds || []).filter(u => /^https:\/\/www\.google\.[a-z.]+\/alerts\/feeds\//.test(u)).slice(0, 10).forEach(u => {
+    try { fetchFeed(u, 'alert', '').forEach(x => found.push(x)); } catch (e) { log.push('تنبيه Google: ' + String(e.message).slice(0, 120)); }
+  });
+  if (set.gnews !== false) {
+    queries.slice(0, 6).forEach(q => {
+      try { fetchFeed('https://news.google.com/rss/search?q=' + encodeURIComponent(q.replace(/^site:\S+\s*/, '')) + '+when:14d&hl=ar&gl=SA&ceid=SA:ar', 'news', q).forEach(x => found.push(x)); } catch (e) { log.push('أخبار Google «' + q.slice(0, 20) + '»: ' + String(e.message).slice(0, 100)); }
+    });
+  }
   if (set.etimad === true) {   // معطّل افتراضياً: اعتماد يحجب خوادم Google (Address unavailable)
     (set.etimadTerms && set.etimadTerms.length ? set.etimadTerms : OPP_DEFAULT_ETIMAD).slice(0, 6).forEach(term => {
       try { fetchEtimad(term).forEach(x => found.push(x)); } catch (e) { log.push('اعتماد «' + term + '»: ' + e.message); }
@@ -48,6 +58,26 @@ function collectOpps() {
   });
   db('settings/opps/lastRun', 'put', { ts: Date.now(), added: added, found: found.length, log: log.slice(0, 8) });
   console.log('فرص التدريب: ' + found.length + ' نتيجة، ' + added + ' جديدة. ' + log.join(' | '));
+}
+
+// قراءة خلاصة Atom (تنبيهات Google) أو RSS (أخبار Google)
+const stripHtml = s => String(s || '').replace(/<[^>]*>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+function fetchFeed(url, src, q) {
+  const r = UrlFetchApp.fetch(url, { muteHttpExceptions: true, followRedirects: true });
+  if (r.getResponseCode() !== 200) throw new Error('HTTP ' + r.getResponseCode());
+  const root = XmlService.parse(r.getContentText()).getRootElement(), out = [];
+  const kids = (el, name) => el.getChildren().filter(c => c.getName() === name);
+  const txt = (el, name) => { const c = kids(el, name)[0]; return c ? c.getText() : ''; };
+  const entries = root.getName() === 'feed' ? kids(root, 'entry') : ((kids(root, 'channel')[0] || root).getChildren('item'));
+  entries.slice(0, 25).forEach(e => {
+    let link = root.getName() === 'feed' ? ((kids(e, 'link')[0] || { getAttribute: () => null }).getAttribute('href') || { getValue: () => '' }).getValue() : txt(e, 'link');
+    const m = String(link).match(/[?&]url=([^&]+)/); if (m) { try { link = decodeURIComponent(m[1]); } catch (x) { /* يبقى الرابط */ } }
+    link = String(link).replace(/&amp;/g, '&');
+    if (!/^https:\/\//.test(link) || OWN_HOST.test(link) || link.length > 500) return;
+    const title = stripHtml(txt(e, 'title')).slice(0, 200); if (!title) return;
+    out.push({ title: title, url: link, desc: stripHtml(txt(e, 'content') || txt(e, 'summary') || txt(e, 'description')).slice(0, 600), site: oppHost(link) || 'news.google.com', kind: 'post', src: src, q: String(q || '').slice(0, 80) });
+  });
+  return out;
 }
 
 // قائمة المنافسات العامة في اعتماد (واجهة الزوار). الحقول المتوقعة: tenderName, agencyName, tenderIdString, lastOfferPresentationDate

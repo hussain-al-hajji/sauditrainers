@@ -86,7 +86,8 @@ const Opps = (() => {
       <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-robot"></i> الجلب الآلي</h3>
         <p class="small muted">${last.ts ? `آخر تشغيل: ${ago(last.ts)} — ${last.found ?? 0} نتيجة، ${last.added ?? 0} جديدة.${arr(last.log).length ? ' <span style="color:var(--warn)">' + esc(arr(last.log).join(' | ')) + '</span>' : ''}` : 'لم يُشغَّل بعد.'} يعمل يومياً بعد تفعيل المشغّل في سكربت Google، أو اضغط «جلب الآن».</p>
         <div class="row" style="gap:10px;flex-wrap:wrap">
-          <div style="flex:2;min-width:260px">${field('عبارات البحث في Google (عبارة في كل سطر)', `<textarea id="op-q" rows="6" dir="rtl">${esc(qs)}</textarea>`)}</div>
+          <div style="flex:2;min-width:260px">${field('عبارات البحث (عبارة في كل سطر؛ تُستعمل في أخبار Google)', `<textarea id="op-q" rows="6" dir="rtl">${esc(qs)}</textarea>`)}</div>
+          <div style="flex:1;min-width:260px">${field('روابط خلاصات RSS من تنبيهات Google (رابط في كل سطر)', `<textarea id="op-f" rows="3" dir="ltr" placeholder="https://www.google.com/alerts/feeds/…">${esc(arr(set.feeds).join('\n'))}</textarea>`)}<label class="chk"><input type="checkbox" id="op-g" ${set.gnews === false ? '' : 'checked'}><span>بحث أخبار Google بالعبارات</span></label></div>
           <div style="flex:1;min-width:200px">${field('كلمات البحث في منصة اعتماد', `<textarea id="op-e" rows="3">${esc(ets)}</textarea>`)}<label class="chk"><input type="checkbox" id="op-eon" ${set.etimad === true ? 'checked' : ''}><span>تجربة جلب منافسات اعتماد <small class="muted">(تحجبه المنصة غالباً عن خوادم Google؛ أضف منافساتها بالرابط يدوياً)</small></span></label></div></div>
         <div class="row" style="gap:8px;margin-top:8px"><button class="btn" id="op-save"><i class="fa-solid fa-floppy-disk"></i> حفظ الإعدادات</button>${Automation.on ? '<button class="btn primary" id="op-run"><i class="fa-solid fa-rotate"></i> جلب الآن</button>' : '<small class="muted">الأتمتة غير مفعّلة</small>'}</div></div>
       <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-inbox"></i> الوارد بانتظار المراجعة (${news.length})</h3>
@@ -103,7 +104,7 @@ const Opps = (() => {
     };
     $('#op-save', main).onclick = () => {
       const lines = id => $(id, main).value.split('\n').map(x => x.trim()).filter(Boolean).slice(0, 12);
-      Store.update('settings/opps', { queries: lines('#op-q'), etimadTerms: lines('#op-e').slice(0, 6), etimad: $('#op-eon', main).checked }); toast('تم حفظ الإعدادات');
+      Store.update('settings/opps', { feeds: lines('#op-f').filter(u => /^https:\/\/www\.google\.[a-z.]+\/alerts\/feeds\//.test(u)).slice(0, 10), gnews: $('#op-g', main).checked, queries: lines('#op-q'), etimadTerms: lines('#op-e').slice(0, 6), etimad: $('#op-eon', main).checked }); toast('تم حفظ الإعدادات');
     };
     $('#op-run', main) && ($('#op-run', main).onclick = async e => { e.currentTarget.disabled = true; await Automation.notify('opps', 'now'); toast('طُلب الجلب، تظهر النتائج خلال دقيقة تقريباً'); });
     $$('[data-ap]', main).forEach(b => b.onclick = () => editor(Store.get(`oppInbox/${b.dataset.ap}`), { fromInbox: true, onDone: again }));
