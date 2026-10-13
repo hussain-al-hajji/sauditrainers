@@ -27,16 +27,16 @@ function collectOpps() {
     queries.forEach(q => {
       try {
         const r = UrlFetchApp.fetch('https://www.googleapis.com/customsearch/v1?key=' + encodeURIComponent(key) + '&cx=' + encodeURIComponent(cx) + '&q=' + encodeURIComponent(q) + '&num=10&dateRestrict=w2&gl=sa&lr=lang_ar', { muteHttpExceptions: true });
-        if (r.getResponseCode() !== 200) { log.push('بحث «' + q + '»: ' + r.getResponseCode()); return; }
+        if (r.getResponseCode() !== 200) { let why = ''; try { const e = JSON.parse(r.getContentText()).error || {}; why = (e.status || '') + ' ' + (e.message || '') + ' ' + ((e.errors || [])[0] || {}).reason; } catch (x) { why = r.getContentText().slice(0, 150); } log.push('بحث «' + q.slice(0, 25) + '»: ' + r.getResponseCode() + ' ' + String(why).slice(0, 220)); if (r.getResponseCode() === 403 || r.getResponseCode() === 429) throw new Error('STOP'); return; }
         (JSON.parse(r.getContentText()).items || []).forEach(it => {
           if (!/^https:\/\//.test(it.link || '') || OWN_HOST.test(it.link)) return;
           const img = it.pagemap && it.pagemap.cse_image && it.pagemap.cse_image[0] && it.pagemap.cse_image[0].src;
           found.push({ title: String(it.title || '').slice(0, 200), url: String(it.link).slice(0, 500), desc: String(it.snippet || '').replace(/\s+/g, ' ').slice(0, 600), site: oppHost(it.link), img: /^https:\/\//.test(img || '') ? String(img).slice(0, 500) : '', kind: 'post', src: 'google', q: q.slice(0, 80) });
         });
-      } catch (e) { log.push('بحث «' + q + '»: ' + e.message); }
+      } catch (e) { if (e.message !== 'STOP') log.push('بحث «' + q.slice(0, 25) + '»: ' + e.message); }
     });
   } else log.push('لم تُضبط CSE_KEY وCSE_CX في خصائص السكربت: تخطّي بحث Google');
-  if (set.etimad !== false) {
+  if (set.etimad === true) {   // معطّل افتراضياً: اعتماد يحجب خوادم Google (Address unavailable)
     (set.etimadTerms && set.etimadTerms.length ? set.etimadTerms : OPP_DEFAULT_ETIMAD).slice(0, 6).forEach(term => {
       try { fetchEtimad(term).forEach(x => found.push(x)); } catch (e) { log.push('اعتماد «' + term + '»: ' + e.message); }
     });
