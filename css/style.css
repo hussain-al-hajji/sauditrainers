@@ -503,8 +503,8 @@ textarea { min-height: 110px; resize: vertical; }
 /* ===== اللوحات (المدرب والإدارة) ===== */
 .dash > * { min-width: 0; }
 .dash { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 24px; padding: 26px 0 40px; align-items: start; }
-.side { position: sticky; top: 86px; background: var(--g950); border-radius: 26px; padding: 14px; color: #fff; box-shadow: var(--sh2); overflow: hidden; }
-.side::before { content: ''; position: absolute; inset: 0; background: var(--pat-dark); background-size: 400px; opacity: .6; }
+.side { position: sticky; top: 86px; background: var(--pat-dark) 0 0 / 400px, var(--g950); border-radius: 26px; padding: 14px; color: #fff; box-shadow: var(--sh2); overflow-x: hidden; overflow-y: auto; max-height: calc(100vh - 100px); overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: rgba(238,243,229,.35) transparent; }
+.side::-webkit-scrollbar { width: 6px; } .side::-webkit-scrollbar-thumb { background: rgba(238,243,229,.3); border-radius: 6px; }
 .side > * { position: relative; }
 .side .who { display: flex; gap: 10px; align-items: center; padding: 8px 8px 14px; border-bottom: 1px solid rgba(255,255,255,.08); margin-bottom: 8px; }
 .side .who .av { width: 44px; height: 50px; border-radius: 999px 999px 8px 8px; object-fit: cover; background: var(--g700); display: grid; place-content: center; font-weight: 900; font-family: var(--f-display); flex: none; }
@@ -516,7 +516,7 @@ textarea { min-height: 110px; resize: vertical; }
 .side .badge { margin-inline-start: auto; background: var(--gold); color: var(--g950); border-radius: 999px; font-size: .72rem; padding: 0 8px; font-weight: 800; }
 @media (max-width: 900px) {
   .dash { grid-template-columns: 1fr; }
-  .side { position: relative; display: flex; overflow-x: auto; gap: 4px; padding: 8px; border-radius: 20px; }
+  .side { position: relative; display: flex; overflow-x: auto; overflow-y: hidden; max-height: none; gap: 4px; padding: 8px; border-radius: 20px; }
   .side .who, .side hr { display: none; }
   .side button { white-space: nowrap; width: auto; flex: none; }
 }
