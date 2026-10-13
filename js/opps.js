@@ -14,7 +14,6 @@ const Opps = (() => {
   const seenTs = id => { try { return Number(localStorage.getItem(key(id)) || 0); } catch { return 0; } };
   const markSeen = id => { try { localStorage.setItem(key(id), String(Math.max(0, ...approved().map(o => o.ts || 0)))); } catch { /* ignore */ } };
   const unread = id => { const s = seenTs(id); return approved().filter(o => (o.ts || 0) > s && isOpen(o)); };
-  const F = { spec: '', region: '', old: false };
 
   function card(o, fresh) {
     const k = KIND[o.kind] || KIND.post, u = safeUrl(o.url), closed = !isOpen(o);
@@ -29,16 +28,10 @@ const Opps = (() => {
   }
   function tab(main, t) {
     const s = seenTs(t.id), all = approved();
-    let list = all.filter(o => (F.old || isOpen(o)) && (!F.spec || o.spec === F.spec) && (!F.region || o.region === F.region));
-    main.innerHTML = `<div class="dash-h"><h2>فرص التدريب</h2><span class="muted small">منشورات ومنافسات عامة تبحث عن مدربين، اعتمدتها الإدارة</span></div>
-      <div class="banner info" style="margin-bottom:12px"><i class="fa-solid fa-circle-info"></i><span>هذه الفرص منقولة من مصادر عامة ولا تتبنّاها المنصة ولا تضمنها. تحقق من الجهة قبل التواصل. هذه الصفحة خاصة بالمدربين ولا تظهر للزوار.</span></div>
-      <div class="bl-bar"><label>التخصص<select id="of-spec"><option value="">الكل</option>${SPECIALTIES.map(x => `<option value="${esc(x.k)}" ${F.spec === x.k ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
-        <label>المنطقة<select id="of-region"><option value="">الكل</option>${REGIONS.map(x => `<option value="${esc(x.k)}" ${F.region === x.k ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select></label>
-        <label class="chk" style="margin:0"><input type="checkbox" id="of-old" ${F.old ? 'checked' : ''}><span>إظهار المنتهية</span></label></div>
-      ${list.length ? list.map(o => card(o, (o.ts || 0) > s)).join('') : `<div class="empty"><i class="fa-solid fa-handshake-angle"></i><h3>${all.length ? 'لا توجد فرص بهذه التصفية' : 'لا توجد فرص حالياً'}</h3><p>حين تعتمد الإدارة فرصة جديدة تظهر هنا وتصلك بشارة.</p></div>`}`;
-    $('#of-spec', main).onchange = e => { F.spec = e.target.value; tab(main, t); };
-    $('#of-region', main).onchange = e => { F.region = e.target.value; tab(main, t); };
-    $('#of-old', main).onchange = e => { F.old = e.target.checked; tab(main, t); };
+    const list = all.filter(isOpen);
+    main.innerHTML = `<div class="dash-h"><h2>فرص التدريب</h2><span class="muted small">إعلانات عامة تبحث عن مدربين، تصلك من عدة مصادر</span></div>
+      <div class="banner info" style="margin-bottom:12px"><i class="fa-solid fa-circle-info"></i><span>هذه الفرص منقولة من مصادر عامة في الإنترنت ومنصات التواصل الاجتماعي، وبعضها يرسل لنا مباشرة. نحاول قدر الإمكان التحقق من صحة الإعلان وسلامة المصدر، ونهيب بجميع المدربين التحقق دائماً عند إجراء التعاملات عبر الإنترنت.</span></div>
+      ${list.length ? list.map(o => card(o, (o.ts || 0) > s)).join('') : `<div class="empty"><i class="fa-solid fa-handshake-angle"></i><h3>لا توجد فرص حالياً</h3><p>حين تعتمد الإدارة فرصة جديدة تظهر هنا وتصلك بشارة.</p></div>`}`;
     markSeen(t.id); $$('[data-tab="opps"] .badge').forEach(x => x.remove());
   }
 
