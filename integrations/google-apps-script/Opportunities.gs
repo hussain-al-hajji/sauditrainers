@@ -41,7 +41,7 @@ function collectOpps() {
   (set.feeds || []).filter(u => /^https:\/\/www\.google\.[a-z.]+\/alerts\/feeds\//.test(u)).slice(0, 10).forEach(u => {
     try { fetchFeed(u, 'alert', '').forEach(x => found.push(x)); } catch (e) { log.push('تنبيه Google: ' + String(e.message).slice(0, 120)); }
   });
-  if (set.gnews !== false) {
+  if (set.gnews === true) {   // معطّل افتراضياً: أخبار Google تعيد أخبار مدربين لا إعلانات بحث عن مدربين
     queries.slice(0, 6).forEach(q => {
       try { fetchFeed('https://news.google.com/rss/search?q=' + encodeURIComponent(q.replace(/^site:\S+\s*/, '')) + '+when:14d&hl=ar&gl=SA&ceid=SA:ar', 'news', q).forEach(x => found.push(x)); } catch (e) { log.push('أخبار Google «' + q.slice(0, 20) + '»: ' + String(e.message).slice(0, 100)); }
     });
