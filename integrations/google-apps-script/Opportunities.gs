@@ -13,7 +13,7 @@ const OPP_DEFAULT_QUERIES = [
   '"مطلوب مدرب" السعودية', '"نبحث عن مدرب" دورة تدريبية', '"نبحث عن مدربين" السعودية', '"مطلوب مدربين" دورات',
   '"طلب عروض" تدريب السعودية', 'site:linkedin.com/posts "نبحث عن مدرب"', 'site:x.com "مطلوب مدرب"'
 ];
-const OPP_DEFAULT_JOBS = ['مدرب', 'مدرب سعودي', 'trainer Saudi Arabia', 'corporate trainer'];
+const OPP_DEFAULT_JOBS = ['وظائف مدربين', 'مدرب', 'trainer Saudi Arabia', 'training specialist'];
 const OPP_DEFAULT_ETIMAD = ['تدريب', 'دورات تدريبية', 'برنامج تدريبي'];
 
 const oppId = url => 'o' + Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, url).map(b => ('0' + (b & 255).toString(16)).slice(-2)).join('').slice(0, 18);
@@ -23,7 +23,7 @@ const OWN_HOST = /sauditrainers\.sa|hussain-al-hajji\.github\.io/i;
 function collectOpps() {
   const set = db('settings/opps') || {}, queries = (set.queries && set.queries.length ? set.queries : OPP_DEFAULT_QUERIES).filter(Boolean).slice(0, 12);
   const known = Object.assign({}, db('oppInbox') || {}, db('opportunities') || {});
-  const found = []; let log = [];
+  const found = [], jobsFound = []; let log = [];
   const key = PROPS.getProperty('CSE_KEY'), cx = PROPS.getProperty('CSE_CX');
   if (key && cx) {
     queries.forEach(q => {
@@ -52,7 +52,7 @@ function collectOpps() {
     const jk = PROPS.getProperty('SERPAPI_KEY');
     if (!jk) log.push('وظائف Google: لم تُضبط SERPAPI_KEY في خصائص السكربت');
     else (set.jobQueries && set.jobQueries.length ? set.jobQueries : OPP_DEFAULT_JOBS).slice(0, 4).forEach(q => {
-      try { parseJobs(fetchJobsRaw(q, jk), q).forEach(x => found.push(x)); } catch (e) { log.push('وظائف Google «' + String(q).slice(0, 20) + '»: ' + String(e.message).slice(0, 140)); }
+      try { parseJobs(fetchJobsRaw(q, jk), q).forEach(x => jobsFound.push(x)); } catch (e) { log.push('وظائف Google «' + String(q).slice(0, 20) + '»: ' + String(e.message).slice(0, 140)); }
     });
   }
   if (set.etimad === true) {   // معطّل افتراضياً: اعتماد يحجب خوادم Google (Address unavailable)
@@ -65,7 +65,14 @@ function collectOpps() {
     const id = oppId(f.url); if (known[id] || seen[id]) return; seen[id] = 1;
     db('oppInbox/' + id, 'put', Object.assign({ id: id, ts: Date.now(), status: 'new' }, f)); added++;
   });
-  db('settings/opps/lastRun', 'put', { ts: Date.now(), added: added, found: found.length, log: log.slice(0, 8) });
+  // وظائف Google Jobs تُنشر مباشرة للمدربين (قسم خاص بلا مراجعة)، وتُحذف بعد 21 يوماً
+  let jobsAdded = 0;
+  if (set.jobs === true) {
+    const have = db('jobs') || {}, cutoff = Date.now() - 21 * 864e5, seenJ = {};
+    jobsFound.forEach(j => { const id = oppId(j.url); if (have[id] || seenJ[id]) return; seenJ[id] = 1; db('jobs/' + id, 'put', Object.assign({ id: id, ts: Date.now() }, j)); jobsAdded++; });
+    Object.keys(have).forEach(id => { if ((have[id] && have[id].ts || 0) < cutoff) { try { db('jobs/' + id, 'delete'); } catch (e) { /* ignore */ } } });
+  }
+  db('settings/opps/lastRun', 'put', { ts: Date.now(), added: added, found: found.length, jobs: jobsAdded, jobsFound: jobsFound.length, log: log.slice(0, 8) });
   console.log('فرص التدريب: ' + found.length + ' نتيجة، ' + added + ' جديدة. ' + log.join(' | '));
 }
 
@@ -82,8 +89,8 @@ function parseJobs(j, q) {
   return (j.jobs_results || []).map(x => {
     const link = (x.apply_options && x.apply_options[0] && x.apply_options[0].link) || (x.related_links && x.related_links[0] && x.related_links[0].link) || '';
     if (!/^https:\/\/[^\s"'<>)]+$/.test(link) || link.length > 500 || !x.title) return null;
-    const ext = x.detected_extensions || {}, meta = [x.location, ext.schedule_type, ext.posted_at].filter(Boolean).join(' · ');
-    const o = { title: String(x.title).slice(0, 200), url: link, desc: ((meta ? meta + '\n' : '') + String(x.description || '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n')).trim().slice(0, 600), org: String(x.company_name || '').slice(0, 160), site: String(x.via || 'Google Jobs').replace(/^(via|عبر)\s+/i, '').slice(0, 80), kind: 'post', src: 'jobs', q: String(q || '').slice(0, 80) };
+    const ext = x.detected_extensions || {};
+    const o = { title: String(x.title).slice(0, 200), url: link, desc: String(x.description || '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim().slice(0, 600), loc: String(x.location || '').slice(0, 80), posted: String(ext.posted_at || '').slice(0, 40), sched: String(ext.schedule_type || '').slice(0, 40), org: String(x.company_name || '').slice(0, 160), site: String(x.via || 'Google Jobs').replace(/^(via|عبر)\s+/i, '').slice(0, 80), kind: 'post', src: 'jobs', q: String(q || '').slice(0, 80) };
     if (/^https:\/\//.test(x.thumbnail || '')) o.img = String(x.thumbnail).slice(0, 500);
     return o;
   }).filter(Boolean);

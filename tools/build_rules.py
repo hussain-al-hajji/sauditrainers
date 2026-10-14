@@ -211,6 +211,17 @@ rules = {
                     '$other': {'.validate': False},
                 },
             },
+            # وظائف Google Jobs تجلبها الأتمتة تلقائياً للمدربين (قسم خاص بلا مراجعة): يقرؤها كل مدرب لديه حساب، وتكتبها الأتمتة/الإدارة فقط
+            'jobs': {
+                '.read': f"auth != null && root.child('{ROOT}/uids/' + auth.uid).exists()",
+                '$id': {
+                    '.validate': "$id.matches(/^[A-Za-z0-9_-]{1,40}$/) && newData.hasChildren(['title', 'url', 'ts'])",
+                    'id': {'.validate': S(40)}, 'ts': {'.validate': 'newData.isNumber()'}, 'title': {'.validate': S(200)}, 'url': {'.validate': URL(500)},
+                    'desc': {'.validate': S(2000)}, 'org': {'.validate': S(160)}, 'site': {'.validate': S(80)}, 'img': {'.validate': URL(500)}, 'q': {'.validate': S(80)},
+                    'loc': {'.validate': S(80)}, 'posted': {'.validate': S(40)}, 'sched': {'.validate': S(40)}, 'kind': {'.validate': S(20)}, 'src': {'.validate': S(20)},
+                    '$other': {'.validate': False},
+                },
+            },
             'requests': {'$id': public_form(['org', 'person', 'phone', 'topic', 'ts', 'status'], req_spec)},
             'hallReqs': {'$id': public_form(['type', 'name', 'phone', 'region', 'ts', 'status'], hall_spec)},
             'applications': {'$id': {**app, '.validate': '$id.matches(/^A[0-9A-Z]{7}$/)'}},

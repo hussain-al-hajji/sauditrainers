@@ -12,8 +12,9 @@ const Opps = (() => {
   /* ---------- جهة المدرب ---------- */
   const key = id => `st-opp-seen-${id}`;
   const seenTs = id => { try { return Number(localStorage.getItem(key(id)) || 0); } catch { return 0; } };
-  const markSeen = id => { try { localStorage.setItem(key(id), String(Math.max(0, ...approved().map(o => o.ts || 0)))); } catch { /* ignore */ } };
-  const unread = id => { const s = seenTs(id); return approved().filter(o => (o.ts || 0) > s && isOpen(o)); };
+  const markSeen = id => { try { localStorage.setItem(key(id), String(Math.max(0, ...approved().map(o => o.ts || 0), ...jobs().map(o => o.ts || 0)))); } catch { /* ignore */ } };
+  const jobs = () => Store.list('jobs').filter(j => j && j.title && j.url).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  const unread = id => { const s = seenTs(id); return [...approved().filter(o => (o.ts || 0) > s && isOpen(o)), ...jobs().filter(j => (j.ts || 0) > s)]; };
 
   function card(o, fresh) {
     const k = KIND[o.kind] || KIND.post, u = safeUrl(o.url), closed = !isOpen(o);
@@ -32,7 +33,18 @@ const Opps = (() => {
     main.innerHTML = `<div class="dash-h"><h2>إعلانات عبر الإنترنت</h2><span class="muted small">إعلانات عامة تبحث عن مدربين، تصلك من عدة مصادر</span></div>
       <div class="banner info" style="margin-bottom:12px"><i class="fa-solid fa-circle-info"></i><span>هذه الفرص منقولة من مصادر عامة في الإنترنت ومنصات التواصل الاجتماعي، وبعضها يرسل لنا مباشرة. نحاول قدر الإمكان التحقق من صحة الإعلان وسلامة المصدر، ونهيب بجميع المدربين التحقق دائماً عند إجراء التعاملات عبر الإنترنت.</span></div>
       ${list.length ? list.map(o => card(o, (o.ts || 0) > s)).join('') : `<div class="empty"><i class="fa-solid fa-handshake-angle"></i><h3>لا توجد فرص حالياً</h3><p>حين تعتمد الإدارة فرصة جديدة تظهر هنا وتصلك بشارة.</p></div>`}`;
+    const jl = jobs();
+    main.insertAdjacentHTML('beforeend', `<div class="dash-h" style="margin-top:26px"><h2><i class="fa-brands fa-google"></i> وظائف مدربين من Google Jobs</h2><span class="muted small">تُجلب تلقائياً يومياً: وظائف تخص المدربين في السعودية (عربي وإنجليزي)</span></div>
+      ${jl.length ? jl.map(j => jobCard(j, (j.ts || 0) > s)).join('') : '<div class="empty"><i class="fa-solid fa-briefcase"></i><h3>لا توجد وظائف حالياً</h3><p>تظهر هنا الوظائف الجديدة تلقائياً.</p></div>'}`);
     markSeen(t.id); $$('[data-tab="opps"] .badge').forEach(x => x.remove());
+  }
+  function jobCard(j, fresh) {
+    const u = safeUrl(j.url);
+    return `<div class="lead opp ${fresh ? 'new' : ''}"><span class="ic"><i class="fa-solid fa-briefcase"></i></span>
+      <div><b>${esc(j.title)}</b> ${fresh ? '<span class="pill ok">جديد</span>' : ''}${j.sched ? ` <span class="pill">${esc(j.sched)}</span>` : ''}
+        <div class="small muted">${j.org ? `${esc(j.org)} · ` : ''}${j.loc ? `${esc(j.loc)} · ` : ''}${j.site ? `${esc(j.site)} · ` : ''}<span title="تاريخ الإضافة في المنصة"><i class="fa-regular fa-calendar"></i> أُضيفت ${fmtDate(j.ts)} (${ago(j.ts)})</span>${j.posted ? ` · نُشرت: ${esc(j.posted)}` : ''}</div>
+        ${j.desc ? `<p>${esc(String(j.desc).slice(0, 280))}${String(j.desc).length > 280 ? '…' : ''}</p>` : ''}</div>
+      <div class="acts" style="flex-direction:column">${u ? `<a class="btn sm primary" href="${esc(u)}" target="_blank" rel="noopener nofollow"><i class="fa-solid fa-arrow-up-right-from-square"></i> فتح الوظيفة</a>` : ''}</div></div>`;
   }
 
   /* ---------- جهة الإدارة ---------- */
@@ -73,7 +85,7 @@ const Opps = (() => {
   }
 
   function admin(main) {
-    const set = Store.get('settings/opps') || {}, last = set.lastRun || {}, ib = inbox(), news = ib.filter(o => o.status === 'new'), ap = approved();
+    const jl = jobs(), set = Store.get('settings/opps') || {}, last = set.lastRun || {}, ib = inbox(), news = ib.filter(o => o.status === 'new'), ap = approved();
     const ets = (arr(set.etimadTerms).length ? arr(set.etimadTerms) : ['تدريب', 'دورات تدريبية', 'برنامج تدريبي']).join('\n');
     const row = (o, btns) => `<div class="lead"><span class="ic"><i class="fa-solid ${(KIND[o.kind] || KIND.post)[1]}"></i></span><div><b><a href="${esc(safeUrl(o.url) || '#')}" target="_blank" rel="noopener nofollow">${esc(o.title)}</a></b> <small class="muted">${esc(o.site || host(o.url))} · ${ago(o.ts)}${o.src === 'jobs' ? ' · Google Jobs' : o.src === 'etimad' ? ' · اعتماد' : o.src === 'google' ? ' · بحث Google' : ''}${o.deadline ? ' · آخر موعد ' + fmtDate(o.deadline) : ''}</small>${o.desc ? `<p class="small">${esc(String(o.desc).slice(0, 220))}</p>` : ''}</div><div class="acts" style="flex-direction:column">${btns}</div></div>`;
     main.innerHTML = `<div class="dash-h"><h2>إعلانات عبر الإنترنت</h2><span class="muted small">طلبات بحث عن مدربين: تُجلب أو تُضاف، ثم تُعتمد لتظهر في حسابات المدربين فقط</span></div>
@@ -86,9 +98,12 @@ const Opps = (() => {
         ${arr(last.log).length ? `<details class="small" style="margin:0 0 10px"><summary style="color:var(--warn);cursor:pointer">رسائل آخر تشغيل (${arr(last.log).length}) — قد تكون قديمة</summary><div style="color:var(--warn);margin-top:6px" dir="auto">${arr(last.log).map(x => `<div>${esc(x)}</div>`).join('')}</div><button class="btn sm ghost" id="op-clrlog" style="margin-top:8px"><i class="fa-solid fa-broom"></i> مسح الرسائل</button></details>` : ''}
         <div style="display:grid;gap:16px">
           <div style="flex:2;min-width:300px">${field('روابط خلاصات RSS من تنبيهات Google (رابط في كل سطر)', `<textarea id="op-f" rows="5" dir="ltr" placeholder="https://www.google.com/alerts/feeds/…">${esc(arr(set.feeds).join('\n'))}</textarea>`)}<small class="muted">أنشئ تنبيهاً في google.com/alerts بعبارة مثل «نبحث عن مدرب» أو «مطلوب مدرب» أو «طلب عروض» تدريب، واختر Deliver to: RSS feed، وانسخ رابط الخلاصة هنا.</small></div>
-          <div style="flex:1;min-width:260px">${field('وظائف Google Jobs — عبارات البحث (حتى 4)', `<textarea id="op-jq" rows="3">${esc((arr(set.jobQueries).length ? arr(set.jobQueries) : ['مدرب', 'مدرب سعودي', 'trainer Saudi Arabia', 'corporate trainer']).join('\n'))}</textarea>`)}<label class="chk"><input type="checkbox" id="op-jobs" ${set.jobs === true ? 'checked' : ''}><span>تفعيل جلب وظائف Google Jobs يومياً <small class="muted">(يحتاج مفتاح SerpApi في خصائص السكربت: SERPAPI_KEY)</small></span></label></div>
+          <div style="flex:1;min-width:260px">${field('وظائف Google Jobs — عبارات البحث (حتى 4)', `<textarea id="op-jq" rows="3">${esc((arr(set.jobQueries).length ? arr(set.jobQueries) : ['وظائف مدربين', 'مدرب', 'trainer Saudi Arabia', 'training specialist']).join('\n'))}</textarea>`)}<label class="chk"><input type="checkbox" id="op-jobs" ${set.jobs === true ? 'checked' : ''}><span>تفعيل جلب وظائف Google Jobs يومياً ونشرها تلقائياً للمدربين <small class="muted">(بلا مراجعة؛ يحتاج مفتاح SerpApi في خصائص السكربت: SERPAPI_KEY)</small></span></label></div>
           <div style="flex:1;min-width:200px">${field('كلمات البحث في منصة اعتماد', `<textarea id="op-e" rows="3">${esc(ets)}</textarea>`)}<label class="chk"><input type="checkbox" id="op-eon" ${set.etimad === true ? 'checked' : ''}><span>تجربة جلب منافسات اعتماد <small class="muted">(تحجبه المنصة غالباً عن خوادم Google؛ أضف منافساتها بالرابط يدوياً)</small></span></label></div></div>
         <div class="row" style="gap:8px;margin-top:8px"><button class="btn" id="op-save"><i class="fa-solid fa-floppy-disk"></i> حفظ الإعدادات</button>${Automation.on ? '<button class="btn primary" id="op-run"><i class="fa-solid fa-rotate"></i> جلب الآن</button>' : '<small class="muted">الأتمتة غير مفعّلة</small>'}</div></div>
+      <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-brands fa-google"></i> وظائف Google Jobs المنشورة تلقائياً (${jl.length}) ${jl.length ? '<button class="btn sm danger" id="op-jclr" style="margin-inline-start:10px"><i class="fa-solid fa-broom"></i> حذف الكل</button>' : ''}</h3>
+        <p class="small muted">تُنشر مباشرة في قسم «وظائف مدربين من Google Jobs» داخل حسابات المدربين بلا مراجعة، وتُحذف تلقائياً بعد 21 يوماً. احذف ما لا يناسب.</p>
+        ${jl.slice(0, 30).map(j => `<div class="lead"><span class="ic"><i class="fa-solid fa-briefcase"></i></span><div><b><a href="${esc(safeUrl(j.url) || '#')}" target="_blank" rel="noopener nofollow">${esc(j.title)}</a></b> <small class="muted">${esc(j.org || '')} ${esc(j.loc || '')} · ${ago(j.ts)}</small></div><div class="acts"><button class="btn sm danger" data-jdel="${esc(j.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`).join('') || '<p class="muted small">لا توجد وظائف بعد.</p>'}</div>
       <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-inbox"></i> الوارد بانتظار المراجعة (${news.length})</h3>
         ${news.length ? news.map(o => row(o, `<button class="btn sm primary" data-ap="${esc(o.id)}"><i class="fa-solid fa-circle-check"></i> اعتماد</button><button class="btn sm danger" data-rj="${esc(o.id)}"><i class="fa-solid fa-xmark"></i> رفض</button>`)).join('') : '<p class="muted small">لا توجد نتائج جديدة.</p>'}</div>
       <div class="pbox"><h3><i class="fa-solid fa-handshake-angle"></i> المعتمدة للمدربين (${ap.length})</h3>
@@ -110,6 +125,8 @@ const Opps = (() => {
     };
     $('#op-run', main) && ($('#op-run', main).onclick = async e => { e.currentTarget.disabled = true; await Automation.notify('opps', 'now'); toast('طُلب الجلب، تظهر النتائج خلال دقيقة تقريباً'); });
     $('#op-clrlog', main) && ($('#op-clrlog', main).onclick = () => { Store.remove('settings/opps/lastRun/log'); toast('تم مسح الرسائل'); });
+    $('#op-jclr', main) && ($('#op-jclr', main).onclick = async () => { if (await confirmBox(`حذف ${jl.length} وظيفة من حسابات المدربين؟`, { ok: 'حذف', danger: true })) { jl.forEach(j => Store.remove(`jobs/${j.id}`)); toast('تم الحذف'); } });
+    $$('[data-jdel]', main).forEach(b => b.onclick = () => Store.remove(`jobs/${b.dataset.jdel}`));
     $$('[data-ap]', main).forEach(b => b.onclick = () => editor(Store.get(`oppInbox/${b.dataset.ap}`), { fromInbox: true, onDone: again }));
     $$('[data-rj]', main).forEach(b => b.onclick = () => Store.update(`oppInbox/${b.dataset.rj}`, { status: 'rejected' }));
     $$('[data-ed]', main).forEach(b => b.onclick = () => editor({ ...Store.get(`opportunities/${b.dataset.ed}`), pub: true }, { onDone: again }));
