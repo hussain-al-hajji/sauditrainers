@@ -261,14 +261,14 @@ const SECTION_TYPES = (() => {
     name: 'المثبّتة (مدرب كل 24 ساعة)', icon: 'fa-thumbtack',
     tpls: [['wide', 'بطاقة عرضية']],
     schema: [...HEAD, { k: 'only', label: 'من يظهر', t: 'select', opts: [['all', 'كل المدربين المنشورين'], ['featured', 'المميزون فقط (وإن لم يوجد فالجميع)']] }, { k: 'btn', label: 'نص زر الصفحة', t: 'text' }],
-    def: () => ({ eyebrow: 'المثبّتة', title: 'مدرب اليوم', sub: 'نُعرّف بمدرب جديد كل 24 ساعة.', only: 'all', btn: 'عرض الصفحة التعريفية' }),
+    def: () => ({ eyebrow: 'المثبّتة', title: '', sub: 'نُعرّف بمدرب جديد كل 24 ساعة.', only: 'all', btn: 'عرض الصفحة التعريفية' }),
     render(sec) {
       const d = sec.d, ls = pinList(d), id = pinPick(ls.map(t => t.id)), t = ls.find(x => x.id === id);
       if (!t) return '';
       const tp = Card.kit.template(), x = tp.text, sp = Data.cardSpecs(t).slice(0, tp.maxSpecs), stats = [[t.years, x.years], [t.hours, x.hours], [t.programs, x.programs]].filter(s => Number(s[0]));
       const th = Card.kit.themed(t, tp), url = `#/t/${esc(encodeURIComponent(t.slug || t.id))}`;
-      return `<div class="wrap">${head(d)}
-        <div class="pin-wrap reveal"><div class="pin-tag"><i class="fa-solid fa-thumbtack"></i> المثبّتة <span class="pin-left">تتجدد بعد <b class="num" data-pin-left>--:--:--</b></span></div>
+      return `<div class="wrap"><div class="sec-h reveal"><span class="eyebrow pin-title"><i class="fa-solid fa-thumbtack"></i>${esc(d.eyebrow || 'المثبّتة')}</span>${d.title ? `<h2>${esc(d.title)}</h2>` : ''}${d.sub ? `<p>${esc(d.sub)}</p>` : ''}</div>
+        <div class="pin-wrap reveal"><div class="pin-tag"><span class="pin-left">تتجدد بعد <b class="num" data-pin-left>--:--:--</b></span></div>
         <a class="pin-card ${Card.themeCls(t, tp)}" href="${url}" style="${Card.themeVars(t, tp)}" aria-label="${esc(t.name)}">
           <i class="pn-frame"></i>
           ${tp.show.logo ? logoImg(th.light ? 'green' : 'cream', 'pn-logo') : ''}
