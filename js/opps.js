@@ -10,13 +10,16 @@ const Opps = (() => {
   const host = u => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return ''; } };
 
   /* ---------- جهة المدرب ---------- */
-  const key = id => `st-opp-seen-${id}`;
-  const seenTs = id => { try { return Number(localStorage.getItem(key(id)) || 0); } catch { return 0; } };
-  const markSeen = id => { try { localStorage.setItem(key(id), String(Math.max(0, ...approved().map(o => o.ts || 0), ...jobs().map(o => o.ts || 0)))); } catch { /* ignore */ } };
+  const lsGet = k => { try { return Number(localStorage.getItem(k) || 0); } catch { return 0; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, String(v)); } catch { /* ignore */ } };
+  const kAds = id => `st-opp-seen-${id}`, kJobs = id => `st-job-seen-${id}`;
+  const V = { sub: 'ads' };   // القسم المفتوح في صفحة المدرب: ads (فرص تدريب عامة) | jobs (وظائف تدريب)
   const JOB_DEFAULT = ['وظائف مدربين', 'مدرب', 'مدرب مهارات', 'مدرب قيادة', 'أخصائي تدريب', 'trainer', 'corporate trainer', 'training specialist', 'soft skills trainer', 'learning and development'];
   const JOB_SUGGEST = ['مدرب تطوير ذاتي', 'مدرب معتمد', 'مطلوب مدرب', 'مدرب مبيعات', 'مدرب تنمية بشرية', 'مدرب لغة إنجليزية', 'مدرب حاسب آلي', 'مدرب سلامة مهنية', 'مدرب موارد بشرية', 'مدرب خدمة عملاء', 'مدرب إدارة مشاريع', 'مدرب تقنية', 'أخصائي تطوير مواهب', 'منسق تدريب', 'sales trainer', 'technical trainer', 'leadership trainer', 'certified trainer', 'L&D specialist', 'training coordinator', 'HR trainer', 'customer service trainer'];
   const jobs = () => Store.list('jobs').filter(j => j && j.title && j.url).sort((a, b) => (b.ts || 0) - (a.ts || 0));
-  const unread = id => { const s = seenTs(id); return [...approved().filter(o => (o.ts || 0) > s && isOpen(o)), ...jobs().filter(j => (j.ts || 0) > s)]; };
+  const unreadAds = id => { const sn = lsGet(kAds(id)); return approved().filter(o => (o.ts || 0) > sn && isOpen(o)); };
+  const unreadJobs = id => { const sn = lsGet(kJobs(id)); return jobs().filter(j => (j.ts || 0) > sn); };
+  const unread = id => [...unreadAds(id), ...unreadJobs(id)];
 
   function card(o, fresh) {
     const k = KIND[o.kind] || KIND.post, u = safeUrl(o.url), closed = !isOpen(o);
@@ -30,15 +33,21 @@ const Opps = (() => {
       <div class="acts" style="flex-direction:column">${u ? `<a class="btn sm primary" href="${esc(u)}" target="_blank" rel="noopener nofollow"><i class="fa-solid fa-arrow-up-right-from-square"></i> فتح الأصل</a>` : ''}</div></div>`;
   }
   function tab(main, t) {
-    const s = seenTs(t.id), all = approved();
-    const list = all.filter(isOpen);
+    const sub = V.sub === 'jobs' ? 'jobs' : 'ads', sa = lsGet(kAds(t.id)), sj = lsGet(kJobs(t.id)), ua = unreadAds(t.id).length, uj = unreadJobs(t.id).length;
+    const list = approved().filter(isOpen), jl = jobs();
+    const sw = (k, ic, l, n) => `<button type="button" class="${sub === k ? 'on' : ''}" data-sub="${k}"><i class="${ic}"></i><span>${l}</span>${n ? `<b class="badge num">${n}</b>` : ''}</button>`;
     main.innerHTML = `<div class="dash-h"><h2>إعلانات عبر الإنترنت</h2><span class="muted small">إعلانات عامة تبحث عن مدربين، تصلك من عدة مصادر</span></div>
+      <div class="opp-sub">${sw('ads', 'fa-solid fa-bullhorn', 'فرص تدريب عامة', ua)}${sw('jobs', 'fa-solid fa-briefcase', 'وظائف تدريب', uj)}</div>
       <div class="banner info" style="margin-bottom:12px"><i class="fa-solid fa-circle-info"></i><span>هذه الفرص منقولة من مصادر عامة في الإنترنت ومنصات التواصل الاجتماعي، وبعضها يرسل لنا مباشرة. نحاول قدر الإمكان التحقق من صحة الإعلان وسلامة المصدر، ونهيب بجميع المدربين التحقق دائماً عند إجراء التعاملات عبر الإنترنت.</span></div>
-      ${list.length ? list.map(o => card(o, (o.ts || 0) > s)).join('') : `<div class="empty"><i class="fa-solid fa-handshake-angle"></i><h3>لا توجد فرص حالياً</h3><p>حين تعتمد الإدارة فرصة جديدة تظهر هنا وتصلك بشارة.</p></div>`}`;
-    const jl = jobs();
-    main.insertAdjacentHTML('beforeend', `<div class="dash-h" style="margin-top:26px"><h2><i class="fa-brands fa-google"></i> وظائف مدربين من Google Jobs</h2><span class="muted small">تُجلب تلقائياً يومياً: وظائف تخص المدربين في السعودية (عربي وإنجليزي)</span></div>
-      ${jl.length ? jl.map(j => jobCard(j, (j.ts || 0) > s)).join('') : '<div class="empty"><i class="fa-solid fa-briefcase"></i><h3>لا توجد وظائف حالياً</h3><p>تظهر هنا الوظائف الجديدة تلقائياً.</p></div>'}`);
-    markSeen(t.id); $$('[data-tab="opps"] .badge').forEach(x => x.remove());
+      ${sub === 'ads'
+        ? `<p class="muted small" style="margin:0 0 10px">إعلانات نعلنها نحن داخل المنصة بعد مراجعتها.</p>${list.length ? list.map(o => card(o, (o.ts || 0) > sa)).join('') : '<div class="empty"><i class="fa-solid fa-handshake-angle"></i><h3>لا توجد فرص حالياً</h3><p>حين تعتمد الإدارة فرصة جديدة تظهر هنا وتصلك بشارة.</p></div>'}`
+        : `<p class="muted small" style="margin:0 0 10px"><i class="fa-brands fa-google"></i> وظائف مدربين في السعودية تُجلب تلقائياً من Google Jobs (عربي وإنجليزي).</p>${jl.length ? jl.map(j => jobCard(j, (j.ts || 0) > sj)).join('') : '<div class="empty"><i class="fa-solid fa-briefcase"></i><h3>لا توجد وظائف حالياً</h3><p>تظهر هنا الوظائف الجديدة تلقائياً.</p></div>'}`}`;
+    $$('[data-sub]', main).forEach(b => b.onclick = () => { V.sub = b.dataset.sub; tab(main, t); });
+    // نعدّ ما في القسم المفتوح مقروءاً، ونحدّث الشارات دون إعادة رسم الصفحة
+    if (sub === 'ads') lsSet(kAds(t.id), Math.max(0, ...approved().map(o => o.ts || 0))); else lsSet(kJobs(t.id), Math.max(0, ...jobs().map(o => o.ts || 0)));
+    $$('.opp-sub [data-sub="' + sub + '"] .badge', main).forEach(x => x.remove());
+    const rest = unread(t.id).length, pb = $('[data-tab="opps"] .badge');
+    if (!rest) pb && pb.remove(); else if (pb) pb.textContent = rest;
   }
   function jobCard(j, fresh) {
     const u = safeUrl(j.url);
