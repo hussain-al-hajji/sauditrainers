@@ -20,7 +20,7 @@ const Card = (() => {
   function avatar(t, cls = '') {
     if (t.noPhoto) return `<span class="${cls} avw sym" role="img" aria-label="${t.gender === 'f' ? 'صورة رمزية لمدربة' : 'صورة رمزية'}">${symbol(t.gender)}</span>`;
     const p = Data.photo(t), ini = initials(t.name);
-    const big = /^t[cm]-photo$/.test(cls), full = nameFL(t.name).map(esc).join('<br>');
+    const big = /^(t[cm]|pn)-photo$/.test(cls), full = nameFL(t.name).map(esc).join('<br>');
     if (!p) return big ? `<span class="${cls} avw ph ph-full"><span class="ph-n">${full}</span></span>` : `<span class="${cls} avw ph">${ini}</span>`;
     const f = fit(t);
     return `<span class="${cls} avw" data-i="${ini}"><img src="${esc(p)}" alt="${esc(t.name)}" loading="lazy" referrerpolicy="no-referrer" style="${imgStyle(f)}" onerror="const s=this.parentNode;s.classList.add('ph');${big ? `s.classList.add('ph-full');s.innerHTML='<span class=ph-n>${full}</span>'` : 's.textContent=s.dataset.i'}"></span>`;
@@ -625,5 +625,5 @@ const Card = (() => {
   }
 
   const kit = { loadImage, ensureQR, ensureFonts, rr, patternTile, hex, wrap, themed, fontCss, fit, SYM_F, SYM_M_BODY, template: cardTemplate, isApple };
-  return { kit, full, mini, avatar, symbol, fit, imgStyle, save, share, shareSheet, shareIcons, shareTo, memberPost, fillShare, xLen, SHARE_DEFAULTS, SHARE_VARS, render, toJPEG, themeVars };
+  return { kit, full, mini, avatar, symbol, fit, imgStyle, save, share, shareSheet, shareIcons, shareTo, memberPost, fillShare, xLen, SHARE_DEFAULTS, SHARE_VARS, render, toJPEG, themeVars, themeCls };
 })();

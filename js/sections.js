@@ -246,6 +246,49 @@ const SECTION_TYPES = (() => {
     }
   };
 
+  /* «المثبّتة»: بطاقة مدرب عرضية تبقى 24 ساعة (بتوقيت الرياض) ثم تُستبدل ببطاقة مدرب آخر، ولا يتكرر مدرب حتى تكتمل دورة كل المدربين.
+     الترتيب في كل دورة عشوائي ثابت (بذرة = رقم الدورة) فيراه كل الزوار نفسه دون حاجة لتخزين. */
+  const pinPick = ids => {
+    const n = ids.length, day = Math.floor((Date.now() + 3 * 3600e3) / 864e5);
+    if (!n) return null;
+    const order = c => { const a = [...ids]; let s = (c * 2654435761 + 1013904223) >>> 0; const rnd = () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+    const cycle = Math.floor(day / n), cur = order(cycle);
+    if (n > 1 && cycle > 0) { const prevLast = order(cycle - 1)[n - 1]; if (cur[0] === prevLast) [cur[0], cur[1]] = [cur[1], cur[0]]; }   // لا يتكرر مدرب عند حدود الدورات
+    return cur[day % n];
+  };
+  const pinList = d => { const ls = live().filter(t => t.id); const pool = d.only === 'featured' ? ls.filter(t => t.featured) : ls; return (pool.length ? pool : ls).sort((a, b) => String(a.id).localeCompare(String(b.id))); };
+  T.pinned = {
+    name: 'المثبّتة (مدرب كل 24 ساعة)', icon: 'fa-thumbtack',
+    tpls: [['wide', 'بطاقة عرضية']],
+    schema: [...HEAD, { k: 'only', label: 'من يظهر', t: 'select', opts: [['all', 'كل المدربين المنشورين'], ['featured', 'المميزون فقط (وإن لم يوجد فالجميع)']] }, { k: 'btn', label: 'نص زر الصفحة', t: 'text' }],
+    def: () => ({ eyebrow: 'المثبّتة', title: 'مدرب اليوم', sub: 'نُعرّف بمدرب جديد كل 24 ساعة.', only: 'all', btn: 'عرض الصفحة التعريفية' }),
+    render(sec) {
+      const d = sec.d, ls = pinList(d), id = pinPick(ls.map(t => t.id)), t = ls.find(x => x.id === id);
+      if (!t) return '';
+      const tp = Card.kit.template(), x = tp.text, sp = Data.cardSpecs(t).slice(0, tp.maxSpecs), stats = [[t.years, x.years], [t.hours, x.hours], [t.programs, x.programs]].filter(s => Number(s[0]));
+      const th = Card.kit.themed(t, tp), url = `#/t/${esc(encodeURIComponent(t.slug || t.id))}`;
+      return `<div class="wrap">${head(d)}
+        <div class="pin-wrap reveal"><div class="pin-tag"><i class="fa-solid fa-thumbtack"></i> المثبّتة <span class="pin-left">تتجدد بعد <b class="num" data-pin-left>--:--:--</b></span></div>
+        <a class="pin-card ${Card.themeCls(t, tp)}" href="${url}" style="${Card.themeVars(t, tp)}" aria-label="${esc(t.name)}">
+          <i class="pn-frame"></i>
+          ${tp.show.logo ? logoImg(th.light ? 'green' : 'cream', 'pn-logo') : ''}
+          <div class="pn-main"><div class="pn-ring">${Card.avatar(t, 'pn-photo')}${tp.show.badge ? '<span class="tc-verified" title="مدرب موثّق"><i class="fa-solid fa-certificate"></i><i class="fa-solid fa-check"></i></span>' : ''}</div>
+            <h3 class="pn-name">${esc(t.name || '')}</h3>${regionsOf(t).length ? `<div class="pn-loc"><i class="fa-solid fa-location-dot"></i>${esc(regionsLabel(t, true, tp.maxRegions))}</div>` : ''}</div>
+          <div class="pn-info">${t.title ? `<p class="pn-title">${esc(t.title)}</p>` : ''}
+            ${stats.length ? `<div class="pn-stats">${stats.map(([v, l]) => `<div><b class="num">${fmtNum(v)}+</b><span>${l}</span></div>`).join('')}</div>` : ''}
+            ${sp.length ? `<div class="pn-chips">${sp.map(s => `<span>${esc(specName(s))}</span>`).join('')}</div>` : ''}</div>
+          <footer class="pn-foot"><span class="pn-qr" data-pin-qr="${esc(profileUrl(t))}"></span><div class="pn-ft"><span>${esc(x.footLead)}</span><b>${esc(x.brand)} <i>|</i> <em dir="ltr">${esc(x.site)}</em></b></div><span class="pn-go">${esc(d.btn || 'عرض الصفحة التعريفية')} <i class="fa-solid fa-arrow-left"></i></span></footer>
+        </a></div></div>`;
+    },
+    mount(el) {
+      const q = el.querySelector('[data-pin-qr]');
+      if (q) Card.kit.ensureQR().then(ok => { if (!ok || !el.isConnected) return; try { const qr = window.qrcode(0, 'M'); qr.addData(q.dataset.pinQr); qr.make(); q.innerHTML = qr.createSvgTag({ cellSize: 3, margin: 0, scalable: true }); } catch { /* بلا رمز */ } });
+      const lb = el.querySelector('[data-pin-left]'); if (!lb) return;
+      const tick = () => { if (!el.isConnected) return clearInterval(iv); const left = 864e5 - ((Date.now() + 3 * 3600e3) % 864e5), z = n => String(n).padStart(2, '0'); lb.textContent = `${z(Math.floor(left / 36e5))}:${z(Math.floor(left / 6e4) % 60)}:${z(Math.floor(left / 1e3) % 60)}`; if (left < 1500) setTimeout(() => App.render(), 1600); };
+      const iv = setInterval(tick, 1000); tick();
+    }
+  };
+
   T.stats = {
     name: 'أرقام وإحصاءات', icon: 'fa-chart-simple', custom: true,
     tpls: [['row', 'صف أرقام'], ['tiles', 'مربعات']],
@@ -294,6 +337,8 @@ const homeSections = () => {
   const l = arr(Store.get('content/home/list')), list = l.length ? l : defaultHome();
   // عدّاد الزيارات يُضاف تحت الواجهة الرئيسية تلقائياً إن لم يكن في القائمة (تخفيه الإدارة من تبويب الصفحة الرئيسية)
   if (!list.some(s => s.type === 'visits')) { const i = list.findIndex(s => s.type === 'hero'); list.splice(i + 1, 0, { id: 'visits', type: 'visits', tpl: 'band', bg: 'tint', vis: true, d: SECTION_TYPES.visits.def() }); }
+  // «المثبّتة» تحت عدّاد الزيارات
+  if (!list.some(s => s.type === 'pinned')) { const i = list.findIndex(s => s.type === 'visits'); list.splice(i < 0 ? Math.min(2, list.length) : i + 1, 0, { id: 'pinned', type: 'pinned', tpl: 'wide', bg: 'light', vis: true, d: SECTION_TYPES.pinned.def() }); }
   return list;
 };
 
