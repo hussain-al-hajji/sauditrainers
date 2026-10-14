@@ -13,6 +13,8 @@ const Opps = (() => {
   const key = id => `st-opp-seen-${id}`;
   const seenTs = id => { try { return Number(localStorage.getItem(key(id)) || 0); } catch { return 0; } };
   const markSeen = id => { try { localStorage.setItem(key(id), String(Math.max(0, ...approved().map(o => o.ts || 0), ...jobs().map(o => o.ts || 0)))); } catch { /* ignore */ } };
+  const JOB_DEFAULT = ['وظائف مدربين', 'مدرب', 'مدرب مهارات', 'مدرب قيادة', 'أخصائي تدريب', 'trainer', 'corporate trainer', 'training specialist', 'soft skills trainer', 'learning and development'];
+  const JOB_SUGGEST = ['مدرب تطوير ذاتي', 'مدرب معتمد', 'مطلوب مدرب', 'مدرب مبيعات', 'مدرب تنمية بشرية', 'مدرب لغة إنجليزية', 'مدرب حاسب آلي', 'مدرب سلامة مهنية', 'مدرب موارد بشرية', 'مدرب خدمة عملاء', 'مدرب إدارة مشاريع', 'مدرب تقنية', 'أخصائي تطوير مواهب', 'منسق تدريب', 'sales trainer', 'technical trainer', 'leadership trainer', 'certified trainer', 'L&D specialist', 'training coordinator', 'HR trainer', 'customer service trainer'];
   const jobs = () => Store.list('jobs').filter(j => j && j.title && j.url).sort((a, b) => (b.ts || 0) - (a.ts || 0));
   const unread = id => { const s = seenTs(id); return [...approved().filter(o => (o.ts || 0) > s && isOpen(o)), ...jobs().filter(j => (j.ts || 0) > s)]; };
 
@@ -85,8 +87,7 @@ const Opps = (() => {
   }
 
   function admin(main) {
-    const jl = jobs(), set = Store.get('settings/opps') || {}, last = set.lastRun || {}, ib = inbox(), news = ib.filter(o => o.status === 'new'), ap = approved();
-    const ets = (arr(set.etimadTerms).length ? arr(set.etimadTerms) : ['تدريب', 'دورات تدريبية', 'برنامج تدريبي']).join('\n');
+    const jl = jobs(), set = Store.get('settings/opps') || {}, jq = arr(set.jobQueries).length ? arr(set.jobQueries) : JOB_DEFAULT, last = set.lastRun || {}, ib = inbox(), news = ib.filter(o => o.status === 'new'), ap = approved();
     const row = (o, btns) => `<div class="lead"><span class="ic"><i class="fa-solid ${(KIND[o.kind] || KIND.post)[1]}"></i></span><div><b><a href="${esc(safeUrl(o.url) || '#')}" target="_blank" rel="noopener nofollow">${esc(o.title)}</a></b> <small class="muted">${esc(o.site || host(o.url))} · ${ago(o.ts)}${o.src === 'jobs' ? ' · Google Jobs' : o.src === 'etimad' ? ' · اعتماد' : o.src === 'google' ? ' · بحث Google' : ''}${o.deadline ? ' · آخر موعد ' + fmtDate(o.deadline) : ''}</small>${o.desc ? `<p class="small">${esc(String(o.desc).slice(0, 220))}</p>` : ''}</div><div class="acts" style="flex-direction:column">${btns}</div></div>`;
     main.innerHTML = `<div class="dash-h"><h2>إعلانات عبر الإنترنت</h2><span class="muted small">طلبات بحث عن مدربين: تُجلب أو تُضاف، ثم تُعتمد لتظهر في حسابات المدربين فقط</span></div>
       <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-plus"></i> إضافة فرصة (إعلان نصي · إعلان نصي برابط · رابط)</h3>
@@ -94,12 +95,14 @@ const Opps = (() => {
         <textarea id="op-text" rows="5" maxlength="2000" placeholder="نص الإعلان (اختياري إن وضعت رابطاً)" style="width:100%;margin-bottom:8px"></textarea>
         <div class="row" style="gap:8px"><input id="op-url" type="url" dir="ltr" placeholder="رابط (اختياري) https://…" style="flex:1"><button class="btn primary" id="op-add"><i class="fa-solid fa-plus"></i> إضافة ومراجعة</button></div></div>
       <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-robot"></i> الجلب الآلي</h3>
-        <p class="small muted">${last.ts ? `آخر تشغيل: ${ago(last.ts)} — ${last.found ?? 0} نتيجة، ${last.added ?? 0} جديدة.` : 'لم يُشغَّل بعد.'} يعمل يومياً بعد تفعيل المشغّل في سكربت Google، أو اضغط «جلب الآن».</p>
+        <p class="small muted">${last.ts ? `آخر تشغيل: ${ago(last.ts)} — ${last.jobsFound ?? 0} نتيجة في السعودية، ${last.jobs ?? 0} جديدة.` : 'لم يُشغَّل بعد.'} يعمل يومياً بعد تفعيل المشغّل في سكربت Google، أو اضغط «جلب الآن».</p>
         ${arr(last.log).length ? `<details class="small" style="margin:0 0 10px"><summary style="color:var(--warn);cursor:pointer">رسائل آخر تشغيل (${arr(last.log).length}) — قد تكون قديمة</summary><div style="color:var(--warn);margin-top:6px" dir="auto">${arr(last.log).map(x => `<div>${esc(x)}</div>`).join('')}</div><button class="btn sm ghost" id="op-clrlog" style="margin-top:8px"><i class="fa-solid fa-broom"></i> مسح الرسائل</button></details>` : ''}
-        <div style="display:grid;gap:16px">
-          <div style="flex:2;min-width:300px">${field('روابط خلاصات RSS من تنبيهات Google (رابط في كل سطر)', `<textarea id="op-f" rows="5" dir="ltr" placeholder="https://www.google.com/alerts/feeds/…">${esc(arr(set.feeds).join('\n'))}</textarea>`)}<small class="muted">أنشئ تنبيهاً في google.com/alerts بعبارة مثل «نبحث عن مدرب» أو «مطلوب مدرب» أو «طلب عروض» تدريب، واختر Deliver to: RSS feed، وانسخ رابط الخلاصة هنا.</small></div>
-          <div style="flex:1;min-width:260px">${field('وظائف Google Jobs — عبارات البحث (حتى 4)', `<textarea id="op-jq" rows="3">${esc((arr(set.jobQueries).length ? arr(set.jobQueries) : ['وظائف مدربين', 'مدرب', 'trainer Saudi Arabia', 'training specialist']).join('\n'))}</textarea>`)}<label class="chk"><input type="checkbox" id="op-jobs" ${set.jobs === true ? 'checked' : ''}><span>تفعيل جلب وظائف Google Jobs يومياً ونشرها تلقائياً للمدربين <small class="muted">(بلا مراجعة؛ يحتاج مفتاح SerpApi في خصائص السكربت: SERPAPI_KEY)</small></span></label></div>
-          <div style="flex:1;min-width:200px">${field('كلمات البحث في منصة اعتماد', `<textarea id="op-e" rows="3">${esc(ets)}</textarea>`)}<label class="chk"><input type="checkbox" id="op-eon" ${set.etimad === true ? 'checked' : ''}><span>تجربة جلب منافسات اعتماد <small class="muted">(تحجبه المنصة غالباً عن خوادم Google؛ أضف منافساتها بالرابط يدوياً)</small></span></label></div></div>
+        <div style="display:grid;gap:12px">
+          <label class="chk"><input type="checkbox" id="op-jobs" ${set.jobs === true ? 'checked' : ''}><span>تفعيل جلب وظائف Google Jobs يومياً ونشرها تلقائياً للمدربين <small class="muted">(بلا مراجعة؛ محصور بالسعودية؛ يحتاج مفتاح SerpApi في خصائص السكربت: SERPAPI_KEY)</small></span></label>
+          ${field('كلمات البحث المفتاحية (عبارة في كل سطر، حتى 20)', `<textarea id="op-jq" rows="9">${esc(jq.join('\n'))}</textarea>`)}
+          <div class="small" id="op-jqn"></div>
+          <div class="small"><b>اقتراحات (انقر للإضافة):</b><div class="chips" id="op-sug" style="margin-top:6px">${JOB_SUGGEST.map(x => `<button type="button" class="chip" data-sg="${esc(x)}">+ ${esc(x)}</button>`).join('')}</div></div>
+        </div>
         <div class="row" style="gap:8px;margin-top:8px"><button class="btn" id="op-save"><i class="fa-solid fa-floppy-disk"></i> حفظ الإعدادات</button>${Automation.on ? '<button class="btn primary" id="op-run"><i class="fa-solid fa-rotate"></i> جلب الآن</button>' : '<small class="muted">الأتمتة غير مفعّلة</small>'}</div></div>
       <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-brands fa-google"></i> وظائف Google Jobs المنشورة تلقائياً (${jl.length}) ${jl.length ? '<button class="btn sm danger" id="op-jclr" style="margin-inline-start:10px"><i class="fa-solid fa-broom"></i> حذف الكل</button>' : ''}</h3>
         <p class="small muted">تُنشر مباشرة في قسم «وظائف مدربين من Google Jobs» داخل حسابات المدربين بلا مراجعة، وتُحذف تلقائياً بعد 21 يوماً. احذف ما لا يناسب.</p>
@@ -119,9 +122,12 @@ const Opps = (() => {
       const p = u ? await News.fetchPreview(u.slice(0, 500)) : null; b.disabled = false; b.innerHTML = h;
       editor({ url: u || '', title: (first || p?.title || '').slice(0, 200), desc: text || p?.desc || '', lt: p?.title || '', ld: p?.desc || '', img: p?.img || '', site: p?.site || '', kind: 'post' }, { onDone: () => { $('#op-text', main).value = ''; $('#op-url', main).value = ''; again(); } });
     };
+    const cnt = () => { const n = [...new Set($('#op-jq', main).value.split('\n').map(x => x.trim()).filter(Boolean))].length; $('#op-jqn', main).innerHTML = `<b>${n}</b> عبارة ≈ <b>${n * 30}</b> بحثاً شهرياً في SerpApi (الخطة المجانية نحو 100 بحث شهرياً، فتحتاج خطة مدفوعة إن زادت العبارات عن 3).${n > 20 ? ' <span style="color:var(--bad)">يُؤخذ أول 20 فقط.</span>' : ''}`; };
+    $('#op-jq', main).oninput = cnt; cnt();
+    $$('[data-sg]', main).forEach(b => b.onclick = () => { const t = $('#op-jq', main), cur = t.value.split('\n').map(x => x.trim()).filter(Boolean); if (!cur.includes(b.dataset.sg)) cur.push(b.dataset.sg); t.value = cur.join('\n'); cnt(); });
     $('#op-save', main).onclick = () => {
-      const lines = id => $(id, main).value.split('\n').map(x => x.trim()).filter(Boolean).slice(0, 12);
-      Store.update('settings/opps', { feeds: lines('#op-f').filter(u => /^https:\/\/www\.google\.[a-z.]+\/alerts\/feeds\//.test(u)).slice(0, 10), gnews: false, jobs: $('#op-jobs', main).checked, jobQueries: lines('#op-jq').slice(0, 4), etimadTerms: lines('#op-e').slice(0, 6), etimad: $('#op-eon', main).checked }); toast('تم حفظ الإعدادات');
+      const lines = id => [...new Set($(id, main).value.split('\n').map(x => x.trim()).filter(Boolean))];
+      Store.update('settings/opps', { jobs: $('#op-jobs', main).checked, jobQueries: lines('#op-jq').slice(0, 20), feeds: null, etimad: null, etimadTerms: null, gnews: null, queries: null }); Security.log('تعديل إعدادات وظائف Google Jobs'); toast('تم حفظ الإعدادات');
     };
     $('#op-run', main) && ($('#op-run', main).onclick = async e => { e.currentTarget.disabled = true; await Automation.notify('opps', 'now'); toast('طُلب الجلب، تظهر النتائج خلال دقيقة تقريباً'); });
     $('#op-clrlog', main) && ($('#op-clrlog', main).onclick = () => { Store.remove('settings/opps/lastRun/log'); toast('تم مسح الرسائل'); });
