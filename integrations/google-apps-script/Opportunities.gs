@@ -13,6 +13,7 @@ const OPP_DEFAULT_QUERIES = [
   '"مطلوب مدرب" السعودية', '"نبحث عن مدرب" دورة تدريبية', '"نبحث عن مدربين" السعودية', '"مطلوب مدربين" دورات',
   '"طلب عروض" تدريب السعودية', 'site:linkedin.com/posts "نبحث عن مدرب"', 'site:x.com "مطلوب مدرب"'
 ];
+const OPP_DEFAULT_JOBS = ['مدرب', 'مدرب سعودي', 'trainer Saudi Arabia', 'corporate trainer'];
 const OPP_DEFAULT_ETIMAD = ['تدريب', 'دورات تدريبية', 'برنامج تدريبي'];
 
 const oppId = url => 'o' + Utilities.computeDigest(Utilities.DigestAlgorithm.MD5, url).map(b => ('0' + (b & 255).toString(16)).slice(-2)).join('').slice(0, 18);
@@ -46,6 +47,14 @@ function collectOpps() {
       try { fetchFeed('https://news.google.com/rss/search?q=' + encodeURIComponent(q.replace(/^site:\S+\s*/, '')) + '+when:14d&hl=ar&gl=SA&ceid=SA:ar', 'news', q).forEach(x => found.push(x)); } catch (e) { log.push('أخبار Google «' + q.slice(0, 20) + '»: ' + String(e.message).slice(0, 100)); }
     });
   }
+  // وظائف Google Jobs عبر SerpApi (خدمة وسيطة مدفوعة/مجانية محدودة؛ Google Jobs لا يوفّر واجهة رسمية). خاصية السكربت: SERPAPI_KEY
+  if (set.jobs === true) {
+    const jk = PROPS.getProperty('SERPAPI_KEY');
+    if (!jk) log.push('وظائف Google: لم تُضبط SERPAPI_KEY في خصائص السكربت');
+    else (set.jobQueries && set.jobQueries.length ? set.jobQueries : OPP_DEFAULT_JOBS).slice(0, 4).forEach(q => {
+      try { parseJobs(fetchJobsRaw(q, jk), q).forEach(x => found.push(x)); } catch (e) { log.push('وظائف Google «' + String(q).slice(0, 20) + '»: ' + String(e.message).slice(0, 140)); }
+    });
+  }
   if (set.etimad === true) {   // معطّل افتراضياً: اعتماد يحجب خوادم Google (Address unavailable)
     (set.etimadTerms && set.etimadTerms.length ? set.etimadTerms : OPP_DEFAULT_ETIMAD).slice(0, 6).forEach(term => {
       try { fetchEtimad(term).forEach(x => found.push(x)); } catch (e) { log.push('اعتماد «' + term + '»: ' + e.message); }
@@ -58,6 +67,26 @@ function collectOpps() {
   });
   db('settings/opps/lastRun', 'put', { ts: Date.now(), added: added, found: found.length, log: log.slice(0, 8) });
   console.log('فرص التدريب: ' + found.length + ' نتيجة، ' + added + ' جديدة. ' + log.join(' | '));
+}
+
+// SerpApi: محرك google_jobs (بحث وظائف Google بحسب البلد والعبارة)
+function fetchJobsRaw(q, key) {
+  const url = 'https://serpapi.com/search.json?engine=google_jobs&q=' + encodeURIComponent(q) + '&location=' + encodeURIComponent('Saudi Arabia') + '&gl=sa&hl=ar&api_key=' + encodeURIComponent(key);
+  const r = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+  const j = JSON.parse(r.getContentText() || '{}');
+  if (r.getResponseCode() !== 200 && !j.jobs_results) throw new Error((j.error || ('HTTP ' + r.getResponseCode())));
+  return j;
+}
+// تحويل نتائج Google Jobs إلى عناصر الوارد (دالة نقيّة قابلة للاختبار)
+function parseJobs(j, q) {
+  return (j.jobs_results || []).map(x => {
+    const link = (x.apply_options && x.apply_options[0] && x.apply_options[0].link) || (x.related_links && x.related_links[0] && x.related_links[0].link) || '';
+    if (!/^https:\/\/[^\s"'<>)]+$/.test(link) || link.length > 500 || !x.title) return null;
+    const ext = x.detected_extensions || {}, meta = [x.location, ext.schedule_type, ext.posted_at].filter(Boolean).join(' · ');
+    const o = { title: String(x.title).slice(0, 200), url: link, desc: ((meta ? meta + '\n' : '') + String(x.description || '').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n')).trim().slice(0, 600), org: String(x.company_name || '').slice(0, 160), site: String(x.via || 'Google Jobs').replace(/^(via|عبر)\s+/i, '').slice(0, 80), kind: 'post', src: 'jobs', q: String(q || '').slice(0, 80) };
+    if (/^https:\/\//.test(x.thumbnail || '')) o.img = String(x.thumbnail).slice(0, 500);
+    return o;
+  }).filter(Boolean);
 }
 
 // قراءة خلاصة Atom (تنبيهات Google) أو RSS (أخبار Google)
