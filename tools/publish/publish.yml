@@ -1,0 +1,67 @@
+# ينسخ هذا الملف إلى المستودع الخاص باسم  .github/workflows/publish.yml  (ويُحذف منه share-pages.yml لأن هذا يحل محله).
+# يبني صفحات المدربين وصورهم كما كان share-pages.yml يفعل، ثم ينشر إلى المستودع العام الملفات التي يخدمها الموقع فقط (tools/publish/public-paths.txt).
+name: نشر الموقع
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+concurrency:
+  group: publish
+  cancel-in-progress: false
+env:
+  PUBLIC_REPO: hussain-al-hajji/sauditrainers   # المستودع العام الذي يخدم GitHub Pages
+  PUBLIC_BRANCH: main                           # الفرع الذي يخدمه Pages (تحقق: Settings ← Pages ← Branch)
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+
+      - name: هل تغيّر شيء في صفحات المدربين؟ (دون تثبيت أي حزمة)
+        id: chk
+        run: node tools/og/build.js --check
+      - name: تثبيت المتصفح
+        if: steps.chk.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        run: |
+          npm install --no-save playwright@1.49
+          npx playwright install --with-deps chromium
+      - name: توليد الصور والصفحات
+        if: steps.chk.outputs.changed == 'true' || github.event_name == 'workflow_dispatch'
+        run: node tools/og/build.js
+      - name: حفظ المولَّد في المستودع الخاص
+        run: |
+          git config user.name "sauditrainers-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add t og sitemap.xml robots.txt index.html
+          if ! git diff --cached --quiet; then
+            git commit -m "تحديث صفحات مشاركة المدربين [skip ci]"
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: سحب المستودع العام
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.PUBLIC_REPO }}
+          ref: ${{ env.PUBLIC_BRANCH }}
+          ssh-key: ${{ secrets.PUBLIC_DEPLOY_KEY }}
+          path: public
+      - name: مزامنة الملفات المنشورة فقط
+        run: bash tools/publish/sync.sh . public
+      - name: نشر إلى المستودع العام
+        working-directory: public
+        run: |
+          git config user.name "sauditrainers-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "نشر الموقع (${GITHUB_SHA::7})"
+            git push origin "HEAD:${PUBLIC_BRANCH}"
+          else
+            echo "لا تغيير للنشر"
+          fi
