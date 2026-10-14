@@ -1,7 +1,7 @@
 /* لوحة الإدارة ← المراسلة: كتابة رسائل منسّقة (كتل) وإرسالها من بريد المنصة للمدربين المسجلين وللمدعوّين (غير المسجلين).
  * الرسالة والمستلمون يُكتبون في campaigns/{id} ثم يعالجها سكربت Campaign.gs ويحدّث التقدّم في السجل نفسه. */
 
-const MailUI = { tab: 'compose', who: 'trainers', q: '', sel: new Set(), doc: null, view: 'desk' };
+const MailUI = { tab: 'compose', who: 'invitees', mode: 'pick', q: '', sel: new Set(), doc: null, view: 'desk' };
 const MAIL_DRAFT = 'st-mail-draft';
 const MAIL_BLOCKS = { h: ['fa-heading', 'عنوان'], p: ['fa-align-right', 'نص'], img: ['fa-image', 'صورة'], imgtext: ['fa-table-columns', 'صورة مع نص'], btn: ['fa-hand-pointer', 'زر رابط'], box: ['fa-note-sticky', 'إطار مميز'], hr: ['fa-minus', 'فاصل'] };
 const MAIL_OPTS = {
@@ -42,6 +42,12 @@ const mailOpts = () => ({ site: siteBase(), assets: siteBase() });
 function mailTrainers() {
   return Store.list('trainers').map(t => ({ k: 't:' + t.id, type: 't', id: t.id, name: t.name || '', email: String(Store.get(`private/${t.id}`)?.email || '').trim(), slug: t.slug || t.id, meta: regionsLabel(t) })).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
 }
+// «غير المسجلين»: المتقدمون الذين لم يكتمل قبولهم النهائي (طلب جديد / قيد المراجعة / مقابلة / قبول مبدئي بانتظار السداد)، دون المرفوضين ودون من صار مدرباً مسجلاً
+function mailApplicants() {
+  const have = new Set(mailTrainers().map(t => t.email.toLowerCase()).filter(Boolean)), seen = new Set();
+  return Store.list('applications').filter(a => ['new', 'review', 'interview', 'accepted'].includes(a.status)).sort((x, y) => (y.ts || 0) - (x.ts || 0)).map(a => ({ k: 'a:' + a.id, type: 'a', id: a.id, name: a.name || '', email: String(a.email || '').trim(), meta: APP_STATUS[a.status]?.name || '' }))
+    .filter(r => { const e = r.email.toLowerCase(); if (!e || have.has(e) || seen.has(e)) return false; seen.add(e); return true; });
+}
 function mailInvitees() {
   return Store.list('invitees').map(i => ({ k: 'i:' + i.id, type: 'i', id: i.id, name: i.name || '', email: i.email || '', optOut: !!i.optOut, last: i.lastMailAt, meta: i.optOut ? 'أوقف الاستلام' : (i.lastMailAt ? 'آخر رسالة ' + ago(i.lastMailAt) : 'لم تُرسل له رسالة') })).sort((a, b) => (b.id > a.id ? 1 : -1));
 }
@@ -68,7 +74,7 @@ function aMail(main) {
     <div class="mail-tabs">
       <button data-mt="compose" class="${tab === 'compose' ? 'on' : ''}"><i class="fa-solid fa-pen-nib"></i>كتابة الرسالة</button>
       <button data-mt="weekly" class="${tab === 'weekly' ? 'on' : ''}"><i class="fa-solid fa-calendar-week"></i>الرسالة الأسبوعية</button>
-      <button data-mt="rcpt" class="${tab === 'rcpt' ? 'on' : ''}"><i class="fa-solid fa-users"></i>المستلمون <span class="badge num">${MailUI.sel.size}</span></button>
+      <button data-mt="rcpt" class="${tab === 'rcpt' ? 'on' : ''}"><i class="fa-solid fa-envelope-circle-check"></i>إدارة المدعوّين <span class="badge num">${counts.i}</span></button>
       <button data-mt="hist" class="${tab === 'hist' ? 'on' : ''}"><i class="fa-solid fa-clock-rotate-left"></i>السجل</button>
     </div>
     <div id="mbody"></div>`;
@@ -100,6 +106,7 @@ function mailCompose(body, main) {
         <span><button class="btn sm ${MailUI.view === 'desk' ? 'primary' : ''}" data-view="desk"><i class="fa-solid fa-desktop"></i></button><button class="btn sm ${MailUI.view === 'mob' ? 'primary' : ''}" data-view="mob"><i class="fa-solid fa-mobile-screen"></i></button></span></div>
         <iframe id="mframe" class="mail-frame ${MailUI.view}" title="معاينة الرسالة"></iframe></div>
     </div>
+    <div class="pbox mail-step" id="mrcpt"></div>
     <div class="mail-send"><div class="grow"><b id="msum"></b><br><small class="muted">يُرسل من بريد المنصة، ويصل الرد على بريد الإدارة.</small></div>
       <button class="btn" id="mtest"><i class="fa-solid fa-vial"></i> تجربة إلى بريدي</button>
       <button class="btn" id="mcopy"><i class="fa-solid fa-code"></i> نسخ HTML</button>
@@ -181,17 +188,54 @@ function mailCompose(body, main) {
   $('#mtest', body).onclick = () => mailSend(true, main);
   $('#msend', body).onclick = () => mailSend(false, main);
   renderSummary(); renderBlocks();
+  mailRcptStep($('#mrcpt', body), renderSummary);
 }
 
-/* ----- المستلمون ----- */
+/* ----- خطوة «المستلمون» داخل صفحة كتابة الرسالة ----- */
+function mailRcptPools() {
+  const tr = mailTrainers(), ap = mailApplicants(), iv = mailInvitees().filter(r => !r.optOut);
+  return { pick: tr, trainers: tr, apps: ap, both: [...tr, ...ap], invitees: iv };
+}
+function mailRcptStep(host, onSel) {
+  const P = mailRcptPools(), ok = r => r.email && !r.optOut, cnt = k => P[k].filter(ok).length;
+  const MODES = [['pick', 'fa-hand-pointer', 'اختيار مدربين بعينهم', () => cnt('pick')], ['trainers', 'fa-id-card', 'كل المدربين المسجلين', () => cnt('trainers')],
+    ['apps', 'fa-user-clock', 'غير المسجلين', () => cnt('apps')], ['both', 'fa-users', 'المسجلون وغير المسجلين', () => cnt('both')], ['invitees', 'fa-envelope-circle-check', 'المدعوّون', () => cnt('invitees')]];
+  const mode = MailUI.mode in P ? MailUI.mode : 'pick', pool = P[mode], q = normAr(MailUI.q);
+  const list = pool.filter(r => !q || normAr(`${r.name} ${r.email}`).includes(q)), selectable = list.filter(ok);
+  const chosen = pool.filter(r => MailUI.sel.has(r.k)).length;
+  const grp = r => (r.type === 't' ? 'المدربون المسجلون' : r.type === 'a' ? 'غير المسجلين (لم يكتمل قبولهم النهائي)' : 'المدعوّون');
+  let last = '';
+  host.innerHTML = `<h3><i class="fa-solid fa-users"></i> الخطوة الأخيرة: المستلمون</h3>
+    <p class="muted small">اختر من تُرسل إليه الرسالة: مدربين بعينهم، أو مجموعة كاملة بنقرة واحدة. «غير المسجلين» هم من لم يكتمل قبولهم النهائي بعد (طلب جديد، قيد المراجعة، مقابلة، قبول مبدئي).</p>
+    <div class="mail-who">${MODES.map(([k, ic, l, n]) => `<button type="button" data-md="${k}" class="${mode === k ? 'on' : ''}"><i class="fa-solid ${ic}"></i>${l} <span class="num">${n()}</span></button>`).join('')}</div>
+    <div class="toolbar"><input type="search" id="rq" placeholder="بحث بالاسم أو البريد" value="${esc(MailUI.q)}">
+      <button type="button" class="btn sm" id="rall"><i class="fa-solid fa-check-double"></i> تحديد الكل (${selectable.length})</button>
+      <button type="button" class="btn sm ghost" id="rnone"><i class="fa-regular fa-square"></i> إلغاء التحديد</button>
+      <b class="small" id="rcnt">تم تحديد <span class="num">${MailUI.sel.size}</span> مستلم${mode === 'pick' ? '' : ` (من ${cnt(mode)} في هذه المجموعة)`}</b></div>
+    <div class="mail-list" style="max-height:340px;overflow:auto">${list.length ? list.map(r => { const h = mode === 'both' && grp(r) !== last ? `<div class="small muted" style="padding:8px 4px 2px"><b>${grp(r)}</b></div>` : ''; last = grp(r); return h + `<label class="mail-row ${ok(r) ? '' : 'off'}"><input type="checkbox" data-k="${esc(r.k)}" ${MailUI.sel.has(r.k) ? 'checked' : ''} ${ok(r) ? '' : 'disabled'}>
+      <span class="grow"><b>${esc(r.name || '—')}</b><small dir="ltr">${r.email ? esc(r.email) : 'لا بريد'}</small></span><small class="muted">${esc(r.meta || '')}</small></label>`; }).join('') : '<p class="muted small" style="padding:10px">لا يوجد مستلمون في هذه المجموعة.</p>'}</div>`;
+  void chosen;
+  const refresh = () => { const c = $('#rcnt .num', host); c && (c.textContent = MailUI.sel.size); onSel && onSel(); };
+  $$('[data-md]', host).forEach(b => b.onclick = () => {
+    const m = b.dataset.md, pl = P[m]; MailUI.mode = m; MailUI.q = '';
+    if (m === 'pick') { const keep = new Set(pl.map(r => r.k)); MailUI.sel = new Set([...MailUI.sel].filter(k => keep.has(k))); }
+    else MailUI.sel = new Set(pl.filter(ok).map(r => r.k));   // نقرة واحدة تحدد المجموعة كلها
+    mailRcptStep(host, onSel); onSel && onSel();
+  });
+  $('#rq', host).oninput = debounce(e => { MailUI.q = e.target.value; mailRcptStep(host, onSel); $('#rq', host).focus(); }, 200);
+  $$('[data-k]', host).forEach(c => c.onchange = () => { c.checked ? MailUI.sel.add(c.dataset.k) : MailUI.sel.delete(c.dataset.k); refresh(); });
+  $('#rall', host).onclick = () => { selectable.forEach(r => MailUI.sel.add(r.k)); mailRcptStep(host, onSel); onSel && onSel(); };
+  $('#rnone', host).onclick = () => { list.forEach(r => MailUI.sel.delete(r.k)); mailRcptStep(host, onSel); onSel && onSel(); };
+}
+
+/* ----- المدعوّون (إدارة القائمة) ----- */
 function mailRecipients(body, main) {
-  const who = MailUI.who, all = who === 'trainers' ? mailTrainers() : mailInvitees();
+  const who = 'invitees', all = mailInvitees();
   const q = normAr(MailUI.q), list = all.filter(r => !q || normAr(`${r.name} ${r.email}`).includes(q));
   const ok = r => r.email && !r.optOut;
   const selectable = list.filter(ok);
   body.innerHTML = `
-    <div class="mail-who"><button data-w="trainers" class="${who === 'trainers' ? 'on' : ''}"><i class="fa-solid fa-id-card"></i>المدربون المسجلون <span class="num">${mailTrainers().filter(r => r.email).length}</span></button>
-      <button data-w="invitees" class="${who === 'invitees' ? 'on' : ''}"><i class="fa-solid fa-envelope-circle-check"></i>غير المسجلين (مدعوّون) <span class="num">${mailInvitees().filter(r => !r.optOut).length}</span></button></div>
+    <p class="muted small">هنا تضيف وتدير قائمة المدعوّين (بريدات مستوردة لغير المسجلين). اختيار المستلمين يتم في خطوة «المستلمون» أسفل صفحة كتابة الرسالة.</p>
     ${who === 'invitees' ? `<div class="pbox"><h3><i class="fa-solid fa-user-plus"></i>إضافة بريدات مدعوّين</h3>
       <p class="muted small">الصق البريدات (واحد في كل سطر، أو بصيغة «الاسم، البريد»)، أو ارفع ملف CSV/نص. لا يُضاف بريد مسجَّل لدينا مسبقاً ولا المكرر.</p>
       <textarea id="inv" rows="5" dir="ltr" placeholder="name@example.com&#10;سارة العتيبي, sara@example.com"></textarea>
@@ -203,9 +247,8 @@ function mailRecipients(body, main) {
     <div class="mail-list">${list.map(r => `<label class="mail-row ${ok(r) ? '' : 'off'}"><input type="checkbox" data-k="${esc(r.k)}" ${MailUI.sel.has(r.k) ? 'checked' : ''} ${ok(r) ? '' : 'disabled'}>
       <span class="grow"><b>${esc(r.name || '—')}</b><small dir="ltr">${r.email ? esc(r.email) : 'لا بريد'}</small></span><small class="muted">${esc(r.meta || '')}</small>
       ${who === 'invitees' ? `<button type="button" class="btn sm ghost" data-opt="${esc(r.id)}" title="${r.optOut ? 'إعادة التفعيل' : 'إيقاف الاستلام (طلب إلغاء)'}"><i class="fa-solid ${r.optOut ? 'fa-rotate-left' : 'fa-ban'}"></i></button>` : ''}</label>`).join('') || '<p class="muted center" style="padding:24px">لا نتائج</p>'}</div>`;
-  $$('[data-w]', body).forEach(b => b.onclick = () => { MailUI.who = b.dataset.w; MailUI.q = ''; aMail(main); });
   $('#rq', body).oninput = debounce(e => { MailUI.q = e.target.value; mailRecipients(body, main); $('#rq', body).focus(); }, 200);
-  const upd = () => { const b = $$('.mail-tabs .badge', main)[0]; b && (b.textContent = MailUI.sel.size); };
+  const upd = () => {};
   $$('[data-k]', body).forEach(c => c.onchange = () => { c.checked ? MailUI.sel.add(c.dataset.k) : MailUI.sel.delete(c.dataset.k); upd(); });
   $('#rall', body).onclick = () => { selectable.forEach(r => MailUI.sel.add(r.k)); mailRecipients(body, main); upd(); };
   $('#rnone', body).onclick = () => { MailUI.sel.clear(); mailRecipients(body, main); upd(); };
@@ -281,10 +324,10 @@ async function mailSend(test, main) {
     if (!mailEmailRe.test(to)) { toast('تعذّر تحديد بريدك: سجّل الدخول ببريد المشرف', 'error'); return; }
     recips = [{ type: 'x', id: 'test', name: 'تجربة', email: to }];
   } else {
-    const byKey = new Map([...mailTrainers(), ...mailInvitees()].map(r => [r.k, r]));
+    const byKey = new Map([...mailTrainers(), ...mailApplicants(), ...mailInvitees()].map(r => [r.k, r]));
     const seen = new Set();
     recips = [...MailUI.sel].map(k => byKey.get(k)).filter(r => r && r.email && !r.optOut && !seen.has(r.email.toLowerCase()) && seen.add(r.email.toLowerCase()));
-    if (!recips.length) { toast('حدّد المستلمين من تبويب «المستلمون»', 'error'); return; }
+    if (!recips.length) { toast('حدّد المستلمين في خطوة «المستلمون» أسفل الرسالة', 'error'); return; }
     if (recips.length > 400) { toast('الحد الأقصى 400 مستلم في الحملة الواحدة', 'error'); return; }
     if (!await confirmBox(`سيُرسل «${esc(D.subject)}» إلى <b>${recips.length}</b> مستلم من بريد المنصة. لا يمكن التراجع بعد الإرسال.`, { ok: 'إرسال الآن' })) return;
   }
