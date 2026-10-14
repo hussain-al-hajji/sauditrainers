@@ -67,13 +67,14 @@ function aMail(main) {
     ${mailBanner()}
     <div class="mail-tabs">
       <button data-mt="compose" class="${tab === 'compose' ? 'on' : ''}"><i class="fa-solid fa-pen-nib"></i>كتابة الرسالة</button>
+      <button data-mt="weekly" class="${tab === 'weekly' ? 'on' : ''}"><i class="fa-solid fa-calendar-week"></i>الرسالة الأسبوعية</button>
       <button data-mt="rcpt" class="${tab === 'rcpt' ? 'on' : ''}"><i class="fa-solid fa-users"></i>المستلمون <span class="badge num">${MailUI.sel.size}</span></button>
       <button data-mt="hist" class="${tab === 'hist' ? 'on' : ''}"><i class="fa-solid fa-clock-rotate-left"></i>السجل</button>
     </div>
     <div id="mbody"></div>`;
   $$('[data-mt]', main).forEach(b => b.onclick = () => { MailUI.tab = b.dataset.mt; aMail(main); });
   const body = $('#mbody', main);
-  ({ compose: mailCompose, rcpt: mailRecipients, hist: mailHistory })[tab](body, main, counts);
+  ({ compose: mailCompose, weekly: mailWeekly, rcpt: mailRecipients, hist: mailHistory })[tab](body, main, counts);
 }
 function mailBanner() {
   if (!Automation.on) return `<div class="banner warn"><i class="fa-solid fa-plug-circle-xmark"></i><span>الإرسال يحتاج ربط بريد المنصة (رابط السكربت <code>automationUrl</code> في <code>js/config.js</code> وإضافة ملف <code>Campaign.gs</code> للسكربت). يمكنك الكتابة والمعاينة الآن.</span></div>`;
