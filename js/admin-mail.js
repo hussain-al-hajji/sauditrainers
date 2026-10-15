@@ -74,13 +74,14 @@ function aMail(main) {
     <div class="mail-tabs">
       <button data-mt="compose" class="${tab === 'compose' ? 'on' : ''}"><i class="fa-solid fa-pen-nib"></i>كتابة الرسالة</button>
       <button data-mt="weekly" class="${tab === 'weekly' ? 'on' : ''}"><i class="fa-solid fa-calendar-week"></i>الرسالة الأسبوعية</button>
+      <button data-mt="weekly2" class="${tab === 'weekly2' ? 'on' : ''}"><i class="fa-solid fa-user-clock"></i>الرسالة الأسبوعية لغير المسجلين</button>
       <button data-mt="rcpt" class="${tab === 'rcpt' ? 'on' : ''}"><i class="fa-solid fa-envelope-circle-check"></i>إدارة المدعوّين <span class="badge num">${counts.i}</span></button>
       <button data-mt="hist" class="${tab === 'hist' ? 'on' : ''}"><i class="fa-solid fa-clock-rotate-left"></i>السجل</button>
     </div>
     <div id="mbody"></div>`;
   $$('[data-mt]', main).forEach(b => b.onclick = () => { MailUI.tab = b.dataset.mt; aMail(main); });
   const body = $('#mbody', main);
-  ({ compose: mailCompose, weekly: mailWeekly, rcpt: mailRecipients, hist: mailHistory })[tab](body, main, counts);
+  ({ compose: mailCompose, weekly: mailWeekly, weekly2: mailWeeklyUnreg, rcpt: mailRecipients, hist: mailHistory })[tab](body, main, counts);
 }
 function mailBanner() {
   if (!Automation.on) return `<div class="banner warn"><i class="fa-solid fa-plug-circle-xmark"></i><span>الإرسال يحتاج ربط بريد المنصة (رابط السكربت <code>automationUrl</code> في <code>js/config.js</code> وإضافة ملف <code>Campaign.gs</code> للسكربت). يمكنك الكتابة والمعاينة الآن.</span></div>`;
@@ -194,12 +195,12 @@ function mailCompose(body, main) {
 /* ----- خطوة «المستلمون» داخل صفحة كتابة الرسالة ----- */
 function mailRcptPools() {
   const tr = mailTrainers(), ap = mailApplicants(), iv = mailInvitees().filter(r => !r.optOut);
-  return { pick: tr, trainers: tr, apps: ap, both: [...tr, ...ap], invitees: iv };
+  return { pick: tr, trainers: tr, apps: ap, both: [...tr, ...ap], invitees: iv, unreg: [...ap, ...iv] };
 }
 function mailRcptStep(host, onSel) {
   const P = mailRcptPools(), ok = r => r.email && !r.optOut, cnt = k => P[k].filter(ok).length;
   const MODES = [['pick', 'fa-hand-pointer', 'اختيار مدربين بعينهم', () => cnt('pick')], ['trainers', 'fa-id-card', 'كل المدربين المسجلين', () => cnt('trainers')],
-    ['apps', 'fa-user-clock', 'غير المسجلين', () => cnt('apps')], ['both', 'fa-users', 'المسجلون وغير المسجلين', () => cnt('both')], ['invitees', 'fa-envelope-circle-check', 'المدعوّون', () => cnt('invitees')]];
+    ['apps', 'fa-user-clock', 'غير المسجلين', () => cnt('apps')], ['both', 'fa-users', 'المسجلون وغير المسجلين', () => cnt('both')], ['invitees', 'fa-envelope-circle-check', 'المدعوّون', () => cnt('invitees')], ['unreg', 'fa-user-clock', 'غير المسجلين والمدعوّون', () => cnt('unreg')]];
   const mode = MailUI.mode in P ? MailUI.mode : 'pick', pool = P[mode], q = normAr(MailUI.q);
   const list = pool.filter(r => !q || normAr(`${r.name} ${r.email}`).includes(q)), selectable = list.filter(ok);
   const chosen = pool.filter(r => MailUI.sel.has(r.k)).length;
@@ -212,7 +213,7 @@ function mailRcptStep(host, onSel) {
       <button type="button" class="btn sm" id="rall"><i class="fa-solid fa-check-double"></i> تحديد الكل (${selectable.length})</button>
       <button type="button" class="btn sm ghost" id="rnone"><i class="fa-regular fa-square"></i> إلغاء التحديد</button>
       <b class="small" id="rcnt">تم تحديد <span class="num">${MailUI.sel.size}</span> مستلم${mode === 'pick' ? '' : ` (من ${cnt(mode)} في هذه المجموعة)`}</b></div>
-    <div class="mail-list" style="max-height:340px;overflow:auto">${list.length ? list.map(r => { const h = mode === 'both' && grp(r) !== last ? `<div class="small muted" style="padding:8px 4px 2px"><b>${grp(r)}</b></div>` : ''; last = grp(r); return h + `<label class="mail-row ${ok(r) ? '' : 'off'}"><input type="checkbox" data-k="${esc(r.k)}" ${MailUI.sel.has(r.k) ? 'checked' : ''} ${ok(r) ? '' : 'disabled'}>
+    <div class="mail-list" style="max-height:340px;overflow:auto">${list.length ? list.map(r => { const h = (mode === 'both' || mode === 'unreg') && grp(r) !== last ? `<div class="small muted" style="padding:8px 4px 2px"><b>${grp(r)}</b></div>` : ''; last = grp(r); return h + `<label class="mail-row ${ok(r) ? '' : 'off'}"><input type="checkbox" data-k="${esc(r.k)}" ${MailUI.sel.has(r.k) ? 'checked' : ''} ${ok(r) ? '' : 'disabled'}>
       <span class="grow"><b>${esc(r.name || '—')}</b><small dir="ltr">${r.email ? esc(r.email) : 'لا بريد'}</small></span><small class="muted">${esc(r.meta || '')}</small></label>`; }).join('') : '<p class="muted small" style="padding:10px">لا يوجد مستلمون في هذه المجموعة.</p>'}</div>`;
   void chosen;
   const refresh = () => { const c = $('#rcnt .num', host); c && (c.textContent = MailUI.sel.size); onSel && onSel(); };
