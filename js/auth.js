@@ -13,6 +13,7 @@ const Auth = {
   current() { if (window.ST_CONFIG.previewMode) return window.__auth || null; try { return JSON.parse(sessionStorage.getItem(this.KEY) || 'null') || window.__auth || null; } catch { return window.__auth || null; } },
   set(v) { window.__auth = v; if (window.ST_CONFIG.previewMode) return; try { v ? sessionStorage.setItem(this.KEY, JSON.stringify(v)) : sessionStorage.removeItem(this.KEY); } catch { /* ignore */ } },
   async logout() {
+    try { if (window.Push && Auth.current()?.kind === 'trainer') await Push.disable(); } catch { /* ignore */ }
     this.set(null);
     if (Store.auth) await Store.auth.signOut().catch(() => {});
     await Security.applyScope(null);
@@ -60,15 +61,17 @@ const Security = (() => {
   }
 
   /* ===== بقاء المشرف مسجلاً مع حد لعدم النشاط ===== */
-  const ACTIVE_KEY = 'st-admin-active';
-  const idleMs = () => (Number(CFG.adminIdleHours) || 72) * 3600e3;
-  const touch = () => { try { localStorage.setItem(ACTIVE_KEY, String(Date.now())); } catch { /* ignore */ } };
-  const lastActive = () => { try { return Number(localStorage.getItem(ACTIVE_KEY) || 0); } catch { return 0; } };
-  const idleExpired = () => { const t = lastActive(); return !t || Date.now() - t > idleMs(); };
+  // المشرف والمدرب كلاهما يبقى مسجلاً على جهازه (ولو أُغلق المتصفح) حتى يخرج بنفسه أو تمرّ المدة دون أي نشاط (72 ساعة افتراضياً)
+  const ACTIVE_KEY = 'st-admin-active', T_ACTIVE_KEY = 'st-trainer-active';
+  const idleMs = kind => (Number(kind === 'trainer' ? CFG.trainerIdleHours : CFG.adminIdleHours) || 72) * 3600e3;
+  const keyOf = kind => (kind === 'trainer' ? T_ACTIVE_KEY : ACTIVE_KEY);
+  const touch = (kind = 'admin') => { try { localStorage.setItem(keyOf(kind), String(Date.now())); } catch { /* ignore */ } };
+  const lastActive = (kind = 'admin') => { try { return Number(localStorage.getItem(keyOf(kind)) || 0); } catch { return 0; } };
+  const idleExpired = (kind = 'admin') => { const t = lastActive(kind); return !t || Date.now() - t > idleMs(kind); };
   let lastTouch = 0;
   ['click', 'keydown', 'scroll', 'touchstart'].forEach(ev => window.addEventListener(ev, () => {
-    if (Auth.current()?.kind !== 'admin' || Date.now() - lastTouch < 60000) return;
-    lastTouch = Date.now(); touch();
+    const k = Auth.current()?.kind; if (!k || Date.now() - lastTouch < 60000) return;
+    lastTouch = Date.now(); touch(k);
   }, { passive: true }));
 
   /* ===== نطاق القراءة حسب الدور ===== */
@@ -101,6 +104,10 @@ const Security = (() => {
     if (session?.kind === 'admin') {
       if (lastActive() && idleExpired()) { session = null; setTimeout(() => toast('انتهت جلسة الإدارة لعدم النشاط، سجّل الدخول من جديد'), 800); }
       else touch();
+    } else if (session?.kind === 'trainer') {
+      // أول فتح بعد هذا التحديث بلا سجل نشاط: نعدّه نشطاً الآن
+      if (lastActive('trainer') && idleExpired('trainer')) { session = null; setTimeout(() => toast('انتهت جلستك لعدم الدخول أكثر من 3 أيام، أدخل رمزك من جديد'), 800); }
+      else touch('trainer');
     }
     if (user && !session) {
       // حساب Google مدعو لم يُفعَّل بعد
@@ -124,7 +131,7 @@ const Security = (() => {
       catch (e) { throw new Error(authMsg(e)); }
       const s = await roleFor(Store.auth.currentUser);
       if (!s || s.kind !== 'trainer') { await Store.auth.signOut(); throw new Error('الرمز غير صحيح'); }
-      Auth.set(s); await applyScope(s); track('login', 'تسجيل دخول');
+      Auth.set(s); touch('trainer'); await applyScope(s); track('login', 'تسجيل دخول');
       return s;
     }
     const codes = Store.get('secrets/codes') || {};

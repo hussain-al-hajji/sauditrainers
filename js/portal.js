@@ -22,6 +22,7 @@ Pages.me = {
         ${tabs.map(([k, i, l, b]) => `<button data-tab="${k}" class="${this.tab === k ? 'on' : ''}"><i class="fa-solid ${i}"></i>${l}${b ? `<span class="badge num">${b}</span>` : ''}</button>`).join('')}
         <hr style="border:0;border-top:1px solid rgba(255,255,255,.08)">
         <button data-go="#/t/${esc(encodeURIComponent(t.slug || t.id))}"><i class="fa-solid fa-arrow-up-right-from-square"></i>صفحتي العامة</button>
+        ${Push.available() ? `<button data-push><i class="fa-solid ${Push.state() === 'on' ? 'fa-bell' : 'fa-bell-slash'}"></i>${Push.state() === 'on' ? 'إشعارات الجوال: مفعّلة' : 'تفعيل إشعارات الجوال'}</button>` : ''}
         <button data-out><i class="fa-solid fa-right-from-bracket"></i>خروج</button>
       </aside>
       <main id="pt"></main>
@@ -32,6 +33,11 @@ Pages.me = {
     $$('[data-tab]', root).forEach(b => b.onclick = () => { this.tab = b.dataset.tab; App.render(); });
     $$('[data-go]', root).forEach(b => b.onclick = () => { location.hash = b.dataset.go; });
     $('[data-out]', root) && ($('[data-out]', root).onclick = () => Auth.logout());
+    $('[data-push]', root) && ($('[data-push]', root).onclick = async () => {
+      if (Push.state() === 'on') { if (await confirmBox('إيقاف إشعارات الجوال على هذا الجهاز؟', { ok: 'إيقاف' })) { await Push.disable(); toast('أُوقفت الإشعارات على هذا الجهاز'); App.render(); } return; }
+      if (await Push.enable()) App.render();
+    });
+    Push.sync();
     const t = Store.get(`trainers/${s.id}`);
     if (!t) return;
     const main = $('#pt', root);

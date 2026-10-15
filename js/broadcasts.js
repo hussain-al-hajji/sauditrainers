@@ -81,7 +81,7 @@ const Broadcast = (() => {
       e.preventDefault(); const f = e.target, inc = true;
       const rec = { ts: Date.now(), requestId: r.id, org: r.org || '', topic: r.topic || '', when: r.when || '', msg: r.msg || '', note: f.note.value.trim(), spec: r.spec || '', region: r.region || '', size: Number(r.size) || 0, contact: inc };
       if (inc) { rec.person = r.person || ''; rec.phone = r.phone || ''; rec.email = r.email || ''; }
-      Store.push('broadcasts', rec); Security.log('إعادة توجيه طلب للمدربين', r.org || r.topic);
+      const bid = Store.push('broadcasts', rec); Security.log('إعادة توجيه طلب للمدربين', r.org || r.topic); Automation.notify('push', `b:${bid}`);
       toast('أُعيد توجيه الطلب لكل المدربين'); m.close();
     };
   }

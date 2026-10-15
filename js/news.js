@@ -244,7 +244,7 @@ const News = (() => {
       e.preventDefault(); const f = e.target, link = f.link.value.trim();
       if (link && !/^https:\/\//i.test(link)) return toast('الرابط يجب أن يبدأ بـ https://', 'err');
       const rec = { ts: Date.now(), title: f.title.value.trim(), body: f.body.value.trim() }; if (link) { rec.link = link; rec.linkLabel = f.linkLabel.value.trim(); }
-      Store.push('announcements', rec); Security.log('إعلان للمدربين', rec.title); toast('أُرسل الإعلان'); f.reset();
+      const aid = Store.push('announcements', rec); Security.log('إعلان للمدربين', rec.title); Automation.notify('push', `a:${aid}`); toast('أُرسل الإعلان'); f.reset();
     };
     const rerender = () => admin(main);
     $('#bf-from', main).onchange = e => { bf.from = e.target.value; rerender(); };
