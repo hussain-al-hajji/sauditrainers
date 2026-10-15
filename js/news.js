@@ -93,7 +93,7 @@ const News = (() => {
   };
 
   /* ---------- تبويب «أخباري» في حساب المدرب ---------- */
-  const editor = (t, n) => {
+  const editor = (t, n, done) => {
     const links = arr(n?.links).map(l => ({ ...l }));
     const m = modal(`<h3><i class="fa-solid fa-newspaper"></i> ${n ? 'تعديل الخبر' : 'خبر جديد'}</h3>
       <form id="nf" style="display:grid;gap:10px">
@@ -126,7 +126,7 @@ const News = (() => {
       if (links.length) rec.links = links.map(l => ({ url: l.url, title: l.title || '', desc: l.desc || '', img: l.img || '', site: l.site || '' }));
       try {
         if (n) await Store.set(`news/${n.id}`, rec); else Store.push('news', rec);
-        toast(n ? 'تم حفظ الخبر' : 'نُشر الخبر في الصفحة الرئيسية وصفحة الأخبار'); m.close();
+        toast(n ? 'تم حفظ الخبر' : 'نُشر الخبر في الصفحة الرئيسية وصفحة الأخبار'); m.close(); done && done();
       } catch { /* Store يعرض سبب الرفض */ }
     };
   };
@@ -230,7 +230,7 @@ const News = (() => {
           <button type="button" class="btn sm ghost" data-rng="7">آخر 7 أيام</button><button type="button" class="btn sm ghost" data-rng="30">آخر 30 يوماً</button><button type="button" class="btn sm ghost" data-rng="all">الكل</button></div>
         <div class="bl-bar"><b>${sel.length}</b> من <b>${inRange.length}</b> خبراً محدداً للنشرة
           <label class="chk" style="margin:0"><input type="checkbox" id="bf-all" ${inRange.length && !sel.length ? '' : (sel.length === inRange.length ? 'checked' : '')}><span>تحديد الكل</span></label></div>
-        ${inRange.length ? inRange.map(n => { const t = Store.get(`trainers/${n.trainerId}`) || {}; return `<div class="lead"><label class="bl-ck"><input type="checkbox" data-sel="${esc(n.id)}" ${bf.off.has(n.id) ? '' : 'checked'}></label><div><b>${esc(n.title)}</b> <small class="muted">${esc(t.name || n.trainerId)} · ${dateOf(n.ts)} · ${kind(n.kind)[1]}</small><p class="small">${esc(String(n.body || '').slice(0, 140))}</p>${bf.cuts[n.id] ? '<small class="muted"><i class="fa-solid fa-scissors"></i> قطع مخصص في النشرة</small>' : ''}</div><div class="acts"><a class="btn sm" href="#/news/${esc(n.id)}" target="_blank"><i class="fa-solid fa-eye"></i></a><button class="btn sm${bf.cuts[n.id] ? ' primary' : ''}" data-cut="${esc(n.id)}" title="تحديد موضع قطع النص في النشرة"><i class="fa-solid fa-scissors"></i></button><button class="btn sm danger" data-dn="${esc(n.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`; }).join('') : '<p class="muted small">لا توجد أخبار في هذه الفترة.</p>'}</div>
+        ${inRange.length ? inRange.map(n => { const t = Store.get(`trainers/${n.trainerId}`) || {}; return `<div class="lead"><label class="bl-ck"><input type="checkbox" data-sel="${esc(n.id)}" ${bf.off.has(n.id) ? '' : 'checked'}></label><div><b>${esc(n.title)}</b> <small class="muted">${esc(t.name || n.trainerId)} · ${dateOf(n.ts)} · ${kind(n.kind)[1]}</small><p class="small">${esc(String(n.body || '').slice(0, 140))}</p>${bf.cuts[n.id] ? '<small class="muted"><i class="fa-solid fa-scissors"></i> قطع مخصص في النشرة</small>' : ''}</div><div class="acts"><a class="btn sm" href="#/news/${esc(n.id)}" target="_blank"><i class="fa-solid fa-eye"></i></a><button class="btn sm" data-edn="${esc(n.id)}" title="تحرير نص الخبر"><i class="fa-solid fa-pen"></i></button><button class="btn sm${bf.cuts[n.id] ? ' primary' : ''}" data-cut="${esc(n.id)}" title="تحديد موضع قطع النص في النشرة"><i class="fa-solid fa-scissors"></i></button><button class="btn sm danger" data-dn="${esc(n.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`; }).join('') : '<p class="muted small">لا توجد أخبار في هذه الفترة.</p>'}</div>
       <div class="pbox" style="margin-top:12px"><h3><i class="fa-solid fa-wand-magic-sparkles"></i> نشرة المدربين للسوشيال ميديا</h3>
         <p class="small muted">تُصمَّم الأخبار المحددة أعلاه صفحاتٍ بمقاس منشور إنستقرام الطولي (1080×1350): غلاف بهوية المنصة، ثم الأخبار باسم المدرب وصورته وسطره التعريفي ورمز QR لصفحته. تُصدَّر صوراً (ZIP) أو PDF.</p>
         <div class="bl-bar"><label>توزيع الأخبار<select id="bf-layout"><option value="compact" ${bf.layout === 'compact' ? 'selected' : ''}>عدة مدربين في الصفحة (أقل عدد صفحات)</option><option value="trainer" ${bf.layout === 'trainer' ? 'selected' : ''}>صفحة لكل مدرب (أخباره مجتمعة)</option><option value="single" ${bf.layout === 'single' ? 'selected' : ''}>صفحة لكل خبر</option></select></label>
@@ -255,6 +255,11 @@ const News = (() => {
     $('#bf-layout', main).onchange = e => { bf.layout = e.target.value; };
     $('#bf-cover', main).onchange = e => { bf.cover = e.target.checked; };
     $('#bf-go', main).onclick = () => Bulletin.make({ items: sel.map(n => (bf.cuts[n.id] ? { ...n, cutAt: bf.cuts[n.id] } : n)), from: bf.from ? dayStart(bf.from) : Math.min(...sel.map(n => n.ts)), to: bf.to ? dayEnd(bf.to) : Math.max(...sel.map(n => n.ts)), layout: bf.layout, withCover: bf.cover });
+    $$('[data-edn]', main).forEach(b => b.onclick = () => {
+      const n = ls.find(x => x.id === b.dataset.edn), t = n && Store.get(`trainers/${n.trainerId}`);
+      if (!t) return toast('تعذّر العثور على صاحب الخبر', 'err');
+      editor(t, n, () => { delete bf.cuts[n.id]; Security.log('تعديل خبر مدرب بواسطة الإدارة', n.title); rerender(); });   // يتغيّر النص فيُلغى موضع القطع القديم
+    });
     $$('[data-cut]', main).forEach(b => b.onclick = () => cutEditor(ls.find(n => n.id === b.dataset.cut), rerender));
     $$('[data-da]', main).forEach(b => b.onclick = async () => { if (await confirmBox('حذف هذا الإعلان؟', { ok: 'حذف', danger: true })) Store.remove(`announcements/${b.dataset.da}`); });
     $$('[data-dn]', main).forEach(b => b.onclick = async () => { if (await confirmBox('حذف هذا الخبر؟', { ok: 'حذف', danger: true })) { Store.remove(`news/${b.dataset.dn}`); Security.log('حذف خبر مدرب', b.dataset.dn); } });
