@@ -53,18 +53,21 @@ const Bulletin = (() => {
   const clip = (ctx, lines, maxW) => { const i = lines.length - 1; if (i >= 0 && lines[i].endsWith('…')) { let w = lines[i].slice(0, -1).trim().split(' '); while (w.length > 1 && ctx.measureText(w.join(' ') + '…').width > maxW) w.pop(); lines[i] = w.join(' ') + '…'; } return lines; };
 
   /* ---------- تخطيط الأخبار ---------- */
-  const HDR = { s: 132, big: 214 };
+  const HDR = { s: 132, big: 214 }, MAX_LINES = 14;
+  const singleMaxLines = (titleLines, hh, availH, linksH, pad, f) => { const used = hh + 20 + pad + 46 + 14 + titleLines * f.tl + (linksH ? 14 + linksH : 0) + 76 + pad; return Math.max(3, Math.min(MAX_LINES, Math.floor((availH - used - 10) / f.bl))); };
   function layoutItem(ctx, n, mode, availH, hh = HDR.big) {
     const big = mode === 'single', f = big ? { tf: 50, tl: 68, tm: 4, bf: 30, bl: 52 } : { tf: 32, tl: 46, tm: 2, bf: 25, bl: 40 };
     const pad = big ? 44 : 28, inner = CW - 2 * pad - 14, links = arr(n.links).slice(0, 3);
     ctx.font = `900 ${f.tf}px ${FONT.head}`; const title = clip(ctx, K().wrap(ctx, n.title, inner, f.tm), inner);
-    const linksH = !links.length ? 0 : big ? links.length * 106 + 6 : 62;
-    const body = collapse(n.body);
+    const linksH = !links.length ? 0 : big ? links.length * 106 + 6 : 62, RM = big ? 76 : 64;
+    const cut = n.cutAt > 0 && n.cutAt < String(n.body || '').trim().length;
+    const body = cut ? collapse(String(n.body).slice(0, n.cutAt)) + '…' : collapse(n.body);
     let bodyMax = big ? 0 : (mode === 'trainer' ? 4 : 3);
-    if (big) { const used = hh + 20 + pad + 46 + 14 + title.length * f.tl + (linksH ? 14 + linksH : 0) + pad; bodyMax = Math.max(3, Math.min(14, Math.floor((availH - used - 10) / f.bl))); }
+    if (big) bodyMax = singleMaxLines(title.length, hh, availH, linksH, pad, f);
+    else if (cut) bodyMax = MAX_LINES;   // قطع يدوي: يُعرض النص المختار كاملاً (حدّه الأعلى يضبطه المحرر)
     ctx.font = `400 ${f.bf}px ${FONT.body}`; const lines = body ? clip(ctx, K().wrap(ctx, body, inner, bodyMax), inner) : [];
-    const h = pad + 46 + 14 + title.length * f.tl + (lines.length ? 10 + lines.length * f.bl : 0) + (linksH ? 14 + linksH : 0) + pad;
-    return { n, h, f, pad, big, title, lines, links, inner };
+    const h = pad + 46 + 14 + title.length * f.tl + (lines.length ? 10 + lines.length * f.bl : 0) + (linksH ? 14 + linksH : 0) + RM + pad;
+    return { n, h, f, pad, big, title, lines, links, inner, RM, url: profileUrl(Store.get(`trainers/${n.trainerId}`) || {}) };
   }
   function drawItem(ctx, L, x, y) {
     const { n, f, pad, big } = L, w = CW, R = x + w - pad - 14;
@@ -95,6 +98,15 @@ const Bulletin = (() => {
         });
       }
     }
+    // «اقرأ الخبر كاملاً عبر الموقع ←» في نهاية كل خبر (رابط قابل للنقر في ملف PDF يقود إلى صفحة المدرب)
+    const ry = y + L.h - pad - L.RM + 22, rfs = big ? 28 : 24, rw = w - 2 * pad - 14;
+    ctx.beginPath(); ctx.moveTo(x + pad, ry - 8); ctx.lineTo(R, ry - 8); ctx.strokeStyle = C.line; ctx.lineWidth = 2; ctx.stroke();
+    const label = 'اقرأ الخبر كاملاً عبر الموقع'; ctx.font = `800 ${rfs}px ${FONT.body}`; const tw = ctx.measureText(label).width, base = ry + (L.RM - 22) / 2 + rfs * 0.3;
+    txt(ctx, label, R, base, { font: ctx.font, color: C.g800 });
+    const ax = R - tw - 14, ay = base - rfs * 0.32, al = rfs * 1.1;   // سهم يشير لليسار (اتجاه القراءة)
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax - al, ay); ctx.moveTo(ax - al + 9, ay - 9); ctx.lineTo(ax - al, ay); ctx.lineTo(ax - al + 9, ay + 9);
+    ctx.strokeStyle = C.g800; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke(); ctx.lineCap = 'butt';
+    if (ctx.__links) ctx.__links.push({ x: x + pad, y: ry, w: rw, h: L.RM - 22, url: L.url });
   }
   // السطر التعريفي يُعرض كاملاً: يلتف على عدة أسطر ويكبر ارتفاع الترويسة بحسب عدد الأسطر
   function hdrLayout(ctx, t, big) {
@@ -179,9 +191,24 @@ const Bulletin = (() => {
   }
 
   /* ---------- البناء ---------- */
-  async function build({ items, from, to, layout = 'compact', withCover = true }) {
-    const tp = K().template(); await Promise.race([K().ensureFonts(tp), new Promise(r => setTimeout(r, 6000))]); await K().ensureQR();
+  async function prepare() {
+    const tp = K().template(); await Promise.race([K().ensureFonts(tp), new Promise(r => setTimeout(r, 6000))]);
     FONT = { head: K().fontCss(tp.fonts.name), body: K().fontCss(tp.fonts.body), brand: K().fontCss(tp.fonts.brand) };
+  }
+  // سعة الخبر: أقصى عدد كلمات يتسع في صفحة الخبر المنفرد (أوسع قالب)، وتوزيعات الصفحات الأصغر تتسع له أيضاً
+  async function limit(n) {
+    await prepare();
+    const ctx = document.createElement('canvas').getContext('2d'); ctx.direction = 'rtl';
+    const t = Store.get(`trainers/${n.trainerId}`) || {}, f = { tf: 50, tl: 68, bf: 30, bl: 52, tm: 4 }, pad = 44, inner = CW - 2 * pad - 14, links = arr(n.links).slice(0, 3);
+    const H = hdrLayout(ctx, t, true); ctx.font = `900 ${f.tf}px ${FONT.head}`; const tl = clip(ctx, K().wrap(ctx, n.title, inner, f.tm), inner).length;
+    const maxLines = singleMaxLines(tl, H.h, BOT - TOP, links.length ? links.length * 106 + 6 : 0, pad, f);
+    const fits = text => { ctx.font = `400 ${f.bf}px ${FONT.body}`; return K().wrap(ctx, text, inner, 999).length <= maxLines; };
+    const words = collapse(n.body).split(' ').filter(Boolean); let lo = 0, hi = words.length;
+    while (lo < hi) { const m = (lo + hi + 1) >> 1; if (fits(words.slice(0, m).join(' '))) lo = m; else hi = m - 1; }
+    return { maxLines, maxWords: lo, fits };
+  }
+  async function build({ items, from, to, layout = 'compact', withCover = true }) {
+    await prepare(); await K().ensureQR();
     chrome.logo = await K().loadImage(LOGO.cream);
     // مجموعات المدربين بترتيب أحدث خبر
     const sorted = [...items].sort((a, b) => (b.ts || 0) - (a.ts || 0)), map = new Map();
@@ -191,7 +218,7 @@ const Bulletin = (() => {
     const photos = new Map(); await Promise.all(groups.map(async g => photos.set(g.t.id, g.t.noPhoto ? null : await K().loadImage(Data.photo(g.t)))));
     const st = { items: sorted.length, trainers: groups.map(g => g.t), photos };
     const attempt = () => {
-      const mk = () => { const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const c = cv.getContext('2d'); c.direction = 'rtl'; c.textAlign = 'right'; return [cv, c]; };
+      const mk = () => { const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const c = cv.getContext('2d'); c.direction = 'rtl'; c.textAlign = 'right'; c.__links = cv.__links = []; return [cv, c]; };
       const pages = paginate(mk()[1], groups, layout), total = pages.length + (withCover ? 1 : 0), out = [];
       if (withCover) { const [cv, c] = mk(); cover(c, st, from, to); out.push(cv); }
       pages.forEach((secs, pi) => {
@@ -237,13 +264,16 @@ const Bulletin = (() => {
     const N = cvs.length, pw = W * 0.75, ph = H * 0.75;
     obj(1, ['<< /Type /Catalog /Pages 2 0 R >>']);
     obj(2, [`<< /Type /Pages /Count ${N} /Kids [${cvs.map((_, i) => `${3 + 3 * i} 0 R`).join(' ')}] >>`]);
+    let next = 3 + 3 * N; const annots = [];
     cvs.forEach((cv, i) => {
       const jpg = b64(cv.toDataURL('image/jpeg', 0.92)), p = 3 + 3 * i, content = `q ${pw} 0 0 ${ph} 0 0 cm /Im0 Do Q`;
-      obj(p, [`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw} ${ph}] /Resources << /XObject << /Im0 ${p + 2} 0 R >> >> /Contents ${p + 1} 0 R >>`]);
+      const refs = (cv.__links || []).filter(l => /^https:\/\//.test(l.url)).map(l => { const id = next++; annots.push([id, l]); return `${id} 0 R`; });
+      obj(p, [`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw} ${ph}] /Resources << /XObject << /Im0 ${p + 2} 0 R >> >> /Contents ${p + 1} 0 R${refs.length ? ` /Annots [${refs.join(' ')}]` : ''} >>`]);
       obj(p + 1, [`<< /Length ${content.length} >>\nstream\n${content}\nendstream`]);
       obj(p + 2, [`<< /Type /XObject /Subtype /Image /Width ${W} /Height ${H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`, jpg, '\nendstream']);
     });
-    const xr = len, cnt = 3 + 3 * N;
+    annots.forEach(([id, l]) => { const u = encodeURI(l.url).replace(/[()\\]/g, ''), f = v => (v * 0.75).toFixed(1); obj(id, [`<< /Type /Annot /Subtype /Link /Border [0 0 0] /Rect [${f(l.x)} ${((H - l.y - l.h) * 0.75).toFixed(1)} ${f(l.x + l.w)} ${((H - l.y) * 0.75).toFixed(1)}] /A << /S /URI /URI (${u}) >> >>`]); });
+    const xr = len, cnt = next;
     push(enc(`xref\n0 ${cnt}\n0000000000 65535 f \n${Array.from({ length: cnt - 1 }, (_, i) => `${String(offs[i + 1]).padStart(10, '0')} 00000 n \n`).join('')}trailer\n<< /Size ${cnt} /Root 1 0 R >>\nstartxref\n${xr}\n%%EOF`));
     return new Blob(chunks, { type: 'application/pdf' });
   }
@@ -272,5 +302,5 @@ const Bulletin = (() => {
     $$('.bl-th', m.el).forEach(b => b.onclick = () => busy(b, async () => { const i = +b.dataset.i; deliver(new Blob([await toPng(cvs[i])], { type: 'image/png' }), `${base}-${String(i + 1).padStart(2, '0')}.png`); }));
   }
 
-  return { make, build, zip, pdf };
+  return { make, build, zip, pdf, limit };
 })();

@@ -172,7 +172,7 @@ const News = (() => {
 
   /* ---------- لوحة الإدارة ---------- */
   const ymd = d => { const z = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`; };
-  const bf = { from: ymd(new Date(Date.now() - 6 * 86400000)), to: ymd(new Date()), off: new Set(), layout: 'compact', cover: true };
+  const bf = { from: ymd(new Date(Date.now() - 6 * 86400000)), to: ymd(new Date()), off: new Set(), cuts: {}, layout: 'compact', cover: true };
   const dayStart = v => new Date(`${v}T00:00:00`).getTime(), dayEnd = v => new Date(`${v}T23:59:59.999`).getTime();
   function setFeature(k, on) {
     Store.set(`content/features/${k}`, on);
@@ -184,6 +184,30 @@ const News = (() => {
       if (!home.some(s => s.type === 'news')) { const i = home.findIndex(s => s.type === 'featured'); home.splice(i < 0 ? Math.min(3, home.length) : i + 1, 0, { id: 'news', type: 'news', tpl: 'grid', bg: 'tint', vis: true, d: section.def() }); Store.set('content/home/list', home); }
     }
     Security.log(on ? 'تفعيل ميزة' : 'إيقاف ميزة', k === 'news' ? 'أخبار المدربين' : 'إعلانات الإدارة');
+  }
+  // اختيار موضع قطع النص في النشرة: ضع المؤشر في الموضع المناسب ثم «اقطع هنا»، مع عدّاد كلمات وحدّ أقصى لا يمكن تجاوزه
+  async function cutEditor(n, done) {
+    if (!n) return;
+    const body = String(n.body || ''), lim = await Bulletin.limit(n), cur = bf.cuts[n.id] || 0;
+    const m = modal(`<h3><i class="fa-solid fa-scissors"></i> موضع القطع في النشرة</h3>
+      <p class="small muted">ضع المؤشر داخل النص حيث تريد أن يتوقف الخبر في النشرة (صور/PDF) ثم اضغط «اقطع هنا». يليه تلقائياً سطر «اقرأ الخبر كاملاً عبر الموقع» برابط صفحة المدرب. الحد الأقصى <b class="num">${lim.maxWords}</b> كلمة لهذا الخبر (يتغيّر بطول العنوان وبيانات المدرب).</p>
+      <textarea id="cut-ta" rows="10" inputmode="none" style="width:100%;line-height:1.9">${esc(body)}</textarea>
+      <div class="bl-bar" style="margin-top:8px"><b id="cut-cnt"></b></div>
+      <p class="small" id="cut-prev" style="background:var(--paper,#f7f9f3);border-radius:10px;padding:10px;min-height:2.4em"></p>
+      <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn primary" id="cut-ok"><i class="fa-solid fa-scissors"></i> اقطع هنا</button><button class="btn" id="cut-auto">بدون قطع مخصص (تلقائي)</button><button class="btn ghost" data-close>إلغاء</button></div>`, { wide: true });
+    const ta = $('#cut-ta', m.el), words = s => (s.trim() ? s.trim().split(/\s+/).length : 0);
+    ta.oninput = () => { const p = ta.selectionStart; ta.value = body; ta.setSelectionRange(p, p); };   // للقراءة فقط عملياً
+    const pos = () => { let i = Math.max(ta.selectionStart, ta.selectionEnd); while (i > 0 && i < body.length && !/\s/.test(body[i - 1]) && !/\s/.test(body[i])) i--; return i; };
+    const upd = () => {
+      const i = pos(), part = body.slice(0, i).trim(), w = words(part), over = w > lim.maxWords || !lim.fits(part.replace(/\s+/g, ' '));
+      $('#cut-cnt', m.el).innerHTML = `الكلمات حتى المؤشر: <span class="num" style="color:${over ? '#B3261E' : 'inherit'}">${w}</span> من <span class="num">${lim.maxWords}</span> كحد أقصى${over ? ' — تجاوزت الحد، حرّك المؤشر للأعلى' : ''}`;
+      $('#cut-prev', m.el).textContent = part ? part + (part.length < body.trim().length ? ' …' : '') : 'ضع المؤشر داخل النص';
+      $('#cut-ok', m.el).disabled = !part || over;
+    };
+    ['click', 'keyup', 'select', 'touchend', 'focus'].forEach(ev => ta.addEventListener(ev, () => setTimeout(upd, 0)));
+    ta.focus(); const start = cur && cur < body.length ? cur : Math.min(body.length, body.length ? lim.maxWords * 6 : 0); ta.setSelectionRange(start, start); upd();
+    $('#cut-ok', m.el).onclick = () => { const i = pos(); if (i >= body.trim().length) delete bf.cuts[n.id]; else bf.cuts[n.id] = i; m.close ? m.close() : $('[data-close]', m.el).click(); done(); };
+    $('#cut-auto', m.el).onclick = () => { delete bf.cuts[n.id]; m.close ? m.close() : $('[data-close]', m.el).click(); done(); };
   }
   function admin(main) {
     const fx = (k, icon, title, text) => { const on = featureOn(k); return `<div class="pbox" style="margin-bottom:12px"><div class="row" style="align-items:center;gap:12px;flex-wrap:wrap"><span class="ic"><i class="fa-solid ${icon}"></i></span><div class="grow"><b>${title}</b> <span class="pill ${on ? 'gold' : ''}">${on ? 'مفعّلة' : 'غير مفعّلة'}</span><p class="small muted" style="margin:4px 0 0">${text}</p></div>
@@ -206,7 +230,7 @@ const News = (() => {
           <button type="button" class="btn sm ghost" data-rng="7">آخر 7 أيام</button><button type="button" class="btn sm ghost" data-rng="30">آخر 30 يوماً</button><button type="button" class="btn sm ghost" data-rng="all">الكل</button></div>
         <div class="bl-bar"><b>${sel.length}</b> من <b>${inRange.length}</b> خبراً محدداً للنشرة
           <label class="chk" style="margin:0"><input type="checkbox" id="bf-all" ${inRange.length && !sel.length ? '' : (sel.length === inRange.length ? 'checked' : '')}><span>تحديد الكل</span></label></div>
-        ${inRange.length ? inRange.map(n => { const t = Store.get(`trainers/${n.trainerId}`) || {}; return `<div class="lead"><label class="bl-ck"><input type="checkbox" data-sel="${esc(n.id)}" ${bf.off.has(n.id) ? '' : 'checked'}></label><div><b>${esc(n.title)}</b> <small class="muted">${esc(t.name || n.trainerId)} · ${dateOf(n.ts)} · ${kind(n.kind)[1]}</small><p class="small">${esc(String(n.body || '').slice(0, 140))}</p></div><div class="acts"><a class="btn sm" href="#/news/${esc(n.id)}" target="_blank"><i class="fa-solid fa-eye"></i></a><button class="btn sm danger" data-dn="${esc(n.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`; }).join('') : '<p class="muted small">لا توجد أخبار في هذه الفترة.</p>'}</div>
+        ${inRange.length ? inRange.map(n => { const t = Store.get(`trainers/${n.trainerId}`) || {}; return `<div class="lead"><label class="bl-ck"><input type="checkbox" data-sel="${esc(n.id)}" ${bf.off.has(n.id) ? '' : 'checked'}></label><div><b>${esc(n.title)}</b> <small class="muted">${esc(t.name || n.trainerId)} · ${dateOf(n.ts)} · ${kind(n.kind)[1]}</small><p class="small">${esc(String(n.body || '').slice(0, 140))}</p>${bf.cuts[n.id] ? '<small class="muted"><i class="fa-solid fa-scissors"></i> قطع مخصص في النشرة</small>' : ''}</div><div class="acts"><a class="btn sm" href="#/news/${esc(n.id)}" target="_blank"><i class="fa-solid fa-eye"></i></a><button class="btn sm${bf.cuts[n.id] ? ' primary' : ''}" data-cut="${esc(n.id)}" title="تحديد موضع قطع النص في النشرة"><i class="fa-solid fa-scissors"></i></button><button class="btn sm danger" data-dn="${esc(n.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`; }).join('') : '<p class="muted small">لا توجد أخبار في هذه الفترة.</p>'}</div>
       <div class="pbox" style="margin-top:12px"><h3><i class="fa-solid fa-wand-magic-sparkles"></i> نشرة المدربين للسوشيال ميديا</h3>
         <p class="small muted">تُصمَّم الأخبار المحددة أعلاه صفحاتٍ بمقاس منشور إنستقرام الطولي (1080×1350): غلاف بهوية المنصة، ثم الأخبار باسم المدرب وصورته وسطره التعريفي ورمز QR لصفحته. تُصدَّر صوراً (ZIP) أو PDF.</p>
         <div class="bl-bar"><label>توزيع الأخبار<select id="bf-layout"><option value="compact" ${bf.layout === 'compact' ? 'selected' : ''}>عدة مدربين في الصفحة (أقل عدد صفحات)</option><option value="trainer" ${bf.layout === 'trainer' ? 'selected' : ''}>صفحة لكل مدرب (أخباره مجتمعة)</option><option value="single" ${bf.layout === 'single' ? 'selected' : ''}>صفحة لكل خبر</option></select></label>
@@ -230,7 +254,8 @@ const News = (() => {
     $('#bf-all', main).onchange = e => { inRange.forEach(n => (e.target.checked ? bf.off.delete(n.id) : bf.off.add(n.id))); rerender(); };
     $('#bf-layout', main).onchange = e => { bf.layout = e.target.value; };
     $('#bf-cover', main).onchange = e => { bf.cover = e.target.checked; };
-    $('#bf-go', main).onclick = () => Bulletin.make({ items: sel, from: bf.from ? dayStart(bf.from) : Math.min(...sel.map(n => n.ts)), to: bf.to ? dayEnd(bf.to) : Math.max(...sel.map(n => n.ts)), layout: bf.layout, withCover: bf.cover });
+    $('#bf-go', main).onclick = () => Bulletin.make({ items: sel.map(n => (bf.cuts[n.id] ? { ...n, cutAt: bf.cuts[n.id] } : n)), from: bf.from ? dayStart(bf.from) : Math.min(...sel.map(n => n.ts)), to: bf.to ? dayEnd(bf.to) : Math.max(...sel.map(n => n.ts)), layout: bf.layout, withCover: bf.cover });
+    $$('[data-cut]', main).forEach(b => b.onclick = () => cutEditor(ls.find(n => n.id === b.dataset.cut), rerender));
     $$('[data-da]', main).forEach(b => b.onclick = async () => { if (await confirmBox('حذف هذا الإعلان؟', { ok: 'حذف', danger: true })) Store.remove(`announcements/${b.dataset.da}`); });
     $$('[data-dn]', main).forEach(b => b.onclick = async () => { if (await confirmBox('حذف هذا الخبر؟', { ok: 'حذف', danger: true })) { Store.remove(`news/${b.dataset.dn}`); Security.log('حذف خبر مدرب', b.dataset.dn); } });
   }
