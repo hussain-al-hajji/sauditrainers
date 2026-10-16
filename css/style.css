@@ -1306,3 +1306,5 @@ body.preview .local-flag { display: none; }
 .lib-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
 .lib-body { background: var(--g50, #F1F6EC); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; line-height: 1.95; max-height: 55vh; overflow: auto; }
 .pill.sm { font-size: .7rem; padding: 1px 8px; }
+.page-head .nshare { border-top: 0; padding-top: 0; margin-top: 18px; color: #fff; } .page-head .nshare b { color: #EEF3E5; font-weight: 700; }
+.page-head .nshare .btn.ghost { color: #fff; border-color: rgba(255,255,255,.65); background: transparent; }

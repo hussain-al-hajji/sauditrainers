@@ -39,7 +39,6 @@ const News = (() => {
       <small class="muted">${dateOf(n.ts)}</small>
       ${body ? `<p>${body}</p>` : ''}
       ${full ? links.map(linkCard).join('') : (links.length ? `<small class="muted"><i class="fa-solid fa-link"></i> ${links.length} ${links.length === 1 ? 'رابط مرفق' : 'روابط مرفقة'}</small>` : '')}
-      ${full ? shareRow(n) : ''}
       ${full ? '' : `<a class="more" href="#/news/${esc(n.id)}">قراءة الخبر <i class="fa-solid fa-arrow-left"></i></a>`}
     </article>`;
   }
@@ -47,7 +46,7 @@ const News = (() => {
   // رابط مشاركة الخبر الذي تظهر له معاينة (صورة المدرب واسمه + العنوان والمقتطف) في واتساب وإكس ولينكدإن
   const shareUrl = n => `${siteBase()}n/${encodeURIComponent(n.id)}/`;
   const shareRow = n => { const u = shareUrl(n), q = encodeURIComponent(u), tx = encodeURIComponent(`${n.title}\n${u}`);
-    return `<div class="nshare"><b class="small"><i class="fa-solid fa-share-nodes"></i> شارك الخبر</b>
+    return `<div class="nshare"><b class="small"><i class="fa-solid fa-share-nodes"></i> شارك الخبر مع البطاقة الشخصية</b>
       <a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/?text=${tx}"><i class="fa-brands fa-whatsapp"></i> واتساب</a>
       <a class="btn sm" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(n.title)}&url=${q}"><i class="fa-brands fa-x-twitter"></i> إكس</a>
       <a class="btn sm" target="_blank" rel="noopener" href="https://www.linkedin.com/sharing/share-offsite/?url=${q}"><i class="fa-brands fa-linkedin"></i> لينكدإن</a>
@@ -72,7 +71,7 @@ const News = (() => {
       if (id) {
         const n = visible().find(x => x.id === id);
         if (!n) return `<section class="page-head"><div class="wrap"><div class="crumbs"><a href="#/">الرئيسية</a> / <a href="#/news">أخبار المدربين</a></div><h1>الخبر غير موجود</h1></div></section><div class="wrap empty"><a class="btn" href="#/news">كل الأخبار</a></div>`;
-        return `<section class="page-head"><div class="wrap"><div class="crumbs"><a href="#/">الرئيسية</a> / <a href="#/news">أخبار المدربين</a></div><h1>${esc(n.title)}</h1></div></section>
+        return `<section class="page-head"><div class="wrap"><div class="crumbs"><a href="#/">الرئيسية</a> / <a href="#/news">أخبار المدربين</a></div><h1>${esc(n.title)}</h1>${shareRow(n)}</div></section>
           <div class="wrap news-one" style="margin-top:30px">${card(n, { full: true })}<p><a class="btn ghost" href="#/news"><i class="fa-solid fa-arrow-right"></i> كل الأخبار</a></p></div>`;
       }
       const list = visible(), q = new URLSearchParams(query).get('k') || '';

@@ -295,23 +295,34 @@ const Bulletin = (() => {
     const ctx = cv.getContext('2d'); ctx.direction = 'rtl'; ctx.textAlign = 'right';
     const g = ctx.createLinearGradient(0, 0, OW, OH); g.addColorStop(0, C.g950); g.addColorStop(0.55, C.g900); g.addColorStop(1, C.g800); ctx.fillStyle = g; ctx.fillRect(0, 0, OW, OH);
     try { ctx.fillStyle = ctx.createPattern(K().patternTile(C.sage, 0.1), 'repeat'); ctx.fillRect(0, 0, OW, OH); } catch { /* بلا نقش */ }
-    // لوحة المدرب (يمين)
-    const PX0 = OW - 60, PW = 340, cx = PX0 - PW / 2, R = 118;
-    rrect(ctx, PX0 - PW, 60, PW, OH - 120, 34, 'rgba(238,243,229,.10)', 'rgba(201,218,180,.35)');
-    avatar(ctx, t, img, cx, 60 + 40 + R + 4, R);
-    const name = String(t.name || ''), nfs = fitFont(ctx, name, 900, 40, 26, PW - 40, FONT.head);
-    ctx.font = `900 ${nfs}px ${FONT.head}`; const nl = clip(ctx, K().wrap(ctx, name, PW - 40, 2), PW - 40), ny = 60 + 40 + 2 * R + 8 + 56;
-    nl.forEach((l, i) => txt(ctx, l, cx, ny + i * (nfs + 8), { font: ctx.font, color: '#fff', align: 'center' }));
-    ctx.font = `600 22px ${FONT.body}`; const tl = clip(ctx, K().wrap(ctx, t.title || '', PW - 40, 2), PW - 40), ty = ny + nl.length * (nfs + 8) + 8;
-    tl.forEach((l, i) => txt(ctx, l, cx, ty + i * 30, { font: ctx.font, color: C.sage, align: 'center' }));
-    // الخبر (يسار اللوحة)
-    const TR = PX0 - PW - 44, TL = 64, TW = TR - TL;
+    // لوحة المدرب (يمين): صورته واسمه وسطره التعريفي كاملاً (يصغّر الخط وحجم الصورة إن لزم)
+    const PX0 = OW - 60, PW = 340, cx = PX0 - PW / 2, PH = OH - 120, IW = PW - 40, name = String(t.name || ''), tag = String(t.title || '');
+    let R = 118, nfs = 40, tfs = 22, nl = [], tl = [];
+    const layout = () => {
+      nfs = fitFont(ctx, name, 900, 40, 22, IW, FONT.head); ctx.font = `900 ${nfs}px ${FONT.head}`; nl = K().wrap(ctx, name, IW, 3);
+      ctx.font = `600 ${tfs}px ${FONT.body}`; tl = K().wrap(ctx, tag, IW, 99);
+      return 28 + 2 * R + 14 + nl.length * (nfs + 8) + 10 + tl.length * (tfs + 8) + 24;
+    };
+    for (const [r, f] of [[118, 22], [104, 21], [92, 20], [80, 19], [70, 18], [62, 17], [54, 16]]) { R = r; tfs = f; if (layout() <= PH) break; }
+    rrect(ctx, PX0 - PW, 60, PW, PH, 34, 'rgba(238,243,229,.10)', 'rgba(201,218,180,.35)');
+    avatar(ctx, t, img, cx, 60 + 28 + R, R);
+    const ny = 60 + 28 + 2 * R + 14 + nfs;
+    ctx.font = `900 ${nfs}px ${FONT.head}`; nl.forEach((l, i) => txt(ctx, l, cx, ny + i * (nfs + 8), { font: ctx.font, color: '#fff', align: 'center' }));
+    const ty = ny + (nl.length - 1) * (nfs + 8) + 10 + tfs;
+    ctx.font = `600 ${tfs}px ${FONT.body}`; tl.forEach((l, i) => txt(ctx, l, cx, ty + i * (tfs + 8), { font: ctx.font, color: C.sage, align: 'center' }));
+    // عنوان الخبر كاملاً (يصغّر الخط حتى يتسع) ثم «اضغط للمزيد» تحته
+    const TR = PX0 - PW - 44, TL = 64, TW = TR - TL, TOP0 = 140, TBOT = OH - 170;
     pill(ctx, kindName(n.kind), TR, 92, { bg: 'rgba(238,243,229,.16)', fg: C.cream });
     txt(ctx, dateAr(n.ts, true), TL, 100, { font: `600 22px ${FONT.body}`, color: C.sage, align: 'left' });
-    ctx.font = `900 54px ${FONT.head}`; const title = clip(ctx, K().wrap(ctx, n.title || '', TW, 3), TW), TLH = 70;
-    title.forEach((l, i) => txt(ctx, l, TR, 150 + TLH * (i + 1) - 14, { font: ctx.font, color: '#fff' }));
-    const by = 150 + title.length * TLH + 14, bl = 44, room = Math.floor((OH - 110 - by) / bl);
-    if (room >= 1 && n.body) { ctx.font = `400 30px ${FONT.body}`; clip(ctx, K().wrap(ctx, collapse(n.body), TW, Math.min(room, 6)), TW).forEach((l, i) => txt(ctx, l, TR, by + bl * (i + 1) - 10, { font: ctx.font, color: 'rgba(238,243,229,.88)' })); }
+    let ts = 68, tlines = [], lh = 0;
+    for (; ts >= 24; ts -= 2) { ctx.font = `900 ${ts}px ${FONT.head}`; tlines = K().wrap(ctx, n.title || '', TW, 99); lh = Math.round(ts * 1.3); if (tlines.length * lh <= TBOT - TOP0 && tlines.every(l => ctx.measureText(l).width <= TW)) break; }
+    ctx.font = `900 ${ts}px ${FONT.head}`; tlines.forEach((l, i) => txt(ctx, l, TR, TOP0 + lh * (i + 1) - Math.round(ts * 0.25), { font: ctx.font, color: '#fff' }));
+    const my = TOP0 + tlines.length * lh + 34;
+    ctx.font = `800 32px ${FONT.body}`; const mw = ctx.measureText('اضغط للمزيد').width;
+    txt(ctx, 'اضغط للمزيد', TR, my, { font: ctx.font, color: C.sage });
+    const ax = TR - mw - 16, ay = my - 11;   // سهم يشير لليسار
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(ax - 38, ay); ctx.moveTo(ax - 38 + 11, ay - 11); ctx.lineTo(ax - 38, ay); ctx.lineTo(ax - 38 + 11, ay + 11);
+    ctx.strokeStyle = C.sage; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.stroke(); ctx.lineCap = 'butt';
     // التذييل
     if (chrome.logo) { const lh = 50, lw = lh * chrome.logo.width / chrome.logo.height; ctx.drawImage(chrome.logo, TR - lw, OH - 50 - lh, lw, lh); }
     txt(ctx, 'sauditrainers.sa', TL, OH - 62, { font: `700 26px ${FONT.body}`, color: C.cream, align: 'left', dir: 'ltr' });

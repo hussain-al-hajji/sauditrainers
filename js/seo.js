@@ -127,7 +127,7 @@ const SEO = (() => {
   function newsExcerpt(n, len = 200) { const s = String(n.body || '').replace(/\s+/g, ' ').trim(); return s.length > len ? s.slice(0, len).replace(/\s+\S*$/, '') + '…' : s; }
   function newsHead(n, t, base) {
     const s = site(), title = `${n.title} — ${t.name}`, desc = newsExcerpt(n) || `${t.name}${t.title ? ' — ' + t.title : ''}`, url = `${base}n/${n.id}/`;
-    return headTags({ title: `${title} | ${s.siteName}`, desc, noindex: !s.robotsIndex }, { base, url, type: 'article', image: `${base}og/n-${n.id}.jpg`, imgAlt: title, keywords: false, ogTitle: title, imgH: 630 });
+    return headTags({ title: `${title} | ${s.siteName}`, desc, noindex: !s.robotsIndex }, { base, url, type: 'article', image: `${base}og/n-${n.id}.jpg`, imgAlt: title, keywords: false, ogTitle: title, ogDesc: 'اضغط للمزيد', imgH: 630 });
   }
   function newsBody(n, t) {
     const e = esc; return `<h1>${e(n.title)}</h1><p>${e(t.name)}${t.title ? ' — ' + e(t.title) : ''}</p>${n.body ? `<p>${e(String(n.body).slice(0, 800))}</p>` : ''}\n<p><a href="../../#/news/${e(encodeURIComponent(n.id))}">قراءة الخبر كاملاً</a></p>`;
