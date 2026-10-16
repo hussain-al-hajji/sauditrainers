@@ -101,53 +101,78 @@ const Library = (() => {
 
   /* ---------- لوحة الإدارة ---------- */
   const AV = { cat: '' };
-  function editor(rec, done) {
-    const r = rec || {};
-    const m = modal(`<h3><i class="fa-solid fa-book-open"></i> ${r.id && Store.get(`library/${r.id}`) ? 'تعديل مورد' : 'مورد جديد في المكتبة'}</h3>
+  // المسودات (libraryDrafts) للإدارة فقط: تعديلات المحتوى الأساسي والموارد غير المنشورة، ولا يراها المدربون
+  const drafts = () => Store.get('libraryDrafts') || {};
+  const clean = r => { const o = { id: r.id, title: r.title, cat: r.cat, kind: r.kind, ts: r.ts || Date.now() }; ['summary', 'body', 'url'].forEach(k => { if (r[k]) o[k] = r[k]; }); if (r.pin) o.pin = true; return o; };
+  async function publish(item) { const rec = { ...clean(item), ts: Date.now() }; if (!await Store.setConfirmed(`library/${rec.id}`, rec)) return false; await Store.remove(`libraryDrafts/${rec.id}`); Security.log('نشر مورد في مكتبة المدرب', rec.title); return true; }
+  // الموارد غير المنشورة: المحتوى الأساسي (بنسخته المعدّلة إن عُدّل) + المسودات الجديدة
+  function pendingItems() {
+    const dr = drafts(), seed = typeof LIBRARY_SEED !== 'undefined' ? LIBRARY_SEED : [];
+    const a = seed.filter(x => !Store.get(`library/${x.id}`)).map(x => (dr[x.id] ? { ...dr[x.id], _edited: true } : x));
+    const b = Object.values(dr).filter(d => d && d.title && !seed.some(x => x.id === d.id) && !Store.get(`library/${d.id}`)).map(d => ({ ...d, _edited: true }));
+    return [...a, ...b];
+  }
+  // mode: تعديل مورد منشور (يُحفظ مباشرة) أو غير منشور (مسودة أو اعتماد ونشر)
+  function editor(rec, done, again) {
+    const r = rec || {}, isPub = !!(r.id && Store.get(`library/${r.id}`));
+    const m = modal(`<h3><i class="fa-solid fa-book-open"></i> ${isPub ? 'تعديل مورد منشور' : r.id ? 'تعديل مورد قبل النشر' : 'مورد جديد في المكتبة'}</h3>
+      ${isPub ? '<p class="small muted">هذا المورد منشور؛ يظهر التعديل للمدربين فور الحفظ.</p>' : '<p class="small muted">حفظ المسودة لا يُظهر المورد للمدربين؛ يظهر بعد «اعتماد ونشر».</p>'}
       <form id="lf2" style="display:grid;gap:10px">${field('العنوان', `<input name="title" required minlength="3" maxlength="120" value="${esc(r.title || '')}">`)}
         <div class="row" style="gap:10px;flex-wrap:wrap"><div style="flex:1;min-width:180px">${field('التصنيف', `<select name="cat">${CATS.map(c => `<option value="${c[0]}" ${r.cat === c[0] ? 'selected' : ''}>${c[2]}</option>`).join('')}</select>`)}</div><div style="flex:1;min-width:180px">${field('النوع', `<select name="kind">${KINDS.map(c => `<option value="${c[0]}" ${r.kind === c[0] ? 'selected' : ''}>${c[1]}</option>`).join('')}</select>`)}</div></div>
         ${field('وصف مختصر', `<input name="summary" maxlength="300" value="${esc(r.summary || '')}">`)}
         ${field('المحتوى', `<textarea name="body" rows="10" maxlength="6000">${esc(r.body || '')}</textarea>`, 'استعمل **نص** للخط العريض. القوالب وقوائم التحقق يستطيع المدرب نسخها بزر.')}
         ${field('رابط (اختياري)', `<input name="url" type="url" dir="ltr" value="${esc(r.url || '')}" placeholder="https://…">`)}
         <label class="chk"><input type="checkbox" name="pin" ${r.pin ? 'checked' : ''}><span>تثبيت في أعلى المكتبة</span></label>
-        <div class="row end"><button type="button" class="btn ghost" data-close>إلغاء</button><button type="button" class="btn" id="lpv"><i class="fa-solid fa-eye"></i> معاينة</button><button class="btn primary" type="submit">اعتماد ونشر للمدربين</button></div></form>`, { wide: true });
-    $('#lpv', m.el).onclick = () => { const f = $('#lf2', m.el); open({ id: r.id || 'preview', title: f.title.value.trim() || '(بلا عنوان)', cat: f.cat.value, kind: f.kind.value, summary: f.summary.value.trim(), body: f.body.value.trim(), url: f.url.value.trim() }, null, { preview: true }); };
-    $('#lf2', m.el).onsubmit = async e => {
-      e.preventDefault(); const f = e.target, url = f.url.value.trim();
-      if (url && !/^https:\/\//i.test(url)) return toast('الرابط يجب أن يبدأ بـ https://', 'err');
-      if (!f.body.value.trim() && !url) return toast('أضف محتوى أو رابطاً', 'err');
-      const id = r.id || Store.newId(), old = Store.get(`library/${id}`), out = { id, title: f.title.value.trim(), cat: f.cat.value, kind: f.kind.value, ts: old?.ts || Date.now() };
+        <div class="row end" style="flex-wrap:wrap"><button type="button" class="btn ghost" data-close>إلغاء</button><button type="button" class="btn" id="lpv"><i class="fa-solid fa-eye"></i> معاينة</button>
+          ${isPub ? '<button class="btn primary" type="submit">حفظ التعديلات</button>' : '<button type="button" class="btn" id="ldr"><i class="fa-solid fa-floppy-disk"></i> حفظ كمسودة</button><button class="btn primary" type="submit">اعتماد ونشر للمدربين</button>'}</div></form>`, { wide: true });
+    const read = () => {
+      const f = $('#lf2', m.el), url = f.url.value.trim();
+      if (url && !/^https:\/\//i.test(url)) { toast('الرابط يجب أن يبدأ بـ https://', 'err'); return null; }
+      if (!f.body.value.trim() && !url) { toast('أضف محتوى أو رابطاً', 'err'); return null; }
+      if (f.title.value.trim().length < 3) { toast('اكتب عنواناً', 'err'); return null; }
+      const id = r.id || Store.newId(), out = { id, title: f.title.value.trim(), cat: f.cat.value, kind: f.kind.value, ts: Store.get(`library/${id}`)?.ts || r.ts || Date.now() };
       ['summary', 'body'].forEach(k => { const v = f[k].value.trim(); if (v) out[k] = v; }); if (url) out.url = url; if (f.pin.checked) out.pin = true;
-      if (await Store.setConfirmed(`library/${id}`, out)) { Security.log('اعتماد مورد في مكتبة المدرب', out.title); toast('نُشر المورد للمدربين'); m.close(); done && done(); }
+      return out;
+    };
+    $('#lpv', m.el).onclick = () => { const f = $('#lf2', m.el); open({ id: r.id || 'preview', title: f.title.value.trim() || '(بلا عنوان)', cat: f.cat.value, kind: f.kind.value, summary: f.summary.value.trim(), body: f.body.value.trim(), url: f.url.value.trim() }, null, { preview: true }); };
+    $('#ldr', m.el) && ($('#ldr', m.el).onclick = async () => { const out = read(); if (out && await Store.setConfirmed(`libraryDrafts/${out.id}`, out)) { toast('حُفظت المسودة (لا يراها المدربون)'); m.close(); again && again(); } });
+    $('#lf2', m.el).onsubmit = async e => {
+      e.preventDefault(); const out = read(); if (!out) return;
+      if (isPub ? await Store.setConfirmed(`library/${out.id}`, out) : await publish(out)) { Security.log(isPub ? 'تعديل مورد في مكتبة المدرب' : 'اعتماد مورد في مكتبة المدرب', out.title); toast(isPub ? 'حُفظت التعديلات' : 'نُشر المورد للمدربين'); m.close(); done && done(); again && again(); }
     };
   }
   function admin(main) {
     const list = all(), sug = Store.list('librarySuggest').filter(s => s && s.status === 'pending').sort((a, b) => (b.ts || 0) - (a.ts || 0));
-    const missing = (typeof LIBRARY_SEED !== 'undefined' ? LIBRARY_SEED : []).filter(s => !Store.get(`library/${s.id}`));
-    const shown = list.filter(x => !AV.cat || x.cat === AV.cat);
-    main.innerHTML = `<div class="dash-h"><h2>مكتبة المدرب</h2><div class="row" style="gap:8px;flex-wrap:wrap">${missing.length ? `<button class="btn" id="lseed"><i class="fa-solid fa-box-open"></i> نشر المحتوى الأساسي (${missing.length})</button>` : ''}<button class="btn primary" id="lnew"><i class="fa-solid fa-plus"></i> مورد جديد</button></div></div>
-      <p class="muted small">لا يظهر أي مورد للمدربين إلا بعد اعتماده هنا. ${list.length} مورداً منشوراً${sug.length ? ` · ${sug.length} اقتراح بانتظار المراجعة` : ''}.</p>
-      ${missing.length ? `<div class="pbox"><h3><i class="fa-solid fa-eye"></i> المحتوى الأساسي بانتظار النشر <small class="num muted">(${missing.length})</small></h3><p class="small muted">عاين كل مورد كما سيراه المدرب قبل النشر. لا يراه المدربون حتى تنشره.</p>${missing.map(s => `<div class="lead"><span class="ic"><i class="fa-solid ${cat(s.cat)[1]}"></i></span><div><b>${esc(s.title)}</b> <small class="muted">${esc(cat(s.cat)[2])} · ${esc(kind(s.kind)[1])}</small><p class="small">${esc(s.summary || '')}</p></div><div class="acts"><button class="btn sm" data-pvs="${esc(s.id)}"><i class="fa-solid fa-eye"></i> معاينة</button><button class="btn sm primary" data-pub="${esc(s.id)}">نشر</button></div></div>`).join('')}</div>` : ''}
+    const missing = pendingItems(), shown = list.filter(x => !AV.cat || x.cat === AV.cat);
+    main.innerHTML = `<div class="dash-h"><h2>مكتبة المدرب</h2><div class="row" style="gap:8px;flex-wrap:wrap">${missing.length ? `<button class="btn" id="lseed"><i class="fa-solid fa-box-open"></i> نشر كل ما بانتظار النشر (${missing.length})</button>` : ''}<button class="btn primary" id="lnew"><i class="fa-solid fa-plus"></i> مورد جديد</button></div></div>
+      <p class="muted small">لا يظهر أي مورد للمدربين إلا بعد اعتماده هنا، ويمكنك تعديل أي مورد قبل النشر وبعده. ${list.length} مورداً منشوراً${sug.length ? ` · ${sug.length} اقتراح بانتظار المراجعة` : ''}.</p>
+      ${missing.length ? `<div class="pbox"><h3><i class="fa-solid fa-eye"></i> بانتظار النشر <small class="num muted">(${missing.length})</small></h3><p class="small muted">عاين وعدّل كل مورد قبل نشره. لا يراه المدربون حتى تنشره.</p>${missing.map(s => `<div class="lead"><span class="ic"><i class="fa-solid ${cat(s.cat)[1]}"></i></span><div><b>${esc(s.title)}</b> ${s._edited ? '<span class="pill gold sm">مسودة معدّلة</span>' : ''} <small class="muted">${esc(cat(s.cat)[2])} · ${esc(kind(s.kind)[1])}</small><p class="small">${esc(s.summary || '')}</p></div><div class="acts"><button class="btn sm" data-pvs="${esc(s.id)}"><i class="fa-solid fa-eye"></i> معاينة</button><button class="btn sm" data-eds="${esc(s.id)}"><i class="fa-solid fa-pen"></i> تعديل</button><button class="btn sm primary" data-pub="${esc(s.id)}">نشر</button>${s._edited ? `<button class="btn sm danger" data-dd="${esc(s.id)}" title="حذف المسودة${(typeof LIBRARY_SEED !== 'undefined' && LIBRARY_SEED.some(x => x.id === s.id)) ? ' والعودة للنص الأصلي' : ''}"><i class="fa-solid fa-trash"></i></button>` : ''}</div></div>`).join('')}</div>` : ''}
       ${sug.length ? `<div class="pbox"><h3><i class="fa-solid fa-lightbulb"></i> اقتراحات المدربين <small class="num muted">(${sug.length})</small></h3>${sug.map(s => { const t = Store.get(`trainers/${s.trainerId}`) || {}; return `<div class="lead"><div><b>${esc(s.title)}</b> <small class="muted">${esc(cat(s.cat)[2])} · ${esc(kind(s.kind)[1])} · من ${esc(t.name || s.trainerId)} · ${dateOf(s.ts)}</small><p class="small" style="white-space:pre-wrap">${esc(String(s.summary || s.body || s.url || '').slice(0, 300))}</p></div>
         <div class="acts" style="flex-direction:column"><button class="btn sm" data-pvg="${esc(s.id)}"><i class="fa-solid fa-eye"></i> معاينة</button><button class="btn sm primary" data-ap="${esc(s.id)}"><i class="fa-solid fa-check"></i> مراجعة واعتماد</button><button class="btn sm danger" data-rj="${esc(s.id)}"><i class="fa-solid fa-xmark"></i> رفض</button></div></div>`; }).join('')}</div>` : ''}
       <div class="chips" style="margin-bottom:12px"><button class="chip ${AV.cat ? '' : 'on'}" data-c="">الكل (${list.length})</button>${CATS.map(c => `<button class="chip ${AV.cat === c[0] ? 'on' : ''}" data-c="${c[0]}"><i class="fa-solid ${c[1]}"></i> ${c[2]} <span class="num">${list.filter(x => x.cat === c[0]).length}</span></button>`).join('')}</div>
-      <div class="pbox">${shown.length ? shown.map(x => `<div class="lead"><span class="ic"><i class="fa-solid ${cat(x.cat)[1]}"></i></span><div><b>${esc(x.title)}</b>${x.pin ? ' <i class="fa-solid fa-thumbtack muted"></i>' : ''} <small class="muted">${esc(kind(x.kind)[1])} · ${dateOf(x.ts)}</small><p class="small">${esc(x.summary || '')}</p></div>
-        <div class="acts"><button class="btn sm" data-pvp="${esc(x.id)}" title="معاينة كما يراه المدرب"><i class="fa-solid fa-eye"></i></button><button class="btn sm" data-ed="${esc(x.id)}"><i class="fa-solid fa-pen"></i></button><button class="btn sm danger" data-del="${esc(x.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`).join('') : '<p class="muted small">لا توجد موارد منشورة في هذا التصنيف. استعمل «نشر المحتوى الأساسي» أو أضف مورداً.</p>'}</div>`;
-    const again = () => admin(main);
-    $('#lnew', main).onclick = () => editor(null, again);
+      <div class="pbox"><h3><i class="fa-solid fa-circle-check"></i> المنشور للمدربين</h3>${shown.length ? shown.map(x => `<div class="lead"><span class="ic"><i class="fa-solid ${cat(x.cat)[1]}"></i></span><div><b>${esc(x.title)}</b>${x.pin ? ' <i class="fa-solid fa-thumbtack muted"></i>' : ''} <small class="muted">${esc(kind(x.kind)[1])} · ${dateOf(x.ts)}</small><p class="small">${esc(x.summary || '')}</p></div>
+        <div class="acts"><button class="btn sm" data-pvp="${esc(x.id)}" title="معاينة كما يراه المدرب"><i class="fa-solid fa-eye"></i></button><button class="btn sm" data-ed="${esc(x.id)}" title="تعديل"><i class="fa-solid fa-pen"></i></button><button class="btn sm" data-hide="${esc(x.id)}" title="إخفاء عن المدربين (يُنقل إلى المسودات)"><i class="fa-solid fa-eye-slash"></i></button><button class="btn sm danger" data-del="${esc(x.id)}" title="حذف"><i class="fa-solid fa-trash"></i></button></div></div>`).join('') : '<p class="muted small">لا توجد موارد منشورة في هذا التصنيف. انشر المحتوى الأساسي أو أضف مورداً.</p>'}</div>`;
+    const again = () => admin(main), pend = id => missing.find(x => x.id === id);
+    $('#lnew', main).onclick = () => editor(null, null, again);
     $('#lseed', main) && ($('#lseed', main).onclick = async () => {
-      if (!await confirmBox(`نشر ${missing.length} مورداً أساسياً للمدربين؟ يمكنك تعديل أي مورد أو حذفه بعد النشر.`, { ok: 'نشر' })) return;
-      const now = Date.now(); let n = 0; for (const [i, s] of missing.entries()) if (await Store.setConfirmed(`library/${s.id}`, { ...s, ts: now - i * 1000 })) n++;
-      Security.log('نشر المحتوى الأساسي لمكتبة المدرب', `${n} مورد`); toast(`نُشر ${n} مورداً`); again();
+      if (!await confirmBox(`نشر ${missing.length} مورداً للمدربين؟ يمكنك تعديل أي مورد أو إخفاءه بعد النشر.`, { ok: 'نشر' })) return;
+      let n = 0; for (const s of missing) if (await publish(s)) n++;
+      toast(`نُشر ${n} مورداً`); again();
     });
     $$('[data-c]', main).forEach(b => b.onclick = () => { AV.cat = b.dataset.c; again(); });
-    $$('[data-pvs]', main).forEach(b => b.onclick = () => open(missing.find(x => x.id === b.dataset.pvs), null, { preview: true }));
+    $$('[data-pvs]', main).forEach(b => b.onclick = () => open(pend(b.dataset.pvs), null, { preview: true }));
+    $$('[data-eds]', main).forEach(b => b.onclick = () => editor(pend(b.dataset.eds), null, again));
+    $$('[data-pub]', main).forEach(b => b.onclick = async () => { const s = pend(b.dataset.pub); if (s && await publish(s)) { toast('نُشر المورد للمدربين'); again(); } });
+    $$('[data-dd]', main).forEach(b => b.onclick = async () => { if (await confirmBox('حذف المسودة؟ (للمحتوى الأساسي يعود النص الأصلي، وللمورد الجديد يُحذف نهائياً)', { ok: 'حذف', danger: true })) { await Store.remove(`libraryDrafts/${b.dataset.dd}`); again(); } });
     $$('[data-pvg]', main).forEach(b => b.onclick = () => open(sug.find(x => x.id === b.dataset.pvg), null, { preview: true }));
-    $$('[data-pub]', main).forEach(b => b.onclick = async () => { const s = missing.find(x => x.id === b.dataset.pub); if (s && await Store.setConfirmed(`library/${s.id}`, { ...s, ts: Date.now() })) { Security.log('نشر مورد من المحتوى الأساسي', s.title); toast('نُشر المورد للمدربين'); again(); } });
-    $$('[data-ed]', main).forEach(b => b.onclick = () => editor(list.find(x => x.id === b.dataset.ed), again));
+    $$('[data-ed]', main).forEach(b => b.onclick = () => editor(list.find(x => x.id === b.dataset.ed), null, again));
     $$('[data-pvp]', main).forEach(b => b.onclick = () => open(list.find(x => x.id === b.dataset.pvp), null, { preview: true }));
-    $$('[data-del]', main).forEach(b => b.onclick = async () => { if (await confirmBox('حذف هذا المورد من المكتبة؟', { ok: 'حذف', danger: true })) { Store.remove(`library/${b.dataset.del}`); Security.log('حذف مورد من مكتبة المدرب', b.dataset.del); } });
-    $$('[data-ap]', main).forEach(b => b.onclick = () => { const s = sug.find(x => x.id === b.dataset.ap); editor({ ...s, id: Store.newId() }, async () => { await Store.setConfirmed(`librarySuggest/${s.id}/status`, 'ok'); }); });
+    $$('[data-hide]', main).forEach(b => b.onclick = async () => {
+      const x = list.find(v => v.id === b.dataset.hide); if (!x || !await confirmBox('إخفاء هذا المورد عن المدربين؟ يُنقل إلى «بانتظار النشر» ويمكنك تعديله ونشره لاحقاً.', { ok: 'إخفاء' })) return;
+      if (await Store.setConfirmed(`libraryDrafts/${x.id}`, clean(x))) { await Store.remove(`library/${x.id}`); Security.log('إخفاء مورد من مكتبة المدرب', x.title); again(); }
+    });
+    $$('[data-del]', main).forEach(b => b.onclick = async () => { if (await confirmBox('حذف هذا المورد من المكتبة نهائياً؟', { ok: 'حذف', danger: true })) { Store.remove(`library/${b.dataset.del}`); Security.log('حذف مورد من مكتبة المدرب', b.dataset.del); } });
+    $$('[data-ap]', main).forEach(b => b.onclick = () => { const s = sug.find(x => x.id === b.dataset.ap); editor({ ...s, id: Store.newId() }, async () => { await Store.setConfirmed(`librarySuggest/${s.id}/status`, 'ok'); }, again); });
     $$('[data-rj]', main).forEach(b => b.onclick = async () => { if (await confirmBox('رفض هذا الاقتراح؟', { ok: 'رفض', danger: true })) Store.setConfirmed(`librarySuggest/${b.dataset.rj}/status`, 'no'); });
   }
 
