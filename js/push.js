@@ -47,9 +47,25 @@ const Push = (() => {
   }
   // عند فتح اللوحة: إن كان مفعّلاً نجدّد الرمز (قد يتغيّر) ونجهّز استقبال الرسائل والصفحة مفتوحة
   async function sync() {
-    if (!available() || !supported() || state() !== 'on') return;
+    if (!available() || !supported()) return;
+    // الإذن ممنوح مسبقاً (جهاز جديد أو بعد مسح البيانات): نسجّل الجهاز بصمت دون سؤال
+    if (state() !== 'on' && Notification.permission !== 'granted') return;
     try { await save(await token()); } catch { /* ignore */ }
   }
+  // دعوة المدرب لتفعيل الإشعارات بضغطة واحدة: المتصفحات لا تسمح بطلب الإذن دون ضغطة منه، فنعرض بطاقة عند أول دخول ثم نعيدها كل 7 أيام ما لم يفعّل
+  const ASK = 'st-push-ask', askDue = () => { try { return Date.now() - Number(localStorage.getItem(ASK) || 0) > 7 * 864e5; } catch { return true; } };
+  function invite(onDone) {
+    if (!available() || document.getElementById('push-ask') || !askDue()) return;
+    const st = state(); if (st === 'on' || st === 'denied' || st === 'unsupported') return;
+    const el = document.createElement('div'); el.id = 'push-ask'; el.className = 'push-ask';
+    el.innerHTML = st === 'ios-install'
+      ? `<i class="fa-solid fa-bell"></i><div><b>فعّل إشعارات الجوال</b><small>على الآيفون: افتح الموقع في سفاري ← زر المشاركة ← «إضافة إلى الشاشة الرئيسية»، ثم افتحه من الأيقونة لتصلك طلبات التواصل فوراً.</small></div><button class="btn sm ghost" data-x>حسناً</button>`
+      : `<i class="fa-solid fa-bell"></i><div><b>فعّل إشعارات الجوال</b><small>يصلك إشعار فور وصول طلب تواصل أو طلب عام أو إعلان من الإدارة.</small></div><button class="btn sm primary" data-ok>تفعيل الآن</button><button class="btn sm ghost" data-x>لاحقاً</button>`;
+    document.body.appendChild(el);
+    const close = () => { try { localStorage.setItem(ASK, String(Date.now())); } catch { /* ignore */ } el.remove(); };
+    el.querySelector('[data-x]').onclick = close;
+    const ok = el.querySelector('[data-ok]'); if (ok) ok.onclick = async () => { ok.disabled = true; const r = await enable(); close(); if (r && onDone) onDone(); };
+  }
   if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if (e.data?.type === 'st-push') { toast(`🔔 ${e.data.title}: ${e.data.body}`); if (window.Broadcast) try { App.render(); } catch { /* ignore */ } } });
-  return { available, supported, state, enable, disable, sync, standalone, ios };
+  return { available, supported, state, enable, disable, sync, invite, standalone, ios };
 })();

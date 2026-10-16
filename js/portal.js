@@ -39,7 +39,7 @@ Pages.me = {
       if (Push.state() === 'on') { if (await confirmBox('إيقاف إشعارات الجوال على هذا الجهاز؟', { ok: 'إيقاف' })) { await Push.disable(); toast('أُوقفت الإشعارات على هذا الجهاز'); App.render(); } return; }
       if (await Push.enable()) App.render();
     });
-    Push.sync();
+    Push.sync(); setTimeout(() => Push.invite(() => App.render()), 1500);
     const t = Store.get(`trainers/${s.id}`);
     if (!t) return;
     const main = $('#pt', root);

@@ -1308,3 +1308,6 @@ body.preview .local-flag { display: none; }
 .pill.sm { font-size: .7rem; padding: 1px 8px; }
 .page-head .nshare { border-top: 0; padding-top: 0; margin-top: 18px; color: #fff; } .page-head .nshare b { color: #EEF3E5; font-weight: 700; }
 .page-head .nshare .btn.ghost { color: #fff; border-color: rgba(255,255,255,.65); background: transparent; }
+.push-ask { position: fixed; z-index: 9990; bottom: 18px; inset-inline: 18px; max-width: 520px; margin-inline: auto; display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 18px; background: #003d23; color: #fff; box-shadow: 0 18px 44px -14px rgba(0,0,0,.55); border: 1px solid rgba(238,243,229,.25); }
+.push-ask > i { font-size: 1.4rem; color: #C9DAB4; } .push-ask > div { flex: 1; display: grid; gap: 2px; } .push-ask small { opacity: .85; line-height: 1.5; }
+.push-ask .btn.ghost { color: #fff; border-color: rgba(255,255,255,.5); }
