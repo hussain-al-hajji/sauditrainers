@@ -130,14 +130,35 @@ const News = (() => {
       } catch { /* Store يعرض سبب الرفض */ }
     };
   };
+  // تصدير أخبار المدرب (صور/PDF للسوشيال ميديا) من لوحته: اختيار الأخبار وموضع القطع والتوزيع
+  const tx = { off: new Set(), cuts: {}, layout: 'single', cover: false };
+  function exportBox(t) {
+    const mine = all().filter(n => n.trainerId === t.id);
+    const draw = () => {
+      const sel = mine.filter(n => !tx.off.has(n.id));
+      $('#xb', m.el).innerHTML = `<p class="small muted">اختر الأخبار التي تريد تصديرها، وحدّد بزر ✂️ موضع قطع نص كل خبر ليظهر في التصميم كما تريد. تُصمَّم صفحات بمقاس منشور إنستقرام الطولي (1080×1350) باسمك وصورتك ورمز QR لصفحتك، وتُصدَّر صوراً أو PDF.</p>
+        <div class="bl-bar"><b>${sel.length}</b> من <b>${mine.length}</b> خبراً محدداً</div>
+        ${mine.map(n => `<div class="lead"><label class="bl-ck"><input type="checkbox" data-xs="${esc(n.id)}" ${tx.off.has(n.id) ? '' : 'checked'}></label><div><b>${esc(n.title)}</b> <small class="muted">${dateOf(n.ts)} · ${kind(n.kind)[1]}</small><p class="small">${esc(String(n.body || '').slice(0, 120))}</p>${tx.cuts[n.id] ? '<small class="muted"><i class="fa-solid fa-scissors"></i> قطع مخصص</small>' : ''}</div><div class="acts"><button class="btn sm${tx.cuts[n.id] ? ' primary' : ''}" data-xc="${esc(n.id)}" title="تحديد موضع القطع"><i class="fa-solid fa-scissors"></i> موضع القطع</button></div></div>`).join('')}
+        <div class="bl-bar"><label>توزيع الأخبار<select id="xl"><option value="single" ${tx.layout === 'single' ? 'selected' : ''}>صفحة لكل خبر</option><option value="trainer" ${tx.layout === 'trainer' ? 'selected' : ''}>أخباري مجتمعة (أقل عدد صفحات)</option></select></label>
+          <label class="chk" style="margin:0"><input type="checkbox" id="xcv" ${tx.cover ? 'checked' : ''}><span>إضافة غلاف</span></label></div>
+        <div class="row end"><button class="btn ghost" data-close>إغلاق</button><button class="btn primary" id="xgo" ${sel.length ? '' : 'disabled'}><i class="fa-solid fa-image"></i> إنشاء التصميم (${sel.length})</button></div>`;
+      $$('[data-xs]', m.el).forEach(c => c.onchange = () => { c.checked ? tx.off.delete(c.dataset.xs) : tx.off.add(c.dataset.xs); draw(); });
+      $$('[data-xc]', m.el).forEach(b => b.onclick = () => cutEditor(mine.find(n => n.id === b.dataset.xc), tx.cuts, draw));
+      $('#xl', m.el).onchange = e => { tx.layout = e.target.value; }; $('#xcv', m.el).onchange = e => { tx.cover = e.target.checked; };
+      $('#xgo', m.el).onclick = () => Bulletin.make({ items: sel.map(n => (tx.cuts[n.id] ? { ...n, cutAt: tx.cuts[n.id] } : n)), from: Math.min(...sel.map(n => n.ts)), to: Math.max(...sel.map(n => n.ts)), layout: tx.layout, withCover: tx.cover });
+    };
+    const m = modal('<h3><i class="fa-solid fa-share-nodes"></i> تصدير أخباري للسوشيال ميديا</h3><div id="xb"></div>', { wide: true });
+    draw();
+  }
   function tab(main, t) {
     const mine = all().filter(n => n.trainerId === t.id);
-    main.innerHTML = `<div class="dash-h"><h2>أخباري</h2><button class="btn primary" id="nn"><i class="fa-solid fa-plus"></i> خبر جديد</button></div>
+    main.innerHTML = `<div class="dash-h"><h2>أخباري</h2><div class="row" style="gap:8px;flex-wrap:wrap">${mine.length ? '<button class="btn" id="nx"><i class="fa-solid fa-share-nodes"></i> تصدير للسوشيال ميديا</button>' : ''}<button class="btn primary" id="nn"><i class="fa-solid fa-plus"></i> خبر جديد</button></div></div>
       <p class="muted small">اكتب عن نفسك في أي وقت: خبر، إنجاز، مشاركة، أو إعلان دورة. يظهر خبرك باسمك وصورتك في قسم «أخبار المدربين» بالرئيسية وصفحة الأخبار.</p>
       ${mine.length ? mine.map(n => `<div class="lead"><span class="ic"><i class="fa-solid ${kind(n.kind)[2]}"></i></span><div><b>${esc(n.title)}</b> <small class="muted">${dateOf(n.ts)}${n.editedAt ? ' · معدّل' : ''}</small><p class="small">${esc(String(n.body || '').slice(0, 160))}</p>${arr(n.links).length ? `<small class="muted"><i class="fa-solid fa-link"></i> ${arr(n.links).length} روابط</small>` : ''}</div>
         <div class="acts" style="flex-direction:column"><a class="btn sm" href="#/news/${esc(n.id)}"><i class="fa-solid fa-eye"></i> عرض</a><button class="btn sm" data-ed="${esc(n.id)}"><i class="fa-solid fa-pen"></i> تعديل</button><button class="btn sm danger" data-del="${esc(n.id)}"><i class="fa-solid fa-trash"></i> حذف</button></div></div>`).join('')
         : '<div class="empty"><i class="fa-solid fa-newspaper"></i><h3>لم تنشر أي خبر بعد</h3><p>اضغط «خبر جديد» لتشارك إنجازاً أو مشاركة أو دورة قادمة.</p></div>'}`;
     $('#nn', main).onclick = () => editor(t);
+    $('#nx', main) && ($('#nx', main).onclick = () => exportBox(t));
     $$('[data-ed]', main).forEach(b => b.onclick = () => editor(t, mine.find(n => n.id === b.dataset.ed)));
     $$('[data-del]', main).forEach(b => b.onclick = async () => { if (await confirmBox('حذف هذا الخبر نهائياً؟', { ok: 'حذف', danger: true })) Store.remove(`news/${b.dataset.del}`); });
   }
@@ -186,9 +207,9 @@ const News = (() => {
     Security.log(on ? 'تفعيل ميزة' : 'إيقاف ميزة', k === 'news' ? 'أخبار المدربين' : 'إعلانات الإدارة');
   }
   // اختيار موضع قطع النص في النشرة: ضع المؤشر في الموضع المناسب ثم «اقطع هنا»، مع عدّاد كلمات وحدّ أقصى لا يمكن تجاوزه
-  async function cutEditor(n, done) {
+  async function cutEditor(n, cuts, done) {
     if (!n) return;
-    const body = String(n.body || ''), lim = await Bulletin.limit(n), cur = bf.cuts[n.id] || 0;
+    const body = String(n.body || ''), lim = await Bulletin.limit(n), cur = cuts[n.id] || 0;
     const m = modal(`<h3><i class="fa-solid fa-scissors"></i> موضع القطع في النشرة</h3>
       <p class="small muted">ضع المؤشر داخل النص حيث تريد أن يتوقف الخبر في النشرة (صور/PDF) ثم اضغط «اقطع هنا». يليه تلقائياً سطر «اقرأ الخبر كاملاً عبر الموقع» برابط صفحة المدرب. الحد الأقصى <b class="num">${lim.maxWords}</b> كلمة لهذا الخبر (يتغيّر بطول العنوان وبيانات المدرب).</p>
       <textarea id="cut-ta" rows="10" inputmode="none" style="width:100%;line-height:1.9">${esc(body)}</textarea>
@@ -206,8 +227,8 @@ const News = (() => {
     };
     ['click', 'keyup', 'select', 'touchend', 'focus'].forEach(ev => ta.addEventListener(ev, () => setTimeout(upd, 0)));
     ta.focus(); const start = cur && cur < body.length ? cur : Math.min(body.length, body.length ? lim.maxWords * 6 : 0); ta.setSelectionRange(start, start); upd();
-    $('#cut-ok', m.el).onclick = () => { const i = pos(); if (i >= body.trim().length) delete bf.cuts[n.id]; else bf.cuts[n.id] = i; m.close ? m.close() : $('[data-close]', m.el).click(); done(); };
-    $('#cut-auto', m.el).onclick = () => { delete bf.cuts[n.id]; m.close ? m.close() : $('[data-close]', m.el).click(); done(); };
+    $('#cut-ok', m.el).onclick = () => { const i = pos(); if (i >= body.trim().length) delete cuts[n.id]; else cuts[n.id] = i; m.close ? m.close() : $('[data-close]', m.el).click(); done(); };
+    $('#cut-auto', m.el).onclick = () => { delete cuts[n.id]; m.close ? m.close() : $('[data-close]', m.el).click(); done(); };
   }
   function admin(main) {
     const fx = (k, icon, title, text) => { const on = featureOn(k); return `<div class="pbox" style="margin-bottom:12px"><div class="row" style="align-items:center;gap:12px;flex-wrap:wrap"><span class="ic"><i class="fa-solid ${icon}"></i></span><div class="grow"><b>${title}</b> <span class="pill ${on ? 'gold' : ''}">${on ? 'مفعّلة' : 'غير مفعّلة'}</span><p class="small muted" style="margin:4px 0 0">${text}</p></div>
@@ -260,7 +281,7 @@ const News = (() => {
       if (!t) return toast('تعذّر العثور على صاحب الخبر', 'err');
       editor(t, n, () => { delete bf.cuts[n.id]; Security.log('تعديل خبر مدرب بواسطة الإدارة', n.title); rerender(); });   // يتغيّر النص فيُلغى موضع القطع القديم
     });
-    $$('[data-cut]', main).forEach(b => b.onclick = () => cutEditor(ls.find(n => n.id === b.dataset.cut), rerender));
+    $$('[data-cut]', main).forEach(b => b.onclick = () => cutEditor(ls.find(n => n.id === b.dataset.cut), bf.cuts, rerender));
     $$('[data-da]', main).forEach(b => b.onclick = async () => { if (await confirmBox('حذف هذا الإعلان؟', { ok: 'حذف', danger: true })) Store.remove(`announcements/${b.dataset.da}`); });
     $$('[data-dn]', main).forEach(b => b.onclick = async () => { if (await confirmBox('حذف هذا الخبر؟', { ok: 'حذف', danger: true })) { Store.remove(`news/${b.dataset.dn}`); Security.log('حذف خبر مدرب', b.dataset.dn); } });
   }
