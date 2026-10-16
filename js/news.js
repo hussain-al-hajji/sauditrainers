@@ -58,10 +58,10 @@ const News = (() => {
     return `<div class="nshare"><b class="small"><i class="fa-solid fa-share-nodes"></i> شارك الخبر مع البطاقة الشخصية</b>
       <a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(full)}"><i class="fa-brands fa-whatsapp"></i> واتساب</a>
       <a class="btn sm" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(st)}&url=${q}"><i class="fa-brands fa-x-twitter"></i> إكس</a>
-      <a class="btn sm" target="_blank" rel="noopener" href="https://www.linkedin.com/sharing/share-offsite/?url=${q}" data-lk="${esc(full)}"><i class="fa-brands fa-linkedin"></i> لينكدإن</a>
+      <a class="btn sm" target="_blank" rel="noopener" href="https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(full)}" data-lk="${esc(full)}"><i class="fa-brands fa-linkedin"></i> لينكدإن</a>
       <button type="button" class="btn sm ghost" data-cp="${esc(full)}" data-msg="تم نسخ النص مع الرابط"><i class="fa-regular fa-copy"></i> نسخ النص والرابط</button>
       <button type="button" class="btn sm ghost" data-cp="${esc(u)}"><i class="fa-solid fa-link"></i> نسخ الرابط فقط</button></div>`; };
-  const bindCopy = root => { $$('[data-lk]', root).forEach(a => a.addEventListener('click', () => { try { navigator.clipboard.writeText(a.dataset.lk); toast('نُسخ النص مع الرابط؛ الصقه في منشور لينكدإن'); } catch { /* ignore */ } })); return bindCopy2(root); };
+  const bindCopy = root => { $$('[data-lk]', root).forEach(a => a.addEventListener('click', () => { try { navigator.clipboard.writeText(a.dataset.lk); toast('نُسخ النص مع الرابط احتياطاً: إن لم يظهر في خانة المنشور فالصقه'); } catch { /* ignore */ } })); return bindCopy2(root); };
   const bindCopy2 = root => $$('[data-cp]', root).forEach(b => b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.cp); toast(b.dataset.msg || 'تم نسخ رابط الخبر'); } catch { toast(b.dataset.cp); } });
 
   /* ---------- قسم «أخباري» في الصفحة العامة للمدرب ---------- */
