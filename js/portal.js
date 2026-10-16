@@ -21,7 +21,7 @@ Pages.me = {
     if (!tabs.some(x => x[0] === this.tab)) this.tab = 'home';
     return `<div class="wrap dash">
       <aside class="side">
-        <div class="who">${Card.avatar(t, 'av')}<div class="grow"><b>${esc(t.name)}</b><small class="num">${esc(t.code)}</small></div><button type="button" class="bell" id="bell" title="الإشعارات" aria-label="الإشعارات"><i class="fa-solid fa-bell"></i>${fresh + bcNew ? `<span class="bdg num">${fresh + bcNew}</span>` : ''}</button></div>
+        <div class="who">${Card.avatar(t, 'av')}<div class="grow"><b>${esc(t.name)}</b><small class="num">${esc(t.code)}</small></div><button type="button" class="bell" id="bell" title="الإشعارات" aria-label="الإشعارات"><i class="fa-solid fa-bell"></i>${fresh + bcNew + Broadcast.noticesNew(t.id) ? `<span class="bdg num">${fresh + bcNew + Broadcast.noticesNew(t.id)}</span>` : ''}</button></div>
         ${tabs.map(([k, i, l, b]) => `<button data-tab="${k}" class="${this.tab === k ? 'on' : ''}"><i class="fa-solid ${i}"></i>${l}${b ? `<span class="badge num">${b}</span>` : ''}</button>`).join('')}
         <hr style="border:0;border-top:1px solid rgba(255,255,255,.08)">
         <button data-go="#/t/${esc(encodeURIComponent(t.slug || t.id))}"><i class="fa-solid fa-arrow-up-right-from-square"></i>صفحتي العامة</button>

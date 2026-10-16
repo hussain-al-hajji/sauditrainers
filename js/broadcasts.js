@@ -8,6 +8,9 @@ const Broadcast = (() => {
   const key = id => `st-bc-seen-${id}`;
   const seenTs = id => { try { return Number(localStorage.getItem(key(id)) || 0); } catch { return 0; } };
   const markSeen = id => { try { const m = Math.max(0, ...all().map(b => b.ts || 0)); localStorage.setItem(key(id), String(m)); } catch { /* ignore */ } };
+  // إشعارات الموقع (notices/<id>): مثل «اختيرت بطاقتك للتثبيت 24 ساعة»
+  const notices = id => Object.values(Store.get(`notices/${id}`) || {}).filter(n => n && n.title).sort((a, b) => (b.ts || 0) - (a.ts || 0));
+  const noticesNew = id => notices(id).filter(n => !n.read).length;
   const unread = id => { const s = seenTs(id); return all().filter(b => (b.ts || 0) > s); };
 
   /* ---------- بطاقة طلب عام (للمدرب) ---------- */
@@ -37,19 +40,24 @@ const Broadcast = (() => {
     markSeen(t.id);
     // تحديث الشارات فوراً دون إعادة رسم الصفحة
     $$('[data-tab="bc"] .badge').forEach(x => x.remove());
-    const bell = $('#bell'), n = Store.list('leads').filter(l => l.trainerId === t.id && l.status === 'new').length;
+    const bell = $('#bell'), n = Store.list('leads').filter(l => l.trainerId === t.id && l.status === 'new').length + noticesNew(t.id);
     if (bell) { bell.querySelector('.bdg')?.remove(); if (n) bell.insertAdjacentHTML('beforeend', `<span class="bdg num">${n}</span>`); }
   }
 
   /* ---------- الإشعارات (الجرس) ---------- */
   function notifications(t, go) {
     const un = unread(t.id), newLeads = Store.list('leads').filter(l => l.trainerId === t.id && l.status === 'new').length, recent = all().slice(0, 8), seen = seenTs(t.id);
+    const ns = notices(t.id).slice(0, 10);
     const m = modal(`<h3><i class="fa-solid fa-bell"></i> الإشعارات</h3>
+      ${ns.map(n => `<div class="bc-row ${n.read ? '' : 'new'}" data-nid="${esc(n.id)}"><i class="fa-solid ${n.kind === 'pin' ? 'fa-thumbtack' : 'fa-circle-info'}"></i><span><b>${esc(n.title)}</b><small>${esc(n.body || '')} · ${ago(n.ts)}</small></span></div>`).join('')}
       ${newLeads ? `<button class="bc-row" data-go="leads"><i class="fa-solid fa-inbox"></i><span><b>${newLeads} ${newLeads === 1 ? 'طلب تواصل جديد' : 'طلبات تواصل جديدة'}</b><small>موجّهة إليك من صفحتك</small></span></button>` : ''}
       ${recent.map(b => `<button class="bc-row ${(b.ts || 0) > seen ? 'new' : ''}" data-go="bc"><i class="fa-solid fa-bullhorn"></i><span><b>${esc(b.topic)}</b><small>${esc(b.org || 'جهة تدريبية')} · ${ago(b.ts)}</small></span></button>`).join('')}
-      ${!newLeads && !recent.length ? '<p class="muted center">لا إشعارات حالياً.</p>' : ''}
+      ${!newLeads && !recent.length && !ns.length ? '<p class="muted center">لا إشعارات حالياً.</p>' : ''}
       ${un.length ? `<p class="small muted">${un.length} طلب عام لم تطّلع عليه.</p>` : ''}`);
     $$('[data-go]', m.el).forEach(b => b.onclick = () => { m.close(); go(b.dataset.go); });
+    // فتح نافذة الإشعارات يعدّ إشعارات الموقع مقروءة
+    ns.filter(n => !n.read).forEach(n => Store.update(`notices/${t.id}/${n.id}`, { read: true }));
+    const bell = $('#bell'); if (bell) { const left = Store.list('leads').filter(l => l.trainerId === t.id && l.status === 'new').length; bell.querySelector('.bdg')?.remove(); if (left) bell.insertAdjacentHTML('beforeend', `<span class="bdg num">${left}</span>`); }
   }
 
   /* ---------- نافذة منبثقة عند فتح اللوحة (مرة لكل مجموعة طلبات جديدة في الجلسة) ---------- */
@@ -91,5 +99,5 @@ const Broadcast = (() => {
     Store.remove(`broadcasts/${b.id}`); Security.log('إلغاء توجيه طلب', b.org || b.topic);
   }
 
-  return { all, unread, card, tab, notifications, popup, forward, revoke, forwarded, markSeen };
+  return { all, unread, noticesNew, card, tab, notifications, popup, forward, revoke, forwarded, markSeen };
 })();
