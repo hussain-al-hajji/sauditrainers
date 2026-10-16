@@ -9,6 +9,8 @@ const lines = s => String(s || '').split('\n').map(x => x.trim()).filter(Boolean
 const benefitList = s => lines(s).map(l => { const i = l.indexOf('|'); return i < 0 ? { t: l, d: '' } : { t: l.slice(0, i).trim(), d: l.slice(i + 1).trim() }; });
 const BENEFIT_ICONS = ['fa-location-dot', 'fa-bullhorn', 'fa-handshake', 'fa-hand-holding-dollar', 'fa-medal', 'fa-star', 'fa-gem'];
 const splitList = s => (Array.isArray(s) ? s : String(s || '').split(/[،,\n]/)).map(x => String(x).trim()).filter(Boolean);
+// «أ. » قبل اسم المدرب في الرسائل ما لم يكن اسمه يبدأ بلقب (أ. / د. / م. / أ.د. / الأستاذ / الدكتور / المهندس / الشيخ)
+const withTitle = n => { n = String(n || '').trim(); return !n || /^(أ\.\s*د|أ\.|د\.|م\.|prof|dr|eng|mr|ms|mrs|الأستاذ|الأستاذة|الدكتور|الدكتورة|المهندس|المهندسة|الشيخ|سعادة|الأخ|الأخت)/i.test(n) ? n : `أ. ${n}`; };
 const debounce = (fn, ms = 200) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 const pad = n => String(n).padStart(2, '0');
 

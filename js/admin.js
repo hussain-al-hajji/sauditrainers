@@ -584,7 +584,7 @@ function exportCSV() {
 }
 
 /* ===================== طلبات الجهات ===================== */
-const leadDraft = (r, t) => `السلام عليكم ${t?.name || r.trainerName || ''} 🌟
+const leadDraft = (r, t) => `السلام عليكم ${withTitle(t?.name || r.trainerName || '')} 🌟
 وصلك طلب تواصل جديد عبر منصة «مدرّبون سعوديّون»:
 
 • الجهة: ${r.org}
