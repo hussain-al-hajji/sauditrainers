@@ -91,6 +91,7 @@ const Opps = (() => {
       if (f.deadline.value) out.deadline = new Date(`${f.deadline.value}T23:59:59`).getTime();
       Store.set(`opportunities/${id}`, out);
       if (fromInbox) Store.update(`oppInbox/${id}`, { status: 'approved' });
+      if (!rec.pub) setTimeout(() => Automation.notify('push', `o:${id}`), 1500);   // إشعار جوال للمدربين بالفرصة الجديدة (لا يشمل الوظائف)
       Security.log(rec.pub ? 'تعديل فرصة تدريب' : 'اعتماد فرصة تدريب', out.title); toast(rec.pub ? 'تم الحفظ' : 'اعتُمدت الفرصة وظهرت للمدربين'); m.close(); onDone && onDone();
     };
   }
