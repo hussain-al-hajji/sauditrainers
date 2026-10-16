@@ -23,9 +23,11 @@ const Push = (() => {
   }
   async function save(tok) {
     const id = myId(); if (!id || !tok) return;
-    const h = hash(tok);
+    const h = hash(tok), cur = Store.get(`pushTokens/${id}/${h}`);
+    let last = 0; try { last = localStorage.getItem(KEY) === h ? Number(localStorage.getItem(KEY + '-ts') || 0) : 0; } catch { /* ignore */ }
+    if ((cur && Date.now() - (cur.ts || 0) < 12 * 3600e3) || Date.now() - last < 12 * 3600e3) { try { localStorage.setItem(KEY, h); } catch { /* ignore */ } return; }   // مسجّل حديثاً: لا نكتب (الكتابة تُعيد رسم الصفحة)
     await Store.set(`pushTokens/${id}/${h}`, { t: tok, ts: Date.now(), ua: (ios() ? 'iOS' : /android/i.test(navigator.userAgent) ? 'Android' : 'Web') + (standalone() ? ' · تطبيق' : ' · متصفح') });
-    try { localStorage.setItem(KEY, h); } catch { /* ignore */ }
+    try { localStorage.setItem(KEY, h); localStorage.setItem(KEY + '-ts', String(Date.now())); } catch { /* ignore */ }
   }
   const state = () => {
     if (!supported()) return ios() && !standalone() ? 'ios-install' : 'unsupported';
@@ -46,8 +48,10 @@ const Push = (() => {
     if (id && h) { try { await Store.remove(`pushTokens/${id}/${h}`); } catch { /* ignore */ } }
   }
   // عند فتح اللوحة: إن كان مفعّلاً نجدّد الرمز (قد يتغيّر) ونجهّز استقبال الرسائل والصفحة مفتوحة
+  let syncedOnce = false;
   async function sync() {
-    if (!available() || !supported()) return;
+    if (syncedOnce || !available() || !supported()) return;
+    syncedOnce = true;   // مرة واحدة لكل فتح للصفحة (وإلا تسبّب كل كتابة بإعادة رسم اللوحة وحلقة لا تنتهي)
     // الإذن ممنوح مسبقاً (جهاز جديد أو بعد مسح البيانات): نسجّل الجهاز بصمت دون سؤال
     if (state() !== 'on' && Notification.permission !== 'granted') return;
     try { await save(await token()); } catch { /* ignore */ }
