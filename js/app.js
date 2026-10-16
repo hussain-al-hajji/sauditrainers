@@ -4,7 +4,7 @@ const App = (() => {
   let timers = [], dataHooks = [], dirty = false;
   const ROUTES = {
     '': 'home', trainers: 'trainers', t: 'profile', join: 'join', status: 'status', request: 'request',
-    halls: 'halls', news: 'news', about: 'about', login: 'login', me: 'me', admin: 'admin'
+    halls: 'halls', news: 'news', recommend: 'recommend', about: 'about', login: 'login', me: 'me', admin: 'admin'
   };
 
   function parse() {

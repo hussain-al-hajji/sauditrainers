@@ -14,6 +14,7 @@ Pages.me = {
     const annNew = News.unread(t.id).length;
     tabs.push(['opps', 'fa-handshake-angle', 'إعلانات عبر الإنترنت', Opps.unread(t.id).length]);
     if (featureOn('news')) tabs.push(['news', 'fa-newspaper', 'أخباري']);
+    tabs.push(['rv', 'fa-star', 'مراجعات وتوصيات', Reviews.unread(t.id)]);
     if (featureOn('announcements')) tabs.push(['ann', 'fa-bell-concierge', 'إعلانات', annNew]);
     if (!tabs.some(x => x[0] === this.tab)) this.tab = 'home';
     return `<div class="wrap dash">
@@ -46,7 +47,7 @@ Pages.me = {
     try { if (fresh && sessionStorage.getItem('st-leads-seen') !== String(fresh)) { sessionStorage.setItem('st-leads-seen', String(fresh)); toast(`لديك ${fresh} ${fresh === 1 ? 'طلب تواصل جديد' : 'طلبات تواصل جديدة'} من جهات تدريبية`); } } catch { /* ignore */ }
     const go = k => { this.tab = k; App.render(); };
     $('#bell', root) && ($('#bell', root).onclick = () => Broadcast.notifications(t, go));
-    ({ home: portalHome, edit: portalEdit, leads: portalLeads, bc: Broadcast.tab, news: News.tab, ann: News.annTab, opps: Opps.tab })[this.tab](main, t);
+    ({ home: portalHome, edit: portalEdit, leads: portalLeads, bc: Broadcast.tab, news: News.tab, rv: Reviews.tab, ann: News.annTab, opps: Opps.tab })[this.tab](main, t);
     if (this.tab !== 'ann') News.annPopup(t, go);
     if (this.tab !== 'bc') Broadcast.popup(t, go);
   },
