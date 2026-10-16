@@ -45,9 +45,9 @@ const Library = (() => {
 
   /* ---------- تبويب «مكتبة المدرب» ---------- */
   const V = { cat: '', q: '', fav: false, seen: 0 };
-  function open(it, t) {
+  function open(it, t, opt = {}) {
     const copy = it.kind === 'template' || it.kind === 'checklist', k = kind(it.kind), c = cat(it.cat);
-    const m = modal(`<h3><i class="fa-solid ${c[1]}"></i> ${esc(it.title)}</h3>
+    const m = modal(`${opt.preview ? '<div class="banner" style="margin-bottom:10px"><i class="fa-solid fa-eye"></i> معاينة كما سيراه المدرب — غير منشور بعد</div>' : ''}<h3><i class="fa-solid ${c[1]}"></i> ${esc(it.title)}</h3>
       <p class="small muted"><span class="pill gold"><i class="fa-solid ${k[2]}"></i> ${k[1]}</span> ${esc(c[2])}</p>
       ${it.summary ? `<p class="muted">${esc(it.summary)}</p>` : ''}
       ${it.body ? `<div class="lib-body">${render(it.body)}</div>` : ''}
@@ -110,7 +110,8 @@ const Library = (() => {
         ${field('المحتوى', `<textarea name="body" rows="10" maxlength="6000">${esc(r.body || '')}</textarea>`, 'استعمل **نص** للخط العريض. القوالب وقوائم التحقق يستطيع المدرب نسخها بزر.')}
         ${field('رابط (اختياري)', `<input name="url" type="url" dir="ltr" value="${esc(r.url || '')}" placeholder="https://…">`)}
         <label class="chk"><input type="checkbox" name="pin" ${r.pin ? 'checked' : ''}><span>تثبيت في أعلى المكتبة</span></label>
-        <div class="row end"><button type="button" class="btn ghost" data-close>إلغاء</button><button class="btn primary" type="submit">اعتماد ونشر للمدربين</button></div></form>`, { wide: true });
+        <div class="row end"><button type="button" class="btn ghost" data-close>إلغاء</button><button type="button" class="btn" id="lpv"><i class="fa-solid fa-eye"></i> معاينة</button><button class="btn primary" type="submit">اعتماد ونشر للمدربين</button></div></form>`, { wide: true });
+    $('#lpv', m.el).onclick = () => { const f = $('#lf2', m.el); open({ id: r.id || 'preview', title: f.title.value.trim() || '(بلا عنوان)', cat: f.cat.value, kind: f.kind.value, summary: f.summary.value.trim(), body: f.body.value.trim(), url: f.url.value.trim() }, null, { preview: true }); };
     $('#lf2', m.el).onsubmit = async e => {
       e.preventDefault(); const f = e.target, url = f.url.value.trim();
       if (url && !/^https:\/\//i.test(url)) return toast('الرابط يجب أن يبدأ بـ https://', 'err');
@@ -126,11 +127,12 @@ const Library = (() => {
     const shown = list.filter(x => !AV.cat || x.cat === AV.cat);
     main.innerHTML = `<div class="dash-h"><h2>مكتبة المدرب</h2><div class="row" style="gap:8px;flex-wrap:wrap">${missing.length ? `<button class="btn" id="lseed"><i class="fa-solid fa-box-open"></i> نشر المحتوى الأساسي (${missing.length})</button>` : ''}<button class="btn primary" id="lnew"><i class="fa-solid fa-plus"></i> مورد جديد</button></div></div>
       <p class="muted small">لا يظهر أي مورد للمدربين إلا بعد اعتماده هنا. ${list.length} مورداً منشوراً${sug.length ? ` · ${sug.length} اقتراح بانتظار المراجعة` : ''}.</p>
+      ${missing.length ? `<div class="pbox"><h3><i class="fa-solid fa-eye"></i> المحتوى الأساسي بانتظار النشر <small class="num muted">(${missing.length})</small></h3><p class="small muted">عاين كل مورد كما سيراه المدرب قبل النشر. لا يراه المدربون حتى تنشره.</p>${missing.map(s => `<div class="lead"><span class="ic"><i class="fa-solid ${cat(s.cat)[1]}"></i></span><div><b>${esc(s.title)}</b> <small class="muted">${esc(cat(s.cat)[2])} · ${esc(kind(s.kind)[1])}</small><p class="small">${esc(s.summary || '')}</p></div><div class="acts"><button class="btn sm" data-pvs="${esc(s.id)}"><i class="fa-solid fa-eye"></i> معاينة</button><button class="btn sm primary" data-pub="${esc(s.id)}">نشر</button></div></div>`).join('')}</div>` : ''}
       ${sug.length ? `<div class="pbox"><h3><i class="fa-solid fa-lightbulb"></i> اقتراحات المدربين <small class="num muted">(${sug.length})</small></h3>${sug.map(s => { const t = Store.get(`trainers/${s.trainerId}`) || {}; return `<div class="lead"><div><b>${esc(s.title)}</b> <small class="muted">${esc(cat(s.cat)[2])} · ${esc(kind(s.kind)[1])} · من ${esc(t.name || s.trainerId)} · ${dateOf(s.ts)}</small><p class="small" style="white-space:pre-wrap">${esc(String(s.summary || s.body || s.url || '').slice(0, 300))}</p></div>
-        <div class="acts" style="flex-direction:column"><button class="btn sm primary" data-ap="${esc(s.id)}"><i class="fa-solid fa-check"></i> مراجعة واعتماد</button><button class="btn sm danger" data-rj="${esc(s.id)}"><i class="fa-solid fa-xmark"></i> رفض</button></div></div>`; }).join('')}</div>` : ''}
+        <div class="acts" style="flex-direction:column"><button class="btn sm" data-pvg="${esc(s.id)}"><i class="fa-solid fa-eye"></i> معاينة</button><button class="btn sm primary" data-ap="${esc(s.id)}"><i class="fa-solid fa-check"></i> مراجعة واعتماد</button><button class="btn sm danger" data-rj="${esc(s.id)}"><i class="fa-solid fa-xmark"></i> رفض</button></div></div>`; }).join('')}</div>` : ''}
       <div class="chips" style="margin-bottom:12px"><button class="chip ${AV.cat ? '' : 'on'}" data-c="">الكل (${list.length})</button>${CATS.map(c => `<button class="chip ${AV.cat === c[0] ? 'on' : ''}" data-c="${c[0]}"><i class="fa-solid ${c[1]}"></i> ${c[2]} <span class="num">${list.filter(x => x.cat === c[0]).length}</span></button>`).join('')}</div>
       <div class="pbox">${shown.length ? shown.map(x => `<div class="lead"><span class="ic"><i class="fa-solid ${cat(x.cat)[1]}"></i></span><div><b>${esc(x.title)}</b>${x.pin ? ' <i class="fa-solid fa-thumbtack muted"></i>' : ''} <small class="muted">${esc(kind(x.kind)[1])} · ${dateOf(x.ts)}</small><p class="small">${esc(x.summary || '')}</p></div>
-        <div class="acts"><button class="btn sm" data-ed="${esc(x.id)}"><i class="fa-solid fa-pen"></i></button><button class="btn sm danger" data-del="${esc(x.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`).join('') : '<p class="muted small">لا توجد موارد منشورة في هذا التصنيف. استعمل «نشر المحتوى الأساسي» أو أضف مورداً.</p>'}</div>`;
+        <div class="acts"><button class="btn sm" data-pvp="${esc(x.id)}" title="معاينة كما يراه المدرب"><i class="fa-solid fa-eye"></i></button><button class="btn sm" data-ed="${esc(x.id)}"><i class="fa-solid fa-pen"></i></button><button class="btn sm danger" data-del="${esc(x.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`).join('') : '<p class="muted small">لا توجد موارد منشورة في هذا التصنيف. استعمل «نشر المحتوى الأساسي» أو أضف مورداً.</p>'}</div>`;
     const again = () => admin(main);
     $('#lnew', main).onclick = () => editor(null, again);
     $('#lseed', main) && ($('#lseed', main).onclick = async () => {
@@ -139,7 +141,11 @@ const Library = (() => {
       Security.log('نشر المحتوى الأساسي لمكتبة المدرب', `${n} مورد`); toast(`نُشر ${n} مورداً`); again();
     });
     $$('[data-c]', main).forEach(b => b.onclick = () => { AV.cat = b.dataset.c; again(); });
+    $$('[data-pvs]', main).forEach(b => b.onclick = () => open(missing.find(x => x.id === b.dataset.pvs), null, { preview: true }));
+    $$('[data-pvg]', main).forEach(b => b.onclick = () => open(sug.find(x => x.id === b.dataset.pvg), null, { preview: true }));
+    $$('[data-pub]', main).forEach(b => b.onclick = async () => { const s = missing.find(x => x.id === b.dataset.pub); if (s && await Store.setConfirmed(`library/${s.id}`, { ...s, ts: Date.now() })) { Security.log('نشر مورد من المحتوى الأساسي', s.title); toast('نُشر المورد للمدربين'); again(); } });
     $$('[data-ed]', main).forEach(b => b.onclick = () => editor(list.find(x => x.id === b.dataset.ed), again));
+    $$('[data-pvp]', main).forEach(b => b.onclick = () => open(list.find(x => x.id === b.dataset.pvp), null, { preview: true }));
     $$('[data-del]', main).forEach(b => b.onclick = async () => { if (await confirmBox('حذف هذا المورد من المكتبة؟', { ok: 'حذف', danger: true })) { Store.remove(`library/${b.dataset.del}`); Security.log('حذف مورد من مكتبة المدرب', b.dataset.del); } });
     $$('[data-ap]', main).forEach(b => b.onclick = () => { const s = sug.find(x => x.id === b.dataset.ap); editor({ ...s, id: Store.newId() }, async () => { await Store.setConfirmed(`librarySuggest/${s.id}/status`, 'ok'); }); });
     $$('[data-rj]', main).forEach(b => b.onclick = async () => { if (await confirmBox('رفض هذا الاقتراح؟', { ok: 'رفض', danger: true })) Store.setConfirmed(`librarySuggest/${b.dataset.rj}/status`, 'no'); });
