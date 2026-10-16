@@ -16,7 +16,7 @@ const Reviews = (() => {
 
   function card(r) {
     return `<figure class="rv"><blockquote>${esc(r.text)}</blockquote>
-      <figcaption><b>${esc(r.name)}</b>${who(r) ? `<small>${who(r)}</small>` : ''}<span class="rv-meta">${stars(Number(r.rating) || 0)}<span class="rv-src ${r.src === 'link' ? 'ok' : ''}" title="${r.src === 'link' ? 'كتبتها الجهة بنفسها عبر رابط التوصية' : 'نقلها المدرب من مصدر آخر'}"><i class="fa-solid ${r.src === 'link' ? 'fa-circle-check' : 'fa-pen'}"></i> ${r.src === 'link' ? 'عبر رابط التوصية' : 'أضافها المدرب'}</span></span></figcaption></figure>`;
+      <figcaption><b>${esc(r.name)}</b>${who(r) ? `<small>${who(r)}</small>` : ''}<span class="rv-meta">${stars(Number(r.rating) || 0)}</span></figcaption></figure>`;
   }
 
   /* ---------- الصفحة العامة للمدرب ---------- */
@@ -100,7 +100,7 @@ const Reviews = (() => {
   function editor(t, r) {
     let rating = Number(r?.rating) || 0;
     const m = modal(`<h3><i class="fa-solid fa-star"></i> ${r ? 'تعديل التوصية' : 'إضافة توصية'}</h3>
-      <p class="muted small">أضف توصية قيلت فيك من متدرب أو جهة تعاون. ستظهر في صفحتك بوسم «أضافها المدرب» للشفافية.</p>
+      <p class="muted small">أضف توصية قيلت فيك من متدرب أو جهة تعاون. ستظهر في صفحتك مباشرة.</p>
       <form id="ef" style="display:grid;gap:10px">${field('اسم القائل', `<input name="name" required minlength="3" maxlength="60" value="${esc(r?.name || '')}">`)}
         <div class="row" style="gap:10px;flex-wrap:wrap"><div style="flex:1;min-width:180px">${field('الجهة (اختياري)', `<input name="org" maxlength="100" value="${esc(r?.org || '')}">`)}</div><div style="flex:1;min-width:180px">${field('صفته (اختياري)', `<input name="role" maxlength="80" value="${esc(r?.role || '')}">`)}</div></div>
         ${field('نص التوصية', `<textarea name="text" required rows="5" minlength="20" maxlength="800">${esc(r?.text || '')}</textarea>`)}
