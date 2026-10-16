@@ -21,7 +21,7 @@ window.ST_CONFIG = {
   // الحسابات الرئيسية: صلاحية كاملة دائماً، وهي وحدها تدعو المشرفين (يجب أن تطابق database.rules.json)
   ownerEmails: ['g.hussainalhajji@gmail.com', 'trainers.sa3@gmail.com'],
   // مفتاح Web Push العام (VAPID) لإشعارات الجوال: Firebase Console ← Project settings ← Cloud Messaging ← Web Push certificates ← Generate key pair (ليس سراً). اتركه فارغاً لتعطيل الإشعارات
-  vapidKey: '',
+  vapidKey: 'BEFVcX1wJbAa5vFww0D-QT5Kca5uS_oqOT-hrIphl7HCErw9YgPPf-NNcezb7iVr1-J9eGhy1cHauLZHtTOEHcY',
   // يبقى المشرف مسجلاً على جهازه، ويُطلب منه الدخول من جديد بعد هذه المدة دون أي نشاط
   adminIdleHours: 72,
   // وكذلك المدرب: يبقى مسجلاً على جهازه حتى يخرج بنفسه، أو تنتهي جلسته تلقائياً بعد هذه المدة دون أي فتح للموقع
