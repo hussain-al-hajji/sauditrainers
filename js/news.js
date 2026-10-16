@@ -45,13 +45,24 @@ const News = (() => {
 
   // رابط مشاركة الخبر الذي تظهر له معاينة (صورة المدرب واسمه + العنوان والمقتطف) في واتساب وإكس ولينكدإن
   const shareUrl = n => `${siteBase()}n/${encodeURIComponent(n.id)}/`;
-  const shareRow = n => { const u = shareUrl(n), q = encodeURIComponent(u), tx = encodeURIComponent(`${n.title}\n${u}`);
+  // نص المشاركة المصاحب للرابط: يتبع جنس صاحب الخبر (المدرب/المدربة) ويناسب إكس (280 حرفاً والرابط يُحسب 23)
+  function shareText(n) {
+    const t = Store.get(`trainers/${n.trainerId}`) || {}, w = t.gender === 'f' ? 'المدربة' : 'المدرب', len = x => [...x].length;
+    const head = `جديد أخبار ${w} ${withTitle(t.name || '')} على «مدرّبون سعوديّون»:\n«`, tail = '»\nاقرأ المزيد 👇';
+    const room = 280 - 23 - 1 - len(head) - len(tail) - 6;   // 6 هامش أمان (الإيموجي يُحسب أكثر من حرف)
+    let title = String(n.title || '').replace(/\s+/g, ' ').trim();
+    if (len(title) > room) title = [...title].slice(0, Math.max(10, room - 1)).join('').replace(/\s+\S*$/, '') + '…';
+    return head + title + tail;
+  }
+  const shareRow = n => { const u = shareUrl(n), q = encodeURIComponent(u), st = shareText(n), full = `${st}\n${u}`;
     return `<div class="nshare"><b class="small"><i class="fa-solid fa-share-nodes"></i> شارك الخبر مع البطاقة الشخصية</b>
-      <a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/?text=${tx}"><i class="fa-brands fa-whatsapp"></i> واتساب</a>
-      <a class="btn sm" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(n.title)}&url=${q}"><i class="fa-brands fa-x-twitter"></i> إكس</a>
-      <a class="btn sm" target="_blank" rel="noopener" href="https://www.linkedin.com/sharing/share-offsite/?url=${q}"><i class="fa-brands fa-linkedin"></i> لينكدإن</a>
-      <button type="button" class="btn sm ghost" data-cp="${esc(u)}"><i class="fa-regular fa-copy"></i> نسخ الرابط</button></div>`; };
-  const bindCopy = root => $$('[data-cp]', root).forEach(b => b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.cp); toast('تم نسخ رابط الخبر'); } catch { toast(b.dataset.cp); } });
+      <a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(full)}"><i class="fa-brands fa-whatsapp"></i> واتساب</a>
+      <a class="btn sm" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(st)}&url=${q}"><i class="fa-brands fa-x-twitter"></i> إكس</a>
+      <a class="btn sm" target="_blank" rel="noopener" href="https://www.linkedin.com/sharing/share-offsite/?url=${q}" data-lk="${esc(full)}"><i class="fa-brands fa-linkedin"></i> لينكدإن</a>
+      <button type="button" class="btn sm ghost" data-cp="${esc(full)}" data-msg="تم نسخ النص مع الرابط"><i class="fa-regular fa-copy"></i> نسخ النص والرابط</button>
+      <button type="button" class="btn sm ghost" data-cp="${esc(u)}"><i class="fa-solid fa-link"></i> نسخ الرابط فقط</button></div>`; };
+  const bindCopy = root => { $$('[data-lk]', root).forEach(a => a.addEventListener('click', () => { try { navigator.clipboard.writeText(a.dataset.lk); toast('نُسخ النص مع الرابط؛ الصقه في منشور لينكدإن'); } catch { /* ignore */ } })); return bindCopy2(root); };
+  const bindCopy2 = root => $$('[data-cp]', root).forEach(b => b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.cp); toast(b.dataset.msg || 'تم نسخ رابط الخبر'); } catch { toast(b.dataset.cp); } });
 
   /* ---------- قسم «أخباري» في الصفحة العامة للمدرب ---------- */
   function profileBox(t) {
