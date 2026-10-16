@@ -200,6 +200,7 @@ Pages.profile = {
         ${typeof News !== 'undefined' ? News.profileBox(t) : ''}
         ${typeof Reviews !== 'undefined' ? Reviews.profileBox(t) : ''}
         ${t.bio ? `<div class="pbox reveal"><h3><i class="fa-solid fa-user"></i>نبذة تعريفية</h3><p>${nl2br(t.bio)}</p></div>` : ''}
+        ${typeof Videos !== 'undefined' ? Videos.box(t) : ''}
         ${sp.length ? `<div class="pbox reveal"><h3><i class="fa-solid fa-layer-group"></i>التخصصات التدريبية</h3><div class="checks">${sp.map(k => `<a class="chk" href="#/trainers?spec=${k}"><span><i class="fa-solid ${specOf(k)?.icon || 'fa-shapes'}"></i>${esc(specName(k))}</span></a>`).join('')}</div></div>` : ''}
         ${tp.length ? `<div class="pbox reveal"><h3><i class="fa-solid fa-chalkboard"></i>دورات تم تقديمها سابقاً</h3><div class="topics">${tp.map(x => `<span>${esc(x)}</span>`).join('')}</div></div>` : ''}
         ${t.proCerts ? `<div class="pbox reveal"><h3><i class="fa-solid fa-certificate"></i>شهادات احترافية يدرّب عليها</h3><div class="topics">${splitList(String(t.proCerts).replace(/\n/g, '،')).map(x => `<span>${esc(x)}</span>`).join('')}</div></div>` : ''}
