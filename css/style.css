@@ -1311,3 +1311,11 @@ body.preview .local-flag { display: none; }
 .push-ask { position: fixed; z-index: 9990; bottom: 18px; inset-inline: 18px; max-width: 520px; margin-inline: auto; display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 18px; background: #003d23; color: #fff; box-shadow: 0 18px 44px -14px rgba(0,0,0,.55); border: 1px solid rgba(238,243,229,.25); }
 .push-ask > i { font-size: 1.4rem; color: #C9DAB4; } .push-ask > div { flex: 1; display: grid; gap: 2px; } .push-ask small { opacity: .85; line-height: 1.5; }
 .push-ask .btn.ghost { color: #fff; border-color: rgba(255,255,255,.5); }
+
+/* صحة الموقع */
+.hl-top.ok { border-color: #8fcf9d; } .hl-top.warn { border-color: #e6c36a; background: #fffaf0; } .hl-top.bad { border-color: #e29a9a; background: #fff6f6; }
+.hl-al { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 6px; } .hl-al li { display: flex; gap: 8px; align-items: center; } .hl-al li.bad { color: #a12626; } .hl-al li.warn { color: #8a5a00; }
+.hl-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 18px; }
+.hl-tile { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 16px; display: grid; gap: 4px; box-shadow: var(--sh1); } .hl-tile > i { color: var(--g600); font-size: 1.2rem; } .hl-tile b { font-size: 1.7rem; line-height: 1.2; } .hl-tile span { font-weight: 600; }
+.hl-row { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 0; border-bottom: 1px dashed var(--line); } .hl-row:last-child { border-bottom: 0; }
+.hl-pill { display: inline-block; padding: 2px 12px; border-radius: 99px; font-size: .8rem; font-weight: 700; background: #eee; } .hl-pill.ok { background: #DDF1E1; color: #0B6A3E; } .hl-pill.bad { background: #FBE0E0; color: #a12626; } .hl-pill.wait { background: #FFF1CC; color: #8a5a00; }
