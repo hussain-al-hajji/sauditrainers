@@ -1295,3 +1295,14 @@ body.preview .local-flag { display: none; }
 .rv-src { font-size: .78rem; padding: 2px 10px; border-radius: 99px; background: #eee; color: #566; display: inline-flex; gap: 6px; align-items: center; } .rv-src.ok { background: #E2F0E4; color: var(--g800); }
 .rv-pick { display: flex; gap: 6px; margin-top: 6px; } .rv-pick button { font-size: 1.7rem; line-height: 1; background: none; border: 0; cursor: pointer; color: #b9c6b0; } .rv-pick button.on { color: #d4a017; }
 .nshare { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 16px; padding-top: 14px; border-top: 1px dashed var(--line); }
+
+/* مكتبة المدرب */
+.lib-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 14px; }
+.lib-card { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px; box-shadow: var(--sh1); }
+.lib-top { display: flex; justify-content: space-between; align-items: center; }
+.lib-ic { width: 44px; height: 44px; border-radius: 14px; background: var(--g50, #EEF3E5); color: var(--g700, #0B6A3E); display: grid; place-items: center; font-size: 1.1rem; }
+.lib-fav { background: none; border: 0; cursor: pointer; font-size: 1.15rem; color: #b9c6b0; } .lib-fav.on { color: #d4a017; }
+.lib-card h4 { margin: 4px 0 0; font-size: 1.05rem; line-height: 1.5; } .lib-card p { margin: 0; flex: 1; }
+.lib-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.lib-body { background: var(--g50, #F1F6EC); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; line-height: 1.95; max-height: 55vh; overflow: auto; }
+.pill.sm { font-size: .7rem; padding: 1px 8px; }
