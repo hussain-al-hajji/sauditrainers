@@ -154,6 +154,11 @@ const Automation = {
   // إجراءات الإدارة تُرفق رمز دخول المشرف (Firebase ID token) ليتحقق منه السكربت؛ الإجراءات العامة (طلب تواصل/تسجيل) بلا رمز
   ADMIN: ['campaign', 'outbox', 'publish', 'ping', 'snapshot', 'backfill', 'analytics', 'opps', 'push', 'health'],
   MEMBER: ['sitebuild'],   // إجراءات يكفيها حساب مدرب أو مشرف مسجّل
+  // طلب بناء الموقع بعد آخر تعديل على المدربين بـ45 ثانية (دمج التعديلات المتتالية في طلب واحد)؛ يتجاهله الخادم إن لم يكن الطالب مدرباً أو مشرفاً
+  siteBuildSoon() {
+    if (!this.on || !(Store.auth && Store.auth.currentUser)) return;
+    clearTimeout(this._sb); this._sb = setTimeout(() => this.notify('sitebuild', 'trainers'), 45000);
+  },
   async notify(action, id) {
     if (!this.on) return false;
     const body = { action, id, root: window.ST_CONFIG.dbRoot || 'sauditrainers' };

@@ -258,8 +258,11 @@ const Store = (() => {
     }).catch(() => {}));
   }
 
+  // أي كتابة محلية على بيانات المدربين أو الروابط تطلب (بعد مهلة) بناء صفحات المشاركة وخريطة الموقع (Automation.siteBuildSoon)
+  const siteTouch = path => { if (rootRef && /^(trainers|slugs)(\/|$)/.test(parts(path).join('/'))) { try { window.Automation && Automation.siteBuildSoon(); } catch { /* ignore */ } } };
+
   function set(path, val) {
-    val = clean(val);
+    val = clean(val); siteTouch(path);
     state = setIn(state, path, val);
     if (rootRef) {
       const p = parts(path).join('/');
@@ -272,7 +275,7 @@ const Store = (() => {
   // حفظ مع انتظار تأكيد الخادم: يعيد true عند النجاح وfalse عند الرفض (للنماذج العامة حتى لا يُعرض نجاح كاذب)
   async function setConfirmed(path, val) {
     if (!rootRef) { set(path, val); return true; }
-    val = clean(val);
+    val = clean(val); siteTouch(path);
     const p = parts(path).join('/');
     if (!p) throw new Error('refusing to overwrite database root');
     state = setIn(state, path, val); notify();
@@ -287,7 +290,7 @@ const Store = (() => {
   }
 
   function update(path, obj) {
-    obj = clean(obj) || {};
+    obj = clean(obj) || {}; siteTouch(path);
     Object.entries(obj).forEach(([k, v]) => { state = setIn(state, parts(path).concat(k).join('/'), v); });
     if (rootRef) {
       const p = parts(path).join('/');
