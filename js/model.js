@@ -153,10 +153,11 @@ const Automation = {
   get on() { return /^https:\/\/script\.google\.com\//.test(this.url); },
   // إجراءات الإدارة تُرفق رمز دخول المشرف (Firebase ID token) ليتحقق منه السكربت؛ الإجراءات العامة (طلب تواصل/تسجيل) بلا رمز
   ADMIN: ['campaign', 'outbox', 'publish', 'ping', 'snapshot', 'backfill', 'analytics', 'opps', 'push'],
+  MEMBER: ['sitebuild'],   // إجراءات يكفيها حساب مدرب أو مشرف مسجّل
   async notify(action, id) {
     if (!this.on) return false;
     const body = { action, id, root: window.ST_CONFIG.dbRoot || 'sauditrainers' };
-    if (this.ADMIN.includes(action)) { try { const u = Store.auth && Store.auth.currentUser; if (u) body.token = await u.getIdToken(); } catch { /* بلا رمز: يرفضه السكربت */ } }
+    if (this.ADMIN.includes(action) || this.MEMBER.includes(action)) { try { const u = Store.auth && Store.auth.currentUser; if (u) body.token = await u.getIdToken(); } catch { /* بلا رمز: يرفضه السكربت */ } }
     return fetch(this.url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(body) }).then(() => true, () => false);
   }
 };

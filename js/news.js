@@ -137,7 +137,7 @@ const News = (() => {
       if (links.length) rec.links = links.map(l => ({ url: l.url, title: l.title || '', desc: l.desc || '', img: l.img || '', site: l.site || '' }));
       try {
         if (n) await Store.set(`news/${n.id}`, rec); else Store.push('news', rec);
-        toast(n ? 'تم حفظ الخبر' : 'نُشر الخبر في الصفحة الرئيسية وصفحة الأخبار'); m.close(); done && done();
+        toast(n ? 'تم حفظ الخبر' : 'نُشر الخبر في الصفحة الرئيسية وصفحة الأخبار'); m.close(); Automation.notify('sitebuild', 'news'); done && done();
       } catch { /* Store يعرض سبب الرفض */ }
     };
   };
