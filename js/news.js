@@ -39,9 +39,20 @@ const News = (() => {
       <small class="muted">${dateOf(n.ts)}</small>
       ${body ? `<p>${body}</p>` : ''}
       ${full ? links.map(linkCard).join('') : (links.length ? `<small class="muted"><i class="fa-solid fa-link"></i> ${links.length} ${links.length === 1 ? 'رابط مرفق' : 'روابط مرفقة'}</small>` : '')}
+      ${full ? shareRow(n) : ''}
       ${full ? '' : `<a class="more" href="#/news/${esc(n.id)}">قراءة الخبر <i class="fa-solid fa-arrow-left"></i></a>`}
     </article>`;
   }
+
+  // رابط مشاركة الخبر الذي تظهر له معاينة (صورة المدرب واسمه + العنوان والمقتطف) في واتساب وإكس ولينكدإن
+  const shareUrl = n => `${siteBase()}n/${encodeURIComponent(n.id)}/`;
+  const shareRow = n => { const u = shareUrl(n), q = encodeURIComponent(u), tx = encodeURIComponent(`${n.title}\n${u}`);
+    return `<div class="nshare"><b class="small"><i class="fa-solid fa-share-nodes"></i> شارك الخبر</b>
+      <a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/?text=${tx}"><i class="fa-brands fa-whatsapp"></i> واتساب</a>
+      <a class="btn sm" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(n.title)}&url=${q}"><i class="fa-brands fa-x-twitter"></i> إكس</a>
+      <a class="btn sm" target="_blank" rel="noopener" href="https://www.linkedin.com/sharing/share-offsite/?url=${q}"><i class="fa-brands fa-linkedin"></i> لينكدإن</a>
+      <button type="button" class="btn sm ghost" data-cp="${esc(u)}"><i class="fa-regular fa-copy"></i> نسخ الرابط</button></div>`; };
+  const bindCopy = root => $$('[data-cp]', root).forEach(b => b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.cp); toast('تم نسخ رابط الخبر'); } catch { toast(b.dataset.cp); } });
 
   /* ---------- قسم «أخباري» في الصفحة العامة للمدرب ---------- */
   function profileBox(t) {
@@ -72,7 +83,7 @@ const News = (() => {
           ${shown.length ? `<div class="ngrid">${shown.map(n => card(n)).join('')}</div>` : '<div class="empty"><i class="fa-solid fa-newspaper"></i><h3>لا توجد أخبار بعد</h3><p>سيظهر هنا ما ينشره المدربون من حساباتهم.</p></div>'}
         </div>`;
     },
-    mount() { /* لا شيء */ }
+    mount(root) { bindCopy(root); }
   };
 
   /* ---------- قسم الصفحة الرئيسية ---------- */
@@ -155,8 +166,9 @@ const News = (() => {
     main.innerHTML = `<div class="dash-h"><h2>أخباري</h2><div class="row" style="gap:8px;flex-wrap:wrap">${mine.length ? '<button class="btn" id="nx"><i class="fa-solid fa-share-nodes"></i> تصدير للسوشيال ميديا</button>' : ''}<button class="btn primary" id="nn"><i class="fa-solid fa-plus"></i> خبر جديد</button></div></div>
       <p class="muted small">اكتب عن نفسك في أي وقت: خبر، إنجاز، مشاركة، أو إعلان دورة. يظهر خبرك باسمك وصورتك في قسم «أخبار المدربين» بالرئيسية وصفحة الأخبار.</p>
       ${mine.length ? mine.map(n => `<div class="lead"><span class="ic"><i class="fa-solid ${kind(n.kind)[2]}"></i></span><div><b>${esc(n.title)}</b> <small class="muted">${dateOf(n.ts)}${n.editedAt ? ' · معدّل' : ''}</small><p class="small">${esc(String(n.body || '').slice(0, 160))}</p>${arr(n.links).length ? `<small class="muted"><i class="fa-solid fa-link"></i> ${arr(n.links).length} روابط</small>` : ''}</div>
-        <div class="acts" style="flex-direction:column"><a class="btn sm" href="#/news/${esc(n.id)}"><i class="fa-solid fa-eye"></i> عرض</a><button class="btn sm" data-ed="${esc(n.id)}"><i class="fa-solid fa-pen"></i> تعديل</button><button class="btn sm danger" data-del="${esc(n.id)}"><i class="fa-solid fa-trash"></i> حذف</button></div></div>`).join('')
+        <div class="acts" style="flex-direction:column"><a class="btn sm" href="#/news/${esc(n.id)}"><i class="fa-solid fa-eye"></i> عرض</a><button class="btn sm" data-cp="${esc(shareUrl(n))}"><i class="fa-solid fa-share-nodes"></i> رابط المشاركة</button><button class="btn sm" data-ed="${esc(n.id)}"><i class="fa-solid fa-pen"></i> تعديل</button><button class="btn sm danger" data-del="${esc(n.id)}"><i class="fa-solid fa-trash"></i> حذف</button></div></div>`).join('')
         : '<div class="empty"><i class="fa-solid fa-newspaper"></i><h3>لم تنشر أي خبر بعد</h3><p>اضغط «خبر جديد» لتشارك إنجازاً أو مشاركة أو دورة قادمة.</p></div>'}`;
+    bindCopy(main);
     $('#nn', main).onclick = () => editor(t);
     $('#nx', main) && ($('#nx', main).onclick = () => exportBox(t));
     $$('[data-ed]', main).forEach(b => b.onclick = () => editor(t, mine.find(n => n.id === b.dataset.ed)));

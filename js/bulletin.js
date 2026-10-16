@@ -286,6 +286,38 @@ const Bulletin = (() => {
     download(name, blob);
   }
 
+  /* ---------- صورة معاينة رابط الخبر (واتساب/إكس/لينكدإن): 1200×630 ---------- */
+  // يمين: صورة المدرب واسمه تحتها، وبجانبها (يساراً) عنوان الخبر ومقتطف من نصه بحسب المساحة
+  async function og(n) {
+    await prepare(); chrome.logo = chrome.logo || await K().loadImage(LOGO.cream);
+    const t = Store.get(`trainers/${n.trainerId}`) || {}, img = t.noPhoto ? null : await K().loadImage(Data.photo(t));
+    const OW = 1200, OH = 630, cv = document.createElement('canvas'); cv.width = OW; cv.height = OH;
+    const ctx = cv.getContext('2d'); ctx.direction = 'rtl'; ctx.textAlign = 'right';
+    const g = ctx.createLinearGradient(0, 0, OW, OH); g.addColorStop(0, C.g950); g.addColorStop(0.55, C.g900); g.addColorStop(1, C.g800); ctx.fillStyle = g; ctx.fillRect(0, 0, OW, OH);
+    try { ctx.fillStyle = ctx.createPattern(K().patternTile(C.sage, 0.1), 'repeat'); ctx.fillRect(0, 0, OW, OH); } catch { /* بلا نقش */ }
+    // لوحة المدرب (يمين)
+    const PX0 = OW - 60, PW = 340, cx = PX0 - PW / 2, R = 118;
+    rrect(ctx, PX0 - PW, 60, PW, OH - 120, 34, 'rgba(238,243,229,.10)', 'rgba(201,218,180,.35)');
+    avatar(ctx, t, img, cx, 60 + 40 + R + 4, R);
+    const name = String(t.name || ''), nfs = fitFont(ctx, name, 900, 40, 26, PW - 40, FONT.head);
+    ctx.font = `900 ${nfs}px ${FONT.head}`; const nl = clip(ctx, K().wrap(ctx, name, PW - 40, 2), PW - 40), ny = 60 + 40 + 2 * R + 8 + 56;
+    nl.forEach((l, i) => txt(ctx, l, cx, ny + i * (nfs + 8), { font: ctx.font, color: '#fff', align: 'center' }));
+    ctx.font = `600 22px ${FONT.body}`; const tl = clip(ctx, K().wrap(ctx, t.title || '', PW - 40, 2), PW - 40), ty = ny + nl.length * (nfs + 8) + 8;
+    tl.forEach((l, i) => txt(ctx, l, cx, ty + i * 30, { font: ctx.font, color: C.sage, align: 'center' }));
+    // الخبر (يسار اللوحة)
+    const TR = PX0 - PW - 44, TL = 64, TW = TR - TL;
+    pill(ctx, kindName(n.kind), TR, 92, { bg: 'rgba(238,243,229,.16)', fg: C.cream });
+    txt(ctx, dateAr(n.ts, true), TL, 100, { font: `600 22px ${FONT.body}`, color: C.sage, align: 'left' });
+    ctx.font = `900 54px ${FONT.head}`; const title = clip(ctx, K().wrap(ctx, n.title || '', TW, 3), TW), TLH = 70;
+    title.forEach((l, i) => txt(ctx, l, TR, 150 + TLH * (i + 1) - 14, { font: ctx.font, color: '#fff' }));
+    const by = 150 + title.length * TLH + 14, bl = 44, room = Math.floor((OH - 110 - by) / bl);
+    if (room >= 1 && n.body) { ctx.font = `400 30px ${FONT.body}`; clip(ctx, K().wrap(ctx, collapse(n.body), TW, Math.min(room, 6)), TW).forEach((l, i) => txt(ctx, l, TR, by + bl * (i + 1) - 10, { font: ctx.font, color: 'rgba(238,243,229,.88)' })); }
+    // التذييل
+    if (chrome.logo) { const lh = 50, lw = lh * chrome.logo.width / chrome.logo.height; ctx.drawImage(chrome.logo, TR - lw, OH - 50 - lh, lw, lh); }
+    txt(ctx, 'sauditrainers.sa', TL, OH - 62, { font: `700 26px ${FONT.body}`, color: C.cream, align: 'left', dir: 'ltr' });
+    return cv;
+  }
+
   /* ---------- النافذة: معاينة وتصدير ---------- */
   async function make(opts) {
     toast('جارٍ تصميم النشرة…');
@@ -302,5 +334,5 @@ const Bulletin = (() => {
     $$('.bl-th', m.el).forEach(b => b.onclick = () => busy(b, async () => { const i = +b.dataset.i; deliver(new Blob([await toPng(cvs[i])], { type: 'image/png' }), `${base}-${String(i + 1).padStart(2, '0')}.png`); }));
   }
 
-  return { make, build, zip, pdf, limit };
+  return { make, build, zip, pdf, limit, og };
 })();

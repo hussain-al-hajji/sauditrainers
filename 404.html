@@ -6,6 +6,8 @@
   var base = location.pathname.split('/').slice(0, location.hostname.endsWith('github.io') ? 2 : 1).join('/') + '/';
   var p = decodeURIComponent(location.pathname.slice(base.length)).replace(/\/+$/, '');
   var tm = p.match(/^t\/([^\/]+)$/);   // رابط المشاركة /t/<الرابط> قبل أن تُولَّد صفحته الثابتة: نحوّله لصفحة المدرب
+  var nm = p.match(/^n\/([^\/]+)$/);   // رابط مشاركة الخبر /n/<id> قبل أن تُولَّد صفحته الثابتة
+  if (nm) { location.replace(base + '#/news/' + encodeURIComponent(nm[1])); return; }
   if (tm) { location.replace(base + '#/t/' + encodeURIComponent(tm[1])); return; }
   var low = p.toLowerCase();
   var map = { about: '#/about', register: '#/join', 'find-major': '#/trainers', book: '#/halls', home: '#/' };

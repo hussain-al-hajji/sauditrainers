@@ -123,6 +123,16 @@ const SEO = (() => {
     return `${body.filter(Boolean).join('\n')}\n<p><a href="../../#/t/${e(cur)}">فتح بطاقة المدرب في ${e(s.siteName)}</a></p>`;
   }
 
+  // صفحة مشاركة الخبر: /n/<id>/ (عنوان الخبر ومقتطف منه، وصورة المعاينة og/n-<id>.jpg بصورة المدرب واسمه)
+  function newsExcerpt(n, len = 200) { const s = String(n.body || '').replace(/\s+/g, ' ').trim(); return s.length > len ? s.slice(0, len).replace(/\s+\S*$/, '') + '…' : s; }
+  function newsHead(n, t, base) {
+    const s = site(), title = `${n.title} — ${t.name}`, desc = newsExcerpt(n) || `${t.name}${t.title ? ' — ' + t.title : ''}`, url = `${base}n/${n.id}/`;
+    return headTags({ title: `${title} | ${s.siteName}`, desc, noindex: !s.robotsIndex }, { base, url, type: 'article', image: `${base}og/n-${n.id}.jpg`, imgAlt: title, keywords: false, ogTitle: title, imgH: 630 });
+  }
+  function newsBody(n, t) {
+    const e = esc; return `<h1>${e(n.title)}</h1><p>${e(t.name)}${t.title ? ' — ' + e(t.title) : ''}</p>${n.body ? `<p>${e(String(n.body).slice(0, 800))}</p>` : ''}\n<p><a href="../../#/news/${e(encodeURIComponent(n.id))}">قراءة الخبر كاملاً</a></p>`;
+  }
+
   /* ----- robots.txt وsitemap.xml ----- */
   function robotsTxt(base, fo) {
     const s = site(), f = fo || files();
@@ -156,5 +166,5 @@ const SEO = (() => {
     } catch (e) { /* لا يعطّل الصفحة */ }
   }
 
-  return { DEF, FILES_DEF, PAGES, PAGE_DEF, TRAINER_VARS, site, files, pageCfg, trainerCfg, trainerMeta, pageMeta, trainerVars, fill, headTags, homeBlock, trainerHead, trainerBody, robotsTxt, sitemapXml, apply };
+  return { DEF, FILES_DEF, PAGES, PAGE_DEF, TRAINER_VARS, site, files, pageCfg, trainerCfg, trainerMeta, pageMeta, trainerVars, fill, headTags, homeBlock, trainerHead, trainerBody, newsHead, newsBody, newsExcerpt, robotsTxt, sitemapXml, apply };
 })();
