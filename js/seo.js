@@ -139,9 +139,9 @@ const SEO = (() => {
     const extra = String(f.robotsExtra || '').split('\n').map(x => x.trim()).filter(x => /^(Disallow|Allow|Crawl-delay):\s*\S*/i.test(x));
     return `User-agent: *\n${s.robotsIndex ? 'Allow: /' : 'Disallow: /'}\n${s.robotsIndex ? extra.map(x => x + '\n').join('') : ''}Sitemap: ${base}sitemap.xml\n`;
   }
-  function sitemapXml(base, trainers, fo) {
+  function sitemapXml(base, trainers, fo, news) {
     const s = site(), f = fo || files(), e = esc;
-    const urls = s.robotsIndex ? [base, ...(f.sitemapTrainers ? trainers.filter(t => !trainerCfg(t.id).noindex).map(t => `${base}t/${t.slug || t.id}/`) : [])] : [];
+    const urls = s.robotsIndex ? [base, ...(f.sitemapTrainers ? trainers.filter(t => !trainerCfg(t.id).noindex).map(t => `${base}t/${t.slug || t.id}/`) : []), ...(f.sitemapTrainers ? (news || []).map(n => `${base}n/${n.id}/`) : [])] : [];
     const extra = u => `${f.changefreq ? `<changefreq>${e(f.changefreq)}</changefreq>` : ''}${f.priority ? `<priority>${e(f.priority)}</priority>` : ''}`;
     return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(u => `  <url><loc>${e(u)}</loc>${extra(u)}</url>`).join('\n')}\n</urlset>\n`;
   }
