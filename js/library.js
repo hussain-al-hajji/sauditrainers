@@ -17,6 +17,32 @@ const Library = (() => {
   const saveFavs = (id, set) => { try { localStorage.setItem(favKey(id), JSON.stringify([...set])); } catch { /* ignore */ } };
   const unread = id => all().filter(x => (x.ts || 0) > seenTs(id)).length;
 
+  /* ---------- تنزيل المورد ملف Word (.docx) قابلاً للتعديل: يُبنى في المتصفح دون مكتبات ---------- */
+  const xe = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+  const runs = (text, { b = false, sz = 24, color = '' } = {}) => String(text).split(/(\*\*[^*]+\*\*)/).filter(Boolean).map(seg => {
+    const bold = b || /^\*\*.+\*\*$/.test(seg), t = seg.replace(/^\*\*|\*\*$/g, '');
+    return `<w:r><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/>${bold ? '<w:b/><w:bCs/>' : ''}${color ? `<w:color w:val="${color}"/>` : ''}<w:sz w:val="${sz}"/><w:szCs w:val="${sz}"/><w:rtl/></w:rPr><w:t xml:space="preserve">${xe(t)}</w:t></w:r>`;
+  }).join('');
+  const para = (text, o = {}) => `<w:p><w:pPr><w:bidi/><w:spacing w:before="${o.before || 0}" w:after="${o.after == null ? 100 : o.after}" w:line="360" w:lineRule="auto"/></w:pPr>${runs(text, o)}</w:p>`;
+  function docxOf(it) {
+    const k = kind(it.kind), c = cat(it.cat), lines = String(it.body || '').split('\n');
+    const body = [para(it.title, { b: true, sz: 40, color: '005430', after: 120 }), para(`${c[2]} · ${k[1]}`, { sz: 20, color: '6A7F72', after: 200 }),
+      it.summary ? para(it.summary, { sz: 24, color: '3A5244', after: 240 }) : '', ...lines.map(l => para(l.trim() ? l : ' ', { sz: 24 })),
+      it.url ? para(`الرابط: ${it.url}`, { sz: 22, before: 160, color: '0B6A3E' }) : '',
+      para('من مكتبة المدرب — منصة «مدرّبون سعوديّون» · sauditrainers.sa', { sz: 18, color: '6A7F72', before: 360 })].join('');
+    const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"', enc = s => new TextEncoder().encode(s);
+    return Bulletin.zip([
+      { name: '[Content_Types].xml', data: enc('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>') },
+      { name: '_rels/.rels', data: enc('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>') },
+      { name: 'word/document.xml', data: enc(`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document ${W}><w:body>${body}<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134" w:header="708" w:footer="708" w:gutter="0"/><w:bidi/></w:sectPr></w:body></w:document>`) }
+    ]);
+  }
+  async function downloadDocx(it) {
+    const name = `trainer-library-${String(it.id).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) || 'item'}.docx`,   // اسم ASCII يضمن نجاح التنزيل في كل المتصفحات
+       blob = new Blob([docxOf(it)], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    await Bulletin.deliver(blob, name); toast('تم تجهيز ملف Word');
+  }
+
   /* ---------- تبويب «مكتبة المدرب» ---------- */
   const V = { cat: '', q: '', fav: false, seen: 0 };
   function open(it, t) {
@@ -26,8 +52,10 @@ const Library = (() => {
       ${it.summary ? `<p class="muted">${esc(it.summary)}</p>` : ''}
       ${it.body ? `<div class="lib-body">${render(it.body)}</div>` : ''}
       <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:14px">${copy && it.body ? '<button class="btn primary" id="lc"><i class="fa-regular fa-copy"></i> نسخ النص</button>' : ''}
-        ${it.url ? `<a class="btn ${copy ? '' : 'primary'}" target="_blank" rel="noopener" href="${esc(safeUrl(it.url))}"><i class="fa-solid fa-arrow-up-right-from-square"></i> فتح الرابط</a>` : ''}
+        <button class="btn ${copy ? '' : 'primary'}" id="ld"><i class="fa-solid fa-file-word"></i> تنزيل Word (.docx)</button>
+        ${it.url ? `<a class="btn" target="_blank" rel="noopener" href="${esc(safeUrl(it.url))}"><i class="fa-solid fa-arrow-up-right-from-square"></i> فتح الرابط</a>` : ''}
         <button class="btn ghost" data-close>إغلاق</button></div>`, { wide: true });
+    $('#ld', m.el).onclick = () => downloadDocx(it);
     const b = $('#lc', m.el); if (b) b.onclick = async () => { try { await navigator.clipboard.writeText(it.body); toast('تم نسخ النص'); } catch { toast('حدّد النص وانسخه يدوياً', 'err'); } };
   }
   function suggest(t) {

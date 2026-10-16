@@ -334,5 +334,5 @@ const Bulletin = (() => {
     $$('.bl-th', m.el).forEach(b => b.onclick = () => busy(b, async () => { const i = +b.dataset.i; deliver(new Blob([await toPng(cvs[i])], { type: 'image/png' }), `${base}-${String(i + 1).padStart(2, '0')}.png`); }));
   }
 
-  return { make, build, zip, pdf, limit, og };
+  return { make, build, zip, pdf, limit, og, deliver };
 })();
