@@ -1331,3 +1331,4 @@ body.preview .local-flag { display: none; }
 .vd-prov { position: absolute; z-index: 2; top: 10px; inset-inline-start: 10px; background: rgba(0,0,0,.55); color: #fff; font-size: .75rem; padding: 3px 10px; border-radius: 99px; }
 .vd-ext { position: relative; z-index: 2; background: #fff; color: #005430; font-weight: 700; padding: 8px 16px; border-radius: 99px; text-decoration: none; }
 .vd-wrap .vd { margin-bottom: 0; }
+.vd-cover.on::after { content: none; } .vd-cover.on iframe, .vd-cover.on video { z-index: 3; }
