@@ -267,7 +267,7 @@ const News = (() => {
       const d = (phone || '').replace(/\D/g, ''), parts = [`*نشرة أخبار منصة (مدربون سعوديون) الأسبوعية*\nنحتفي بأحدث إنجازات وبرامج المدربين 🌟`];
       sorted.forEach((n, i) => {
         const t = Store.get(`trainers/${n.trainerId}`) || {}, sm = one(n.summary) || (() => { const b = one(n.body); return b.length > 160 ? b.slice(0, 160).replace(/\s+\S*$/, '') + '…' : b; })();
-        parts.push(`${i + 1}️⃣ *${one(n.title)}*\n${one(withTitle(t.name || ''))} · ${dateOf(n.ts)}${sm ? `\n${sm}` : ''}\n🔗 ${shareUrl(n)}`);
+        parts.push(`${i + 1}️⃣ *${one(n.title)}*\n${one(withTitle(t.name || ''))}${sm ? `\n${sm}` : ''}\n🔗 ${shareUrl(n)}`);
       });
       parts.push(`✍️ *هل أنت مدرب أو مدربة؟*\nسجّل في منصة «مدرّبون سعوديّون» وانشر بطاقتك التعريفية وسيرتك وإنجازاتك، وآخر أخبار أنشطتك التدريبية أمام الجهات المهتمة وزوار المنصة.\n📝 التسجيل: ${siteBase()}#/join${d ? `\n💬 للتواصل واتساب: +${d}` : ''}`);
       return parts.join('\n\n━━━━━━━━━━\n\n');
