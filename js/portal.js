@@ -50,6 +50,7 @@ Pages.me = {
     const go = k => { this.tab = k; App.render(); };
     $('#bell', root) && ($('#bell', root).onclick = () => Broadcast.notifications(t, go));
     ({ home: portalHome, edit: portalEdit, leads: portalLeads, bc: Broadcast.tab, news: News.tab, rv: Reviews.tab, lib: Library.tab, vid: Videos.tab, ann: News.annTab, opps: Opps.tab })[this.tab](main, t);
+    if (this.tab === 'home') completeness(main, t, go);
     if (this.tab !== 'ann') News.annPopup(t, go);
     if (this.tab !== 'bc') Broadcast.popup(t, go);
   },
@@ -76,6 +77,26 @@ function trainerStatsHTML(t) {
     </div>
     <div class="ts-spark" title="زوار صفحتك يومياً خلال آخر 30 يوماً">${days.map((v, i) => `<span style="height:${Math.max(4, v / max * 100)}%" title="${dayKeyRiyadh(29 - i).slice(6)}/${dayKeyRiyadh(29 - i).slice(4, 6)} — ${v}"></span>`).join('')}</div>
     <p class="muted small" style="margin:8px 0 0">${has ? 'أرقام المنصة من Google Analytics وتتحدث كل ساعتين. ' : ''}زوار صفحتك يُحسبون مرة لكل زائر في الجلسة، ولا تُحتسب زياراتك أنت.${v30 === 0 && Data.views(t.id) ? ' (التفصيل اليومي يبدأ من تاريخ هذا التحديث.)' : ''}</p></div>`;
+}
+
+/* شريط اكتمال الصفحة التعريفية: يذكّر المدرب بالأقسام الفارغة (الصورة الشخصية اختيارية فلا تُحسب) */
+function completeness(main, t, go) {
+  const has = v => (Array.isArray(v) ? v.length : v && typeof v === 'object' ? Object.keys(v).length : typeof v === 'number' ? v > 0 : !!String(v || '').trim());
+  const nv = Object.values(Store.get('news') || {}).some(n => n && n.trainerId === t.id), rv = has(Store.get(`reviewsPub/${t.id}`)), vd = has(t.videos);
+  const items = [
+    ['bio', 'نبذة تعريفية', 'edit', has(t.bio)], ['city', 'المدينة', 'edit', has(t.city)], ['topics', 'عناوين الدورات السابقة', 'edit', has(t.topics)],
+    ['years', 'سنوات الخبرة', 'edit', has(Number(t.years))], ['hours', 'الساعات التدريبية', 'edit', has(Number(t.hours))], ['programs', 'عدد البرامج والدورات', 'edit', has(Number(t.programs))],
+    ['certs', 'الشهادات والاعتمادات', 'edit', has(t.certs)], ['partners', 'جهات تم التعاون معها', 'edit', has(t.partners)],
+    ['vid', 'روابط الفيديو', 'vid', vd], ['rv', 'التوصيات', 'rv', rv], ...(featureOn('news') ? [['news', 'خبر منشور', 'news', nv]] : [])
+  ];
+  const miss = items.filter(x => !x[3]), pct = Math.round(100 * (items.length - miss.length) / items.length);
+  if (!miss.length) return;
+  const el = document.createElement('div'); el.className = 'pcomp';
+  el.innerHTML = `<div class="row" style="align-items:center;gap:12px;flex-wrap:wrap"><b><i class="fa-solid fa-chart-line"></i> اكتمال صفحتك التعريفية <span class="num">${pct}%</span></b><span class="pc-bar"><i style="width:${pct}%"></i></span></div>
+    <p class="small muted" style="margin:6px 0 8px">كلما اكتملت صفحتك زادت ثقة الجهات التدريبية بك وظهورك في البحث. أكمل:</p>
+    <div class="pc-chips">${miss.map(x => `<button type="button" class="chip" data-pc="${x[2]}"><i class="fa-solid fa-plus"></i> ${x[1]}</button>`).join('')}</div>`;
+  main.prepend(el);
+  $$('[data-pc]', el).forEach(b => b.onclick = () => go(b.dataset.pc));
 }
 
 function portalHome(main, t) {

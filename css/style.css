@@ -1337,3 +1337,6 @@ body.preview .local-flag { display: none; }
 .pn-sum{display:block;font-size:.85rem;color:var(--muted,#667);line-height:1.7;margin-top:.15rem}
 .nshare.compact{margin-top:8px;padding-top:8px}
 .n-cta{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0 6px}.n-cta .btn{flex:1;min-width:180px;justify-content:center}
+.pcomp{background:#fff;border:1px solid var(--line);border-inline-start:5px solid var(--gold,#c9a227);border-radius:14px;padding:14px 16px;margin-bottom:16px}
+.pc-bar{flex:1;min-width:120px;height:10px;border-radius:6px;background:#e8eee8;overflow:hidden}.pc-bar i{display:block;height:100%;background:var(--g700,#2f7d32);border-radius:6px}
+.pc-chips{display:flex;gap:8px;flex-wrap:wrap}
