@@ -85,7 +85,7 @@ const News = (() => {
         const n = visible().find(x => x.id === id);
         if (!n) return `<section class="page-head"><div class="wrap"><div class="crumbs"><a href="#/">الرئيسية</a> / <a href="#/news">أخبار المدربين</a></div><h1>الخبر غير موجود</h1></div></section><div class="wrap empty"><a class="btn" href="#/news">كل الأخبار</a></div>`;
         return `<section class="page-head"><div class="wrap"><div class="crumbs"><a href="#/">الرئيسية</a> / <a href="#/news">أخبار المدربين</a></div><h1>${esc(n.title)}</h1>${shareRow(n)}</div></section>
-          <div class="wrap news-one" style="margin-top:30px">${card(n, { full: true })}<p><a class="btn ghost" href="#/news"><i class="fa-solid fa-arrow-right"></i> كل الأخبار</a></p></div>`;
+          <div class="wrap news-one" style="margin-top:30px">${card(n, { full: true })}<div class="n-cta"><a class="btn primary" href="#/join"><i class="fa-solid fa-user-plus"></i> سجّل كمدرب سعودي</a><a class="btn" href="#/"><i class="fa-solid fa-address-book"></i> تصفح سير المدربين</a></div><p><a class="btn ghost" href="#/news"><i class="fa-solid fa-arrow-right"></i> كل الأخبار</a></p></div>`;
       }
       const list = visible(), q = new URLSearchParams(query).get('k') || '';
       const shown = q ? list.filter(n => n.kind === q) : list;
