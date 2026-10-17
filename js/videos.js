@@ -24,7 +24,7 @@ const Videos = (() => {
     if (/\.(mp4|webm|ogv|ogg|m4v|mov)$/i.test(p)) return { kind: 'file', url: u, file: u };
     return { kind: 'link', url: u };
   }
-  const yt = (id, u) => ({ kind: 'yt', url: u, embed: `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0`, thumb: `https://i.ytimg.com/vi/${id}/hqdefault.jpg` });
+  const yt = (id, u) => ({ kind: 'yt', url: u, embed: `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&playsinline=1`, thumb: `https://i.ytimg.com/vi/${id}/hqdefault.jpg` });
   const list = t => (Array.isArray(t?.videos) ? t.videos : Object.values(t?.videos || {})).filter(v => v && /^https:\/\//.test(v.u || ''));
 
   // بطاقة فيديو: صورة/غلاف + زر تشغيل؛ عند الضغط يُحمَّل المشغّل داخل البطاقة نفسها
@@ -33,12 +33,18 @@ const Videos = (() => {
     const cover = `<div class="vd-cover ${thumb ? 'has' : ''}" ${thumb ? `style="background-image:url('${esc(thumb)}')"` : ''}><span class="vd-prov"><i class="fa-${pv[2]} ${pv[1]}"></i> ${pv[0]}</span>${playable ? '<button type="button" class="vd-play" aria-label="تشغيل الفيديو"><i class="fa-solid fa-play"></i></button>' : `<a class="vd-ext" href="${esc(i.url)}" target="_blank" rel="noopener noreferrer"><i class="fa-solid fa-arrow-up-right-from-square"></i> مشاهدة على ${esc(host(i.url))}</a>`}</div>`;
     return `<figure class="vd ${i.tall ? 'tall' : ''}" data-vk="${esc(i.kind)}" data-e="${esc(i.embed || '')}" data-f="${esc(i.file || '')}">${cover}<figcaption>${esc(v.t || host(v.u))}</figcaption></figure>`;
   }
-  // تشغيل داخل الصفحة (يُستدعى من زر التشغيل)
+  // تشغيل داخل الصفحة: يوقف أي فيديو آخر يعمل ويعيد غلافه (إزالة المشغّل توقف الصوت والفيديو فوراً)
+  const stopCover = cov => { if (cov._orig == null) return; cov.innerHTML = cov._orig; cov.style.backgroundImage = cov._bg || ''; cov.classList.remove('on'); cov._orig = null; };
   function play(btn) {
     const f = btn.closest('.vd'); if (!f) return;
+    document.querySelectorAll('.vd-cover.on').forEach(c => { if (c !== f.querySelector('.vd-cover')) stopCover(c); });
     const cov = f.querySelector('.vd-cover'), e = f.dataset.e, file = f.dataset.f;
-    if (file) cov.innerHTML = `<video controls autoplay playsinline preload="metadata" src="${esc(file)}"></video>`;
-    else if (e) cov.innerHTML = `<iframe src="${esc(e)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen; clipboard-write" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" loading="lazy" title="${esc(f.querySelector('figcaption')?.textContent || 'فيديو')}"></iframe>`;
+    cov._orig = cov.innerHTML; cov._bg = cov.style.backgroundImage;
+    if (file) {
+      cov.innerHTML = `<video controls autoplay playsinline preload="metadata" src="${esc(file)}"></video>`;
+      const v = cov.querySelector('video');   // الضغط على الفيديو (خارج شريط التحكم) يوقفه ويشغّله
+      v.addEventListener('click', ev => { if (ev.offsetY < v.clientHeight - 56) { ev.preventDefault(); v.paused ? v.play() : v.pause(); } });
+    } else if (e) cov.innerHTML = `<iframe src="${esc(e)}" allow="autoplay; encrypted-media; picture-in-picture; fullscreen; clipboard-write" allowfullscreen referrerpolicy="strict-origin-when-cross-origin" loading="lazy" title="${esc(f.querySelector('figcaption')?.textContent || 'فيديو')}"></iframe>`;
     cov.classList.add('on'); cov.style.backgroundImage = '';
   }
   document.addEventListener('click', e => { const b = e.target.closest?.('.vd-play'); if (b) { e.preventDefault(); play(b); } });
