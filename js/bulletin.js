@@ -60,9 +60,10 @@ const Bulletin = (() => {
     const pad = big ? 44 : 28, inner = CW - 2 * pad - 14, links = arr(n.links).slice(0, 3);
     ctx.font = `900 ${f.tf}px ${FONT.head}`; const title = clip(ctx, K().wrap(ctx, n.title, inner, f.tm), inner);
     const linksH = !links.length ? 0 : big ? links.length * 106 + 6 : 62, RM = big ? 76 : 64;
-    const cut = n.cutAt > 0 && n.cutAt < String(n.body || '').trim().length;
-    const body = cut ? collapse(String(n.body).slice(0, n.cutAt)) + '…' : collapse(n.body);
-    let bodyMax = big ? 0 : (mode === 'trainer' ? 4 : 3);
+    const sum = collapse(n.summary || '');
+    const cut = !sum && n.cutAt > 0 && n.cutAt < String(n.body || '').trim().length;
+    const body = sum ? sum : cut ? collapse(String(n.body).slice(0, n.cutAt)) + '…' : collapse(n.body);
+    let bodyMax = big ? 0 : (sum ? 9 : mode === 'trainer' ? 4 : 3);
     if (big) bodyMax = singleMaxLines(title.length, hh, availH, linksH, pad, f);
     else if (cut) bodyMax = MAX_LINES;   // قطع يدوي: يُعرض النص المختار كاملاً (حدّه الأعلى يضبطه المحرر)
     ctx.font = `400 ${f.bf}px ${FONT.body}`; const lines = body ? clip(ctx, K().wrap(ctx, body, inner, bodyMax), inner) : [];

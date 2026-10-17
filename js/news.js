@@ -30,14 +30,16 @@ const News = (() => {
   /* ---------- بطاقة خبر ---------- */
   function card(n, { full = false } = {}) {
     const t = Store.get(`trainers/${n.trainerId}`) || {}, k = kind(n.kind), links = arr(n.links);
-    const body = full ? nl2br(n.body || '') : esc(String(n.body || '').slice(0, 220)) + (String(n.body || '').length > 220 ? '…' : '');
+    // البطاقة المختصرة تعرض الموجز (أو مقتطفاً من الخبر القديم)، والصفحة الكاملة تعرض الموجز ثم مربع التفاصيل
+    const sum = esc(n.summary || ''), body = full ? nl2br(n.body || '') : (n.summary ? sum : esc(String(n.body || '').slice(0, 220)) + (String(n.body || '').length > 220 ? '…' : ''));
     return `<article class="ncard reveal">
       <div class="n-who"><a href="#/t/${esc(encodeURIComponent(t.slug || t.id || ''))}">${Card.avatar(t, 'av')}</a>
         <div><a href="#/t/${esc(encodeURIComponent(t.slug || t.id || ''))}"><b>${esc(t.name || 'مدرب')}</b></a><small>${esc(t.title || '')}</small></div>
         <span class="pill gold"><i class="fa-solid ${k[2]}"></i> ${k[1]}</span></div>
       <h3>${full ? esc(n.title) : `<a href="#/news/${esc(n.id)}">${esc(n.title)}</a>`}</h3>
       <small class="muted">${dateOf(n.ts)}</small>
-      ${body ? `<p>${body}</p>` : ''}
+      ${full && n.summary ? `<p class="n-sum">${sum}</p>` : ''}
+      ${body && !(full && !n.body) ? `<${full && n.summary ? 'div class="n-det"' : 'p'}>${full && n.summary ? '<b class="small muted">تفاصيل الخبر</b><br>' : ''}${body}</${full && n.summary ? 'div' : 'p'}>` : ''}
       ${full ? links.map(linkCard).join('') : (links.length ? `<small class="muted"><i class="fa-solid fa-link"></i> ${links.length} ${links.length === 1 ? 'رابط مرفق' : 'روابط مرفقة'}</small>` : '')}
       ${full ? '' : `<a class="more" href="#/news/${esc(n.id)}">قراءة الخبر <i class="fa-solid fa-arrow-left"></i></a>`}
     </article>`;
@@ -70,7 +72,7 @@ const News = (() => {
     const mine = all().filter(n => n.trainerId === t.id).slice(0, 6);
     if (!mine.length) return '';
     return `<div class="pbox reveal"><h3><i class="fa-solid fa-newspaper"></i>أخباري</h3>
-      ${mine.map(n => `<a class="pn-item" href="#/news/${esc(n.id)}"><span class="pill gold"><i class="fa-solid ${kind(n.kind)[2]}"></i> ${kind(n.kind)[1]}</span><b>${esc(n.title)}</b><small class="muted">${dateOf(n.ts)}</small></a>`).join('')}
+      ${mine.map(n => `<a class="pn-item" href="#/news/${esc(n.id)}"><span class="pill gold"><i class="fa-solid ${kind(n.kind)[2]}"></i> ${kind(n.kind)[1]}</span><b>${esc(n.title)}</b><small class="muted">${dateOf(n.ts)}</small>${n.summary ? `<span class="pn-sum">${esc(n.summary)}</span>` : ''}</a>`).join('')}
       <p style="margin:10px 0 0"><a class="more" href="#/news">كل أخبار المدربين <i class="fa-solid fa-arrow-left"></i></a></p></div>`;
   }
 
@@ -120,12 +122,15 @@ const News = (() => {
       <form id="nf" style="display:grid;gap:10px">
         ${field('النوع', `<select name="kind">${KINDS.map(k => `<option value="${k[0]}" ${n?.kind === k[0] ? 'selected' : ''}>${k[1]}</option>`).join('')}</select>`)}
         ${field('العنوان', `<input name="title" required minlength="3" maxlength="120" value="${esc(n?.title || '')}" placeholder="مثال: تكريمي في ملتقى التدريب">`)}
-        ${field('نص الخبر', `<textarea name="body" rows="6" maxlength="5000" placeholder="اكتب التفاصيل…">${esc(n?.body || '')}</textarea>`)}
+        ${field('موجز الخبر (40 كلمة كحد أقصى)', `<textarea name="summary" rows="3" required maxlength="400" placeholder="لخّص الخبر في سطرين: يظهر تحت العنوان في الموقع وصفحتك ونشرة الأخبار">${esc(n?.summary || '')}</textarea>`, '<b id="nsc" class="num">0</b> / 40 كلمة')}
+        ${field('تفاصيل الخبر', `<textarea name="body" rows="6" maxlength="5000" placeholder="اكتب التفاصيل كاملة (تظهر عند فتح الخبر)…">${esc(n?.body || '')}</textarea>`)}
         <div><b class="small">روابط مرفقة (حتى 3)</b> <small class="muted">— تظهر كبطاقات معاينة داخل الخبر</small>
           <div class="row" style="gap:8px;margin-top:6px"><input id="nu" type="url" dir="ltr" placeholder="https://…" style="flex:1"><button type="button" class="btn sm" id="na"><i class="fa-solid fa-plus"></i> إضافة</button></div>
           <div id="nls" style="margin-top:8px"></div></div>
         <div class="row end"><button type="button" class="btn ghost" data-close>إلغاء</button><button class="btn primary" type="submit"><i class="fa-solid fa-paper-plane"></i> ${n ? 'حفظ' : 'نشر الخبر'}</button></div>
       </form>`, { wide: true });
+    const wc = s => (String(s).trim() ? String(s).trim().split(/\s+/).length : 0), sf = $('#nf textarea[name=summary]', m.el), upd = () => { const c = wc(sf.value); $('#nsc', m.el).textContent = c; $('#nsc', m.el).style.color = c > 40 ? '#B3261E' : ''; };
+    sf.oninput = upd; upd();
     const draw = () => {
       $('#nls', m.el).innerHTML = links.map((l, i) => `<div class="nl-edit">${linkCard(l)}<button type="button" class="btn sm ghost" data-rm="${i}" aria-label="إزالة الرابط"><i class="fa-solid fa-xmark"></i></button></div>`).join('');
       $$('[data-rm]', m.el).forEach(b => b.onclick = () => { links.splice(+b.dataset.rm, 1); draw(); });
@@ -142,7 +147,8 @@ const News = (() => {
     };
     $('#nf', m.el).onsubmit = async e => {
       e.preventDefault(); const f = e.target;
-      const rec = { id: n?.id || '', trainerId: t.id, title: f.title.value.trim(), body: f.body.value.trim(), kind: f.kind.value, ts: n?.ts || Date.now() };
+      if (wc(f.summary.value) > 40) return toast('الموجز أطول من 40 كلمة: اختصره', 'err');
+      const rec = { id: n?.id || '', trainerId: t.id, title: f.title.value.trim(), summary: f.summary.value.trim().replace(/\s+/g, ' '), body: f.body.value.trim(), kind: f.kind.value, ts: n?.ts || Date.now() };
       if (n) rec.editedAt = Date.now();
       if (links.length) rec.links = links.map(l => ({ url: l.url, title: l.title || '', desc: l.desc || '', img: l.img || '', site: l.site || '' }));
       try {
@@ -159,7 +165,7 @@ const News = (() => {
       const sel = mine.filter(n => !tx.off.has(n.id));
       $('#xb', m.el).innerHTML = `<p class="small muted">اختر الأخبار التي تريد تصديرها، وحدّد بزر ✂️ موضع قطع نص كل خبر ليظهر في التصميم كما تريد. تُصمَّم صفحات بمقاس منشور إنستقرام الطولي (1080×1350) باسمك وصورتك ورمز QR لصفحتك، وتُصدَّر صوراً أو PDF.</p>
         <div class="bl-bar"><b>${sel.length}</b> من <b>${mine.length}</b> خبراً محدداً</div>
-        ${mine.map(n => `<div class="lead"><label class="bl-ck"><input type="checkbox" data-xs="${esc(n.id)}" ${tx.off.has(n.id) ? '' : 'checked'}></label><div><b>${esc(n.title)}</b> <small class="muted">${dateOf(n.ts)} · ${kind(n.kind)[1]}</small><p class="small">${esc(String(n.body || '').slice(0, 120))}</p>${tx.cuts[n.id] ? '<small class="muted"><i class="fa-solid fa-scissors"></i> قطع مخصص</small>' : ''}</div><div class="acts"><button class="btn sm${tx.cuts[n.id] ? ' primary' : ''}" data-xc="${esc(n.id)}" title="تحديد موضع القطع"><i class="fa-solid fa-scissors"></i> موضع القطع</button></div></div>`).join('')}
+        ${mine.map(n => `<div class="lead"><label class="bl-ck"><input type="checkbox" data-xs="${esc(n.id)}" ${tx.off.has(n.id) ? '' : 'checked'}></label><div><b>${esc(n.title)}</b> <small class="muted">${dateOf(n.ts)} · ${kind(n.kind)[1]}</small><p class="small">${esc(n.summary || String(n.body || '').slice(0, 120))}</p>${tx.cuts[n.id] ? '<small class="muted"><i class="fa-solid fa-scissors"></i> قطع مخصص</small>' : ''}</div><div class="acts">${n.summary ? '' : `<button class="btn sm${tx.cuts[n.id] ? ' primary' : ''}" data-xc="${esc(n.id)}" title="تحديد موضع القطع"><i class="fa-solid fa-scissors"></i> موضع القطع</button>`}</div></div>`).join('')}
         <div class="bl-bar"><label>توزيع الأخبار<select id="xl"><option value="single" ${tx.layout === 'single' ? 'selected' : ''}>صفحة لكل خبر</option><option value="trainer" ${tx.layout === 'trainer' ? 'selected' : ''}>أخباري مجتمعة (أقل عدد صفحات)</option></select></label>
           <label class="chk" style="margin:0"><input type="checkbox" id="xcv" ${tx.cover ? 'checked' : ''}><span>إضافة غلاف</span></label>
           <label class="chk" style="margin:0"><input type="checkbox" id="xpr" ${tx.promo ? 'checked' : ''}><span>صفحة ختامية دعائية</span></label></div>
@@ -274,7 +280,7 @@ const News = (() => {
           <button type="button" class="btn sm ghost" data-rng="7">آخر 7 أيام</button><button type="button" class="btn sm ghost" data-rng="30">آخر 30 يوماً</button><button type="button" class="btn sm ghost" data-rng="all">الكل</button></div>
         <div class="bl-bar"><b>${sel.length}</b> من <b>${inRange.length}</b> خبراً محدداً للنشرة
           <label class="chk" style="margin:0"><input type="checkbox" id="bf-all" ${inRange.length && !sel.length ? '' : (sel.length === inRange.length ? 'checked' : '')}><span>تحديد الكل</span></label></div>
-        ${inRange.length ? inRange.map(n => { const t = Store.get(`trainers/${n.trainerId}`) || {}; return `<div class="lead"><label class="bl-ck"><input type="checkbox" data-sel="${esc(n.id)}" ${bf.off.has(n.id) ? '' : 'checked'}></label><div><b>${esc(n.title)}</b> <small class="muted">${esc(t.name || n.trainerId)} · ${dateOf(n.ts)} · ${kind(n.kind)[1]}</small><p class="small">${esc(String(n.body || '').slice(0, 140))}</p>${bf.cuts[n.id] ? '<small class="muted"><i class="fa-solid fa-scissors"></i> قطع مخصص في النشرة</small>' : ''}</div><div class="acts"><a class="btn sm" href="#/news/${esc(n.id)}" target="_blank"><i class="fa-solid fa-eye"></i></a><button class="btn sm" data-edn="${esc(n.id)}" title="تحرير نص الخبر"><i class="fa-solid fa-pen"></i></button><button class="btn sm${bf.cuts[n.id] ? ' primary' : ''}" data-cut="${esc(n.id)}" title="تحديد موضع قطع النص في النشرة"><i class="fa-solid fa-scissors"></i></button><button class="btn sm danger" data-dn="${esc(n.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`; }).join('') : '<p class="muted small">لا توجد أخبار في هذه الفترة.</p>'}</div>
+        ${inRange.length ? inRange.map(n => { const t = Store.get(`trainers/${n.trainerId}`) || {}; return `<div class="lead"><label class="bl-ck"><input type="checkbox" data-sel="${esc(n.id)}" ${bf.off.has(n.id) ? '' : 'checked'}></label><div><b>${esc(n.title)}</b> <small class="muted">${esc(t.name || n.trainerId)} · ${dateOf(n.ts)} · ${kind(n.kind)[1]}</small><p class="small">${esc(n.summary || String(n.body || '').slice(0, 140))}</p>${bf.cuts[n.id] ? '<small class="muted"><i class="fa-solid fa-scissors"></i> قطع مخصص في النشرة</small>' : ''}</div><div class="acts"><a class="btn sm" href="#/news/${esc(n.id)}" target="_blank"><i class="fa-solid fa-eye"></i></a><button class="btn sm" data-edn="${esc(n.id)}" title="تحرير نص الخبر"><i class="fa-solid fa-pen"></i></button>${n.summary ? '' : `<button class="btn sm${bf.cuts[n.id] ? ' primary' : ''}" data-cut="${esc(n.id)}" title="تحديد موضع قطع النص في النشرة"><i class="fa-solid fa-scissors"></i></button>`}<button class="btn sm danger" data-dn="${esc(n.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`; }).join('') : '<p class="muted small">لا توجد أخبار في هذه الفترة.</p>'}</div>
       <div class="pbox" style="margin-top:12px"><h3><i class="fa-solid fa-wand-magic-sparkles"></i> نشرة المدربين للسوشيال ميديا</h3>
         <p class="small muted">تُصمَّم الأخبار المحددة أعلاه صفحاتٍ بمقاس منشور إنستقرام الطولي (1080×1350): غلاف بهوية المنصة، ثم الأخبار باسم المدرب وصورته وسطره التعريفي ورمز QR لصفحته. تُصدَّر صوراً (ZIP) أو PDF.</p>
         <div class="bl-bar"><label>توزيع الأخبار<select id="bf-layout"><option value="compact" ${bf.layout === 'compact' ? 'selected' : ''}>عدة مدربين في الصفحة (أقل عدد صفحات)</option><option value="trainer" ${bf.layout === 'trainer' ? 'selected' : ''}>صفحة لكل مدرب (أخباره مجتمعة)</option><option value="single" ${bf.layout === 'single' ? 'selected' : ''}>صفحة لكل خبر</option></select></label>

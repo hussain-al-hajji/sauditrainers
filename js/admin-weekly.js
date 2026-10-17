@@ -37,7 +37,7 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     if (!list.length) blocks.push({ t: 'p', text: unreg ? 'لم يُنشر أي خبر خلال هذه الفترة، وسنوافيك بالجديد في الرسالة القادمة بإذن الله.' : 'لم يُنشر أي خبر خلال هذه الفترة. كن أنت أول من يشارك جديده!', align: 'start' });
     list.forEach(n => {
       const t = Store.get(`trainers/${n.trainerId}`) || {}, kind = (News.kinds.find(k => k[0] === n.kind) || News.kinds[0])[1];
-      const [ex, long] = cut(n.body, 240), url = `${base}#/news/${encodeURIComponent(n.id)}`;
+      const [ex, long] = n.summary ? [clean(n.summary), true] : cut(n.body, 240), url = `${base}#/news/${encodeURIComponent(n.id)}`;
       const text = `**${clean(n.title)}**\n${clean(t.name)}${t.title ? ' — ' + cut(t.title, 70)[0] : ''}\n${kind} · ${fmt(n.ts)}${ex ? '\n\n' + ex : ''}${long ? `\n[قراءة الخبر كاملاً ←](${url})` : `\n[عرض الخبر ←](${url})`}`;
       const photo = !t.noPhoto && Data.photo(t);
       blocks.push(photo ? { t: 'imgtext', url: photo, text, side: 'start', alt: clean(t.name) } : { t: 'box', text });

@@ -1332,3 +1332,6 @@ body.preview .local-flag { display: none; }
 .vd-ext { position: relative; z-index: 2; background: #fff; color: #005430; font-weight: 700; padding: 8px 16px; border-radius: 99px; text-decoration: none; }
 .vd-wrap .vd { margin-bottom: 0; }
 .vd-cover.on::after { content: none; } .vd-cover.on iframe, .vd-cover.on video { z-index: 3; }
+.n-sum{font-weight:700;line-height:1.9;margin:.4rem 0;color:var(--g900,#14532d)}
+.n-det{background:var(--paper,#f6f8f6);border:1px solid var(--line,#e2e8e2);border-radius:12px;padding:.7rem .9rem;margin:.6rem 0;line-height:1.9}
+.pn-sum{display:block;font-size:.85rem;color:var(--muted,#667);line-height:1.7;margin-top:.15rem}

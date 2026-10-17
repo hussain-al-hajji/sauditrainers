@@ -124,7 +124,7 @@ const SEO = (() => {
   }
 
   // صفحة مشاركة الخبر: /n/<id>/ (عنوان الخبر ومقتطف منه، وصورة المعاينة og/n-<id>.jpg بصورة المدرب واسمه)
-  function newsExcerpt(n, len = 200) { const s = String(n.body || '').replace(/\s+/g, ' ').trim(); return s.length > len ? s.slice(0, len).replace(/\s+\S*$/, '') + '…' : s; }
+  function newsExcerpt(n, len = 200) { const s = String(n.summary || n.body || '').replace(/\s+/g, ' ').trim(); return s.length > len ? s.slice(0, len).replace(/\s+\S*$/, '') + '…' : s; }
   function newsHead(n, t, base) {
     const s = site(), title = `${n.title} — ${t.name}`, desc = newsExcerpt(n) || `${t.name}${t.title ? ' — ' + t.title : ''}`, url = `${base}n/${n.id}/`;
     return headTags({ title: `${title} | ${s.siteName}`, desc, noindex: !s.robotsIndex }, { base, url, type: 'article', image: `${base}og/n-${n.id}.jpg`, imgAlt: title, keywords: false, ogTitle: title, ogDesc: 'اضغط للمزيد', imgH: 630 });
