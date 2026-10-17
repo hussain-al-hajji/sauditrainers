@@ -152,7 +152,7 @@ const News = (() => {
     };
   };
   // تصدير أخبار المدرب (صور/PDF للسوشيال ميديا) من لوحته: اختيار الأخبار وموضع القطع والتوزيع
-  const tx = { off: new Set(), cuts: {}, layout: 'single', cover: false };
+  const tx = { off: new Set(), cuts: {}, layout: 'single', cover: false, promo: true };
   function exportBox(t) {
     const mine = all().filter(n => n.trainerId === t.id);
     const draw = () => {
@@ -161,12 +161,13 @@ const News = (() => {
         <div class="bl-bar"><b>${sel.length}</b> من <b>${mine.length}</b> خبراً محدداً</div>
         ${mine.map(n => `<div class="lead"><label class="bl-ck"><input type="checkbox" data-xs="${esc(n.id)}" ${tx.off.has(n.id) ? '' : 'checked'}></label><div><b>${esc(n.title)}</b> <small class="muted">${dateOf(n.ts)} · ${kind(n.kind)[1]}</small><p class="small">${esc(String(n.body || '').slice(0, 120))}</p>${tx.cuts[n.id] ? '<small class="muted"><i class="fa-solid fa-scissors"></i> قطع مخصص</small>' : ''}</div><div class="acts"><button class="btn sm${tx.cuts[n.id] ? ' primary' : ''}" data-xc="${esc(n.id)}" title="تحديد موضع القطع"><i class="fa-solid fa-scissors"></i> موضع القطع</button></div></div>`).join('')}
         <div class="bl-bar"><label>توزيع الأخبار<select id="xl"><option value="single" ${tx.layout === 'single' ? 'selected' : ''}>صفحة لكل خبر</option><option value="trainer" ${tx.layout === 'trainer' ? 'selected' : ''}>أخباري مجتمعة (أقل عدد صفحات)</option></select></label>
-          <label class="chk" style="margin:0"><input type="checkbox" id="xcv" ${tx.cover ? 'checked' : ''}><span>إضافة غلاف</span></label></div>
+          <label class="chk" style="margin:0"><input type="checkbox" id="xcv" ${tx.cover ? 'checked' : ''}><span>إضافة غلاف</span></label>
+          <label class="chk" style="margin:0"><input type="checkbox" id="xpr" ${tx.promo ? 'checked' : ''}><span>صفحة ختامية دعائية</span></label></div>
         <div class="row end"><button class="btn ghost" data-close>إغلاق</button><button class="btn primary" id="xgo" ${sel.length ? '' : 'disabled'}><i class="fa-solid fa-image"></i> إنشاء التصميم (${sel.length})</button></div>`;
       $$('[data-xs]', m.el).forEach(c => c.onchange = () => { c.checked ? tx.off.delete(c.dataset.xs) : tx.off.add(c.dataset.xs); draw(); });
       $$('[data-xc]', m.el).forEach(b => b.onclick = () => cutEditor(mine.find(n => n.id === b.dataset.xc), tx.cuts, draw));
-      $('#xl', m.el).onchange = e => { tx.layout = e.target.value; }; $('#xcv', m.el).onchange = e => { tx.cover = e.target.checked; };
-      $('#xgo', m.el).onclick = () => Bulletin.make({ items: sel.map(n => (tx.cuts[n.id] ? { ...n, cutAt: tx.cuts[n.id] } : n)), from: Math.min(...sel.map(n => n.ts)), to: Math.max(...sel.map(n => n.ts)), layout: tx.layout, withCover: tx.cover });
+      $('#xl', m.el).onchange = e => { tx.layout = e.target.value; }; $('#xcv', m.el).onchange = e => { tx.cover = e.target.checked; }; $('#xpr', m.el).onchange = e => { tx.promo = e.target.checked; };
+      $('#xgo', m.el).onclick = () => Bulletin.make({ items: sel.map(n => (tx.cuts[n.id] ? { ...n, cutAt: tx.cuts[n.id] } : n)), from: Math.min(...sel.map(n => n.ts)), to: Math.max(...sel.map(n => n.ts)), layout: tx.layout, withCover: tx.cover, withPromo: tx.promo });
     };
     const m = modal('<h3><i class="fa-solid fa-share-nodes"></i> تصدير أخباري للسوشيال ميديا</h3><div id="xb"></div>', { wide: true });
     draw();
@@ -215,7 +216,7 @@ const News = (() => {
 
   /* ---------- لوحة الإدارة ---------- */
   const ymd = d => { const z = n => String(n).padStart(2, '0'); return `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`; };
-  const bf = { from: ymd(new Date(Date.now() - 6 * 86400000)), to: ymd(new Date()), off: new Set(), cuts: {}, layout: 'compact', cover: true };
+  const bf = { from: ymd(new Date(Date.now() - 6 * 86400000)), to: ymd(new Date()), off: new Set(), cuts: {}, layout: 'compact', cover: true, promo: true };
   const dayStart = v => new Date(`${v}T00:00:00`).getTime(), dayEnd = v => new Date(`${v}T23:59:59.999`).getTime();
   function setFeature(k, on) {
     Store.set(`content/features/${k}`, on);
@@ -277,7 +278,8 @@ const News = (() => {
       <div class="pbox" style="margin-top:12px"><h3><i class="fa-solid fa-wand-magic-sparkles"></i> نشرة المدربين للسوشيال ميديا</h3>
         <p class="small muted">تُصمَّم الأخبار المحددة أعلاه صفحاتٍ بمقاس منشور إنستقرام الطولي (1080×1350): غلاف بهوية المنصة، ثم الأخبار باسم المدرب وصورته وسطره التعريفي ورمز QR لصفحته. تُصدَّر صوراً (ZIP) أو PDF.</p>
         <div class="bl-bar"><label>توزيع الأخبار<select id="bf-layout"><option value="compact" ${bf.layout === 'compact' ? 'selected' : ''}>عدة مدربين في الصفحة (أقل عدد صفحات)</option><option value="trainer" ${bf.layout === 'trainer' ? 'selected' : ''}>صفحة لكل مدرب (أخباره مجتمعة)</option><option value="single" ${bf.layout === 'single' ? 'selected' : ''}>صفحة لكل خبر</option></select></label>
-          <label class="chk" style="margin:0"><input type="checkbox" id="bf-cover" ${bf.cover ? 'checked' : ''}><span>إضافة غلاف</span></label></div>
+          <label class="chk" style="margin:0"><input type="checkbox" id="bf-cover" ${bf.cover ? 'checked' : ''}><span>إضافة غلاف</span></label>
+          <label class="chk" style="margin:0"><input type="checkbox" id="bf-promo" ${bf.promo ? 'checked' : ''}><span>صفحة ختامية دعائية (مزايا المنصة + رمز التسجيل)</span></label></div>
         <button class="btn primary" id="bf-go" ${sel.length ? '' : 'disabled'}><i class="fa-solid fa-newspaper"></i> إنشاء النشرة (${sel.length} خبر)</button></div>`;
     $$('[data-fx]', main).forEach(b => b.onclick = async () => {
       const k = b.dataset.fx, on = !featureOn(k);
@@ -297,7 +299,8 @@ const News = (() => {
     $('#bf-all', main).onchange = e => { inRange.forEach(n => (e.target.checked ? bf.off.delete(n.id) : bf.off.add(n.id))); rerender(); };
     $('#bf-layout', main).onchange = e => { bf.layout = e.target.value; };
     $('#bf-cover', main).onchange = e => { bf.cover = e.target.checked; };
-    $('#bf-go', main).onclick = () => Bulletin.make({ items: sel.map(n => (bf.cuts[n.id] ? { ...n, cutAt: bf.cuts[n.id] } : n)), from: bf.from ? dayStart(bf.from) : Math.min(...sel.map(n => n.ts)), to: bf.to ? dayEnd(bf.to) : Math.max(...sel.map(n => n.ts)), layout: bf.layout, withCover: bf.cover });
+    $('#bf-promo', main).onchange = e => { bf.promo = e.target.checked; };
+    $('#bf-go', main).onclick = () => Bulletin.make({ items: sel.map(n => (bf.cuts[n.id] ? { ...n, cutAt: bf.cuts[n.id] } : n)), from: bf.from ? dayStart(bf.from) : Math.min(...sel.map(n => n.ts)), to: bf.to ? dayEnd(bf.to) : Math.max(...sel.map(n => n.ts)), layout: bf.layout, withCover: bf.cover, withPromo: bf.promo });
     $$('[data-edn]', main).forEach(b => b.onclick = () => {
       const n = ls.find(x => x.id === b.dataset.edn), t = n && Store.get(`trainers/${n.trainerId}`);
       if (!t) return toast('تعذّر العثور على صاحب الخبر', 'err');

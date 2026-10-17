@@ -190,6 +190,45 @@ const Bulletin = (() => {
     return pages;
   }
 
+
+  /* ---------- الصفحة الختامية الدعائية: مزايا المنصة + دعوة للتسجيل برمز QR لصفحة الانضمام ---------- */
+  const PROMO_FEATS = [['', 'صفحتك وبطاقتك التعريفية الخاصة'], ['', 'أخبارك وإنجازاتك تُنشر وتُصدَّر للسوشيال'], ['', 'طلبات تدريب مباشرة من الجهات'], ['', 'إشعارات فورية على جوالك'],
+    ['', 'مكتبة قوالب وأدلة لعملك التدريبي'], ['', 'فرص وإعلانات تدريب حصرية'], ['', 'فيديوهات وتوصيات تعزّز ثقة الجهات'], ['', 'رمز QR ومشاركة سهلة لبطاقتك']];
+  function promo(ctx) {
+    frameBg(ctx, true);
+    const glow = ctx.createRadialGradient(W * 0.85, H * 0.15, 20, W * 0.85, H * 0.15, W * 0.8); glow.addColorStop(0, 'rgba(35,163,101,.35)'); glow.addColorStop(1, 'rgba(35,163,101,0)'); ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+    const M = 38; ctx.strokeStyle = 'rgba(201,218,180,.8)'; ctx.lineWidth = 3; K().rr(ctx, M, M, W - 2 * M, H - 2 * M, 44); ctx.stroke();
+    if (chrome.logo) { const lh = 96, lw = lh * chrome.logo.width / chrome.logo.height; ctx.drawImage(chrome.logo, W - 90 - lw, 82, lw, lh); }
+    pill(ctx, 'دعوة للمدرب السعودي', 90 + 260, 130, { bg: 'rgba(238,243,229,.14)', fg: C.cream, fs: 26 });
+    txt(ctx, 'سجّل في منصة', W - 90, 300, { font: `900 76px ${FONT.head}`, color: '#fff' });
+    txt(ctx, 'مدرّبون سعوديّون', W - 90, 396, { font: `900 96px ${FONT.head}`, color: C.sage });
+    ctx.fillStyle = C.sage; ctx.fillRect(W - 90 - 150, 438, 150, 7);
+    txt(ctx, 'بطاقتك المهنية وفرصك وجمهورك في مكان واحد', W - 90, 500, { font: `600 33px ${FONT.body}`, color: C.cream });
+    // بطاقات المزايا (عمودان × أربعة صفوف)
+    const colW = (W - 180 - 20) / 2, rowH = 104, gy = 16, y0 = 540;
+    PROMO_FEATS.forEach(([ic, label], i) => {
+      const col = i % 2, row = Math.floor(i / 2), x = W - 90 - colW - col * (colW + 20), y = y0 + row * (rowH + gy);
+      rrect(ctx, x, y, colW, rowH, 24, 'rgba(238,243,229,.10)', 'rgba(201,218,180,.32)');
+      const cx = x + colW - 20 - 36, cy = y + rowH / 2;
+      ctx.beginPath(); ctx.arc(cx, cy, 36, 0, Math.PI * 2); ctx.fillStyle = C.cream; ctx.fill();
+      ctx.save(); ctx.font = '900 32px "Font Awesome 6 Free"'; ctx.fillStyle = C.g800; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'ltr'; ctx.fillText(ic, cx, cy + 2); ctx.restore();
+      ctx.font = `700 26px ${FONT.body}`; const lines = K().wrap(ctx, label, colW - 36 - 72 - 16, 2), lh = 34, top = cy - (lines.length * lh) / 2 + 26;
+      lines.forEach((l, k) => txt(ctx, l, cx - 36 - 18, top + k * lh, { font: ctx.font, color: '#fff' }));
+    });
+    // الدعوة + الباركود
+    const by = y0 + 4 * (rowH + gy) + 14, bh = H - 90 - by;
+    rrect(ctx, 90, by, W - 180, bh, 30, C.cream);
+    const url = `${siteBase()}#/join`, qs = bh - 60;
+    qr(ctx, url, 90 + 30, by + (bh - qs - 16) / 2, qs - 16);
+    const tx = W - 90 - 36;
+    txt(ctx, 'انضم الآن وابدأ ظهورك أمام الجهات', tx, by + 72, { font: `900 38px ${FONT.head}`, color: C.g900 });
+    txt(ctx, 'امسح الرمز أو افتح رابط التسجيل:', tx, by + 122, { font: `600 26px ${FONT.body}`, color: C.ink2 });
+    const shown = url.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    ctx.font = `800 32px ${FONT.body}`; ctx.direction = 'ltr'; const tw = Math.min(ctx.measureText(shown).width + 44, W - 180 - qs - 120); ctx.direction = 'rtl';
+    rrect(ctx, tx - tw, by + 144, tw, 58, 29, C.g800); ctx.save(); ctx.beginPath(); ctx.rect(tx - tw + 14, by + 144, tw - 28, 58); ctx.clip();
+    txt(ctx, shown, tx - tw / 2, by + 184, { font: ctx.font, color: '#fff', align: 'center', dir: 'ltr' }); ctx.restore();
+  }
+
   /* ---------- البناء ---------- */
   async function prepare() {
     const tp = K().template(); await Promise.race([K().ensureFonts(tp), new Promise(r => setTimeout(r, 6000))]);
@@ -207,8 +246,9 @@ const Bulletin = (() => {
     while (lo < hi) { const m = (lo + hi + 1) >> 1; if (fits(words.slice(0, m).join(' '))) lo = m; else hi = m - 1; }
     return { maxLines, maxWords: lo, fits };
   }
-  async function build({ items, from, to, layout = 'compact', withCover = true }) {
+  async function build({ items, from, to, layout = 'compact', withCover = true, withPromo = true }) {
     await prepare(); await K().ensureQR();
+    try { await document.fonts.load('900 32px "Font Awesome 6 Free"'); } catch { /* ignore */ }
     chrome.logo = await K().loadImage(LOGO.cream);
     // مجموعات المدربين بترتيب أحدث خبر
     const sorted = [...items].sort((a, b) => (b.ts || 0) - (a.ts || 0)), map = new Map();
@@ -219,7 +259,7 @@ const Bulletin = (() => {
     const st = { items: sorted.length, trainers: groups.map(g => g.t), photos };
     const attempt = () => {
       const mk = () => { const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const c = cv.getContext('2d'); c.direction = 'rtl'; c.textAlign = 'right'; c.__links = cv.__links = []; return [cv, c]; };
-      const pages = paginate(mk()[1], groups, layout), total = pages.length + (withCover ? 1 : 0), out = [];
+      const pages = paginate(mk()[1], groups, layout), total = pages.length + (withCover ? 1 : 0) + (withPromo ? 1 : 0), out = [];
       if (withCover) { const [cv, c] = mk(); cover(c, st, from, to); out.push(cv); }
       pages.forEach((secs, pi) => {
         const [cv, c] = mk(); chrome(c, pi + 1 + (withCover ? 1 : 0), total, from, to);
@@ -230,6 +270,7 @@ const Bulletin = (() => {
         });
         out.push(cv);
       });
+      if (withPromo) { const [cv, c] = mk(); promo(c); out.push(cv); }
       return out;
     };
     const ok = cvs => { try { cvs.forEach(cv => cv.getContext('2d').getImageData(0, 0, 1, 1)); return true; } catch { return false; } };
