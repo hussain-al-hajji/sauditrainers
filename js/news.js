@@ -56,8 +56,8 @@ const News = (() => {
     if (len(title) > room) title = [...title].slice(0, Math.max(10, room - 1)).join('').replace(/\s+\S*$/, '') + '…';
     return head + title + tail;
   }
-  const shareRow = n => { const u = shareUrl(n), q = encodeURIComponent(u), st = shareText(n), full = `${st}\n${u}`;
-    return `<div class="nshare"><b class="small"><i class="fa-solid fa-share-nodes"></i> شارك الخبر مع البطاقة الشخصية</b>
+  const shareRow = (n, compact) => { const u = shareUrl(n), q = encodeURIComponent(u), st = shareText(n), full = `${st}\n${u}`;
+    return `<div class="nshare${compact ? ' compact' : ''}">${compact ? '' : '<b class="small"><i class="fa-solid fa-share-nodes"></i> شارك الخبر مع البطاقة الشخصية</b>'}
       <a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(full)}"><i class="fa-brands fa-whatsapp"></i> واتساب</a>
       <a class="btn sm" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(st)}&url=${q}"><i class="fa-brands fa-x-twitter"></i> إكس</a>
       <a class="btn sm" target="_blank" rel="noopener" href="https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(full)}" data-lk="${esc(full)}"><i class="fa-brands fa-linkedin"></i> لينكدإن</a>
@@ -259,6 +259,29 @@ const News = (() => {
     $('#cut-ok', m.el).onclick = () => { const i = pos(); if (i >= body.trim().length) delete cuts[n.id]; else cuts[n.id] = i; m.close ? m.close() : $('[data-close]', m.el).click(); done(); };
     $('#cut-auto', m.el).onclick = () => { delete cuts[n.id]; m.close ? m.close() : $('[data-close]', m.el).click(); done(); };
   }
+  /* رسالة واتساب واحدة بأخبار الفترة المحددة: مقدمة + أخبار منفصلة بروابطها + خاتمة دعوة للتسجيل */
+  function waDigest(items) {
+    const LS = 'st-wa-contact', cfgWa = String(window.ST_CONFIG?.contactWhatsapp || ''); let saved = ''; try { saved = localStorage.getItem(LS) || ''; } catch { /* ignore */ }
+    const sorted = items.slice().sort((a, b) => (b.ts || 0) - (a.ts || 0)), one = x => String(x || '').replace(/\s+/g, ' ').replace(/\*/g, '').trim();
+    const build = phone => {
+      const d = (phone || '').replace(/\D/g, ''), parts = [`*مدرّبون سعوديّون*\nأخبار وإنجازات المدربين والمدربات 🌟\n\nإليكم أبرز ما نُشر${sorted.length > 1 ? ` (${sorted.length} أخبار)` : ''}:`];
+      sorted.forEach((n, i) => {
+        const t = Store.get(`trainers/${n.trainerId}`) || {}, sm = one(n.summary) || (() => { const b = one(n.body); return b.length > 160 ? b.slice(0, 160).replace(/\s+\S*$/, '') + '…' : b; })();
+        parts.push(`${i + 1}️⃣ *${one(n.title)}*\n${one(withTitle(t.name || ''))} · ${dateOf(n.ts)}${sm ? `\n${sm}` : ''}\n🔗 ${shareUrl(n)}`);
+      });
+      parts.push(`✍️ *هل أنت مدرب أو مدربة؟*\nسجّل في منصة «مدرّبون سعوديّون» وانشر بطاقتك وأخبارك أمام الجهات التدريبية، مجاناً.\n📝 التسجيل: ${siteBase()}#/join${d ? `\n💬 للتواصل واتساب: +${d}` : ''}`);
+      return parts.join('\n\n━━━━━━━━━━\n\n');
+    };
+    const m = modal(`<h3><i class="fa-brands fa-whatsapp"></i> رسالة واتساب بأخبار الفترة (${sorted.length})</h3>
+      <label class="field"><span>رقم واتساب التواصل (يظهر في الخاتمة)</span><input id="wd-ph" dir="ltr" inputmode="tel" placeholder="9665XXXXXXXX" value="${esc(saved || cfgWa)}"></label>
+      <label class="field"><span>نص الرسالة (قابل للتعديل)</span><textarea id="wd-tx" rows="16"></textarea></label>
+      <div class="row end" style="gap:8px;flex-wrap:wrap"><button class="btn" id="wd-cp"><i class="fa-regular fa-copy"></i> نسخ الرسالة</button><a class="btn primary" id="wd-go" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> فتح في واتساب</a></div>`, { wide: true });
+    const ta = $('#wd-tx', m.el), ph = $('#wd-ph', m.el), go = () => { $('#wd-go', m.el).href = `https://wa.me/?text=${encodeURIComponent(ta.value)}`; };
+    ta.value = build(ph.value); go(); ta.oninput = go;
+    ph.onchange = () => { try { localStorage.setItem(LS, ph.value.trim()); } catch { /* ignore */ } ta.value = build(ph.value); go(); };
+    $('#wd-cp', m.el).onclick = async () => { try { await navigator.clipboard.writeText(ta.value); toast('تم نسخ الرسالة'); } catch { ta.select(); toast('حدّد النص وانسخه يدوياً'); } };
+  }
+
   function admin(main) {
     const fx = (k, icon, title, text) => { const on = featureOn(k); return `<div class="pbox" style="margin-bottom:12px"><div class="row" style="align-items:center;gap:12px;flex-wrap:wrap"><span class="ic"><i class="fa-solid ${icon}"></i></span><div class="grow"><b>${title}</b> <span class="pill ${on ? 'gold' : ''}">${on ? 'مفعّلة' : 'غير مفعّلة'}</span><p class="small muted" style="margin:4px 0 0">${text}</p></div>
         <button class="btn ${on ? 'danger' : 'primary'}" data-fx="${k}">${on ? 'إيقاف' : 'تفعيل'}</button></div></div>`; };
@@ -280,13 +303,14 @@ const News = (() => {
           <button type="button" class="btn sm ghost" data-rng="7">آخر 7 أيام</button><button type="button" class="btn sm ghost" data-rng="30">آخر 30 يوماً</button><button type="button" class="btn sm ghost" data-rng="all">الكل</button></div>
         <div class="bl-bar"><b>${sel.length}</b> من <b>${inRange.length}</b> خبراً محدداً للنشرة
           <label class="chk" style="margin:0"><input type="checkbox" id="bf-all" ${inRange.length && !sel.length ? '' : (sel.length === inRange.length ? 'checked' : '')}><span>تحديد الكل</span></label></div>
-        ${inRange.length ? inRange.map(n => { const t = Store.get(`trainers/${n.trainerId}`) || {}; return `<div class="lead"><label class="bl-ck"><input type="checkbox" data-sel="${esc(n.id)}" ${bf.off.has(n.id) ? '' : 'checked'}></label><div><b>${esc(n.title)}</b> <small class="muted">${esc(t.name || n.trainerId)} · ${dateOf(n.ts)} · ${kind(n.kind)[1]}</small><p class="small">${esc(n.summary || String(n.body || '').slice(0, 140))}</p>${bf.cuts[n.id] ? '<small class="muted"><i class="fa-solid fa-scissors"></i> قطع مخصص في النشرة</small>' : ''}</div><div class="acts"><a class="btn sm" href="#/news/${esc(n.id)}" target="_blank"><i class="fa-solid fa-eye"></i></a><button class="btn sm" data-edn="${esc(n.id)}" title="تحرير نص الخبر"><i class="fa-solid fa-pen"></i></button>${n.summary ? '' : `<button class="btn sm${bf.cuts[n.id] ? ' primary' : ''}" data-cut="${esc(n.id)}" title="تحديد موضع قطع النص في النشرة"><i class="fa-solid fa-scissors"></i></button>`}<button class="btn sm danger" data-dn="${esc(n.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`; }).join('') : '<p class="muted small">لا توجد أخبار في هذه الفترة.</p>'}</div>
+        ${inRange.length ? inRange.map(n => { const t = Store.get(`trainers/${n.trainerId}`) || {}; return `<div class="lead"><label class="bl-ck"><input type="checkbox" data-sel="${esc(n.id)}" ${bf.off.has(n.id) ? '' : 'checked'}></label><div><b>${esc(n.title)}</b> <small class="muted">${esc(t.name || n.trainerId)} · ${dateOf(n.ts)} · ${kind(n.kind)[1]}</small><p class="small">${esc(n.summary || String(n.body || '').slice(0, 140))}</p>${bf.cuts[n.id] ? '<small class="muted"><i class="fa-solid fa-scissors"></i> قطع مخصص في النشرة</small>' : ''}${shareRow(n, true)}</div><div class="acts"><a class="btn sm" href="#/news/${esc(n.id)}" target="_blank"><i class="fa-solid fa-eye"></i></a><button class="btn sm" data-edn="${esc(n.id)}" title="تحرير نص الخبر"><i class="fa-solid fa-pen"></i></button>${n.summary ? '' : `<button class="btn sm${bf.cuts[n.id] ? ' primary' : ''}" data-cut="${esc(n.id)}" title="تحديد موضع قطع النص في النشرة"><i class="fa-solid fa-scissors"></i></button>`}<button class="btn sm danger" data-dn="${esc(n.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`; }).join('') : '<p class="muted small">لا توجد أخبار في هذه الفترة.</p>'}</div>
       <div class="pbox" style="margin-top:12px"><h3><i class="fa-solid fa-wand-magic-sparkles"></i> نشرة المدربين للسوشيال ميديا</h3>
         <p class="small muted">تُصمَّم الأخبار المحددة أعلاه صفحاتٍ بمقاس منشور إنستقرام الطولي (1080×1350): غلاف بهوية المنصة، ثم الأخبار باسم المدرب وصورته وسطره التعريفي ورمز QR لصفحته. تُصدَّر صوراً (ZIP) أو PDF.</p>
         <div class="bl-bar"><label>توزيع الأخبار<select id="bf-layout"><option value="compact" ${bf.layout === 'compact' ? 'selected' : ''}>عدة مدربين في الصفحة (أقل عدد صفحات)</option><option value="trainer" ${bf.layout === 'trainer' ? 'selected' : ''}>صفحة لكل مدرب (أخباره مجتمعة)</option><option value="single" ${bf.layout === 'single' ? 'selected' : ''}>صفحة لكل خبر</option></select></label>
           <label class="chk" style="margin:0"><input type="checkbox" id="bf-cover" ${bf.cover ? 'checked' : ''}><span>إضافة غلاف</span></label>
           <label class="chk" style="margin:0"><input type="checkbox" id="bf-promo" ${bf.promo ? 'checked' : ''}><span>صفحة ختامية دعائية (مزايا المنصة + رمز التسجيل)</span></label></div>
-        <button class="btn primary" id="bf-go" ${sel.length ? '' : 'disabled'}><i class="fa-solid fa-newspaper"></i> إنشاء النشرة (${sel.length} خبر)</button></div>`;
+        <button class="btn primary" id="bf-go" ${sel.length ? '' : 'disabled'}><i class="fa-solid fa-newspaper"></i> إنشاء النشرة (${sel.length} خبر)</button>
+        <button class="btn" id="bf-wa" ${sel.length ? '' : 'disabled'}><i class="fa-brands fa-whatsapp"></i> استخراج رسالة واتساب (${sel.length} خبر)</button></div>`;
     $$('[data-fx]', main).forEach(b => b.onclick = async () => {
       const k = b.dataset.fx, on = !featureOn(k);
       if (await confirmBox(on ? 'تفعيل هذه الميزة لجميع المدربين والزوار؟' : 'إيقاف الميزة؟ تختفي من الموقع وحسابات المدربين، وتبقى البيانات محفوظة.', { ok: on ? 'تفعيل' : 'إيقاف', danger: !on })) { setFeature(k, on); toast(on ? 'تم التفعيل' : 'تم الإيقاف'); }
@@ -307,6 +331,8 @@ const News = (() => {
     $('#bf-cover', main).onchange = e => { bf.cover = e.target.checked; };
     $('#bf-promo', main).onchange = e => { bf.promo = e.target.checked; };
     $('#bf-go', main).onclick = () => Bulletin.make({ items: sel.map(n => (bf.cuts[n.id] ? { ...n, cutAt: bf.cuts[n.id] } : n)), from: bf.from ? dayStart(bf.from) : Math.min(...sel.map(n => n.ts)), to: bf.to ? dayEnd(bf.to) : Math.max(...sel.map(n => n.ts)), layout: bf.layout, withCover: bf.cover, withPromo: bf.promo });
+    $('#bf-wa', main).onclick = () => waDigest(sel);
+    bindCopy(main);
     $$('[data-edn]', main).forEach(b => b.onclick = () => {
       const n = ls.find(x => x.id === b.dataset.edn), t = n && Store.get(`trainers/${n.trainerId}`);
       if (!t) return toast('تعذّر العثور على صاحب الخبر', 'err');

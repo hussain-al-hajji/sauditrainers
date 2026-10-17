@@ -1335,3 +1335,4 @@ body.preview .local-flag { display: none; }
 .n-sum{font-weight:700;line-height:1.9;margin:.4rem 0;color:var(--g900,#14532d)}
 .n-det{background:var(--paper,#f6f8f6);border:1px solid var(--line,#e2e8e2);border-radius:12px;padding:.7rem .9rem;margin:.6rem 0;line-height:1.9}
 .pn-sum{display:block;font-size:.85rem;color:var(--muted,#667);line-height:1.7;margin-top:.15rem}
+.nshare.compact{margin-top:8px;padding-top:8px}
