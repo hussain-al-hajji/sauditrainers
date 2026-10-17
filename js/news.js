@@ -264,12 +264,12 @@ const News = (() => {
     const LS = 'st-wa-contact', cfgWa = String(window.ST_CONFIG?.contactWhatsapp || ''); let saved = ''; try { saved = localStorage.getItem(LS) || ''; } catch { /* ignore */ }
     const sorted = items.slice().sort((a, b) => (b.ts || 0) - (a.ts || 0)), one = x => String(x || '').replace(/\s+/g, ' ').replace(/\*/g, '').trim();
     const build = phone => {
-      const d = (phone || '').replace(/\D/g, ''), parts = [`*مدرّبون سعوديّون*\nأخبار وإنجازات المدربين والمدربات 🌟\n\nإليكم أبرز ما نُشر${sorted.length > 1 ? ` (${sorted.length} أخبار)` : ''}:`];
+      const d = (phone || '').replace(/\D/g, ''), parts = [`*نشرة أخبار منصة (مدربون سعوديون) الأسبوعية*\nنحتفي بأحدث إنجازات وبرامج المدربين 🌟`];
       sorted.forEach((n, i) => {
         const t = Store.get(`trainers/${n.trainerId}`) || {}, sm = one(n.summary) || (() => { const b = one(n.body); return b.length > 160 ? b.slice(0, 160).replace(/\s+\S*$/, '') + '…' : b; })();
         parts.push(`${i + 1}️⃣ *${one(n.title)}*\n${one(withTitle(t.name || ''))} · ${dateOf(n.ts)}${sm ? `\n${sm}` : ''}\n🔗 ${shareUrl(n)}`);
       });
-      parts.push(`✍️ *هل أنت مدرب أو مدربة؟*\nسجّل في منصة «مدرّبون سعوديّون» وانشر بطاقتك وأخبارك أمام الجهات التدريبية، مجاناً.\n📝 التسجيل: ${siteBase()}#/join${d ? `\n💬 للتواصل واتساب: +${d}` : ''}`);
+      parts.push(`✍️ *هل أنت مدرب أو مدربة؟*\nسجّل في منصة «مدرّبون سعوديّون» وانشر بطاقتك التعريفية وسيرتك وإنجازاتك، وآخر أخبار أنشطتك التدريبية أمام الجهات المهتمة وزوار المنصة.\n📝 التسجيل: ${siteBase()}#/join${d ? `\n💬 للتواصل واتساب: +${d}` : ''}`);
       return parts.join('\n\n━━━━━━━━━━\n\n');
     };
     const m = modal(`<h3><i class="fa-brands fa-whatsapp"></i> رسالة واتساب بأخبار الفترة (${sorted.length})</h3>
