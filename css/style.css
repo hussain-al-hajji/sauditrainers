@@ -1340,3 +1340,4 @@ body.preview .local-flag { display: none; }
 .pcomp{background:#fff;border:1px solid var(--line);border-inline-start:5px solid var(--gold,#c9a227);border-radius:14px;padding:14px 16px;margin-bottom:16px}
 .pc-bar{flex:1;min-width:120px;height:10px;border-radius:6px;background:#e8eee8;overflow:hidden}.pc-bar i{display:block;height:100%;background:var(--g700,#2f7d32);border-radius:6px}
 .pc-chips{display:flex;gap:8px;flex-wrap:wrap}
+.rv-links{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.rv-links a{font-size:.85rem;padding:3px 10px;border:1px solid var(--line);border-radius:999px;direction:ltr}
