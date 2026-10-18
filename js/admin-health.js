@@ -58,6 +58,40 @@ function aHealth(main) {
       ${errs.length ? errs.slice(0, 15).map(e => `<div class="lead"><span class="ic"><i class="fa-solid fa-triangle-exclamation"></i></span><div><b dir="ltr">${esc(e.where || '')}</b> <small class="muted">${when(e.ts)}</small><p class="small" dir="auto">${esc(e.msg)}</p></div></div>`).join('') : '<p class="muted small" style="margin-top:10px">لا أخطاء مسجّلة.</p>'}</div>`;
   $('#hl-ref', main).onclick = async e => { const b = e.currentTarget; b.disabled = true; b.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ التحديث'; await Automation.notify('health', 'now'); setTimeout(() => { if ($('#hl-ref', main)) aHealth(main); }, 6000); };
   $('#hl-clr', main) && ($('#hl-clr', main).onclick = async () => { if (await confirmBox('مسح سجل الأخطاء؟', { ok: 'مسح', danger: true })) Store.remove('health/errors'); });
+  cleanBox(main);
   // هل النسخة المفتوحة هي آخر نسخة منشورة؟
-  if (HealthUI.live == null) { HealthUI.live = ''; fetch(`index.html?cb=${Date.now()}`, { cache: 'no-store' }).then(r => r.text()).then(t => { const v = (t.match(/css\/style\.css\?v=([0-9-]+)/) || [])[1], mine = (document.querySelector('link[href*="style.css?v="]')?.href.match(/v=([0-9-]+)/) || [])[1]; HealthUI.live = v ? (v === mine ? 'نسخة الموقع المنشورة: ' + v : `يوجد إصدار أحدث (${v}) — حدّث الصفحة`) : ''; if ($('#hl-ref', main)) aHealth(main); }).catch(() => {}); }
+  if (HealthUI.live == null) { HealthUI.live = ''; fetch(`index.html?cb=${Date.now()}`, { cache: 'no-store' }).then(r => r.text()).then(t => { const v = (t.match(/css\/style\.css\?v=([0-9-]+)/) || [])[1], mine = (document.querySelector('link[href*="style.css?v="]')?.href.match(/v=([0-9-]+)/) || [])[1]; HealthUI.live = v ? (v === mine ? 'نسخة الموقع المنشورة: ' + v : `يوجد إصدار أحدث (${v}) - حدّث الصفحة`) : ''; if ($('#hl-ref', main)) aHealth(main); }).catch(() => {}); }
+}
+
+/* أداة تنظيف النصوص المحفوظة: تعاين التغييرات ثم تطبّقها، وتنبّه إلى عبارات «ليس ... بل» لمراجعتها يدوياً */
+function cleanScan() {
+  const F = {
+    trainers: ['title', 'bio', 'topics', 'certs', 'partners', 'proCerts', 'city'], news: ['title', 'summary', 'body'], library: ['title', 'summary', 'body'],
+    announcements: ['title', 'body']
+  }, ch = [], fl = [];
+  const visit = (path, rec, keys, label) => keys.forEach(k => {
+    const v = rec && rec[k]; if (typeof v !== 'string' || !v) return; const to = plainText(v);
+    if (to !== v) ch.push({ path: `${path}/${k}`, label: `${label} (${k})`, from: v, to });
+    if (flagContrast(to)) fl.push({ label: `${label} (${k})`, text: to });
+  });
+  Object.entries(F).forEach(([node, keys]) => Store.list(node).forEach(r => r && visit(`${node}/${r.id}`, r, keys, r.name || r.title || r.id)));
+  Store.list('trainers').forEach(t => Object.entries(Store.get(`reviewsPub/${t.id}`) || {}).forEach(([id, r]) => visit(`reviewsPub/${t.id}/${id}`, r, ['text'], `توصية ${t.name || t.id}`)));
+  return { ch, fl };
+}
+function cleanBox(main) {
+  const box = document.createElement('div'); box.className = 'pbox'; box.style.marginTop = '12px';
+  box.innerHTML = '<h3><i class="fa-solid fa-broom"></i> تنظيف النصوص من علامات الصياغة الآلية</h3><p class="small muted">يفحص نصوص المدربين والأخبار والمكتبة والإعلانات والتوصيات، ويزيل ** والشرطة الطويلة والتطويل المتكرر والنقاط الثلاث، مع معاينة قبل التطبيق. عبارات «ليس ... بل» تُعرض للمراجعة اليدوية فقط.</p><button class="btn" id="cl-go"><i class="fa-solid fa-magnifying-glass"></i> فحص النصوص</button>';
+  main.appendChild(box);
+  $('#cl-go', box).onclick = () => {
+    const { ch, fl } = cleanScan(), cut = x => esc(String(x).replace(/\s+/g, ' ').slice(0, 140));
+    const m = modal(`<h3><i class="fa-solid fa-broom"></i> نتيجة الفحص</h3><p>${ch.length ? `<b>${ch.length}</b> نصاً سيُنظَّف` : 'لا توجد نصوص تحتاج تنظيفاً.'}${fl.length ? ` · <b>${fl.length}</b> نصاً فيه عبارة «ليس ... بل» للمراجعة اليدوية` : ''}</p>
+      <div style="max-height:46vh;overflow:auto">${ch.slice(0, 60).map(c => `<div class="lead"><div><b>${esc(c.label)}</b><p class="small muted" style="margin:2px 0">قبل: ${cut(c.from)}</p><p class="small" style="margin:2px 0">بعد: ${cut(c.to)}</p></div></div>`).join('')}
+      ${fl.slice(0, 40).map(c => `<div class="lead"><div><b>${esc(c.label)}</b> <span class="pill gold">مراجعة يدوية</span><p class="small" style="margin:2px 0">${cut(c.text)}</p></div></div>`).join('')}</div>
+      ${ch.length ? '<div class="row end" style="margin-top:10px"><button class="btn primary" id="cl-ap"><i class="fa-solid fa-check"></i> تطبيق التنظيف</button></div>' : ''}`, { wide: true });
+    const ap = $('#cl-ap', m.el); if (ap) ap.onclick = async () => {
+      if (!await confirmBox(`تعديل ${ch.length} نصاً محفوظاً؟ لا يمكن التراجع.`, { ok: 'تطبيق' })) return;
+      ap.disabled = true; for (const c of ch) await Store.setConfirmed(c.path, c.to);
+      Security.log('تنظيف النصوص من علامات الصياغة الآلية', `${ch.length} نصاً`); toast(`نُظِّف ${ch.length} نصاً`); m.close();
+    };
+  };
 }

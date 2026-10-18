@@ -45,7 +45,7 @@ function seoGeneral(body, main) {
     <h3><i class="fa-solid fa-id-card"></i> صفحات المدربين (القوالب)</h3>
     <div class="tvars">${SEO.TRAINER_VARS.map(([k, l]) => `<span class="tvar" style="cursor:default">{${k}}<small>${l}</small></span>`).join('')}</div>
     ${seoField('قالب عنوان صفحة المدرب', 'trainerTitleTpl', val('trainerTitleTpl') || SEO.DEF.trainerTitleTpl, { max: 70 })}
-    ${seoField('قالب وصف صفحة المدرب', 'trainerDescTpl', val('trainerDescTpl') || SEO.DEF.trainerDescTpl, { max: 200, area: true, hint: 'الجزء الذي متغيره فارغ يُحذف تلقائياً (الفواصل: — | ·). يمكن تخصيص عنوان ووصف أي مدرب منفرداً من تبويب «المدربون»' })}
+    ${seoField('قالب وصف صفحة المدرب', 'trainerDescTpl', val('trainerDescTpl') || SEO.DEF.trainerDescTpl, { max: 200, area: true, hint: 'الجزء الذي متغيره فارغ يُحذف تلقائياً (الفواصل: - | ·). يمكن تخصيص عنوان ووصف أي مدرب منفرداً من تبويب «المدربون»' })}
     ${seoChk('إظهار نبذة نصية عن المدرب في صفحته الثابتة (يقرؤها الزاحف)', 'trainerBody', s.trainerBody)}
     <h3><i class="fa-solid fa-diagram-project"></i> البيانات المنظّمة (JSON-LD)</h3>
     <div class="grid2">${seoChk('بيانات المنصة (Organization وWebSite) في الصفحة الرئيسية', 'ldOrg', s.ldOrg)}${seoChk('بيانات المدرب (Person) في صفحته', 'ldPerson', s.ldPerson)}</div>

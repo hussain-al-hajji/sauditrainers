@@ -189,7 +189,7 @@ function aHome(main) {
 }
 
 function templateGallery(done) {
-  const m = modal(`<h3><i class="fa-solid fa-plus"></i> إضافة قسم — اختر النوع والقالب</h3>
+  const m = modal(`<h3><i class="fa-solid fa-plus"></i> إضافة قسم - اختر النوع والقالب</h3>
     <div class="tg">${Object.entries(SECTION_TYPES).map(([k, T]) => `<div class="tg-type"><b><i class="fa-solid ${T.icon}"></i> ${esc(T.name)}</b><div class="tg-tpls">${T.tpls.map(([tk, tn]) => `<button class="tg-tpl" data-t="${k}" data-tpl="${tk}">${tplThumb(k, tk)}<span>${esc(tn)}</span></button>`).join('')}</div></div>`).join('')}</div>`, { wide: true });
   $$('.tg-tpl', m.el).forEach(b => b.onclick = () => {
     const T = SECTION_TYPES[b.dataset.t];

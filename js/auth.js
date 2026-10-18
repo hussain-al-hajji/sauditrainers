@@ -124,7 +124,7 @@ const Security = (() => {
   async function trainerLogin(rawCode) {
     const code = normCode(rawCode);
     if (!code) throw new Error('فضلاً أدخل رمز الدخول');
-    if (!code.includes('-')) throw new Error('الرمز غير مكتمل — اكتبه كما وصلك، مثل ST0012-7K4Q9P');
+    if (!code.includes('-')) throw new Error('الرمز غير مكتمل - اكتبه كما وصلك، مثل ST0012-7K4Q9P');
     if (secure()) {
       await Store.auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});
       try { await Store.auth.signInWithEmailAndPassword(emailFor(code.split('-')[0]), code); }

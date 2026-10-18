@@ -57,7 +57,7 @@ function anLine(rows, series, h = 200) {
     const pts = rows.map((r, i) => `${x(i).toFixed(1)},${y(r[s.k]).toFixed(1)}`);
     return `${si === 0 ? `<path d="M${x(0)},${y(0)} L${pts.join(' L')} L${x(n - 1)},${y(0)} Z" fill="${s.c}" opacity=".12"/>` : ''}<polyline points="${pts.join(' ')}" fill="none" stroke="${s.c}" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round" ${s.dash ? 'stroke-dasharray="6 5"' : ''}/>`;
   }).join('');
-  const hit = rows.map((r, i) => `<rect x="${x(i) - (W - L - R) / Math.max(1, n - 1) / 2}" y="${T}" width="${(W - L - R) / Math.max(1, n - 1)}" height="${h - T - B}" fill="transparent"><title>${r.label} — ${series.map(s => `${s.name}: ${anNum(r[s.k])}`).join(' · ')}</title></rect>`).join('');
+  const hit = rows.map((r, i) => `<rect x="${x(i) - (W - L - R) / Math.max(1, n - 1) / 2}" y="${T}" width="${(W - L - R) / Math.max(1, n - 1)}" height="${h - T - B}" fill="transparent"><title>${r.label} - ${series.map(s => `${s.name}: ${anNum(r[s.k])}`).join(' · ')}</title></rect>`).join('');
   return `<svg viewBox="0 0 ${W} ${h}" class="an-svg" role="img" aria-label="رسم بياني">${grid}${paths}${xl}${hit}</svg>
     <div class="an-leg">${series.map(s => `<span><i style="background:${s.c}"></i>${s.name}</span>`).join('')}</div>`;
 }
@@ -115,7 +115,7 @@ function statsOwn() {
       ${anKpi('fa-inbox', anNum(S('contacts')), 'طلب تواصل مع مدرب', anDelta(S('contacts'), P('contacts')))}
       ${anKpi('fa-user-check', anNum(appsN), 'طلب تسجيل مدرب', anDelta(appsN, Stats.days ? appsPrev : null))}
     </div>
-    ${anBox('fa-chart-area', `الزيارات والمشاهدات ${n > 120 ? 'شهرياً' : 'يومياً'} — ${Stats.days ? `آخر ${n} يوماً` : 'منذ بدء الرصد'}`, anLine(n > 120 ? anMonthly(cur) : cur, [{ k: 'views', name: 'مشاهدات الصفحات', c: '#005430' }, { k: 'visits', name: 'الزيارات', c: '#6E9142' }, { k: 'visitors', name: 'الزوار الفريدون', c: '#B8A25A', dash: true }]))}
+    ${anBox('fa-chart-area', `الزيارات والمشاهدات ${n > 120 ? 'شهرياً' : 'يومياً'} - ${Stats.days ? `آخر ${n} يوماً` : 'منذ بدء الرصد'}`, anLine(n > 120 ? anMonthly(cur) : cur, [{ k: 'views', name: 'مشاهدات الصفحات', c: '#005430' }, { k: 'visits', name: 'الزيارات', c: '#6E9142' }, { k: 'visitors', name: 'الزوار الفريدون', c: '#B8A25A', dash: true }]))}
     <div class="grid2">
       ${anBox('fa-mobile-screen', 'الأجهزة', anDonut(anTop('dev'), k => AN_DEV[k] || k))}
       ${anBox('fa-globe', 'المتصفحات', anDonut(anTop('browser'), k => AN_BROWSER[k] || k))}
@@ -126,7 +126,7 @@ function statsOwn() {
       ${anBox('fa-magnifying-glass', 'ماذا يبحث عنه الزوار؟ (كلمات البحث)', anBars(anTop('term', 12), k => k.replace(/-/g, ' '), 'تظهر هنا كلمات البحث في دليل المدربين'))}
       ${anBox('fa-filter', 'التخصصات والمناطق الأكثر تصفية', `<h4 class="an-h4">التخصصات</h4>${anBars(anTop('spec', 6), k => specName(k))}<h4 class="an-h4">المناطق</h4>${anBars(anTop('region', 6), k => regionName(k))}`)}
     </div>
-    ${anBox('fa-clock', 'ساعات الذروة (بتوقيت الرياض)', `<div class="an-hours">${hours.map(([h, v]) => `<div title="${h}:00 — ${anNum(v)} زيارة"><span style="height:${Math.max(3, v / hm * 100)}%"></span><small>${+h % 3 === 0 ? h : ''}</small></div>`).join('')}</div>`)}
+    ${anBox('fa-clock', 'ساعات الذروة (بتوقيت الرياض)', `<div class="an-hours">${hours.map(([h, v]) => `<div title="${h}:00 - ${anNum(v)} زيارة"><span style="height:${Math.max(3, v / hm * 100)}%"></span><small>${+h % 3 === 0 ? h : ''}</small></div>`).join('')}</div>`)}
     <div class="grid2">
       ${anBox('fa-filter-circle-dollar', 'قمع الزائر ← طلب تواصل (منذ بدء الرصد)', `<div class="an-funnel">${funnel.map((f, i) => `<div><span style="width:${Math.max(4, f[1] / fm * 100)}%"></span><b>${esc(f[0])}</b><em class="num">${anNum(f[1])}${i ? ` · ${anPct(f[1], funnel[i - 1][1])}%` : ''}</em></div>`).join('')}</div>`)}
       ${anBox('fa-user-plus', 'قمع التسجيل كمدرب', `<div class="an-funnel">${fjoin.map((f, i) => `<div><span style="width:${Math.max(4, f[1] / Math.max(1, fjoin[0][1]) * 100)}%"></span><b>${esc(f[0])}</b><em class="num">${anNum(f[1])}${i ? ` · ${anPct(f[1], fjoin[0][1])}%` : ''}</em></div>`).join('')}</div><p class="muted small" style="margin-top:10px">نسبة التحويل = من فتح صفحة التسجيل وأكمل الطلب.</p>`)}
@@ -140,7 +140,7 @@ function anGaCard(ga0) {
   const list = (k, nameFn) => arr(ga[k]).map(r => [nameFn(r), +r[r.length - 1] || 0]);
   const rt = ga.realtime || {};
   return `
-    <div class="an-head"><div><h3><i class="fa-brands fa-google"></i> Google Analytics — ${Stats.gp === 'all' ? (ga0.firstDate ? `منذ ${anDate(ga0.firstDate)} (أقدم بيانات متاحة)` : 'كل البيانات المتاحة') : AN_GP_LABEL[Stats.gp]}</h3><small class="muted">تحديث: ${ga.updatedAt ? ago(ga.updatedAt) : '—'}</small></div></div>
+    <div class="an-head"><div><h3><i class="fa-brands fa-google"></i> Google Analytics - ${Stats.gp === 'all' ? (ga0.firstDate ? `منذ ${anDate(ga0.firstDate)} (أقدم بيانات متاحة)` : 'كل البيانات المتاحة') : AN_GP_LABEL[Stats.gp]}</h3><small class="muted">تحديث: ${ga.updatedAt ? ago(ga.updatedAt) : '—'}</small></div></div>
     <div class="kpis">
       ${anKpi('fa-bolt', anNum(rt.users), 'نشط الآن (آخر 30 دقيقة)', '', true)}
       ${anKpi('fa-users', anNum(o.activeUsers), 'مستخدم نشط', anDelta(o.activeUsers, pv.activeUsers))}

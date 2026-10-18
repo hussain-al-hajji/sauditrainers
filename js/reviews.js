@@ -52,7 +52,7 @@ const Reviews = (() => {
           <div class="row" style="gap:10px;flex-wrap:wrap"><div style="flex:1;min-width:200px">${field('الجهة (اختياري)', '<input name="org" maxlength="100" placeholder="اسم الشركة أو الجهة">')}</div><div style="flex:1;min-width:200px">${field('صفتك (اختياري)', '<input name="role" maxlength="80" placeholder="مثال: مدير التدريب / متدرب">')}</div></div>
           ${field('توصيتك', '<textarea name="text" required rows="5" minlength="20" maxlength="800" placeholder="اكتب ما تراه عن أسلوبه وخبرته وتجربتك معه…"></textarea>', '<span id="rvc">0</span> / 800 (20 حرفاً على الأقل)')}
           <div><b class="small">التقييم (اختياري)</b><div class="rv-pick" id="rvr">${[1, 2, 3, 4, 5].map(n => `<button type="button" data-r="${n}" aria-label="${n}">☆</button>`).join('')}</div></div>
-          ${field('وسيلة تواصل (اختياري، لا تُنشر)', '<input name="contact" maxlength="120" dir="ltr" placeholder="بريد أو جوال — يراه المدرب فقط للتأكد منك">')}
+          ${field('وسيلة تواصل (اختياري، لا تُنشر)', '<input name="contact" maxlength="120" dir="ltr" placeholder="بريد أو جوال - يراه المدرب فقط للتأكد منك">')}
           <input name="website" tabindex="-1" autocomplete="off" style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none" aria-hidden="true">
           <div class="row end"><button class="btn primary" type="submit"><i class="fa-solid fa-paper-plane"></i> إرسال التوصية</button></div>
         </form></div>`;
@@ -63,7 +63,7 @@ const Reviews = (() => {
       $('#rvf', host).onsubmit = async e => {
         e.preventDefault(); const f = e.target, btn = $('button[type=submit]', f);
         if (f.website.value) { host.innerHTML = '<div class="empty"><i class="fa-solid fa-circle-check"></i><h3>شكراً لك</h3></div>'; return; }   // فخ للروبوتات
-        const rec = { id: tk, trainerId: link.trainerId, name: f.name.value.trim(), text: f.text.value.trim(), status: 'pending', ts: Date.now() };
+        const rec = { id: tk, trainerId: link.trainerId, name: f.name.value.trim(), text: plainText(f.text.value.trim()), status: 'pending', ts: Date.now() };
         ['org', 'role', 'contact'].forEach(k => { const v = f[k].value.trim(); if (v) rec[k] = v; }); if (rating) rec.rating = rating;
         if (rec.text.length < 20 || rec.name.length < 3) return toast('أكمل الاسم والتوصية (20 حرفاً على الأقل)', 'err');
         btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ الإرسال';
@@ -88,7 +88,7 @@ const Reviews = (() => {
   }
   function newLink(t) {
     const m = modal(`<h3><i class="fa-solid fa-link"></i> طلب توصية جديد</h3>
-      <form id="lf" style="display:grid;gap:10px">${field('لمن ستُرسل؟ (ملاحظة لك فقط)', '<input name="label" maxlength="80" placeholder="مثال: أ. خالد — شركة النور">')}
+      <form id="lf" style="display:grid;gap:10px">${field('لمن ستُرسل؟ (ملاحظة لك فقط)', '<input name="label" maxlength="80" placeholder="مثال: أ. خالد - شركة النور">')}
         <div class="row end"><button type="button" class="btn ghost" data-close>إلغاء</button><button class="btn primary" type="submit">إنشاء الرابط</button></div></form>`);
     $('#lf', m.el).onsubmit = async e => {
       e.preventDefault(); const tk = token(), label = e.target.label.value.trim();
@@ -110,7 +110,7 @@ const Reviews = (() => {
     paint(); $$('#rvr button', m.el).forEach(b => b.onclick = () => { rating = rating === +b.dataset.r ? 0 : +b.dataset.r; paint(); });
     $('#ef', m.el).onsubmit = async e => {
       e.preventDefault(); const f = e.target, id = r?.id || Store.newId();
-      const rec = { id, name: f.name.value.trim(), text: f.text.value.trim(), src: r?.src || 'self', ts: r?.ts || Date.now() };
+      const rec = { id, name: f.name.value.trim(), text: plainText(f.text.value.trim()), src: r?.src || 'self', ts: r?.ts || Date.now() };
       ['org', 'role'].forEach(k => { const v = f[k].value.trim(); if (v) rec[k] = v; }); if (rating) rec.rating = rating;
       if (await Store.setConfirmed(`reviewsPub/${t.id}/${id}`, rec)) { toast('تم الحفظ'); m.close(); }
     };

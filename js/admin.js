@@ -90,7 +90,7 @@ function adminLoginView() {
     <div style="display:grid;gap:12px;margin-top:18px">
       <button class="gbtn" id="gl">${googleIcon}<span>${Security.secure() ? 'الدخول بحساب Google' : 'دخول تجريبي (الوضع المحلي)'}</span></button>
       <div class="error-msg" id="ge"></div>
-      ${Security.secure() ? '' : '<div class="note"><i class="fa-solid fa-circle-info"></i> المنصة تعمل حالياً في الوضع المحلي (البيانات في هذا المتصفح فقط). لتفعيل دخول Google الحقيقي والحفظ المركزي أضف إعدادات Firebase في <b>js/config.js</b> — التفاصيل في README.</div>'}
+      ${Security.secure() ? '' : '<div class="note"><i class="fa-solid fa-circle-info"></i> المنصة تعمل حالياً في الوضع المحلي (البيانات في هذا المتصفح فقط). لتفعيل دخول Google الحقيقي والحفظ المركزي أضف إعدادات Firebase في <b>js/config.js</b> - التفاصيل في README.</div>'}
     </div>
   </div></div>`;
 }
@@ -132,7 +132,7 @@ function aDash(main) {
       <div class="kpi"><i class="fa-solid fa-user-slash"></i><b class="num">${live.filter(t => !act[t.id]).length}</b><span>لم يدخلوا بعد</span></div>
     </div>
     ${rows.length ? `<div class="tbl-wrap" style="overflow:auto"><table class="tbl"><thead><tr><th>المدرب</th><th>آخر دخول</th><th>مرات الدخول</th><th>آخر تعديل</th><th>مرات التعديل</th></tr></thead><tbody>${rows.map(a => `<tr><td><a href="#/t/${esc(a.id)}">${esc(tname(a.id))}</a></td><td>${a.lastLogin ? ago(a.lastLogin) : '—'}</td><td class="num">${a.logins}</td><td>${a.lastEdit ? ago(a.lastEdit) : '—'}</td><td class="num">${a.edits}</td></tr>`).join('')}</tbody></table></div>
-    <h4 style="margin:14px 0 6px">آخر الحركات</h4><div class="log">${evs.sort((a, b) => b.ts - a.ts).slice(0, 12).map(e => `<div><small>${ago(e.ts)}</small><span><b>${esc(tname(e.tid))}</b> — ${e.type === 'login' ? '<i class="fa-solid fa-right-to-bracket"></i> دخل إلى صفحته' : `<i class="fa-solid fa-pen"></i> عدّل ${esc(e.detail || 'بياناته')}`}</span></div>`).join('')}</div>` : '<p class="muted small">لا نشاط للمدربين بعد، يظهر هنا عند دخول أي مدرب أو تعديله لبياناته</p>'}</div>`;
+    <h4 style="margin:14px 0 6px">آخر الحركات</h4><div class="log">${evs.sort((a, b) => b.ts - a.ts).slice(0, 12).map(e => `<div><small>${ago(e.ts)}</small><span><b>${esc(tname(e.tid))}</b> - ${e.type === 'login' ? '<i class="fa-solid fa-right-to-bracket"></i> دخل إلى صفحته' : `<i class="fa-solid fa-pen"></i> عدّل ${esc(e.detail || 'بياناته')}`}</span></div>`).join('')}</div>` : '<p class="muted small">لا نشاط للمدربين بعد، يظهر هنا عند دخول أي مدرب أو تعديله لبياناته</p>'}</div>`;
   main.innerHTML = `
     <div class="dash-h"><h2>نظرة عامة</h2><span class="muted small">${fmtTs(Date.now())}</span></div>
     <div id="anx"></div>
@@ -208,7 +208,7 @@ async function sendMailNotice(to, msg, applog) {
     toast('أُرسل الإشعار من بريد المنصة');
   } else {
     window.open(gmailCompose(to, msg.subject, msg.body), '_blank');
-    toast('فُتح Gmail في المتصفح برسالة جاهزة — سجّل الدخول ببريد المنصة واضغط إرسال');
+    toast('فُتح Gmail في المتصفح برسالة جاهزة - سجّل الدخول ببريد المنصة واضغط إرسال');
   }
   applog && Store.update(`applications/${applog.id}`, { [applog.key]: Date.now() });
   return true;
@@ -269,7 +269,7 @@ function appDetail(a) {
             ${noticeButtons(a, 'initial')}
             <p class="small muted">بعد التأكد من وصول التحويل اضغط القبول النهائي ليُنشأ حساب المدرب وبطاقته ورمز دخوله.</p>
             <button class="btn gold" data-act="final"><i class="fa-solid fa-certificate"></i> قبول نهائي (تم تأكيد التحويل)</button>` : ''}
-          ${a.status === 'published' ? `<div class="banner ok"><i class="fa-solid fa-certificate"></i>تم القبول النهائي${trainer ? ` — رقم العضوية <b class="num">${esc(trainer.code)}</b>` : ''}</div>
+          ${a.status === 'published' ? `<div class="banner ok"><i class="fa-solid fa-certificate"></i>تم القبول النهائي${trainer ? ` - رقم العضوية <b class="num">${esc(trainer.code)}</b>` : ''}</div>
             ${secret ? noticeButtons(a, 'final') : '<p class="small muted">لا يتوفر رمز محفوظ؛ جدّد الرمز من تبويب المدربين.</p>'}
             ${trainer ? `<a class="btn" href="#/t/${esc(trainer.slug || trainer.id)}" target="_blank"><i class="fa-solid fa-id-card"></i> فتح بطاقته</a>` : ''}` : ''}
           ${a.status === 'rejected' ? '<div class="banner warn"><i class="fa-solid fa-circle-xmark"></i>الطلب غير مقبول. يمكنك إعادته للمراجعة من القائمة.</div>' : ''}
@@ -571,7 +571,7 @@ function importDialog() {
       }
       Security.log('استيراد مدربين', `${done} مدرب`, file.name);
       if (failed) toast(`استُورد ${done} وتعذّر ${failed}. تأكد من نشر آخر database.rules.json في Firebase`, 'error');
-      else toast(`تم استيراد ${done} مدرب — أصدر رموز الدخول من فلتر «بلا رمز دخول»`);
+      else toast(`تم استيراد ${done} مدرب - أصدر رموز الدخول من فلتر «بلا رمز دخول»`);
       m.close();
     });
   };
@@ -591,7 +591,7 @@ const leadDraft = (r, t) => `السلام عليكم ${withTitle(t?.name || r.tr
 • المسؤول: ${r.person}
 • موضوع البرنامج: ${r.topic}${r.when ? `\n• الموعد المتوقع: ${r.when}` : ''}${r.mode ? `\n• طريقة التقديم: ${DELIVERY.find(d => d.k === r.mode)?.name || ''}` : ''}${r.msg ? `\n• التفاصيل: ${r.msg}` : ''}
 
-للتواصل معهم: ${r.phone}${r.email ? ' — ' + r.email : ''}
+للتواصل معهم: ${r.phone}${r.email ? ' - ' + r.email : ''}
 تفاصيل الطلب في لوحتك: ${siteBase()}#/login`;
 
 function aRequests(main) {
@@ -623,10 +623,10 @@ function aRequests(main) {
       </div>
       <div class="acts" style="flex-direction:column">
         ${r.kind === 'lead' ? `<a class="btn sm primary" target="_blank" rel="noopener" data-wa="${esc(r.id)}" href="${esc(tp?.phone ? waLink(tp.phone, leadDraft(r, t)) : '#')}" title="فتح محادثة المدرب مع مسودة الرسالة"><i class="fa-brands fa-whatsapp"></i> للمدرب</a>
-        ${tp?.email ? `<a class="btn sm" target="_blank" rel="noopener" href="${esc(gmailCompose(tp.email, 'طلب تواصل جديد — ' + r.topic, leadDraft(r, t), ''))}" title="بريد للمدرب (Gmail)"><i class="fa-solid fa-envelope"></i> للمدرب</a>` : ''}
+        ${tp?.email ? `<a class="btn sm" target="_blank" rel="noopener" href="${esc(gmailCompose(tp.email, 'طلب تواصل جديد - ' + r.topic, leadDraft(r, t), ''))}" title="بريد للمدرب (Gmail)"><i class="fa-solid fa-envelope"></i> للمدرب</a>` : ''}
         ${Automation.on ? `<button class="btn sm" data-mail="${esc(r.id)}" title="إعادة إرسال البريد الآلي"><i class="fa-solid fa-rotate"></i> البريد</button>` : ''}` : ''}
         <a class="btn sm" target="_blank" rel="noopener" href="${esc(waLink(r.phone, `السلام عليكم ${r.person}، معك فريق منصة مدرّبون سعوديّون بخصوص طلبكم: ${r.topic}`))}" title="واتساب الجهة"><i class="fa-brands fa-whatsapp"></i> للجهة</a>
-        ${r.kind === 'req' ? (Broadcast.forwarded(r.id) ? `<button class="btn sm gold" data-fwx="${esc(r.id)}" title="أُعيد توجيهه للمدربين ${ago(Broadcast.forwarded(r.id).ts)} — اضغط لإلغاء التوجيه"><i class="fa-solid fa-share"></i> أُعيد توجيهه</button>` : `<button class="btn sm" data-fw="${esc(r.id)}" title="إعادة توجيه الطلب إلى كل المدربين (إشعار ونافذة وتبويب «طلبات عامة»)"><i class="fa-solid fa-share"></i> للمدربين</button>`) : ''}
+        ${r.kind === 'req' ? (Broadcast.forwarded(r.id) ? `<button class="btn sm gold" data-fwx="${esc(r.id)}" title="أُعيد توجيهه للمدربين ${ago(Broadcast.forwarded(r.id).ts)} - اضغط لإلغاء التوجيه"><i class="fa-solid fa-share"></i> أُعيد توجيهه</button>` : `<button class="btn sm" data-fw="${esc(r.id)}" title="إعادة توجيه الطلب إلى كل المدربين (إشعار ونافذة وتبويب «طلبات عامة»)"><i class="fa-solid fa-share"></i> للمدربين</button>`) : ''}
         <button class="btn sm" data-show="${r.kind}" data-id="${esc(r.id)}" title="عرض في «من طلبات هذا الشهر»"><i class="fa-solid fa-table-cells-large"></i></button>
         <button class="btn sm" data-t="${r.kind}" data-id="${esc(r.id)}" title="تبديل الحالة"><i class="fa-solid fa-check"></i></button>
         <button class="btn sm ghost" data-del="${r.kind}" data-id="${esc(r.id)}" title="حذف"><i class="fa-solid fa-trash"></i></button>
@@ -671,7 +671,7 @@ function showcaseEditor(x) {
     const d = formData(e.target);
     const rec = { ...d, src: x.src || '', ts: x.ts || Date.now() };
     if (x.id) Store.update(`showcase/${x.id}`, rec); else Store.push('showcase', rec);
-    Security.log('عرض طلب في الرئيسية', d.title); m.close(); toast('تم — يظهر في الصفحة الرئيسية');
+    Security.log('عرض طلب في الرئيسية', d.title); m.close(); toast('تم - يظهر في الصفحة الرئيسية');
   };
 }
 

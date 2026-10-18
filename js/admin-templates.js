@@ -4,7 +4,7 @@
 function aTemplates(main) {
   const chip = ([k, l]) => `<button type="button" class="tvar" data-v="${k}" title="${l}">{${k}}<small>${l}</small></button>`;
   const sample = () => Tpl.vars({ a: { id: 'ABCD1234', name: 'أ. سارة العتيبي' }, t: { name: 'أ. سارة العتيبي', code: 'ST0012', slug: 'sarah' }, secret: 'ST0012-7K4Q9P' });
-  const trainerOpts = Store.list('trainers').filter(t => t.name).sort((x, y) => String(x.name).localeCompare(String(y.name), 'ar')).map(t => `<option value="${esc(t.id)}">${esc(t.name)} — ${esc(t.code || '')}${Data.isLive(t) ? '' : ' (مخفي)'}</option>`).join('');
+  const trainerOpts = Store.list('trainers').filter(t => t.name).sort((x, y) => String(x.name).localeCompare(String(y.name), 'ar')).map(t => `<option value="${esc(t.id)}">${esc(t.name)} - ${esc(t.code || '')}${Data.isLive(t) ? '' : ' (مخفي)'}</option>`).join('');
   main.innerHTML = `
     <div class="dash-h"><h2>قوالب الرسائل</h2></div>
     <div id="ctpl"></div>

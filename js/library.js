@@ -29,7 +29,7 @@ const Library = (() => {
     const body = [para(it.title, { b: true, sz: 40, color: '005430', after: 120 }), para(`${c[2]} · ${k[1]}`, { sz: 20, color: '6A7F72', after: 200 }),
       it.summary ? para(it.summary, { sz: 24, color: '3A5244', after: 240 }) : '', ...lines.map(l => para(l.trim() ? l : ' ', { sz: 24 })),
       it.url ? para(`الرابط: ${it.url}`, { sz: 22, before: 160, color: '0B6A3E' }) : '',
-      para('من مكتبة المدرب — منصة «مدرّبون سعوديّون» · sauditrainers.sa', { sz: 18, color: '6A7F72', before: 360 })].join('');
+      para('من مكتبة المدرب - منصة «مدرّبون سعوديّون» · sauditrainers.sa', { sz: 18, color: '6A7F72', before: 360 })].join('');
     const W = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"', enc = s => new TextEncoder().encode(s);
     return Bulletin.zip([
       { name: '[Content_Types].xml', data: enc('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>') },
@@ -47,7 +47,7 @@ const Library = (() => {
   const V = { cat: '', q: '', fav: false, seen: 0 };
   function open(it, t, opt = {}) {
     const copy = it.kind === 'template' || it.kind === 'checklist', k = kind(it.kind), c = cat(it.cat);
-    const m = modal(`${opt.preview ? '<div class="banner" style="margin-bottom:10px"><i class="fa-solid fa-eye"></i> معاينة كما سيراه المدرب — غير منشور بعد</div>' : ''}<h3><i class="fa-solid ${c[1]}"></i> ${esc(it.title)}</h3>
+    const m = modal(`${opt.preview ? '<div class="banner" style="margin-bottom:10px"><i class="fa-solid fa-eye"></i> معاينة كما سيراه المدرب - غير منشور بعد</div>' : ''}<h3><i class="fa-solid ${c[1]}"></i> ${esc(it.title)}</h3>
       <p class="small muted"><span class="pill gold"><i class="fa-solid ${k[2]}"></i> ${k[1]}</span> ${esc(c[2])}</p>
       ${it.summary ? `<p class="muted">${esc(it.summary)}</p>` : ''}
       ${it.body ? `<div class="lib-body">${render(it.body)}</div>` : ''}

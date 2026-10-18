@@ -4,12 +4,12 @@
  * تُحمَّل الرسالة المولَّدة في تبويب «كتابة الرسالة» كمسودة لتراجعها وتعدّلها ثم تختار المستلمين وترسلها بآلية المراسلة المعتادة. */
 
 const WEEKLY_DEFAULT = {
-  subject: 'الرسالة الأسبوعية — مدرّبون سعوديّون',
+  subject: 'الرسالة الأسبوعية - مدرّبون سعوديّون',
   intro: 'السلام عليكم ورحمة الله وبركاته\n\nأ. {first}،\n\nيسعدنا أن نضع بين يديك **ملخص هذا الأسبوع** في منصة «مدرّبون سعوديّون»: أبرز ما شاركه زملاؤك المدربون من أخبار وإنجازات، وما نُشر في تبويب «إعلانات عبر الإنترنت» من إعلانات عامة لجهات تبحث عن مدربين.',
   outro: 'نشكر لك ثقتك بمنصتك، ونتطلع إلى أن نقرأ أخبارك وإنجازاتك في الأسبوع القادم.\n\nمع خالص التحية،\n**فريق منصة مدرّبون سعوديّون**'
 };
 const WEEKLY_UNREG_DEFAULT = {
-  subject: 'جديد مدرّبون سعوديّون — أخبار الأسبوع ومزايا المنصة',
+  subject: 'جديد مدرّبون سعوديّون - أخبار الأسبوع ومزايا المنصة',
   intro: 'السلام عليكم ورحمة الله وبركاته\n\nأ. {first}،\n\nيسعدنا أن نضع بين يديك **ملخص أخبار المدربين هذا الأسبوع** في منصة «مدرّبون سعوديّون»، مع تذكير سريع بمزايا المنصة وأحدث ما أضفناه إليها.',
   features: '🪪 | صفحة مهنية خاصة بك | رابط وبطاقة تعريفية تجمع نبذتك وخبراتك ودوراتك وطرق التواصل معك.\n📰 | أخبار المدربين | شارك إنجازاتك ودوراتك القادمة لتظهر باسمك وصورتك في الصفحة الرئيسية.\n📨 | طلبات التدريب | تصلك طلبات الجهات الباحثة عن مدربين مباشرةً أو عبر الطلبات العامة.\n🔗 | مشاركة سهلة | رمز QR وبطاقات جاهزة للمشاركة في واتساب ومنصات التواصل.',
   updates: '📌 | قسم «المثبّتة» | بطاقة مدرب مميّزة في الصفحة الرئيسية تتبدّل كل 24 ساعة.\n🗞️ | نشرة الأخبار المصوّرة | أخبار المدربين تُصدَّر بصور وPDF جاهزة للنشر.\n📢 | إعلانات عبر الإنترنت وفرص التدريب | يطّلع عليها المدربون المسجلون نهائياً داخل حساباتهم.\n👋 | عدّاد الزيارات | ترحيب بكل زائر برقم زيارته من إجمالي زيارات المنصة.',
@@ -38,7 +38,7 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     list.forEach(n => {
       const t = Store.get(`trainers/${n.trainerId}`) || {}, kind = (News.kinds.find(k => k[0] === n.kind) || News.kinds[0])[1];
       const [ex, long] = n.summary ? [clean(n.summary), true] : cut(n.body, 240), url = `${base}#/news/${encodeURIComponent(n.id)}`;
-      const text = `**${clean(n.title)}**\n${clean(t.name)}${t.title ? ' — ' + cut(t.title, 70)[0] : ''}\n${kind} · ${fmt(n.ts)}${ex ? '\n\n' + ex : ''}${long ? `\n[قراءة الخبر كاملاً ←](${url})` : `\n[عرض الخبر ←](${url})`}`;
+      const text = `**${clean(n.title)}**\n${clean(t.name)}${t.title ? ' - ' + cut(t.title, 70)[0] : ''}\n${kind} · ${fmt(n.ts)}${ex ? '\n\n' + ex : ''}${long ? `\n[قراءة الخبر كاملاً ←](${url})` : `\n[عرض الخبر ←](${url})`}`;
       const photo = !t.noPhoto && Data.photo(t);
       blocks.push(photo ? { t: 'imgtext', url: photo, text, side: 'start', alt: clean(t.name) } : { t: 'box', text });
     });
@@ -107,7 +107,7 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
 
   /* ===== الرسالة الأسبوعية لغير المسجلين: أخبار المدربين فقط + مزايا المنصة وآخر تحديثاتها (بلا إعلانات عبر الإنترنت) ===== */
   const getU = () => ({ ...WEEKLY_UNREG_DEFAULT, ...(Store.get('settings/weeklyUnreg') || {}) });
-  const parseLines = txt => String(txt || '').split('\n').map(l => l.split('|').map(x => clean(x))).filter(a => a.length >= 2 && (a[1] || a[2])).map(a => a.length === 2 ? { ic: '✨', ti: a[0], de: a[1] } : { ic: a[0] || '✨', ti: a[1], de: a.slice(2).join(' — ') });
+  const parseLines = txt => String(txt || '').split('\n').map(l => l.split('|').map(x => clean(x))).filter(a => a.length >= 2 && (a[1] || a[2])).map(a => a.length === 2 ? { ic: '✨', ti: a[0], de: a[1] } : { ic: a[0] || '✨', ti: a[1], de: a.slice(2).join(' - ') });
   const lineBox = (heading, items) => items.length ? [{ t: 'h', text: heading, align: 'start' }, ...items.map(x => ({ t: 'box', text: `${x.ic}  **${x.ti}**${x.de ? '\n' + x.de : ''}` }))] : [];
   function buildUnreg({ from, to, intro, features, updates, outro, subject }) {
     const base = siteBase(), blocks = [];

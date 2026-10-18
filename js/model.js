@@ -98,7 +98,7 @@ const Data = (() => {
   // ترحيل: يضمن أن لكل مدرب حالي رابطاً محجوزاً في slugs/ (يُشغَّل من لوحة الإدارة)
   function syncSlugs() { Store.list('trainers').forEach(t => { if (t.slug && Store.get(`slugs/${t.slug}`) !== t.id) Store.set(`slugs/${t.slug}`, t.id); }); }
 
-  // الحقول العامة للمدرب (المسموح بتعديلها من صفحته — تطابق القواعد)
+  // الحقول العامة للمدرب (المسموح بتعديلها من صفحته - تطابق القواعد)
   const PUBLIC_FIELDS = ['name', 'nameEn', 'title', 'gender', 'region', 'city', 'bio', 'specs', 'topics', 'modes', 'years', 'hours', 'programs', 'certs', 'langs', 'theme', 'photoUrl', 'photoX', 'photoY', 'photoZ', 'noPhoto', 'cardSpecs', 'regions', 'travel', 'tot', 'proCerts', 'partners'];
   // تقسيم إجابات الحقول المخصصة: العامة تظهر في صفحة المدرب، والباقي في بياناته الإدارية
   const splitExtra = extra => { const pub = {}, priv = {}; Object.entries(extra || {}).forEach(([k, v]) => { (FormKit.isPublicExtra(k) ? pub : priv)[k] = v; }); return { pub, priv }; };

@@ -148,7 +148,7 @@ const News = (() => {
     $('#nf', m.el).onsubmit = async e => {
       e.preventDefault(); const f = e.target;
       if (wc(f.summary.value) > 40) return toast('الموجز أطول من 40 كلمة: اختصره', 'err');
-      const rec = { id: n?.id || '', trainerId: t.id, title: f.title.value.trim(), summary: f.summary.value.trim().replace(/\s+/g, ' '), body: f.body.value.trim(), kind: f.kind.value, ts: n?.ts || Date.now() };
+      const rec = { id: n?.id || '', trainerId: t.id, title: plainText(f.title.value.trim()), summary: plainText(f.summary.value.trim().replace(/\s+/g, ' ')), body: plainText(f.body.value.trim()), kind: f.kind.value, ts: n?.ts || Date.now() };
       if (n) rec.editedAt = Date.now();
       if (links.length) rec.links = links.map(l => ({ url: l.url, title: l.title || '', desc: l.desc || '', img: l.img || '', site: l.site || '' }));
       try {
@@ -250,7 +250,7 @@ const News = (() => {
     const pos = () => { let i = Math.max(ta.selectionStart, ta.selectionEnd); while (i > 0 && i < body.length && !/\s/.test(body[i - 1]) && !/\s/.test(body[i])) i--; return i; };
     const upd = () => {
       const i = pos(), part = body.slice(0, i).trim(), w = words(part), over = w > lim.maxWords || !lim.fits(part.replace(/\s+/g, ' '));
-      $('#cut-cnt', m.el).innerHTML = `الكلمات حتى المؤشر: <span class="num" style="color:${over ? '#B3261E' : 'inherit'}">${w}</span> من <span class="num">${lim.maxWords}</span> كحد أقصى${over ? ' — تجاوزت الحد، حرّك المؤشر للأعلى' : ''}`;
+      $('#cut-cnt', m.el).innerHTML = `الكلمات حتى المؤشر: <span class="num" style="color:${over ? '#B3261E' : 'inherit'}">${w}</span> من <span class="num">${lim.maxWords}</span> كحد أقصى${over ? ' - تجاوزت الحد، حرّك المؤشر للأعلى' : ''}`;
       $('#cut-prev', m.el).textContent = part ? part + (part.length < body.trim().length ? ' …' : '') : 'ضع المؤشر داخل النص';
       $('#cut-ok', m.el).disabled = !part || over;
     };
@@ -290,7 +290,7 @@ const News = (() => {
       ${fx('news', 'fa-newspaper', 'أخبار المدربين', 'يكتب المدرب أخباره من حسابه وتظهر في صفحة الأخبار وقسم بالرئيسية وتبويب بالقائمة العلوية. عند التفعيل لأول مرة يُضاف القسم والتبويب تلقائياً.')}
       ${fx('announcements', 'fa-bullhorn', 'إعلانات الإدارة للمدربين', 'تصل حسابات المدربين كنافذة منبثقة وتبقى محفوظة في تبويب «إعلانات».')}
       <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-pen"></i> إعلان جديد للمدربين</h3>
-        <p class="small muted">يصل إلى ${trainers} مدرباً لديهم حسابات${featureOn('announcements') ? '' : ' — فعّل ميزة الإعلانات أولاً ليظهر لهم'}.</p>
+        <p class="small muted">يصل إلى ${trainers} مدرباً لديهم حسابات${featureOn('announcements') ? '' : ' - فعّل ميزة الإعلانات أولاً ليظهر لهم'}.</p>
         <form id="af" style="display:grid;gap:10px">
           ${field('العنوان', '<input name="title" required maxlength="160">')}
           ${field('النص', '<textarea name="body" rows="4" maxlength="3000"></textarea>')}
@@ -318,7 +318,7 @@ const News = (() => {
     $('#af', main).onsubmit = e => {
       e.preventDefault(); const f = e.target, link = f.link.value.trim();
       if (link && !/^https:\/\//i.test(link)) return toast('الرابط يجب أن يبدأ بـ https://', 'err');
-      const rec = { ts: Date.now(), title: f.title.value.trim(), body: f.body.value.trim() }; if (link) { rec.link = link; rec.linkLabel = f.linkLabel.value.trim(); }
+      const rec = { ts: Date.now(), title: plainText(f.title.value.trim()), body: plainText(f.body.value.trim()) }; if (link) { rec.link = link; rec.linkLabel = f.linkLabel.value.trim(); }
       const aid = Store.push('announcements', rec); Security.log('إعلان للمدربين', rec.title); Automation.notify('push', `a:${aid}`); toast('أُرسل الإعلان'); f.reset();
     };
     const rerender = () => admin(main);

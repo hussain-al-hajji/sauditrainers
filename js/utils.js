@@ -332,3 +332,18 @@ document.addEventListener('DOMContentLoaded', () => {
   new MutationObserver(() => { cancelAnimationFrame(t); t = requestAnimationFrame(() => addListSearch()); }).observe(document.body, { childList: true, subtree: true });
   addListSearch();
 });
+
+/* تنظيف النصوص من علامات الصياغة الآلية: **نجمتان**، الشرطة الطويلة (—)، التطويل المتكرر (ـــ)، النقاط الثلاث (...) */
+const plainText = s => {
+  if (s == null || typeof s !== 'string') return s;
+  let r = s.replace(/\*\*([^*\n]+)\*\*/g, '$1').replace(/__([^_\n]+)__/g, '$1').replace(/\*\*/g, '')
+    .replace(/ـ{2,}/g, '')
+    .replace(/\s*[—–]\s*/g, '، ')
+    .replace(/[ \t]*(\.{3,}|…)[ \t]*(?=\n|$)/g, '.')
+    .replace(/[ \t]*(\.{3,}|…)[ \t]*/g, '، ')
+    .replace(/،\s*،/g, '،').replace(/،\s*([.!؟?])/g, '$1');
+  return r.trim() === s.trim() ? s : r;
+};
+// نمط «ليس ... بل ...»: لا يُعدَّل تلقائياً لأن إعادة صياغته تحتاج قراءة، بل يُبلَّغ عنه للمراجعة
+const CONTRAST_RE = /(ليس|ليست|لا|وليس)[^.\n؟!]{1,80}?[\s،]بل\s/;
+const flagContrast = s => typeof s === 'string' && CONTRAST_RE.test(s);

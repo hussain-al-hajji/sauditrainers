@@ -81,7 +81,7 @@ function mountSuggest(input, box, { onPick } = {}) {
     const nq = normAr(q);
     const sp = SPECIALTIES.filter(s => normAr(s.name).includes(nq)).slice(0, 3);
     const rg = REGIONS.filter(r => normAr(r.name).includes(nq)).slice(0, 2);
-    if (!ts.length && !sp.length && !rg.length) { box.innerHTML = `<div class="s-h">لا نتائج مطابقة — جرّب «اطلب مدرباً» ونبحث لك</div>`; box.classList.add('open'); return; }
+    if (!ts.length && !sp.length && !rg.length) { box.innerHTML = `<div class="s-h">لا نتائج مطابقة - جرّب «اطلب مدرباً» ونبحث لك</div>`; box.classList.add('open'); return; }
     box.innerHTML = `${ts.length ? '<div class="s-h">مدربون</div>' : ''}${ts.map(t => `<a href="#/t/${esc(encodeURIComponent(t.slug || t.id))}">${Card.avatar(t, 's-av')}<span><b>${esc(t.name)}</b><small>${esc(t.title || '')} · ${esc(regionName(t.region))}</small></span></a>`).join('')}
       ${sp.length ? '<div class="s-h">تخصصات</div>' : ''}${sp.map(s => `<a href="#/trainers?spec=${s.k}"><span class="s-av"><i class="fa-solid ${s.icon}"></i></span><span><b>${esc(s.name)}</b><small>${Data.specCounts()[s.k] || 0} مدرب</small></span></a>`).join('')}
       ${rg.length ? '<div class="s-h">مناطق</div>' : ''}${rg.map(r => `<a href="#/trainers?region=${r.k}"><span class="s-av"><i class="fa-solid fa-location-dot"></i></span><span><b>منطقة ${r.name}</b><small>${Data.regionCounts()[r.k] || 0} مدرب</small></span></a>`).join('')}`;
@@ -328,7 +328,7 @@ Pages.request = {
       if (!d.spec && !d.topic) return;
       const res = Data.match(d);
       $('#mt', root).innerHTML = res.length ? `<div class="match-list">${res.map(({ t, s, why }) => `<a class="match" href="#/t/${esc(encodeURIComponent(t.slug || t.id))}" target="_blank">${Card.avatar(t, 'av')}<span><b>${esc(t.name)}</b><br><small class="muted">${esc(t.title || '')}</small><br><small class="pill ok">${why.join(' · ')}</small></span><span class="score num">${Math.min(99, s)}%<small>توافق</small></span></a>`).join('')}</div>`
-        : '<p class="muted small">لا توجد مطابقة مباشرة حالياً — أرسل الطلب وسيبحث فريقنا لك.</p>';
+        : '<p class="muted small">لا توجد مطابقة مباشرة حالياً - أرسل الطلب وسيبحث فريقنا لك.</p>';
     };
     form.addEventListener('input', debounce(draw, 200));
     form.onsubmit = async e => {
@@ -351,7 +351,7 @@ Pages.halls = {
     const c = Data.content();
     const halls = Store.list('halls').filter(h => h.active !== false);
     return `
-    <section class="page-head"><div class="wrap"><div class="crumbs"><a href="#/">الرئيسية</a> / قاعات التدريب</div><h1>قاعات التدريب — عرض وحجز</h1><p>${esc(c.halls.intro)}</p></div></section>
+    <section class="page-head"><div class="wrap"><div class="crumbs"><a href="#/">الرئيسية</a> / قاعات التدريب</div><h1>قاعات التدريب - عرض وحجز</h1><p>${esc(c.halls.intro)}</p></div></section>
     <div class="wrap" style="margin-top:-30px;position:relative">
       ${halls.length ? `<div class="cards3" style="margin-bottom:30px">${halls.map(h => `<div class="icard"><div class="ic"><i class="fa-solid fa-building-columns"></i></div><h3>${esc(h.name)}</h3><p class="muted small"><i class="fa-solid fa-location-dot"></i> ${esc(regionName(h.region))}${h.city ? ' · ' + esc(h.city) : ''} · <span class="num">${esc(h.capacity || '—')}</span> متدرب</p><p>${nl2br(h.desc || '')}</p></div>`).join('')}</div>` : ''}
       <div class="panel">

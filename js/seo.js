@@ -8,16 +8,16 @@ const SEO = (() => {
   const DEF = {
     siteName: 'مدرّبون سعوديّون',
     homeTitle: 'مدرّبون سعوديّون | منصة تسويق خبرات المدربين السعوديين',
-    homeDesc: 'مدرّبون سعوديّون — منصة تهتم بتسويق خبرات المدربين السعوديين في مختلف المجالات، وتسهيل وصول الجهات التدريبية إليهم. ابحث عن مدرب بالتخصص أو المنطقة، أو سجّل كمدرب.',
+    homeDesc: 'مدرّبون سعوديّون - منصة تهتم بتسويق خبرات المدربين السعوديين في مختلف المجالات، وتسهيل وصول الجهات التدريبية إليهم. ابحث عن مدرب بالتخصص أو المنطقة، أو سجّل كمدرب.',
     ogTitle: 'مدرّبون سعوديّون | Saudi Trainers',
-    ogDesc: 'اعثر على المدرب السعودي المناسب لبرنامجك في دقائق — بالتخصص أو المنطقة.',
+    ogDesc: 'اعثر على المدرب السعودي المناسب لبرنامجك في دقائق - بالتخصص أو المنطقة.',
     keywords: '',
     ogImage: 'assets/og.png',
     twitter: '',
     robotsIndex: true,
     gsc: '', bing: '',
     trainerTitleTpl: '{name} | {siteName}',
-    trainerDescTpl: '{title} — المنطقة: {region} — منصة {siteName} لتسويق خبرات المدربين السعوديين',
+    trainerDescTpl: '{title} - المنطقة: {region} - منصة {siteName} لتسويق خبرات المدربين السعوديين',
     trainerBody: true, ldOrg: true, ldPerson: true,
     orgName: '', orgLogo: 'assets/icon-512.png', orgSameAs: ''
   };
@@ -126,11 +126,11 @@ const SEO = (() => {
   // صفحة مشاركة الخبر: /n/<id>/ (عنوان الخبر ومقتطف منه، وصورة المعاينة og/n-<id>.jpg بصورة المدرب واسمه)
   function newsExcerpt(n, len = 200) { const s = String(n.summary || n.body || '').replace(/\s+/g, ' ').trim(); return s.length > len ? s.slice(0, len).replace(/\s+\S*$/, '') + '…' : s; }
   function newsHead(n, t, base) {
-    const s = site(), title = `${n.title} — ${t.name}`, desc = newsExcerpt(n) || `${t.name}${t.title ? ' — ' + t.title : ''}`, url = `${base}n/${n.id}/`;
+    const s = site(), title = `${n.title} - ${t.name}`, desc = newsExcerpt(n) || `${t.name}${t.title ? ' - ' + t.title : ''}`, url = `${base}n/${n.id}/`;
     return headTags({ title: `${title} | ${s.siteName}`, desc, noindex: !s.robotsIndex }, { base, url, type: 'article', image: `${base}og/n-${n.id}.jpg`, imgAlt: title, keywords: false, ogTitle: title, ogDesc: 'اضغط للمزيد', imgH: 630 });
   }
   function newsBody(n, t) {
-    const e = esc; return `<h1>${e(n.title)}</h1><p>${e(t.name)}${t.title ? ' — ' + e(t.title) : ''}</p>${n.body ? `<p>${e(String(n.body).slice(0, 800))}</p>` : ''}\n<p><a href="../../#/news/${e(encodeURIComponent(n.id))}">قراءة الخبر كاملاً</a></p>`;
+    const e = esc; return `<h1>${e(n.title)}</h1><p>${e(t.name)}${t.title ? ' - ' + e(t.title) : ''}</p>${n.body ? `<p>${e(String(n.body).slice(0, 800))}</p>` : ''}\n<p><a href="../../#/news/${e(encodeURIComponent(n.id))}">قراءة الخبر كاملاً</a></p>`;
   }
 
   /* ----- robots.txt وsitemap.xml ----- */

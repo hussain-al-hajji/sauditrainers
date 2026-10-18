@@ -19,7 +19,7 @@ const CORE_FIELDS = {
   region: { label: 'المنطقة (يمكن اختيار أكثر من منطقة)', type: 'region', req: true, lock: true, w: 'full' },
   city: { label: 'المدينة', type: 'text', max: 40 },
   travel: { label: 'مستعد للسفر حسب الاحتياجات التدريبية', type: 'consent', w: 'full' },
-  phone: { label: 'الجوال', type: 'tel', req: true, lock: true, priv: true, hint: 'للتواصل الإداري فقط — لا يظهر لأحد في المنصة' },
+  phone: { label: 'الجوال', type: 'tel', req: true, lock: true, priv: true, hint: 'للتواصل الإداري فقط - لا يظهر لأحد في المنصة' },
   email: { label: 'البريد الإلكتروني', type: 'email', req: true, lock: true, priv: true, hint: 'تصلك عليه طلبات الجهات التدريبية' },
   title: { label: 'اللقب المهني (سطر تعريفي)', type: 'text', max: 80, req: true, ph: 'مثال: مدربة معتمدة في القيادة والتحول الرقمي', w: 'full' },
   specs: { label: 'مجالات التدريب', type: 'specs', req: true, lock: true, hint: `اختر حتى ${MAX_SPECS} مجالاً`, w: 'full' },
@@ -159,9 +159,9 @@ const FormKit = (() => {
         </div>
       </div>
       <div class="pf-np ${d.gender === 'f' ? '' : 'hidden'}"><input type="hidden" name="noPhoto" value="${d.noPhoto ? '1' : ''}">
-        <button type="button" class="btn sm ${d.noPhoto ? 'primary' : 'ghost'}" data-nophoto><i class="fa-solid fa-user-slash"></i> <span>${d.noPhoto ? 'ستظهر بطاقتي بصورة رمزية — اضغط للتراجع وإضافة صورة' : 'لا أرغب بنشر الصورة الشخصية مطلقاً'}</span></button>
+        <button type="button" class="btn sm ${d.noPhoto ? 'primary' : 'ghost'}" data-nophoto><i class="fa-solid fa-user-slash"></i> <span>${d.noPhoto ? 'ستظهر بطاقتي بصورة رمزية - اضغط للتراجع وإضافة صورة' : 'لا أرغب بنشر الصورة الشخصية مطلقاً'}</span></button>
         <small class="muted">تظهر في بطاقتك صورة رمزية بلا ملامح تشير إلى أن صاحبة البطاقة مدربة.</small></div>
-      <p class="pf-msg small muted">${src ? '' : 'اختيارية — يمكنك تأجيل هذه الخطوة الآن وإضافة صورتك لاحقاً من لوحتك عند الرغبة في نشرها.'}</p>
+      <p class="pf-msg small muted">${src ? '' : 'اختيارية - يمكنك تأجيل هذه الخطوة الآن وإضافة صورتك لاحقاً من لوحتك عند الرغبة في نشرها.'}</p>
       <details class="drive-help"><summary><i class="fa-solid fa-cloud-arrow-up"></i> كيف أضيف رابط صورتي؟</summary>
         <ol><li>ارفع صورة شخصية واضحة إلى Google Drive أو Dropbox أو OneDrive (أو أي مساحة تخزين تعطي رابطاً مباشراً للصورة).</li><li>اجعل المشاركة «أي شخص لديه الرابط» (عارض).</li><li>انسخ رابط المشاركة والصقه هنا، ثم نسّق الصورة داخل الدائرة. إن لم تظهر المعاينة فالرابط غير مباشر أو المشاركة مغلقة.</li></ol></details>
     </div>`;
@@ -194,6 +194,7 @@ const FormKit = (() => {
       d.specs = d.specs.slice(0, MAX_SPECS);
       d.cardSpecs = (d.cardSpecs || []).filter(k => d.specs.includes(k)).slice(0, MAX_CARD_SPECS);
     }
+    ['title', 'bio', 'topics', 'certs', 'partners', 'proCerts', 'city'].forEach(k => { if (typeof d[k] === 'string') d[k] = plainText(d[k]); });
     Object.keys(d.extra).forEach(k => { if (d.extra[k] === '' || d.extra[k] == null) delete d.extra[k]; });
     return d;
   }
@@ -295,7 +296,7 @@ const FormKit = (() => {
       pf.classList.toggle('np', !!d.noPhoto);
       $('.pf-np', pf).classList.toggle('hidden', d.gender !== 'f');
       const npb = $('[data-nophoto]', pf); npb.classList.toggle('primary', !!d.noPhoto); npb.classList.toggle('ghost', !d.noPhoto);
-      $('span', npb).textContent = d.noPhoto ? 'ستظهر بطاقتي بصورة رمزية — اضغط للتراجع وإضافة صورة' : 'لا أرغب بنشر الصورة الشخصية مطلقاً';
+      $('span', npb).textContent = d.noPhoto ? 'ستظهر بطاقتي بصورة رمزية - اضغط للتراجع وإضافة صورة' : 'لا أرغب بنشر الصورة الشخصية مطلقاً';
       if (d.noPhoto) { c.className = 'pf-circle avw sym'; c.innerHTML = Card.symbol('f'); msg.textContent = 'ستظهر في بطاقتك صورة رمزية بلا ملامح تشير إلى أن صاحبتها مدربة.'; return; }
       c.classList.remove('sym');
       if (!d.photoUrl) { c.classList.add('ph'); c.innerHTML = '<i class="fa-solid fa-user"></i>'; msg.textContent = ''; return; }
@@ -305,7 +306,7 @@ const FormKit = (() => {
         c.classList.remove('ph'); c.innerHTML = `<img alt="" referrerpolicy="no-referrer" data-src="${esc(src)}">`; img = $('img', c);
         msg.textContent = 'جارٍ تحميل الصورة...';
         img.onload = () => { msg.textContent = 'كبّر الصورة قليلاً ثم حرّك الموضعين لضبط الإطار داخل الدائرة'; };
-        img.onerror = () => { c.classList.add('ph'); c.textContent = c.dataset.i; msg.textContent = 'تعذّر قراءة الصورة — تأكد أن الملف مشارَك «لأي شخص لديه الرابط» وأن الرابط لصورة وليس لمجلد'; };
+        img.onerror = () => { c.classList.add('ph'); c.textContent = c.dataset.i; msg.textContent = 'تعذّر قراءة الصورة - تأكد أن الملف مشارَك «لأي شخص لديه الرابط» وأن الرابط لصورة وليس لمجلد'; };
         img.src = src;
       }
       img.style.cssText = Card.imgStyle(f);

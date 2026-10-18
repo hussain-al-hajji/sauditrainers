@@ -34,7 +34,7 @@ const App = (() => {
     const cur = page === 'profile' ? 'trainers' : parse().seg;
     const link = n => { const h = safeHref(n.href); if (!h) return ''; const ext = /^https?:/i.test(h); return `<a href="${esc(h)}" class="${!ext && seg(n.href) === cur ? 'on' : ''}" ${ext ? 'target="_blank" rel="noopener"' : ''}>${esc(n.label)}</a>`; };
     return `${ticker()}<header class="topbar ${dark ? 'dark' : ''}" id="top"><div class="wrap">
-      <a class="logo" href="#/" aria-label="مدرّبون سعوديّون — الرئيسية">${logoImg('green', 'on-light')}${logoImg('cream', 'on-dark')}</a>
+      <a class="logo" href="#/" aria-label="مدرّبون سعوديّون - الرئيسية">${logoImg('green', 'on-light')}${logoImg('cream', 'on-dark')}</a>
       <nav class="nav" id="nav">
         ${siteNav().map(link).join('')}
         <a href="${s?.kind === 'trainer' ? '#/me' : s?.kind === 'admin' ? '#/admin' : '#/login'}" class="mob-only">${s ? 'لوحتي' : 'دخول المدربين'}</a>
@@ -55,7 +55,7 @@ const App = (() => {
     const bottom = f.bottom.filter(l => l.vis !== false && l.label).map(l => A(l.href, `${l.href === '#/admin' ? '<i class="fa-solid fa-shield-halved"></i> ' : ''}${esc(l.label)}`, 'style="display:inline"')).join('<span class="sep">·</span>');
     return `<footer class="footer"><div class="wrap">
       <div class="foot-grid" style="--fc:${cols.length}">
-        <div><a class="logo" href="#/" aria-label="مدرّبون سعوديّون — الرئيسية">${logoImg('green', 'on-light')}${logoImg('cream', 'on-dark')}</a>
+        <div><a class="logo" href="#/" aria-label="مدرّبون سعوديّون - الرئيسية">${logoImg('green', 'on-light')}${logoImg('cream', 'on-dark')}</a>
           ${f.tagline ? `<p style="margin-top:12px">${esc(f.tagline)}</p>` : ''}
           ${soc ? `<div class="socials">${soc}</div>` : ''}
         </div>

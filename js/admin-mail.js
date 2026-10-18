@@ -95,7 +95,7 @@ function mailCompose(body, main) {
   body.innerHTML = `
     <div class="mail-grid">
       <div class="mail-edit">
-        <label class="field"><span>عنوان الرسالة</span><input type="text" id="msub" maxlength="150" value="${esc(D.subject)}" placeholder="مثال: منصتك بحُلّة جديدة — حدّث بياناتك الآن"></label>
+        <label class="field"><span>عنوان الرسالة</span><input type="text" id="msub" maxlength="150" value="${esc(D.subject)}" placeholder="مثال: منصتك بحُلّة جديدة - حدّث بياناتك الآن"></label>
         <div class="tvars"><small class="muted">متغيرات تُستبدل لكل مستلم (انقر لإدراجها):</small>${MAIL_VARS.map(([k, l]) => `<button type="button" class="tvar" data-v="${k}" title="${l}">{${k}}<small>${l}</small></button>`).join('')}</div>
         <div id="mblocks"></div>
         <div class="mail-add"><b class="small">إضافة عنصر:</b>${Object.entries(MAIL_BLOCKS).map(([k, [i, l]]) => `<button type="button" class="btn sm" data-add="${k}"><i class="fa-solid ${i}"></i>${l}</button>`).join('')}</div>
@@ -255,7 +255,7 @@ function mailRecipients(body, main) {
   $('#rnone', body).onclick = () => { MailUI.sel.clear(); mailRecipients(body, main); upd(); };
   $$('[data-opt]', body).forEach(b => b.onclick = e => { e.preventDefault(); const id = b.dataset.opt, cur = !!Store.get(`invitees/${id}/optOut`); Store.update(`invitees/${id}`, { optOut: cur ? null : true }); MailUI.sel.delete('i:' + id); aMail(main); });
   if (who === 'invitees') {
-    $('#invfile', body).onchange = e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { $('#inv', body).value = String(rd.result || '').slice(0, 400000); toast('قُرئ الملف — اضغط «إضافة للقائمة»'); }; rd.readAsText(f); };
+    $('#invfile', body).onchange = e => { const f = e.target.files[0]; if (!f) return; const rd = new FileReader(); rd.onload = () => { $('#inv', body).value = String(rd.result || '').slice(0, 400000); toast('قُرئ الملف - اضغط «إضافة للقائمة»'); }; rd.readAsText(f); };
     $('#invadd', body).onclick = () => {
       const rows = mailParseInvitees($('#inv', body).value), known = mailKnownEmails();
       let added = 0, dup = 0, bad = 0;
@@ -317,7 +317,7 @@ function mailValidate(D) {
 async function mailSend(test, main) {
   const D = mailDoc(), err = mailValidate(D);
   if (err) { toast(err, 'error'); return; }
-  if (!Automation.on) { toast('الإرسال يحتاج ربط بريد المنصة (Campaign.gs) — راجع التعليمات أعلى الصفحة', 'error'); return; }
+  if (!Automation.on) { toast('الإرسال يحتاج ربط بريد المنصة (Campaign.gs) - راجع التعليمات أعلى الصفحة', 'error'); return; }
   const u = Security.currentUser();
   let recips;
   if (test) {
@@ -339,6 +339,6 @@ async function mailSend(test, main) {
   if (!await Store.setConfirmed(`campaigns/${id}`, camp)) { toast('تعذّر حفظ الحملة (الصلاحيات)', 'error'); return; }
   await Automation.notify('campaign', id);
   Security.log(test ? 'تجربة رسالة بريد' : 'إرسال حملة بريد', camp.subject, `${recips.length} مستلم`);
-  toast(test ? 'أُرسلت التجربة، تصل خلال لحظات' : 'بدأ الإرسال — تابع التقدّم في «السجل»');
+  toast(test ? 'أُرسلت التجربة، تصل خلال لحظات' : 'بدأ الإرسال - تابع التقدّم في «السجل»');
   if (!test) { MailUI.tab = 'hist'; aMail(main); }
 }

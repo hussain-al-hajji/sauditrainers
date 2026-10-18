@@ -285,7 +285,7 @@ const Bulletin = (() => {
   const concat = parts => { const n = parts.reduce((a, p) => a + p.length, 0), o = new Uint8Array(n); let i = 0; parts.forEach(p => { o.set(p, i); i += p.length; }); return o; };
   const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
   const crc32 = d => { let c = 0xFFFFFFFF; for (let i = 0; i < d.length; i++) c = CRC[(c ^ d[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
-  function zip(files) {   // files: [{name, data:Uint8Array}] — تخزين بلا ضغط (الصور مضغوطة أصلاً)
+  function zip(files) {   // files: [{name, data:Uint8Array}] - تخزين بلا ضغط (الصور مضغوطة أصلاً)
     const loc = [], cen = []; let off = 0;
     const u16 = v => new Uint8Array([v & 255, v >> 8 & 255]), u32 = v => new Uint8Array([v & 255, v >> 8 & 255, v >> 16 & 255, v >> 24 & 255]);
     files.forEach(f => {

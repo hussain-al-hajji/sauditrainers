@@ -517,7 +517,7 @@ const Card = (() => {
   async function share(t) {
     Analytics.event('share');
     const url = profileUrl(t);
-    const text = `تعرّف على المدرب ${t.name}${t.title ? ' — ' + t.title : ''} عبر منصة مدرّبون سعوديّون`;
+    const text = `تعرّف على المدرب ${t.name}${t.title ? ' - ' + t.title : ''} عبر منصة مدرّبون سعوديّون`;
     try {
       const blob = await toBlob(t, 'post');
       const file = new File([blob], `${(t.slug || 'trainer')}.png`, { type: 'image/png' });
@@ -543,7 +543,7 @@ const Card = (() => {
   // قوالب نصوص المشاركة الافتراضية (بلسان المدرب). تعدّلها الإدارة من «قوالب ← نصوص مشاركة المدرب» وتُحفظ في content/shareTpl
   const SHARE_DEFAULTS = {
     x: 'تعرّفوا على مسيرتي في عالم التدريب عبر منصة «مدرّبون سعوديّون» 🌟\n\n{title}\n\n📍 {region} · ⏳ خبرة {years} سنة\n\nبطاقتي وطلب التدريب 👇\n{link}\n{hashtags}',
-    linkedin: 'يسعدني أن أشارككم بطاقتي التعريفية في منصة «مدرّبون سعوديّون» 🌟\n\nأنا {name} — {title}\n\n📊 خبرة {years} سنة في التدريب · {hours}+ ساعة تدريبية · {programs}+ برنامج ودورة\n\n🎯 تخصصاتي: {specs}\n\n📍 {region}\n\nتعرّفوا على مسيرتي وتواصلوا معي لطلب التدريب عبر المنصة:\n{link}\n\n{hashtags} #تطوير_المهارات',
+    linkedin: 'يسعدني أن أشارككم بطاقتي التعريفية في منصة «مدرّبون سعوديّون» 🌟\n\nأنا {name} - {title}\n\n📊 خبرة {years} سنة في التدريب · {hours}+ ساعة تدريبية · {programs}+ برنامج ودورة\n\n🎯 تخصصاتي: {specs}\n\n📍 {region}\n\nتعرّفوا على مسيرتي وتواصلوا معي لطلب التدريب عبر المنصة:\n{link}\n\n{hashtags} #تطوير_المهارات',
     instagram: 'تعرّفوا على مسيرتي في عالم التدريب عبر منصة «مدرّبون سعوديّون» 🌟\n\n{name}\n{title}\n\n📍 {region} · ⏳ خبرة {years} سنة\n\n🎯 {specs}\n\nبطاقتي وطلب التدريب 👇\n{link}\n\n{hashtags} #تطوير_الذات',
     whatsapp: 'السلام عليكم 👋\nتعرّف على مسيرتي في عالم التدريب عبر منصة «مدرّبون سعوديّون»\n{title}\nبطاقتي وطلب التدريب 👇\n{link}'
   };
@@ -587,7 +587,7 @@ const Card = (() => {
     const text = memberPost(t, pl), enc = encodeURIComponent;
     if (pl === 'whatsapp') { window.open(`https://wa.me/?text=${enc(text)}`, '_blank', 'noopener'); return; }
     if (pl === 'x') { window.open(`https://x.com/intent/post?text=${enc(text)}`, '_blank', 'noopener'); return; }
-    if (pl === 'linkedin') { copyText(text, 'نُسخ النص أيضاً — إن لم يظهر في نافذة لينكدإن فالصقه'); window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${enc(text)}`, '_blank', 'noopener'); return; }
+    if (pl === 'linkedin') { copyText(text, 'نُسخ النص أيضاً - إن لم يظهر في نافذة لينكدإن فالصقه'); window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${enc(text)}`, '_blank', 'noopener'); return; }
     // إنستقرام لا يوفّر رابط مشاركة ويب: على الجوال نرسل الصورة والنص عبر قائمة المشاركة، وإلا ننسخ النص ونعرض الصور للتنزيل
     try {
       if (navigator.canShare) {
@@ -606,7 +606,7 @@ const Card = (() => {
 
   function shareSheet(t) {
     const url = profileUrl(t);
-    const text = `تعرّف على المدرب ${t.name}${t.title ? ' — ' + t.title : ''}`;
+    const text = `تعرّف على المدرب ${t.name}${t.title ? ' - ' + t.title : ''}`;
     const u = encodeURIComponent(url), tx = encodeURIComponent(text);
     const m = modal(`<h3><i class="fa-solid fa-share-nodes"></i> مشاركة البطاقة</h3>
       <div class="share-grid">

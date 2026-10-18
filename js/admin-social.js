@@ -92,7 +92,7 @@ function aSocial(main) {
     const overdue = p.status === 'scheduled' && p.scheduledAt < now - 10 * 60000;
     return `<div class="sp-row">
       ${Card.avatar(t, 'av')}
-      <div class="grow"><b>${esc(t.name || '')}</b> <span class="pill ${tone}">${sn}</span>${overdue ? ` <span class="pill warn" title="${Automation.on ? 'لم يُنشر بعد — تحقق من الربط' : 'الربط الآلي غير مفعّل — انشره يدوياً'}"><i class="fa-solid fa-clock"></i> حان موعده</span>` : ''}<br>
+      <div class="grow"><b>${esc(t.name || '')}</b> <span class="pill ${tone}">${sn}</span>${overdue ? ` <span class="pill warn" title="${Automation.on ? 'لم يُنشر بعد - تحقق من الربط' : 'الربط الآلي غير مفعّل - انشره يدوياً'}"><i class="fa-solid fa-clock"></i> حان موعده</span>` : ''}<br>
         <small class="muted">${p.scheduledAt ? `<i class="fa-regular fa-calendar"></i> ${fmtTs(p.scheduledAt)}` : 'دون موعد'} · ${{ story: 'قصة 9:16', wide: 'عرضي 16:9' }[p.format] || 'منشور 4:5'}</small>
         <div class="sp-plats">${PLATFORMS.filter(x => p.platforms?.[x.k]).map(x => { const r = p.results?.[x.k]; return `<span class="sp-pl ${r?.ok ? 'ok' : r?.err ? 'bad' : ''}" title="${r?.err ? esc(r.err) : r?.ok ? (r.manual ? 'نُشر يدوياً' : 'نُشر آلياً') : 'لم يُنشر'}"><i class="${x.icon}"></i>${r?.url ? `<a href="${esc(safeUrl(r.url))}" target="_blank" rel="noopener">عرض</a>` : ''}</span>`; }).join('')}</div>
       </div>
@@ -133,7 +133,7 @@ async function publishNow(post) {
     if (!await confirmBox('نشر المنشور الآن في المنصات المختارة عبر الربط الآلي؟', { ok: 'نشر الآن' })) return;
     Store.update(`social/${post.id}`, { status: 'scheduled', scheduledAt: Date.now() });
     await Automation.notify('publish', post.id);
-    toast('أُرسل للنشر — تظهر النتيجة هنا خلال لحظات');
+    toast('أُرسل للنشر - تظهر النتيجة هنا خلال لحظات');
     return;
   }
   manualPublish(post);
@@ -169,7 +169,7 @@ function postEditor(post) {
     <form id="pe" class="pe">
       <div class="pe-main">
         <div class="grid2">
-          ${field('المدرب *', `<select name="trainerId" required><option value="">اختر المدرب</option>${live.map(x => opt(x.id, `${x.name} — ${x.code}`, t?.id)).join('')}</select>`)}
+          ${field('المدرب *', `<select name="trainerId" required><option value="">اختر المدرب</option>${live.map(x => opt(x.id, `${x.name} - ${x.code}`, t?.id)).join('')}</select>`)}
           ${field('شكل الصورة', `<select name="format">${opt('post', 'منشور 4:5 (إنستقرام ولينكدإن وإكس)', post.format)}${opt('story', 'قصة 9:16', post.format)}${opt('wide', 'عرضي 16:9 (لينكدإن وإكس)', post.format)}</select>`)}
         </div>
         <div class="field"><span>المنصات</span><div class="checks">${PLATFORMS.map(x => `<label class="chk"><input type="checkbox" name="pl_${x.k}" ${plats[x.k] ? 'checked' : ''}><span><i class="${x.icon}"></i>${x.name}</span></label>`).join('')}</div></div>
@@ -264,7 +264,7 @@ function socialSettings() {
   const m = modal(`<h3><i class="fa-solid fa-plug"></i> الربط والقوالب</h3>
     <div class="pbox" style="margin:0 0 14px"><h3><i class="fa-solid fa-robot"></i>النشر الآلي</h3>
       <dl class="dl">
-        <dt>رابط الأتمتة</dt><dd>${Automation.on ? '<span class="pill ok">مضبوط</span>' : '<span class="pill gray">غير مضبوط</span> — يُضاف <code>automationUrl</code> في <code>js/config.js</code>'}</dd>
+        <dt>رابط الأتمتة</dt><dd>${Automation.on ? '<span class="pill ok">مضبوط</span>' : '<span class="pill gray">غير مضبوط</span> - يُضاف <code>automationUrl</code> في <code>js/config.js</code>'}</dd>
         <dt>آخر اتصال</dt><dd>${auto.lastPing ? fmtTs(auto.lastPing) : '—'}</dd>
         ${PLATFORMS.map(x => `<dt><i class="${x.icon}"></i> ${x.name}</dt><dd>${auto.platforms?.[x.k] ? '<span class="pill ok">مربوط</span>' : '<span class="pill gray">غير مربوط</span>'}</dd>`).join('')}
       </dl>
@@ -279,7 +279,7 @@ function socialSettings() {
       <button class="btn primary">حفظ</button>
     </form>`, { wide: true });
   m.$('#g2') && (m.$('#g2').onclick = e => { e.preventDefault(); m.close(); linkGuide(); });
-  m.$('#ping') && (m.$('#ping').onclick = async () => { await Automation.notify('ping'); toast('أُرسل طلب الاختبار — حدّث النافذة بعد لحظات'); });
+  m.$('#ping') && (m.$('#ping').onclick = async () => { await Automation.notify('ping'); toast('أُرسل طلب الاختبار - حدّث النافذة بعد لحظات'); });
   m.$('#ss').onsubmit = e => {
     e.preventDefault();
     const d = formData(e.target);

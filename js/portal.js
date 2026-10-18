@@ -75,7 +75,7 @@ function trainerStatsHTML(t) {
       <div class="kpi ${has ? '' : 'dark'}"><i class="fa-solid fa-id-card"></i><b class="num" data-count="${Data.views(t.id)}">0</b><span>زائر لصفحتك الشخصية (الإجمالي)</span></div>
       <div class="kpi"><i class="fa-solid fa-eye"></i><b class="num" data-count="${v30}">0</b><span>زائر لصفحتك خلال آخر 30 يوماً</span></div>
     </div>
-    <div class="ts-spark" title="زوار صفحتك يومياً خلال آخر 30 يوماً">${days.map((v, i) => `<span style="height:${Math.max(4, v / max * 100)}%" title="${dayKeyRiyadh(29 - i).slice(6)}/${dayKeyRiyadh(29 - i).slice(4, 6)} — ${v}"></span>`).join('')}</div>
+    <div class="ts-spark" title="زوار صفحتك يومياً خلال آخر 30 يوماً">${days.map((v, i) => `<span style="height:${Math.max(4, v / max * 100)}%" title="${dayKeyRiyadh(29 - i).slice(6)}/${dayKeyRiyadh(29 - i).slice(4, 6)} - ${v}"></span>`).join('')}</div>
     <p class="muted small" style="margin:8px 0 0">${has ? 'أرقام المنصة من Google Analytics وتتحدث كل ساعتين. ' : ''}زوار صفحتك يُحسبون مرة لكل زائر في الجلسة، ولا تُحتسب زياراتك أنت.${v30 === 0 && Data.views(t.id) ? ' (التفصيل اليومي يبدأ من تاريخ هذا التحديث.)' : ''}</p></div>`;
 }
 
@@ -129,10 +129,10 @@ function portalHome(main, t) {
         </div>
         <div class="pbox"><h3><i class="fa-solid fa-lightbulb"></i>نصائح لبطاقة أقوى</h3>
           <ul style="margin:0;padding-inline-start:18px;color:var(--ink2)">
-            ${!Data.photo(t) && !t.noPhoto ? '<li>أضف صورة شخصية واضحة — البطاقات ذات الصور تحصل على مشاهدات أكثر.</li>' : ''}
+            ${!Data.photo(t) && !t.noPhoto ? '<li>أضف صورة شخصية واضحة - البطاقات ذات الصور تحصل على مشاهدات أكثر.</li>' : ''}
             ${Data.topics(t).length < 3 ? '<li>أضف عناوين دوراتك السابقة في «عناوين دورات تم تقديمها سابقاً» لتظهر في نتائج البحث.</li>' : ''}
             ${!Number(t.hours) ? '<li>أضف عدد ساعاتك التدريبية لتظهر كمؤشر بارز في بطاقتك.</li>' : ''}
-            <li>شارك بطاقتك في لينكدإن وإكس — كل مشاهدة تُحتسب في لوحتك.</li>
+            <li>شارك بطاقتك في لينكدإن وإكس - كل مشاهدة تُحتسب في لوحتك.</li>
           </ul>
         </div>
         <div class="pbox"><h3><i class="fa-solid fa-lock"></i>بيانات التواصل (لا تظهر للعامة)</h3>

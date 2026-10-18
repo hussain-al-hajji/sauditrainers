@@ -34,7 +34,7 @@ function aForms(main) {
               <button class="btn sm icon" data-fd="${si}.${fi}" title="أسفل" ${fi < s.fields.length - 1 ? '' : 'disabled'}><i class="fa-solid fa-arrow-down"></i></button>
               <button class="btn sm icon" data-fh="${si}.${fi}" title="${f.hidden ? 'إظهار' : 'إخفاء'}" ${f.lock ? 'disabled' : ''}><i class="fa-solid fa-${f.hidden && !f.lock ? 'eye-slash' : 'eye'}"></i></button>
               <button class="btn sm icon" data-fe="${si}.${fi}" title="تعديل"><i class="fa-solid fa-pen"></i></button>
-              <button class="btn sm icon" data-fx="${si}.${fi}" title="${f.custom ? 'حذف' : 'الحقول الأساسية لا تُحذف — يمكن إخفاؤها'}" ${f.custom ? '' : 'disabled'}><i class="fa-solid fa-trash"></i></button>
+              <button class="btn sm icon" data-fx="${si}.${fi}" title="${f.custom ? 'حذف' : 'الحقول الأساسية لا تُحذف - يمكن إخفاؤها'}" ${f.custom ? '' : 'disabled'}><i class="fa-solid fa-trash"></i></button>
             </div>
           </div>`).join('') || '<p class="muted small center">لا حقول في هذه الخطوة</p>'}</div>
         <button class="btn sm" data-fa="${si}"><i class="fa-solid fa-plus"></i> إضافة حقل</button>
@@ -152,7 +152,7 @@ function fieldEditor(steps, si, f, done, kind) {
     if (custom) {
       Object.assign(nf, { type: d.type, pub: !!d.pub, edit: !!d.edit, opts: ['select', 'multi'].includes(d.type) ? lines(d.opts) : null });
       if (['select', 'multi'].includes(d.type) && !nf.opts.length) { toast('أضف خياراً واحداً على الأقل', 'error'); return; }
-      if (nf.pub && ['tel', 'email'].includes(d.type)) { toast('حقول الجوال والبريد لا تكون عامة — بيانات التواصل خاصة', 'error'); return; }
+      if (nf.pub && ['tel', 'email'].includes(d.type)) { toast('حقول الجوال والبريد لا تكون عامة - بيانات التواصل خاصة', 'error'); return; }
     }
     m.close();
     done(Number(d.step), nf, !!d.also);
