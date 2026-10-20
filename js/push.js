@@ -64,7 +64,7 @@ const Push = (() => {
     const el = document.createElement('div'); el.id = 'push-ask'; el.className = 'push-ask';
     el.innerHTML = st === 'ios-install'
       ? `<i class="fa-solid fa-bell"></i><div><b>فعّل إشعارات الجوال</b><small>على الآيفون: افتح الموقع في سفاري ← زر المشاركة ← «إضافة إلى الشاشة الرئيسية»، ثم افتحه من الأيقونة لتصلك طلبات التواصل فوراً.</small></div><button class="btn sm ghost" data-x>حسناً</button>`
-      : `<i class="fa-solid fa-bell"></i><div><b>فعّل إشعارات الجوال</b><small>يصلك إشعار فور وصول طلب تواصل أو طلب عام أو إعلان من الإدارة.</small></div><button class="btn sm primary" data-ok>تفعيل الآن</button><button class="btn sm ghost" data-x>لاحقاً</button>`;
+      : `<i class="fa-solid fa-bell"></i><div><b>فعّل إشعارات الجوال</b><small>يصلك إشعار فور وصول طلب تواصل أو طلب عام أو إعلان من الإدارة. وإن ثبّتَّ الموقع كتطبيق ظهر على أيقونته عدد الجديد.</small></div><button class="btn sm primary" data-ok>تفعيل الآن</button><button class="btn sm ghost" data-x>لاحقاً</button>`;
     document.body.appendChild(el);
     const close = () => { try { localStorage.setItem(ASK, String(Date.now())); } catch { /* ignore */ } el.remove(); };
     el.querySelector('[data-x]').onclick = close;
