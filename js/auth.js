@@ -14,6 +14,7 @@ const Auth = {
   set(v) { window.__auth = v; if (window.ST_CONFIG.previewMode) return; try { v ? sessionStorage.setItem(this.KEY, JSON.stringify(v)) : sessionStorage.removeItem(this.KEY); } catch { /* ignore */ } },
   async logout() {
     try { if (window.Push && Auth.current()?.kind === 'trainer') await Push.disable(); } catch { /* ignore */ }
+    try { window.Push && Push.setBadge(0); } catch { /* ignore */ }
     this.set(null);
     if (Store.auth) await Store.auth.signOut().catch(() => {});
     await Security.applyScope(null);

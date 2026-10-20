@@ -10,6 +10,12 @@ self.addEventListener('push', e => {
     const cs = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     const seen = cs.find(c => c.visibilityState === 'visible');
     if (seen) { seen.postMessage({ type: 'st-push', title, body, url }); return; }
+    // شارة الأيقونة للتطبيق المثبّت: نزيد العدّاد المحفوظ (تصفّره الصفحة بالعدد الفعلي عند فتحها)
+    try {
+      const c = await caches.open('st-badge'), r = await c.match('badge'), n = (r ? parseInt(await r.text(), 10) || 0 : 0) + 1;
+      await c.put('badge', new Response(String(n)));
+      if (self.navigator.setAppBadge) await self.navigator.setAppBadge(n);
+    } catch { /* غير مدعوم */ }
     await self.registration.showNotification(title, { body, icon: 'assets/icon-192.png', badge: 'assets/icon-192.png', dir: 'rtl', lang: 'ar', tag: d.tag || 'st', data: { url } });
   })());
 });

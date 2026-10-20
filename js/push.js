@@ -71,5 +71,11 @@ const Push = (() => {
     const ok = el.querySelector('[data-ok]'); if (ok) ok.onclick = async () => { ok.disabled = true; const r = await enable(); close(); if (r && onDone) onDone(); };
   }
   if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', e => { if (e.data?.type === 'st-push') { toast(`🔔 ${e.data.title}: ${e.data.body}`); if (window.Broadcast) try { App.render(); } catch { /* ignore */ } } });
-  return { available, supported, state, enable, disable, sync, invite, standalone, ios };
+  /* شارة الأيقونة (Badging API) للتطبيق المثبّت: عدد ما لم يفتحه المدرب بعد؛ تُصفَّر عند 0 */
+  const setBadge = async n => {
+    n = Math.max(0, Math.min(999, Number(n) || 0));
+    try { if (n > 0 && navigator.setAppBadge) await navigator.setAppBadge(n); else if (navigator.clearAppBadge) await navigator.clearAppBadge(); } catch { /* غير مدعوم */ }
+    try { const c = await caches.open('st-badge'); await c.put('badge', new Response(String(n))); } catch { /* ignore */ }
+  };
+  return { available, supported, state, enable, disable, sync, invite, standalone, ios, setBadge };
 })();

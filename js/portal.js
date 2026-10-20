@@ -12,6 +12,7 @@ Pages.me = {
     const bcNew = Broadcast.unread(t.id).length;
     const tabs = [['home', 'fa-id-card', 'بطاقتي'], ['edit', 'fa-pen-to-square', 'تعديل البيانات'], ['leads', 'fa-inbox', 'طلبات موجهة لك', fresh], ['bc', 'fa-bullhorn', 'طلبات عامة', bcNew]];
     const annNew = News.unread(t.id).length;
+    try { Push.setBadge(fresh + bcNew + Broadcast.noticesNew(t.id) + annNew + Opps.unread(t.id).length + Library.unread(t.id) + Reviews.unread(t.id)); } catch { /* ignore */ }
     tabs.push(['opps', 'fa-handshake-angle', 'إعلانات عبر الإنترنت', Opps.unread(t.id).length]);
     if (featureOn('news')) tabs.push(['news', 'fa-newspaper', 'أخباري']);
     tabs.push(['vid', 'fa-circle-play', 'نماذج الفيديو']);
