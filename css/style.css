@@ -1357,3 +1357,15 @@ body.preview .local-flag { display: none; }
 .mstat .ms-i { position: absolute; top: 8px; inset-inline-start: 8px; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--g700); background: #fff; color: var(--g800); font: 700 .8rem/1 var(--f-display); font-style: italic; cursor: pointer; padding: 0; display: grid; place-content: center; }
 .mstat .ms-i:hover, .mstat .ms-i[aria-expanded="true"] { background: var(--g800); color: #fff; }
 .mstat .ms-tip { font-size: .85rem; line-height: 1.6; color: var(--ink2); background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; margin-top: 4px; }
+
+/* أرشيف «من طلبات هذا الشهر» */
+.ord-ym { text-align: center; margin: -6px 0 10px; color: var(--ink2); font-size: .95rem; }
+.ord-ym b { color: var(--g800); }
+.ord-arch { text-align: center; margin: 0 0 14px; }
+.ord-arch summary { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; list-style: none; padding: 8px 18px; border-radius: 999px; border: 1.5px solid var(--g700); color: var(--g800); background: #fff; font-weight: 700; font-size: .9rem; }
+.ord-arch summary::-webkit-details-marker { display: none; }
+.ord-arch[open] summary { background: var(--g800); color: #fff; }
+.ord-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 10px; }
+.ord-chips button { border: 1px solid var(--line); background: #fff; color: var(--ink2); border-radius: 999px; padding: 6px 14px; cursor: pointer; font-size: .88rem; }
+.ord-chips button.on { background: var(--g800); color: #fff; border-color: var(--g800); }
+.ord-chips button b { opacity: .7; font-size: .8rem; margin-inline-start: 4px; }

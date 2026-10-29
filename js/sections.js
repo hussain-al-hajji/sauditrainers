@@ -153,26 +153,50 @@ const SECTION_TYPES = (() => {
     }
   };
 
-  T.orders = {
-    name: 'من طلبات هذا الشهر', icon: 'fa-table-cells-large',
-    tpls: [['slider', 'مربعات متحركة'], ['grid', 'مربعات ثابتة']],
-    schema: [...HEAD, { k: 'count', label: 'أقصى عدد للبطاقات', t: 'number' }, { k: 'scope', label: 'الفترة', t: 'select', opts: [['month', 'هذا الشهر (وإن لم توجد فالأحدث)'], ['latest', 'الأحدث دائماً']] }],
-    def: () => ({ eyebrow: 'نبض المنصة', title: 'من طلبات هذا الشهر', sub: 'برامج طلبتها جهات تدريبية من مدربي المنصة مؤخراً.', count: 12, scope: 'month' }),
-    render(sec) {
-      const d = sec.d, all = Store.list('showcase').sort((a, b) => b.ts - a.ts);
-      const now = new Date(), inMonth = all.filter(x => { const t = new Date(x.ts); return t.getMonth() === now.getMonth() && t.getFullYear() === now.getFullYear(); });
-      const list = (d.scope === 'latest' || !inMonth.length ? all : inMonth).slice(0, Math.max(1, Number(d.count) || 12));
-      if (!list.length) return '';
-      const tile = x => `<article class="ord" style="--pat:${Pattern.css('#EEF3E5', 0.12)}">
+  /* «من طلبات هذا الشهر»: لا يُحذف شيء؛ تُجمَّع البطاقات بالشهر (بتوقيت الرياض). يُعرض تلقائياً شهر الإحصائية الحالي (يتبدّل يوم 5 من الشهر التالي)
+     إن كان فيه بطاقات، وإلا يستمر عرض أحدث شهر فيه بطاقات؛ ويمكن للزائر الرجوع لأي شهر سابق من الزر تحت العنوان. */
+  const ordYm = ts => { const d = new Date((ts || 0) + 3 * 36e5); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; };
+  const ordYmName = ym => new Date(Date.UTC(+ym.slice(0, 4), +ym.slice(5, 7) - 1, 15)).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+  const ordState = () => {
+    const all = Store.list('showcase'), count = {}; all.forEach(x => { const m = ordYm(x.ts); count[m] = (count[m] || 0) + 1; });
+    const months = Object.keys(count).sort().reverse();
+    return { all, count, months, active: forced => (forced && count[forced] ? forced : count[MonthStats.cur().key] ? MonthStats.cur().key : months[0]) };
+  };
+  const ordList = (d, ym) => Store.list('showcase').filter(x => ordYm(x.ts) === ym).sort((a, b) => b.ts - a.ts).slice(0, Math.max(1, Number(d.count) || 60));
+  const ordTile = x => `<article class="ord" style="--pat:${Pattern.css('#EEF3E5', 0.12)}">
         <span class="ord-ic"><i class="fa-solid ${specOf(x.spec)?.icon || 'fa-chalkboard-user'}"></i></span>
         <b class="${String(x.title).length > 48 ? 'long' : ''}">${esc(x.title)}</b>
         <small>${esc(x.org || 'جهة تدريبية')}</small>
         ${x.trainerName ? `<span class="ord-tr"><i class="fa-solid fa-user-tie"></i>${esc(x.trainerName)}</span>` : ''}
         <span class="ord-meta">${(x.city || x.region) ? `<span><i class="fa-solid ${x.city === 'عن بعد' ? 'fa-laptop' : 'fa-location-dot'}"></i>${esc(x.city || regionName(x.region))}</span>` : ''}<span><i class="fa-regular fa-calendar"></i>${esc(monthName(x.ts))}</span></span>
       </article>`;
-      if (sec.tpl === 'grid') return `<div class="wrap">${head(d)}<div class="ord-grid">${list.map(tile).join('')}</div></div>`;
-      let loop = [...list]; while (loop.length < 8) loop = loop.concat(list);
-      return `<div class="wrap">${head(d)}</div><div class="ord-slider" aria-label="${esc(d.title)}"><div class="ord-track" style="--dur:${loop.length * 4}s">${[...loop, ...loop].map(tile).join('')}</div></div>`;
+  const ordBody = (sec, d, list) => {
+    if (sec.tpl === 'grid') return `<div class="wrap"><div class="ord-grid">${list.map(ordTile).join('')}</div></div>`;
+    let loop = [...list]; while (loop.length < 8) loop = loop.concat(list);
+    return `<div class="ord-slider" aria-label="${esc(d.title)}"><div class="ord-track" style="--dur:${loop.length * 4}s">${[...loop, ...loop].map(ordTile).join('')}</div></div>`;
+  };
+  T.orders = {
+    name: 'من طلبات هذا الشهر', icon: 'fa-table-cells-large',
+    tpls: [['slider', 'مربعات متحركة'], ['grid', 'مربعات ثابتة']],
+    schema: [...HEAD, { k: 'count', label: 'أقصى عدد للبطاقات في الشهر', t: 'number' }],
+    def: () => ({ eyebrow: 'نبض المنصة', title: 'من طلبات هذا الشهر', sub: 'برامج طلبتها جهات تدريبية من مدربي المنصة مؤخراً.', count: 60 }),
+    render(sec) {
+      const d = sec.d, st = ordState(); if (!st.months.length) return '';
+      const act = st.active(T.orders.view.ym), list = ordList(d, act);
+      const chips = st.months.length > 1 ? `<details class="ord-arch"><summary><i class="fa-solid fa-clock-rotate-left"></i> طلبات الأشهر السابقة</summary><div class="ord-chips">${st.months.map(m => `<button type="button" data-ym="${m}" class="${m === act ? 'on' : ''}">${esc(ordYmName(m))} <b class="num">${st.count[m]}</b></button>`).join('')}</div></details>` : '';
+      return `<div class="wrap">${head(d)}<p class="ord-ym">طلبات شهر <b>${esc(ordYmName(act))}</b></p>${chips}</div><div class="ord-body">${ordBody(sec, d, list)}</div>`;
+    },
+    view: { ym: null },
+    mount(el, sec) {
+      const d = { ...T.orders.def(), ...(sec.d || {}) };
+      el.querySelectorAll('.ord-chips [data-ym]').forEach(b => b.onclick = () => {
+        const st = ordState(), ym = b.dataset.ym; T.orders.view.ym = ym === st.active(null) ? null : ym;
+        const act = st.active(T.orders.view.ym);
+        el.querySelector('.ord-body').innerHTML = ordBody(sec, d, ordList(d, act));
+        el.querySelector('.ord-ym').innerHTML = `طلبات شهر <b>${esc(ordYmName(act))}</b>`;
+        el.querySelectorAll('.ord-chips [data-ym]').forEach(x => x.classList.toggle('on', x.dataset.ym === act));
+        const dt = el.querySelector('.ord-arch'); dt && dt.removeAttribute('open');
+      });
     }
   };
 
