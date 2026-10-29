@@ -250,7 +250,7 @@ const SECTION_TYPES = (() => {
     name: 'إحصائيات الشهر', icon: 'fa-chart-column',
     tpls: [['band', 'بطاقتان']],
     schema: [{ k: 'title', label: 'عنوان الإحصائية' }, { k: 'lReq', label: 'نص طلبات التعاون' }, { k: 'lJobs', label: 'نص الوظائف' }],
-    def: () => ({ title: 'إحصائيات الشهر', lReq: 'طلبات التعاون في التدريب المنشورة على الموقع', lJobs: 'وظائف التدريب المنشورة على الموقع' }),
+    def: () => ({ title: 'إحصائيات الشهر', lReq: 'فرص التعاون في التدريب المنشورة على الموقع', lJobs: 'وظائف التدريب المنشورة على الموقع' }),
     render(sec) {
       const d = { ...T.monthstats.def(), ...(sec.d || {}) }, c = MonthStats.cur(), v = Store.get(`stats/month/${c.key}`);
       if (!v) return '';

@@ -352,10 +352,10 @@ const flagContrast = s => typeof s === 'string' && CONTRAST_RE.test(s);
 const MonthStats = (() => {
   const NAMES = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'], RY = 3 * 36e5;
   const cur = (now = Date.now()) => { const s = new Date(now + RY - 4 * 864e5), y = s.getUTCFullYear(), m = s.getUTCMonth(); return { key: `${y}-${String(m + 1).padStart(2, '0')}`, name: NAMES[m], from: Date.UTC(y, m, 1) - RY, to: Date.UTC(y, m + 1, 1) - RY }; };
-  // أرشيف شهري دائم: لكل شهر ميلادي (بتوقيت الرياض) عدد طلبات الجهات وإعلانات الإدارة والوظائف المجلوبة.
+  // أرشيف شهري دائم: لكل شهر ميلادي (بتوقيت الرياض) عدد طلبات الجهات (اطلب مدرباً + التواصل المباشر) وإعلانات الإدارة والوظائف المجلوبة.
   // تحسبها لوحة الإدارة من البيانات (والسكربت يفعل الشيء نفسه كل ساعة)، ولا ينقص رقم الشهر المحفوظ أبداً حتى لو حُذف الأصل (الوظائف تُحذف بعد 45 يوماً)
   const ymOf = ts => { const d = new Date(ts + RY); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; };
-  const compute = () => { const acc = {}; [['requests', 'requests'], ['opportunities', 'ads'], ['jobs', 'jobs'], ['jobsOld', 'jobs']].forEach(([node, f]) => Store.list(node).forEach(x => { if (x && x.ts) { const m = ymOf(x.ts); (acc[m] = acc[m] || { requests: 0, ads: 0, jobs: 0 })[f]++; } })); return acc; };
+  const compute = () => { const acc = {}; [['requests', 'requests'], ['leads', 'requests'], ['opportunities', 'ads'], ['jobs', 'jobs'], ['jobsOld', 'jobs']].forEach(([node, f]) => Store.list(node).forEach(x => { if (x && x.ts) { const m = ymOf(x.ts); (acc[m] = acc[m] || { requests: 0, ads: 0, jobs: 0 })[f]++; } })); return acc; };
   let started = false, timer = 0;
   const sync = () => {
     try {
