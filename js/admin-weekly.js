@@ -16,7 +16,7 @@ const MONTHLY_DEFAULT = {
   benefits: '💰 | بلا عمولة | كل ما تحصل عليه عبر المنصة يعود لك.\n♾️ | اشتراك مدى الحياة | رسوم {fee} ريالاً تُدفع مرة واحدة فقط.\n📈 | ظهور أوسع | حضور في صفحة منطقتك وتخصصك وفي نتائج البحث.\n🏅 | ترشيح للجهات | نرشّحك للجهات التي تبحث عن تخصصك.',
   outro: 'يسعدنا انضمامك إلى مجتمع المدربين السعوديين، وإن كان لديك أي استفسار فنحن بخدمتك.\n\nمع خالص التحية،\n**فريق منصة مدرّبون سعوديّون**'
 };
-const MonthlyUI = { ym: '', subject: null, intro: null, features: null, account: null, benefits: null, outro: null, doc: null };
+const MonthlyUI = { ym: '', topics: null, subject: null, intro: null, features: null, account: null, benefits: null, outro: null, doc: null };
 const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro: null, outro: null };
 
 (() => {
@@ -130,7 +130,7 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     return Object.keys(days).filter(k => k.startsWith(pre)).reduce((t, k) => t + (Number((days[k] || {}).visits) || 0), 0);
   };
   const ymOfTs = ts => { const d = new Date((ts || 0) + 3 * 36e5); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; };
-  function buildMonthly({ ym, subject, intro, features, account, benefits, outro }) {
+  function buildMonthly({ ym, subject, intro, features, account, benefits, outro, topics }) {
     const base = siteBase(), blocks = [], mname = ymLabel(ym), last = new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0).getDate(), fee = (Data.content().join || {}).fee || 720;
     const T = homeStatTexts(), st = Store.get(`stats/month/${ym}`) || {}, comp = MonthStats.compute()[ym] || {};
     const opp = Math.max(Number(st.requests) || 0, comp.requests || 0) + Math.max(Number(st.ads) || 0, comp.ads || 0), jobs = Math.max(Number(st.jobs) || 0, comp.jobs || 0);
@@ -143,14 +143,13 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     blocks.push({ t: 'stat', num: num(platformVisitsTotal()), text: `إجمالي زيارات المنصة حتى ${fmt(Date.now())}` });
     blocks.push({ t: 'stat', num: num(opp), text: clean(T.lReq), note: clean(T.tReq) });
     blocks.push({ t: 'stat', num: num(jobs), text: clean(T.lJobs), note: clean(T.tJobs) });
-    // عناوين كل فرص وطلبات التدريب خلال الشهر: فرص الإدارة وطلبات الجهات (اطلب مدرباً والتواصل المباشر مع مدرب)؛ الطلب المُعاد توجيهه للمدربين يُحسب مرة واحدة (سجل الطلب نفسه لا سجل التوجيه)، بلا تكرار وبلا أعداد
-    const inM = x => ymOfTs(x.ts) === ym, seen = new Set(), titles = [];
-    [...Opps.approved().filter(inM).map(o => o.title), ...Store.list('requests').filter(inM).map(r => r.topic), ...Store.list('leads').filter(inM).map(r => r.topic)].forEach(t => {
-      const c = clean(t).replace(/\s+/g, ' '), k = c.toLowerCase().replace(/[ً-ٟ]/g, '');
-      if (c && !seen.has(k)) { seen.add(k); titles.push(c.length > 110 ? c.slice(0, 110).replace(/\s+\S*$/, '') + '…' : c); }
-    });
-    blocks.push({ t: 'h', text: '🎯 مجالات وموضوعات التدريب المطلوبة هذا الشهر', align: 'start' });
-    blocks.push(titles.length ? { t: 'box', text: titles.map(x => `• ${x}`).join('\n') + '\n\nمن فرص وطلبات التدريب الواردة إلى المنصة والمنشورة فيها خلال الشهر.' } : { t: 'p', text: 'لم تُسجَّل فرص أو طلبات تدريب جديدة خلال هذا الشهر.', align: 'start' });
+    // قائمة عناوين ومواضيع البرامج والدورات المطلوبة: تُجهَّز خارج المنصة (من ملف الطلبات المصدَّر) وتُلصق في مربع خاص، فتُدرج هنا بلا تكرار
+    const seen = new Set(), titles = [];
+    String(topics || '').split('\n').forEach(l => { const c = clean(l).replace(/^[\s•\-–*·\d.)]+/, '').replace(/\s+/g, ' ').trim(), k = c.toLowerCase(); if (c && !seen.has(k)) { seen.add(k); titles.push(c); } });
+    if (titles.length) {
+      blocks.push({ t: 'h', text: '🎯 مجالات وموضوعات التدريب المطلوبة هذا الشهر', align: 'start' });
+      blocks.push({ t: 'box', text: titles.map(x => `• ${x}`).join('\n') });
+    }
     blocks.push({ ...reg });
     newsBlocks(blocks, `${ym}-01`, `${ym}-${String(last).padStart(2, '0')}`, base, `${base}#/login`, true, `📰 أخبار المدربين خلال شهر ${mname}`);
     blocks.push({ t: 'hr' });
@@ -181,6 +180,10 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
       <p class="small muted">تُولَّد في بداية كل شهر ميلادي عن الشهر المنتهي: زيارات الشهر والإجمالي، فرص التعاون والوظائف، مجالات التدريب المطلوبة، أخبار المدربين، ثم مزايا المنصة وحساب المدرب ونموذج البطاقة، وزر «سجّل كمدرب سعودي» يتكرر خلالها. المستلمون المتاحون الآن: <b class="num">${mailApplicants().length + mailInvitees().filter(r => !r.optOut).length}</b>.</p>
       <div class="bl-bar"><label>الشهر<select id="mm-ym">${months.map(m => `<option value="${m}" ${m === U.ym ? 'selected' : ''}>${esc(ymLabel(m))}</option>`).join('')}</select></label>
         <button class="btn primary" id="mm-gen"><i class="fa-solid fa-wand-magic-sparkles"></i> توليد محتوى الرسالة (آخر تحديث للبيانات)</button></div>
+      <div class="pbox" style="margin-top:10px;background:var(--g50)"><b><i class="fa-solid fa-list-check"></i> عناوين ومواضيع التدريب المطلوبة هذا الشهر</b>
+        <p class="small muted" style="margin:4px 0 8px">صدّر فرص وطلبات الشهر بالزر أدناه، وجهّز قائمة العناوين (دون تكرار) ثم الصقها هنا، سطر لكل عنوان. تُدرج في الرسالة عند التوليد، وإن تُرك المربع فارغاً حُذف هذا القسم من الرسالة.</p>
+        <textarea id="mm-topics" rows="7" placeholder="إدارة الوقت&#10;السلامة والصحة المهنية&#10;القيادة الإدارية">${esc(U.topics != null ? U.topics : ((Store.get('settings/monthlyTopics') || {})[U.ym] || ''))}</textarea>
+        <div class="row" style="gap:8px;margin-top:6px"><button class="btn sm" id="mm-exp"><i class="fa-solid fa-file-csv"></i> تصدير فرص وطلبات هذا الشهر (CSV)</button></div></div>
       <div id="mm-out" style="margin-top:12px"></div>
       <details style="margin-top:12px"><summary style="cursor:pointer"><b><i class="fa-solid fa-pen"></i> النصوص الثابتة (العنوان والمقدمة والمزايا والخاتمة)</b></summary>
         ${field('عنوان الرسالة (Subject)', `<input id="mm-sub" value="${esc(S.subject)}">`, 'استعمل {month} لاسم الشهر')}
@@ -190,10 +193,21 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
         ${field('الفوائد التي سيحصل عليها المدرب', `<textarea id="mm-ben" rows="5" style="font-size:.9rem">${esc(S.benefits)}</textarea>`, 'الصيغة: أيقونة | العنوان | الوصف، و{fee} لرسوم الاشتراك')}
         ${field('الخاتمة', `<textarea id="mm-outro" rows="4">${esc(S.outro)}</textarea>`)}
         <button class="btn" id="mm-save"><i class="fa-solid fa-floppy-disk"></i> حفظ النصوص</button></details></div>`;
-    const read = () => ({ ym: $('#mm-ym', body).value, subject: $('#mm-sub', body).value.trim(), intro: $('#mm-intro', body).value.trim(), features: $('#mm-feat', body).value.trim(), account: $('#mm-acc', body).value.trim(), benefits: $('#mm-ben', body).value.trim(), outro: $('#mm-outro', body).value.trim() });
+    const read = () => ({ ym: $('#mm-ym', body).value, subject: $('#mm-sub', body).value.trim(), intro: $('#mm-intro', body).value.trim(), features: $('#mm-feat', body).value.trim(), account: $('#mm-acc', body).value.trim(), benefits: $('#mm-ben', body).value.trim(), outro: $('#mm-outro', body).value.trim(), topics: $('#mm-topics', body).value.trim() });
     const sync = () => Object.assign(U, read());
+    const saveTopics = r => { if (r.ym) Store.set(`settings/monthlyTopics/${r.ym}`, r.topics || null); };
     const save = r => Store.set('settings/monthly', { subject: r.subject, intro: r.intro, features: r.features, account: r.account, benefits: r.benefits, outro: r.outro });
-    $('#mm-ym', body).onchange = () => { sync(); U.doc = null; mailWeeklyUnreg(body, main); };
+    $('#mm-ym', body).onchange = () => { sync(); U.doc = null; U.topics = null; mailWeeklyUnreg(body, main); };
+    $('#mm-exp', body).onclick = () => {
+      const ym = $('#mm-ym', body).value, inM = x => ymOfTs(x.ts) === ym, day = ts => (ts ? new Date(ts + 3 * 36e5).toISOString().slice(0, 10) : '');
+      const q = v => `"${String(v == null ? '' : v).replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
+      const rows = [['النوع', 'التاريخ', 'العنوان / الموضوع', 'الجهة', 'التخصص', 'المنطقة', 'التفاصيل']];
+      Opps.approved().filter(inM).forEach(o => rows.push(['فرصة من الإدارة', day(o.ts), o.title, o.org, o.spec ? specName(o.spec) : '', o.region ? regionName(o.region) : '', o.desc]));
+      Store.list('requests').filter(inM).forEach(r => rows.push(['طلب «اطلب مدرباً»', day(r.ts), r.topic, r.org, r.spec ? specName(r.spec) : '', r.region ? regionName(r.region) : '', r.msg]));
+      Store.list('leads').filter(inM).forEach(r => rows.push(['طلب تواصل مع مدرب', day(r.ts), r.topic, r.org, '', '', r.msg]));
+      if (rows.length < 2) return toast('لا فرص أو طلبات في هذا الشهر', 'error');
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + rows.map(r => r.map(q).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' })); a.download = `فرص-وطلبات-التدريب-${ym}.csv`; a.click();
+    };
     $('#mm-save', body).onclick = () => { save(read()); toast('تم الحفظ'); };
     const show = doc => {
       const vars = { name: '', first: 'الزميل', loginUrl: `${siteBase()}#/login`, siteUrl: siteBase(), profileUrl: siteBase() }, html = mailHtml(doc, vars, mailOpts());
@@ -213,7 +227,7 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
         MailUI.tab = 'compose'; aMail(main); toast('جُهّزت الرسالة وحُدّد المستلمون (غير المسجلون والمدعوّون): راجعها ثم أرسل');
       };
     };
-    $('#mm-gen', body).onclick = () => { const r = read(); Object.assign(U, r); save(r); U.doc = buildMonthly(r); show(U.doc); };
+    $('#mm-gen', body).onclick = () => { const r = read(); Object.assign(U, r); save(r); saveTopics(r); U.doc = buildMonthly(r); show(U.doc); };
     if (U.doc) show(U.doc);
   };
 })();
