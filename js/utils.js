@@ -355,7 +355,7 @@ const MonthStats = (() => {
   // أرشيف شهري دائم: لكل شهر ميلادي (بتوقيت الرياض) عدد طلبات الجهات وإعلانات الإدارة والوظائف المجلوبة.
   // تحسبها لوحة الإدارة من البيانات (والسكربت يفعل الشيء نفسه كل ساعة)، ولا ينقص رقم الشهر المحفوظ أبداً حتى لو حُذف الأصل (الوظائف تُحذف بعد 45 يوماً)
   const ymOf = ts => { const d = new Date(ts + RY); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; };
-  const compute = () => { const acc = {}; [['requests', 'requests'], ['opportunities', 'ads'], ['jobs', 'jobs']].forEach(([node, f]) => Store.list(node).forEach(x => { if (x && x.ts) { const m = ymOf(x.ts); (acc[m] = acc[m] || { requests: 0, ads: 0, jobs: 0 })[f]++; } })); return acc; };
+  const compute = () => { const acc = {}; [['requests', 'requests'], ['opportunities', 'ads'], ['jobs', 'jobs'], ['jobsOld', 'jobs']].forEach(([node, f]) => Store.list(node).forEach(x => { if (x && x.ts) { const m = ymOf(x.ts); (acc[m] = acc[m] || { requests: 0, ads: 0, jobs: 0 })[f]++; } })); return acc; };
   let started = false, timer = 0;
   const sync = () => {
     try {
