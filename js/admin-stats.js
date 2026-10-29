@@ -235,6 +235,28 @@ function anMonthlyCsv() {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'سجل-الإحصاءات-الشهري.csv'; a.click();
 }
 
+/* ===== أرشيف فرص التدريب والوظائف الشهري (للتقرير الشهري والسنوي) ===== */
+function statsOpps() {
+  const all = Store.get('stats/month') || {}, nowY = new Date().getFullYear();
+  const years = [...new Set([...Object.keys(all).map(k => +k.slice(0, 4)), nowY])].filter(Boolean).sort((a, b) => b - a);
+  if (!years.includes(Stats.oy)) Stats.oy = nowY;
+  const y = Stats.oy, rows = Array.from({ length: 12 }, (_, i) => { const ym = `${y}-${String(i + 1).padStart(2, '0')}`, r = all[ym] || {}; return { ym, req: +r.requests || 0, ads: +r.ads || 0, jobs: +r.jobs || 0, has: !!all[ym] }; });
+  const tot = rows.reduce((t, r) => ({ req: t.req + r.req, ads: t.ads + r.ads, jobs: t.jobs + r.jobs }), { req: 0, ads: 0, jobs: 0 });
+  return `<div class="an-ext-h"><h2><i class="fa-solid fa-briefcase"></i> فرص التدريب والوظائف (أرشيف شهري)</h2><button class="btn sm" id="opcsv"><i class="fa-solid fa-file-csv"></i> تنزيل CSV</button></div>
+    <p class="muted small">يُحفظ لكل شهر عدد طلبات الجهات وإعلانات الإدارة والوظائف المجلوبة، ولا تنقص الأرقام حتى لو حُذفت الوظائف القديمة بعد 45 يوماً. للتقرير الشهري والسنوي.</p>
+    <div class="an-per" style="margin:6px 0 10px">${years.map(v => `<button data-op-y="${v}" class="${v === y ? 'on' : ''}">${v}</button>`).join('')}</div>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>الشهر</th><th>طلبات الجهات</th><th>إعلانات الإدارة</th><th>إجمالي فرص التدريب</th><th>وظائف التدريب</th></tr></thead><tbody>
+      ${rows.map(r => `<tr class="${r.has ? '' : 'muted'}"><td><b>${esc(anMonthName(r.ym))}</b></td><td class="num">${r.has ? anNum(r.req) : '—'}</td><td class="num">${r.has ? anNum(r.ads) : '—'}</td><td class="num"><b>${r.has ? anNum(r.req + r.ads) : '—'}</b></td><td class="num">${r.has ? anNum(r.jobs) : '—'}</td></tr>`).join('')}
+      <tr style="background:var(--g50)"><td><b>إجمالي ${y}</b></td><td class="num"><b>${anNum(tot.req)}</b></td><td class="num"><b>${anNum(tot.ads)}</b></td><td class="num"><b>${anNum(tot.req + tot.ads)}</b></td><td class="num"><b>${anNum(tot.jobs)}</b></td></tr>
+    </tbody></table></div>`;
+}
+function statsOppsCsv() {
+  const all = Store.get('stats/month') || {}, head = ['الشهر', 'طلبات الجهات', 'إعلانات الإدارة', 'إجمالي فرص التدريب', 'وظائف التدريب'];
+  const rows = Object.keys(all).sort().map(k => { const r = all[k] || {}; return [k, +r.requests || 0, +r.ads || 0, (+r.requests || 0) + (+r.ads || 0), +r.jobs || 0]; });
+  const csv = '\ufeff' + [head, ...rows].map(r => r.join(',')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = 'فرص-ووظائف-التدريب-الشهرية.csv'; a.click();
+}
+
 /* ===== استهلاك Firebase مقابل حدود الخطة المجانية (Spark) ===== */
 const FB_LIMITS = { storage: 1024 ** 3, down: 10 * 1024 ** 3, conn: 100 };
 const anBytes = b => (b >= 1024 ** 3 ? (b / 1024 ** 3).toFixed(2) + ' GB' : b >= 1024 ** 2 ? (b / 1024 ** 2).toFixed(1) + ' MB' : Math.round(b / 1024) + ' KB');
@@ -268,11 +290,14 @@ function statsMount(main) {
     ${ga && (ga.periods || ga.overview) ? anGaCard(ga) : anSetup('ga')}
     ${gsc && (gsc.periods || gsc.totals) ? anGscCard(gsc) : anSetup('gsc')}
     ${statsMonthly()}
+    ${statsOpps()}
     ${statsFirebase()}
     ${ga?.error || gsc?.error ? `<div class="banner warn"><i class="fa-solid fa-triangle-exclamation"></i><span>${esc([ga?.error && 'Analytics: ' + ga.error, gsc?.error && 'Search Console: ' + gsc.error].filter(Boolean).join(' | '))}</span></div>` : ''}`;
   $$('[data-an-p]', box).forEach(b => b.onclick = () => { Stats.days = +b.dataset.anP; statsMount(main); });
   $$('[data-an-g]', box).forEach(b => b.onclick = () => { Stats.gp = b.dataset.anG; statsMount(main); });
   $$('[data-ym]', box).forEach(tr => tr.onclick = () => { const m = Store.get(`analytics_ext/monthly/${tr.dataset.ym.replace('-', '')}`); m && anMonthDetail(m); });
+  $$('[data-op-y]', box).forEach(b => b.onclick = () => { Stats.oy = +b.dataset.opY; statsMount(main); });
+  $('#opcsv', box) && ($('#opcsv', box).onclick = statsOppsCsv);
   $('#ancsv', box) && ($('#ancsv', box).onclick = anMonthlyCsv);
   $('#ansnap', box) && ($('#ansnap', box).onclick = async () => { await Automation.notify('snapshot', 'last'); toast('طُلبت لقطة الشهر الماضي، تظهر خلال دقيقة تقريباً'); });
   $('#anbf', box) && ($('#anbf', box).onclick = async () => { await Automation.notify('backfill', 'all'); toast('بدأ استرجاع الأشهر السابقة، قد يستغرق عدة دقائق (12 شهراً في كل مرة). حدّث الصفحة لاحقاً'); });
