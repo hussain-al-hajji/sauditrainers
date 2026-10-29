@@ -144,11 +144,12 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     blocks.push({ t: 'stat', num: num(opp), text: clean(T.lReq), note: clean(T.tReq) });
     blocks.push({ t: 'stat', num: num(jobs), text: clean(T.lJobs), note: clean(T.tJobs) });
     // عناوين البرامج المطلوبة: تُسحب تلقائياً من بطاقات قسم «من طلبات هذا الشهر» للشهر المختار (المرفوعة من ملف العناوين)، بلا تكرار
-    const seen = new Set(), titles = [];
-    Store.list('showcase').filter(x => ymOfTs(x.ts) === ym).sort((a, b) => (b.ts || 0) - (a.ts || 0)).forEach(x => { const c = clean(x.title).replace(/\s+/g, ' '), k = c.toLowerCase(); if (c && !seen.has(k)) { seen.add(k); titles.push(c); } });
+    const seen = new Map(), titles = [];
+    Store.list('showcase').filter(x => ymOfTs(x.ts) === ym).sort((a, b) => (b.ts || 0) - (a.ts || 0)).forEach(x => { const c = clean(x.title).replace(/\s+/g, ' '), k = c.toLowerCase(); if (!c) return; if (seen.has(k)) { seen.get(k).n += Number(x.n) || 0; return; } const o = { c, n: Number(x.n) || 0 }; seen.set(k, o); titles.push(o); });
+    titles.sort((a, b) => b.n - a.n);   // الأكثر طلباً أولاً
     if (titles.length) {
       blocks.push({ t: 'h', text: '🎯 مجالات وموضوعات التدريب المطلوبة هذا الشهر', align: 'start' });
-      blocks.push({ t: 'box', text: titles.map(x => `• ${x}`).join('\n') });
+      blocks.push({ t: 'box', text: titles.map(x => `• ${x.c}${x.n > 0 ? ` (${num(x.n)} ${x.n === 1 ? 'فرصة' : 'فرص'})` : ''}`).join('\n') });
     }
     blocks.push({ ...reg });
     newsBlocks(blocks, `${ym}-01`, `${ym}-${String(last).padStart(2, '0')}`, base, `${base}#/login`, true, `📰 أخبار المدربين خلال شهر ${mname}`);

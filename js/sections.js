@@ -169,6 +169,7 @@ const SECTION_TYPES = (() => {
         <small>${esc(x.org || 'جهة تدريبية')}</small>
         ${x.trainerName ? `<span class="ord-tr"><i class="fa-solid fa-user-tie"></i>${esc(x.trainerName)}</span>` : ''}
         <span class="ord-meta">${(x.city || x.region) ? `<span><i class="fa-solid ${x.city === 'عن بعد' ? 'fa-laptop' : 'fa-location-dot'}"></i>${esc(x.city || regionName(x.region))}</span>` : ''}<span><i class="fa-regular fa-calendar"></i>${esc(monthName(x.ts))}</span></span>
+        ${Number(x.n) > 0 ? `<span class="ord-n"><i class="fa-solid fa-layer-group"></i>${Number(x.n).toLocaleString('en-US')} ${Number(x.n) === 1 ? 'فرصة' : 'فرص'} في هذا المجال</span>` : ''}
       </article>`;
   const ordBody = (sec, d, list) => {
     if (sec.tpl === 'grid') return `<div class="wrap"><div class="ord-grid">${list.map(ordTile).join('')}</div></div>`;
