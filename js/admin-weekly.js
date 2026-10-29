@@ -143,12 +143,14 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     blocks.push({ t: 'stat', num: num(platformVisitsTotal()), text: `إجمالي زيارات المنصة حتى ${fmt(Date.now())}` });
     blocks.push({ t: 'stat', num: num(opp), text: clean(T.lReq), note: clean(T.tReq) });
     blocks.push({ t: 'stat', num: num(jobs), text: clean(T.lJobs), note: clean(T.tJobs) });
-    // مجالات التدريب المطلوبة في فرص وطلبات الشهر
-    const inM = x => ymOfTs(x.ts) === ym, spc = new Map();
-    [...Store.list('requests'), ...Store.list('leads'), ...Store.list('opportunities')].filter(inM).forEach(x => { if (x.spec) spc.set(x.spec, (spc.get(x.spec) || 0) + 1); });
-    const top = [...spc.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
-    blocks.push({ t: 'h', text: '🎯 مجالات التدريب المطلوبة هذا الشهر', align: 'start' });
-    blocks.push(top.length ? { t: 'box', text: top.map(([k, n]) => `• **${clean(specName(k))}** (${num(n)})`).join('\n') + '\n\nمن فرص وطلبات التدريب المنشورة على الموقع خلال الشهر.' } : { t: 'p', text: 'لم تُسجَّل مجالات محددة في فرص وطلبات هذا الشهر.', align: 'start' });
+    // عناوين فرص وطلبات التدريب التي وصلت المدربين خلال الشهر (فرص الإدارة + الطلبات المُوجَّهة للمدربين)، سواء ظهرت في الرئيسية أم لا: بلا تكرار وبلا أعداد
+    const inM = x => ymOfTs(x.ts) === ym, seen = new Set(), titles = [];
+    [...Opps.approved().filter(inM).map(o => o.title), ...Broadcast.all().filter(inM).map(b => b.topic)].forEach(t => {
+      const c = clean(t).replace(/\s+/g, ' '), k = c.toLowerCase().replace(/[ً-ٟ]/g, '');
+      if (c && !seen.has(k)) { seen.add(k); titles.push(c.length > 110 ? c.slice(0, 110).replace(/\s+\S*$/, '') + '…' : c); }
+    });
+    blocks.push({ t: 'h', text: '🎯 مجالات وموضوعات التدريب المطلوبة هذا الشهر', align: 'start' });
+    blocks.push(titles.length ? { t: 'box', text: titles.map(x => `• ${x}`).join('\n') + '\n\nمن فرص وطلبات التدريب التي وصلت المدربين عبر المنصة خلال الشهر.' } : { t: 'p', text: 'لم تصل المدربين فرص أو طلبات جديدة خلال هذا الشهر.', align: 'start' });
     blocks.push({ ...reg });
     newsBlocks(blocks, `${ym}-01`, `${ym}-${String(last).padStart(2, '0')}`, base, `${base}#/login`, true, `📰 أخبار المدربين خلال شهر ${mname}`);
     blocks.push({ t: 'hr' });
