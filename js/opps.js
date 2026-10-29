@@ -33,7 +33,7 @@ const Opps = (() => {
         ${u ? `<a class="nlink" href="${esc(u)}" target="_blank" rel="noopener nofollow">${/^https:\/\//.test(o.img || '') ? `<span class="nl-img"><img src="${esc(o.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.nlink').classList.add('noimg');this.parentNode.remove()"></span>` : '<span class="nl-img ph"><i class="fa-solid fa-link"></i></span>'}<span class="nl-t"><b>${esc(o.lt || o.title)}</b>${o.ld ? `<small>${esc(o.ld)}</small>` : ''}<em dir="ltr">${esc(host(o.url))}</em></span></a>` : ''}
         <div class="small">${o.spec ? `<span class="pill">${esc(specName(o.spec))}</span> ` : ''}${o.region ? `<span class="pill">${esc(regionName(o.region))}</span>` : ''}</div>
         ${o.note ? `<p class="small"><i class="fa-solid fa-circle-info"></i> <b>ملاحظة الإدارة:</b> ${nl2br(o.note)}</p>` : ''}</div>
-      <div class="acts" style="flex-direction:column">${u ? `<a class="btn sm primary" href="${esc(u)}" target="_blank" rel="noopener nofollow"><i class="fa-solid fa-arrow-up-right-from-square"></i> فتح الأصل</a>` : ''}</div></div>`;
+      <div class="acts" style="flex-direction:column">${u ? `<a class="btn sm primary" href="${esc(u)}" target="_blank" rel="noopener nofollow"><i class="fa-solid fa-arrow-up-right-from-square"></i> فتح الأصل</a>` : ''}${/^\d{10,15}$/.test(o.wa || '') ? `<a class="btn sm" style="background:#25D366;color:#fff;border-color:#25D366" href="https://wa.me/${o.wa}" target="_blank" rel="noopener" title="تواصل عبر واتساب"><i class="fa-brands fa-whatsapp"></i> واتساب</a>` : ''}${/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(o.email || '') ? `<a class="btn sm" href="mailto:${esc(o.email)}" title="مراسلة بالبريد"><i class="fa-solid fa-envelope"></i> بريد</a>` : ''}</div></div>`;
   }
   function tab(main, t) {
     const sub = V.sub === 'jobs' ? 'jobs' : 'ads', sa = lsGet(kAds(t.id)), sj = lsGet(kJobs(t.id)), ua = unreadAds(t.id).length, uj = unreadJobs(t.id).length;
@@ -78,6 +78,7 @@ const Opps = (() => {
           <div style="flex:1;min-width:150px">${field('آخر موعد', `<input type="date" name="deadline" value="${rec.deadline ? ymd(rec.deadline) : ''}">`)}</div>
           <div style="flex:1;min-width:150px">${field('النوع', `<select name="kind"><option value="post" ${rec.kind !== 'tender' ? 'selected' : ''}>منشور عام</option><option value="tender" ${rec.kind === 'tender' ? 'selected' : ''}>منافسة حكومية</option></select>`)}</div>
         </div>
+        <div class="row" style="gap:10px;flex-wrap:wrap"><div style="flex:1;min-width:200px">${field('رقم واتساب للتواصل (اختياري)', `<input name="wa" type="tel" dir="ltr" maxlength="20" placeholder="05xxxxxxxx" value="${esc(rec.wa || '')}">`)}</div><div style="flex:1;min-width:200px">${field('بريد للتواصل (اختياري)', `<input name="email" type="email" dir="ltr" maxlength="120" value="${esc(rec.email || '')}">`)}</div></div>
         ${field('ملاحظة للمدربين (اختياري)', `<textarea name="note" rows="2" maxlength="500">${esc(rec.note || '')}</textarea>`)}
         <div class="row end" style="gap:8px"><button type="button" class="btn ghost" data-close>إلغاء</button><button class="btn primary" type="submit"><i class="fa-solid fa-circle-check"></i> ${rec.pub ? 'حفظ' : 'اعتماد ونشر للمدربين'}</button></div>
       </form>`, { wide: true });
@@ -90,6 +91,10 @@ const Opps = (() => {
       ['org', 'desc', 'note'].forEach(k => { const v = f[k].value.trim(); if (v) out[k] = v; });
       ['spec', 'region'].forEach(k => { if (f[k].value) out[k] = f[k].value; });
       const site = f.site.value.trim(); if (site) out.site = site.slice(0, 80);
+      const wa = f.wa.value.trim() ? phoneDigits(f.wa.value) : '', em = f.email.value.trim();
+      if (f.wa.value.trim() && !/^\d{10,15}$/.test(wa)) return toast('رقم الواتساب غير صحيح (مثال: 0501234567)', 'error');
+      if (em && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)) return toast('البريد الإلكتروني غير صحيح', 'error');
+      if (wa) out.wa = wa; if (em) out.email = em;
       if (/^https:\/\//.test(rec.img || '')) out.img = String(rec.img).slice(0, 500);
       if (f.deadline.value) out.deadline = new Date(`${f.deadline.value}T23:59:59`).getTime();
       Store.set(`opportunities/${id}`, out);
@@ -143,14 +148,16 @@ const Opps = (() => {
     box.innerHTML = `      <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-plus"></i> إضافة فرصة (إعلان نصي · إعلان نصي برابط · رابط)</h3>
         <p class="small muted">الصق نص الإعلان كما وصلك (من واتساب مثلاً) و/أو رابطه (لينكدإن، إنستقرام، تيك توك…). يظهر للمدربين كما هو، ومع الرابط تظهر لهم معاينته. اكتب نصاً أو رابطاً أو الاثنين.</p>
         <textarea id="op-text" rows="5" maxlength="2000" placeholder="نص الإعلان (اختياري إن وضعت رابطاً)" style="width:100%;margin-bottom:8px"></textarea>
-        <div class="row" style="gap:8px"><input id="op-url" type="url" dir="ltr" placeholder="رابط (اختياري) https://…" style="flex:1"><button class="btn primary" id="op-add"><i class="fa-solid fa-plus"></i> إضافة ومراجعة</button></div></div>
+        <div class="row" style="gap:8px;margin-bottom:8px"><input id="op-url" type="url" dir="ltr" placeholder="رابط (اختياري) https://…" style="flex:1"></div>
+        <div class="row" style="gap:8px;flex-wrap:wrap"><input id="op-wa" type="tel" dir="ltr" inputmode="tel" maxlength="20" placeholder="رقم واتساب للتواصل (اختياري) 05xxxxxxxx" style="flex:1;min-width:200px"><input id="op-em" type="email" dir="ltr" maxlength="120" placeholder="بريد للتواصل (اختياري)" style="flex:1;min-width:200px"><button class="btn primary" id="op-add"><i class="fa-solid fa-plus"></i> إضافة ومراجعة</button></div>
+        <p class="small muted" style="margin:6px 0 0">الرقم والبريد يظهران للمدربين كأيقونتين: واتساب يفتح المحادثة مباشرة، والبريد يفتح رسالة جديدة.</p></div>
       ${news.length ? `<div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-inbox"></i> الوارد بانتظار المراجعة (${news.length})</h3>${news.map(o => row(o, `<button class="btn sm primary" data-ap="${esc(o.id)}"><i class="fa-solid fa-circle-check"></i> اعتماد</button><button class="btn sm danger" data-rj="${esc(o.id)}"><i class="fa-solid fa-xmark"></i> رفض</button>`)).join('')}</div>` : ''}
       <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-table-list"></i> جدول فرص التدريب المضافة من الإدارة (${ap.length})</h3>
         <p class="small muted">اضغط على عنوان الفرصة لعرض تفاصيلها. صدّر الجدول بكامل حقوله (العنوان والنص والرابط والتخصص والمنطقة...) لتحليله لاحقاً، مثل استخراج أكثر البرامج طلباً.</p>
         <div class="bl-bar"><label>الشهر<select id="op-m"><option value="">كل الأشهر</option>${months.map(m => `<option value="${m}" ${OV.m === m ? 'selected' : ''}>${esc(ymName(m))}</option>`).join('')}</select></label><button class="btn sm" id="op-csv" ${ap.length ? '' : 'disabled'}><i class="fa-solid fa-file-csv"></i> تصدير CSV</button></div>
         ${ap.length ? `<div class="tbl-wrap" style="max-height:480px;overflow:auto"><table class="tbl"><thead><tr><th>التاريخ</th><th>العنوان</th><th>الجهة</th><th>النوع</th><th>التخصص</th><th>المنطقة</th><th>آخر موعد</th></tr></thead><tbody>
           ${ap.map(o => `<tr><td class="num">${esc(dayOf(o.ts))}</td><td><button type="button" class="btn sm ghost" data-x="${esc(o.id)}" style="text-align:start;white-space:normal">${esc(String(o.title).slice(0, 70))}</button></td><td>${esc(o.org || '')}</td><td>${esc((KIND[o.kind] || KIND.post)[0])}</td><td>${esc(o.spec ? specName(o.spec) : '')}</td><td>${esc(o.region ? regionName(o.region) : '')}</td><td class="num">${o.deadline ? esc(dayOf(o.deadline)) : ''}</td></tr>
-            <tr hidden data-dx="${esc(o.id)}"><td colspan="7" style="background:var(--g50)"><div style="display:grid;gap:6px">${o.desc ? `<div>${nl2br(o.desc)}</div>` : ''}${o.note ? `<div class="small"><b>ملاحظة للمدربين:</b> ${nl2br(o.note)}</div>` : ''}${o.url ? `<div class="small"><a href="${esc(safeUrl(o.url) || '#')}" target="_blank" rel="noopener nofollow" dir="ltr">${esc(o.url)}</a></div>` : ''}<div class="small muted">المصدر: ${esc(o.site || host(o.url) || '')}</div><div class="row" style="gap:8px"><button class="btn sm" data-ed="${esc(o.id)}"><i class="fa-solid fa-pen"></i> تعديل</button><button class="btn sm danger" data-dl="${esc(o.id)}"><i class="fa-solid fa-trash"></i> سحب</button></div></div></td></tr>`).join('')}
+            <tr hidden data-dx="${esc(o.id)}"><td colspan="7" style="background:var(--g50)"><div style="display:grid;gap:6px">${o.desc ? `<div>${nl2br(o.desc)}</div>` : ''}${o.note ? `<div class="small"><b>ملاحظة للمدربين:</b> ${nl2br(o.note)}</div>` : ''}${o.url ? `<div class="small"><a href="${esc(safeUrl(o.url) || '#')}" target="_blank" rel="noopener nofollow" dir="ltr">${esc(o.url)}</a></div>` : ''}<div class="small muted">المصدر: ${esc(o.site || host(o.url) || '')}</div>${o.wa || o.email ? `<div class="small">التواصل: ${o.wa ? `<span dir="ltr">+${esc(o.wa)}</span> ` : ''}${o.email ? `<span dir="ltr">${esc(o.email)}</span>` : ''}</div>` : ''}<div class="row" style="gap:8px"><button class="btn sm" data-ed="${esc(o.id)}"><i class="fa-solid fa-pen"></i> تعديل</button><button class="btn sm danger" data-dl="${esc(o.id)}"><i class="fa-solid fa-trash"></i> سحب</button></div></div></td></tr>`).join('')}
         </tbody></table></div>` : '<p class="muted small">لم تُضف فرص بعد.</p>'}</div>`;
     const again = rerender;
     $('#op-m', box).onchange = e => { OV.m = e.target.value; again(); };
@@ -161,10 +168,13 @@ const Opps = (() => {
       if (!text && !raw) return toast('اكتب نص الإعلان أو ضع رابطاً', 'error');
       if (raw && (!u || !/^https:\/\//i.test(u))) return toast('الرابط يجب أن يبدأ بـ https://', 'error');
       if (u && (all.some(o => o.url === u) || ib.some(o => o.url === u))) return toast('الرابط موجود مسبقاً', 'error');
+      const waRaw = $('#op-wa', box).value.trim(), wa = waRaw ? phoneDigits(waRaw) : '', em = $('#op-em', box).value.trim();
+      if (waRaw && !/^\d{10,15}$/.test(wa)) return toast('رقم الواتساب غير صحيح (مثال: 0501234567)', 'error');
+      if (em && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)) return toast('البريد الإلكتروني غير صحيح', 'error');
       const first = text.split('\n').map(x => x.trim()).find(Boolean) || '';
       const b = e.currentTarget, h = b.innerHTML; b.disabled = true; b.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
       const p = u ? await News.fetchPreview(u.slice(0, 500)) : null; b.disabled = false; b.innerHTML = h;
-      editor({ url: u || '', title: (first || p?.title || '').slice(0, 200), desc: text || p?.desc || '', lt: p?.title || '', ld: p?.desc || '', img: p?.img || '', site: p?.site || '', kind: 'post' }, { onDone: () => { $('#op-text', box).value = ''; $('#op-url', box).value = ''; again(); } });
+      editor({ url: u || '', title: (first || p?.title || '').slice(0, 200), desc: text || p?.desc || '', lt: p?.title || '', ld: p?.desc || '', img: p?.img || '', site: p?.site || '', kind: 'post', wa, email: em }, { onDone: () => { $('#op-text', box).value = ''; $('#op-url', box).value = ''; $('#op-wa', box).value = ''; $('#op-em', box).value = ''; again(); } });
     };
     $$('[data-ap]', box).forEach(b => b.onclick = () => editor(Store.get(`oppInbox/${b.dataset.ap}`), { fromInbox: true, onDone: again }));
     $$('[data-rj]', box).forEach(b => b.onclick = () => Store.update(`oppInbox/${b.dataset.rj}`, { status: 'rejected' }));
