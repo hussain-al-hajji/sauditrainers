@@ -671,8 +671,8 @@ function aRequests(main) {
     const text = (await f.text()).replace(/^\ufeff/, ''), have = new Set(Store.list('showcase').map(x => String(x.title || '').trim().toLowerCase())), seen = new Set(); let dup = 0;
     const titles = text.split(/\r?\n/).map(cols).map(([t, c]) => ({ t: String(t || '').replace(/^[\s•\-–*·]+/, '').slice(0, 90), c: String(c || '').slice(0, 40) })).filter((x, i) => x.t && !(i === 0 && /^(عنوان الدورة|العنوان|عناوين الدورات|title)$/i.test(x.t))).filter(x => { const k = x.t.toLowerCase(); if (have.has(k) || seen.has(k)) { dup++; return false; } seen.add(k); return true; });
     if (!titles.length) return toast('لا عناوين جديدة في الملف', 'error');
-    const take = titles.slice(0, 60);
-    if (!await confirmBox(`إضافة ${take.length} عنوان إلى «من طلبات هذا الشهر»${dup ? ` (استُبعد ${dup} مكرراً)` : ''}${titles.length > take.length ? ` - أول 60 فقط من ${titles.length}` : ''}؟`, { ok: 'إضافة' })) return;
+    const take = titles.slice(0, 250);
+    if (!await confirmBox(`إضافة ${take.length} عنوان إلى «من طلبات هذا الشهر»${dup ? ` (استُبعد ${dup} مكرراً)` : ''}${titles.length > take.length ? ` - أول 250 فقط من ${titles.length}` : ''}؟`, { ok: 'إضافة' })) return;
     const now = Date.now(); take.forEach((x, i) => Store.push('showcase', { title: x.t, org: '', region: '', city: x.c, spec: '', trainerName: '', src: '', ts: now - i }));
     Security.log('رفع عناوين «من طلبات هذا الشهر»', `${take.length} عنواناً`); toast(`أُضيف ${take.length} عنوان وتظهر في الصفحة الرئيسية`);
   };
