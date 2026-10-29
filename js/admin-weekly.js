@@ -143,14 +143,14 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     blocks.push({ t: 'stat', num: num(platformVisitsTotal()), text: `إجمالي زيارات المنصة حتى ${fmt(Date.now())}` });
     blocks.push({ t: 'stat', num: num(opp), text: clean(T.lReq), note: clean(T.tReq) });
     blocks.push({ t: 'stat', num: num(jobs), text: clean(T.lJobs), note: clean(T.tJobs) });
-    // عناوين فرص وطلبات التدريب التي وصلت المدربين خلال الشهر (فرص الإدارة + الطلبات المُوجَّهة للمدربين)، سواء ظهرت في الرئيسية أم لا: بلا تكرار وبلا أعداد
+    // عناوين كل فرص وطلبات التدريب خلال الشهر: فرص الإدارة وطلبات الجهات (اطلب مدرباً والتواصل المباشر مع مدرب)؛ الطلب المُعاد توجيهه للمدربين يُحسب مرة واحدة (سجل الطلب نفسه لا سجل التوجيه)، بلا تكرار وبلا أعداد
     const inM = x => ymOfTs(x.ts) === ym, seen = new Set(), titles = [];
-    [...Opps.approved().filter(inM).map(o => o.title), ...Broadcast.all().filter(inM).map(b => b.topic)].forEach(t => {
+    [...Opps.approved().filter(inM).map(o => o.title), ...Store.list('requests').filter(inM).map(r => r.topic), ...Store.list('leads').filter(inM).map(r => r.topic)].forEach(t => {
       const c = clean(t).replace(/\s+/g, ' '), k = c.toLowerCase().replace(/[ً-ٟ]/g, '');
       if (c && !seen.has(k)) { seen.add(k); titles.push(c.length > 110 ? c.slice(0, 110).replace(/\s+\S*$/, '') + '…' : c); }
     });
     blocks.push({ t: 'h', text: '🎯 مجالات وموضوعات التدريب المطلوبة هذا الشهر', align: 'start' });
-    blocks.push(titles.length ? { t: 'box', text: titles.map(x => `• ${x}`).join('\n') + '\n\nمن فرص وطلبات التدريب التي وصلت المدربين عبر المنصة خلال الشهر.' } : { t: 'p', text: 'لم تصل المدربين فرص أو طلبات جديدة خلال هذا الشهر.', align: 'start' });
+    blocks.push(titles.length ? { t: 'box', text: titles.map(x => `• ${x}`).join('\n') + '\n\nمن فرص وطلبات التدريب الواردة إلى المنصة والمنشورة فيها خلال الشهر.' } : { t: 'p', text: 'لم تُسجَّل فرص أو طلبات تدريب جديدة خلال هذا الشهر.', align: 'start' });
     blocks.push({ ...reg });
     newsBlocks(blocks, `${ym}-01`, `${ym}-${String(last).padStart(2, '0')}`, base, `${base}#/login`, true, `📰 أخبار المدربين خلال شهر ${mname}`);
     blocks.push({ t: 'hr' });
