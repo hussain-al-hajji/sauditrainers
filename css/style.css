@@ -1351,3 +1351,8 @@ body.preview .local-flag { display: none; }
 .mstat .ms-c span { font-size: .92rem; color: var(--ink2); line-height: 1.5; }
 @media (max-width: 560px) { .mstat .ms-g { grid-template-columns: 1fr; } }
 .rq-part{margin:26px 0 12px;padding-top:14px;border-top:2px solid var(--line);color:var(--g800)}
+
+.mstat .ms-c { position: relative; }
+.mstat .ms-i { position: absolute; top: 8px; inset-inline-start: 8px; width: 24px; height: 24px; border-radius: 50%; border: 1.5px solid var(--g700); background: #fff; color: var(--g800); font: 700 .8rem/1 var(--f-display); font-style: italic; cursor: pointer; padding: 0; display: grid; place-content: center; }
+.mstat .ms-i:hover, .mstat .ms-i[aria-expanded="true"] { background: var(--g800); color: #fff; }
+.mstat .ms-tip { font-size: .85rem; line-height: 1.6; color: var(--ink2); background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px; margin-top: 4px; }

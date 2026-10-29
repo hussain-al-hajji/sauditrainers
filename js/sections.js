@@ -249,14 +249,17 @@ const SECTION_TYPES = (() => {
   T.monthstats = {
     name: 'إحصائيات الشهر', icon: 'fa-chart-column',
     tpls: [['band', 'بطاقتان']],
-    schema: [{ k: 'title', label: 'عنوان الإحصائية' }, { k: 'lReq', label: 'نص طلبات التعاون' }, { k: 'lJobs', label: 'نص الوظائف' }],
-    def: () => ({ title: 'إحصائيات الشهر', lReq: 'فرص التعاون في التدريب المنشورة على الموقع', lJobs: 'وظائف التدريب المنشورة على الموقع' }),
+    schema: [{ k: 'title', label: 'عنوان الإحصائية' }, { k: 'lReq', label: 'نص طلبات التعاون' }, { k: 'lJobs', label: 'نص الوظائف' }, { k: 'tReq', label: 'تفاصيل (i) فرص التعاون' }, { k: 'tJobs', label: 'تفاصيل (i) الوظائف' }],
+    def: () => ({ title: 'إحصائيات الشهر', lReq: 'فرص التعاون في التدريب المنشورة على الموقع', lJobs: 'وظائف التدريب المنشورة على الموقع', tReq: 'تشمل طلبات الجهات الواردة إلى الموقع مباشرة، والفرص التدريبية التي تنشرها الإدارة عبر مصادرها', tJobs: 'تشمل إعلانات توظيف المدربين التي يقوم الموقع بجلبها من عدة مصادر عبر الإنترنت بشكل أسبوعي' }),
     render(sec) {
       const d = { ...T.monthstats.def(), ...(sec.d || {}) }, c = MonthStats.cur(), v = Store.get(`stats/month/${c.key}`);
       if (!v) return '';
       const f = x => (Number(x) || 0).toLocaleString('en-US');
       return `<div class="wrap"><div class="mstat reveal"><div class="ms-h"><i class="fa-solid fa-chart-column"></i><b>${esc(d.title)} (${esc(c.name)})</b></div>
-        <div class="ms-g"><div class="ms-c"><b class="num">${f((Number(v.requests) || 0) + (Number(v.ads) || 0))}</b><span>${esc(d.lReq)}</span></div><div class="ms-c"><b class="num">${f(v.jobs)}</b><span>${esc(d.lJobs)}</span></div></div></div></div>`;
+        <div class="ms-g"><div class="ms-c"><button type="button" class="ms-i" aria-label="تفاصيل" aria-expanded="false" title="تفاصيل">i</button><b class="num">${f((Number(v.requests) || 0) + (Number(v.ads) || 0))}</b><span>${esc(d.lReq)}</span><small class="ms-tip" hidden>${esc(d.tReq)}</small></div><div class="ms-c"><button type="button" class="ms-i" aria-label="تفاصيل" aria-expanded="false" title="تفاصيل">i</button><b class="num">${f(v.jobs)}</b><span>${esc(d.lJobs)}</span><small class="ms-tip" hidden>${esc(d.tJobs)}</small></div></div></div></div>`;
+    },
+    mount(el) {
+      el.querySelectorAll('.ms-i').forEach(b => b.onclick = () => { const t = b.parentElement.querySelector('.ms-tip'); if (!t) return; t.hidden = !t.hidden; b.setAttribute('aria-expanded', String(!t.hidden)); });
     }
   };
 
