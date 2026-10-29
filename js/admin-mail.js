@@ -3,7 +3,7 @@
 
 const MailUI = { tab: 'compose', who: 'invitees', mode: 'pick', q: '', sel: new Set(), doc: null, view: 'desk' };
 const MAIL_DRAFT = 'st-mail-draft';
-const MAIL_BLOCKS = { h: ['fa-heading', 'عنوان'], p: ['fa-align-right', 'نص'], img: ['fa-image', 'صورة'], imgtext: ['fa-table-columns', 'صورة مع نص'], btn: ['fa-hand-pointer', 'زر رابط'], box: ['fa-note-sticky', 'إطار مميز'], hr: ['fa-minus', 'فاصل'] };
+const MAIL_BLOCKS = { h: ['fa-heading', 'عنوان'], p: ['fa-align-right', 'نص'], img: ['fa-image', 'صورة'], imgtext: ['fa-table-columns', 'صورة مع نص'], btn: ['fa-hand-pointer', 'زر رابط'], box: ['fa-note-sticky', 'إطار مميز'], stat: ['fa-chart-simple', 'رقم بارز'], hr: ['fa-minus', 'فاصل'] };
 const MAIL_OPTS = {
   align: [['start', 'يمين'], ['center', 'وسط'], ['end', 'يسار']],
   w: [['full', 'كامل العرض'], ['mid', 'متوسط'], ['small', 'صغير']],
@@ -13,12 +13,13 @@ const MAIL_FIELDS = {
   h: [['text', 'نص العنوان'], ['align']],
   p: [['text', 'النص', 'area'], ['align']],
   box: [['text', 'نص الإطار', 'area']],
+  stat: [['num', 'الرقم'], ['text', 'عنوان الرقم'], ['note', 'توضيح (اختياري)', 'area']],
   img: [['url', 'رابط الصورة (Drive أو أي تخزين سحابي)', 'url'], ['alt', 'وصف الصورة (اختياري)'], ['w', 'العرض'], ['align'], ['link', 'رابط عند النقر على الصورة (اختياري)', 'url']],
   imgtext: [['url', 'رابط الصورة', 'url'], ['text', 'النص المجاور للصورة', 'area'], ['side', 'موضع الصورة'], ['alt', 'وصف الصورة (اختياري)']],
   btn: [['text', 'نص الزر'], ['url', 'رابط الزر', 'url'], ['align']],
   hr: []
 };
-const MAIL_NEW = { h: { t: 'h', text: '', align: 'start' }, p: { t: 'p', text: '', align: 'start' }, img: { t: 'img', url: '', alt: '', w: 'full', align: 'center', link: '' }, imgtext: { t: 'imgtext', url: '', text: '', side: 'start', alt: '' }, btn: { t: 'btn', text: 'ادخل إلى لوحتك', url: '{loginUrl}', align: 'center' }, box: { t: 'box', text: '' }, hr: { t: 'hr' } };
+const MAIL_NEW = { h: { t: 'h', text: '', align: 'start' }, p: { t: 'p', text: '', align: 'start' }, img: { t: 'img', url: '', alt: '', w: 'full', align: 'center', link: '' }, imgtext: { t: 'imgtext', url: '', text: '', side: 'start', alt: '' }, btn: { t: 'btn', text: 'ادخل إلى لوحتك', url: '{loginUrl}', align: 'center' }, box: { t: 'box', text: '' }, stat: { t: 'stat', num: '', text: '', note: '' }, hr: { t: 'hr' } };
 const MAIL_VARS = [['name', 'الاسم الكامل'], ['first', 'الاسم الأول'], ['loginUrl', 'رابط دخول المدربين'], ['siteUrl', 'رابط المنصة'], ['profileUrl', 'رابط بطاقة المدرب']];
 const mailEmailRe = /[^\s,;<>"'()]+@[^\s,;<>"'()]+\.[^\s,;<>"'()]{2,}/;
 
@@ -74,7 +75,7 @@ function aMail(main) {
     <div class="mail-tabs">
       <button data-mt="compose" class="${tab === 'compose' ? 'on' : ''}"><i class="fa-solid fa-pen-nib"></i>كتابة الرسالة</button>
       <button data-mt="weekly" class="${tab === 'weekly' ? 'on' : ''}"><i class="fa-solid fa-calendar-week"></i>الرسالة الأسبوعية</button>
-      <button data-mt="weekly2" class="${tab === 'weekly2' ? 'on' : ''}"><i class="fa-solid fa-user-clock"></i>الرسالة الأسبوعية لغير المسجلين</button>
+      <button data-mt="weekly2" class="${tab === 'weekly2' ? 'on' : ''}"><i class="fa-solid fa-user-clock"></i>الرسالة الشهرية لغير المسجلين</button>
       <button data-mt="rcpt" class="${tab === 'rcpt' ? 'on' : ''}"><i class="fa-solid fa-envelope-circle-check"></i>إدارة المدعوّين <span class="badge num">${counts.i}</span></button>
       <button data-mt="hist" class="${tab === 'hist' ? 'on' : ''}"><i class="fa-solid fa-clock-rotate-left"></i>السجل</button>
     </div>

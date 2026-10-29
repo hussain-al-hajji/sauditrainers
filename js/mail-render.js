@@ -61,6 +61,7 @@ function mailBlockHtml(b, vars, o) {
       return '<div style="margin:18px 0;text-align:' + al + '"><a href="' + mEsc(u) + '" style="display:inline-block;background:' + MAIL_BRAND.green + ';color:' + MAIL_BRAND.cream + ';padding:13px 30px;border-radius:999px;text-decoration:none;font-weight:bold;font-size:15.5px">' + mEsc(mailVars(b.text || 'افتح الرابط', vars)) + '</a></div>';
     }
     case 'box': return '<div style="margin:14px 0;padding:16px 20px;background:' + MAIL_BRAND.cream + ';border-right:5px solid ' + MAIL_BRAND.green + ';border-radius:12px;font-size:15px;line-height:1.9;color:' + MAIL_BRAND.ink + ';text-align:right">' + mailText(b.text, vars) + '</div>';
+    case 'stat': return '<div style="margin:14px 0;padding:18px 22px;background:' + MAIL_BRAND.cream + ';border-radius:16px;text-align:center"><div style="font-size:44px;font-weight:bold;color:' + MAIL_BRAND.green + ';line-height:1.25">' + mEsc(mailVars(b.num, vars)) + '</div><div style="font-size:16px;font-weight:bold;color:' + MAIL_BRAND.ink + ';line-height:1.7;margin-top:2px">' + mailText(b.text, vars) + '</div>' + (b.note ? '<div style="font-size:13px;line-height:1.8;color:#3A5244;margin-top:6px">' + mailText(b.note, vars) + '</div>' : '') + '</div>';
     case 'hr': return '<hr style="border:0;border-top:1px solid #DCE6D2;margin:20px 0">';
     default: return '';
   }
@@ -87,6 +88,7 @@ function mailPlain(doc, vars) {
     if (b.t === 'hr') return '----';
     if (b.t === 'btn') return mailVars(b.text, vars) + ': ' + mailVars(b.url, vars);
     if (b.t === 'img') return b.link ? b.link : '';
+    if (b.t === 'stat') return mailVars(b.num, vars) + ' - ' + mailVars(b.text, vars) + (b.note ? '\n' + mailVars(b.note, vars) : '');
     return mailVars(b.text, vars).replace(/\*\*(.+?)\*\*/g, '$1').replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1 ($2)');
   }).filter(Boolean).join('\n\n');
 }
