@@ -23,11 +23,12 @@ const Opps = (() => {
   const unreadAds = id => { const sn = lsGet(kAds(id)); return approved().filter(o => (o.ts || 0) > sn && isOpen(o)); };
   const unreadJobs = id => { const sn = lsGet(kJobs(id)); return liveJobs().filter(j => (j.ts || 0) > sn); };
   const unread = id => [...unreadAds(id), ...unreadJobs(id)];
+  const markAdsSeen = id => lsSet(kAds(id), Math.max(0, ...approved().map(o => o.ts || 0)));
 
-  function card(o, fresh) {
+  function card(o, fresh, tag = '') {
     const k = KIND[o.kind] || KIND.post, u = safeUrl(o.url), closed = !isOpen(o);
     return `<div class="lead opp ${fresh ? 'new' : ''} ${closed ? 'closed' : ''}"><span class="ic"><i class="fa-solid ${k[1]}"></i></span>
-      <div><b>${esc(o.title)}</b> <span class="pill ${o.kind === 'tender' ? 'gold' : ''}">${k[0]}</span> ${fresh ? '<span class="pill ok">جديد</span>' : ''}${closed ? ' <span class="pill gray">انتهى الموعد</span>' : ''}
+      <div><b>${esc(o.title)}</b> ${tag}<span class="pill ${o.kind === 'tender' ? 'gold' : ''}">${k[0]}</span> ${fresh ? '<span class="pill ok">جديد</span>' : ''}${closed ? ' <span class="pill gray">انتهى الموعد</span>' : ''}
         <div class="small muted">${o.org ? `${esc(o.org)} · ` : ''}${esc(o.site || host(o.url) || '')}${o.site || o.url ? ' · ' : ''}<span title="تاريخ النشر في المنصة"><i class="fa-regular fa-calendar"></i> نُشرت في ${fmtDate(o.ts)} (${ago(o.ts)})</span>${o.deadline ? ` · آخر موعد: <b>${fmtDate(o.deadline)}</b>` : ''}</div>
         ${o.desc ? `<p>${nl2br(o.desc)}</p>` : ''}
         ${u ? `<a class="nlink" href="${esc(u)}" target="_blank" rel="noopener nofollow">${/^https:\/\//.test(o.img || '') ? `<span class="nl-img"><img src="${esc(o.img)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('.nlink').classList.add('noimg');this.parentNode.remove()"></span>` : '<span class="nl-img ph"><i class="fa-solid fa-link"></i></span>'}<span class="nl-t"><b>${esc(o.lt || o.title)}</b>${o.ld ? `<small>${esc(o.ld)}</small>` : ''}<em dir="ltr">${esc(host(o.url))}</em></span></a>` : ''}
@@ -35,22 +36,16 @@ const Opps = (() => {
         ${o.note ? `<p class="small"><i class="fa-solid fa-circle-info"></i> <b>ملاحظة الإدارة:</b> ${nl2br(o.note)}</p>` : ''}</div>
       <div class="acts" style="flex-direction:column">${u ? `<a class="btn sm primary" href="${esc(u)}" target="_blank" rel="noopener nofollow"><i class="fa-solid fa-arrow-up-right-from-square"></i> فتح الأصل</a>` : ''}${/^\d{10,15}$/.test(o.wa || '') ? `<a class="btn sm" style="background:#25D366;color:#fff;border-color:#25D366" href="https://wa.me/${o.wa}" target="_blank" rel="noopener" title="تواصل عبر واتساب"><i class="fa-brands fa-whatsapp"></i> واتساب</a>` : ''}${/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(o.email || '') ? `<a class="btn sm" href="mailto:${esc(o.email)}" title="مراسلة بالبريد"><i class="fa-solid fa-envelope"></i> بريد</a>` : ''}</div></div>`;
   }
+  // «وظائف التدريب»: الوظائف المجلوبة آلياً فقط (الفرص العامة والإعلانات صارت في تبويب «طلبات عامة»)
   function tab(main, t) {
-    const sub = V.sub === 'jobs' ? 'jobs' : 'ads', sa = lsGet(kAds(t.id)), sj = lsGet(kJobs(t.id)), ua = unreadAds(t.id).length, uj = unreadJobs(t.id).length;
-    const list = approved().filter(isOpen), jl = liveJobs();
-    const sw = (k, ic, l, n) => `<button type="button" class="${sub === k ? 'on' : ''}" data-sub="${k}"><i class="${ic}"></i><span>${l}</span>${n ? `<b class="badge num">${n}</b>` : ''}</button>`;
-    main.innerHTML = `<div class="dash-h"><h2>إعلانات عبر الإنترنت</h2><span class="muted small">إعلانات عامة تبحث عن مدربين، تصلك من عدة مصادر</span></div>
-      <div class="opp-sub">${sw('ads', 'fa-solid fa-bullhorn', 'فرص تدريب عامة', ua)}${sw('jobs', 'fa-solid fa-briefcase', 'وظائف تدريب', uj)}</div>
-      <div class="banner info" style="margin-bottom:12px"><i class="fa-solid fa-circle-info"></i><span>هذه الفرص منقولة من مصادر عامة في الإنترنت ومنصات التواصل الاجتماعي، وبعضها يرسل لنا مباشرة. نحاول قدر الإمكان التحقق من صحة الإعلان وسلامة المصدر، ونهيب بجميع المدربين التحقق دائماً عند إجراء التعاملات عبر الإنترنت.</span></div>
-      ${sub === 'ads'
-        ? `<p class="muted small" style="margin:0 0 10px">إعلانات نعلنها نحن داخل المنصة بعد مراجعتها.</p>${list.length ? list.map(o => card(o, (o.ts || 0) > sa)).join('') : '<div class="empty"><i class="fa-solid fa-handshake-angle"></i><h3>لا توجد فرص حالياً</h3><p>حين تعتمد الإدارة فرصة جديدة تظهر هنا وتصلك بشارة.</p></div>'}`
-        : `<p class="muted small" style="margin:0 0 10px"><i class="fa-brands fa-google"></i> وظائف مدربين في السعودية تُجلب تلقائياً من Google Jobs (عربي وإنجليزي).</p><div class="banner warn" style="margin-bottom:10px"><i class="fa-solid fa-hourglass-half"></i><span><b>تنبيه:</b> الوظائف المعلنة تُمسح من هذه الصفحة بعد مرور 45 يوماً على إضافتها، فبادر بالتقديم قبل ذلك.</span></div>${jl.length ? jl.map(j => jobCard(j, (j.ts || 0) > sj)).join('') : '<div class="empty"><i class="fa-solid fa-briefcase"></i><h3>لا توجد وظائف حالياً</h3><p>تظهر هنا الوظائف الجديدة تلقائياً.</p></div>'}`}`;
-    $$('[data-sub]', main).forEach(b => b.onclick = () => { V.sub = b.dataset.sub; tab(main, t); });
-    // نعدّ ما في القسم المفتوح مقروءاً، ونحدّث الشارات دون إعادة رسم الصفحة
-    if (sub === 'ads') lsSet(kAds(t.id), Math.max(0, ...approved().map(o => o.ts || 0))); else lsSet(kJobs(t.id), Math.max(0, ...liveJobs().map(o => o.ts || 0)));
-    $$('.opp-sub [data-sub="' + sub + '"] .badge', main).forEach(x => x.remove());
-    const rest = unread(t.id).length, pb = $('[data-tab="opps"] .badge');
-    if (!rest) pb && pb.remove(); else if (pb) pb.textContent = rest;
+    const sj = lsGet(kJobs(t.id)), jl = liveJobs();
+    main.innerHTML = `<div class="dash-h"><h2>وظائف التدريب</h2><span class="muted small">وظائف مدربين في السعودية تُجلب تلقائياً من عدة مصادر عبر الإنترنت</span></div>
+      <div class="banner warn" style="margin-bottom:10px"><i class="fa-solid fa-hourglass-half"></i><span><b>تنبيه:</b> الوظائف المعلنة تُمسح من هذه الصفحة بعد مرور 45 يوماً على إضافتها، فبادر بالتقديم قبل ذلك.</span></div>
+      <div class="banner info" style="margin-bottom:12px"><i class="fa-solid fa-circle-info"></i><span>هذه الوظائف منقولة من مصادر عامة في الإنترنت دون مراجعة فردية. نحاول التحقق من المصدر، ونهيب بالمدربين التحقق دائماً قبل أي تعامل عبر الإنترنت.</span></div>
+      ${jl.length ? jl.map(j => jobCard(j, (j.ts || 0) > sj)).join('') : '<div class="empty"><i class="fa-solid fa-briefcase"></i><h3>لا توجد وظائف حالياً</h3><p>تُضاف الوظائف الجديدة تلقائياً وتصلك بشارة.</p></div>'}`;
+    lsSet(kJobs(t.id), Math.max(0, ...jl.map(o => o.ts || 0)));
+    const pb = $('[data-tab="opps"] .badge'); pb && pb.remove();
+    // شارة الأيقونة والتبويب الآخر تتحدّث عند أول رسم لاحق
   }
   function jobCard(j, fresh) {
     const u = safeUrl(j.url);
@@ -223,5 +218,5 @@ const Opps = (() => {
     $$('[data-jx]', main).forEach(b => b.onclick = () => saveCsv(`وظائف-التدريب-${b.dataset.jx}.csv`, jobRows(jl.filter(j => ymKey(j.ts) === b.dataset.jx))));
   }
 
-  return { approved, inbox, unread, tab, admin, adminOpps, statsHtml, exportAll, exportMonths, ymName };
+  return { approved, inbox, unread, tab, admin, adminOpps, statsHtml, exportAll, exportMonths, ymName, card, unreadAds, unreadJobs, markAdsSeen };
 })();

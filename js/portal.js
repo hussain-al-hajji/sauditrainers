@@ -10,10 +10,10 @@ Pages.me = {
     const leads = Store.list('leads').filter(l => l.trainerId === t.id);
     const fresh = leads.filter(l => l.status === 'new').length;
     const bcNew = Broadcast.unread(t.id).length;
-    const tabs = [['home', 'fa-id-card', 'بطاقتي'], ['edit', 'fa-pen-to-square', 'تعديل البيانات'], ['leads', 'fa-inbox', 'طلبات موجهة لك', fresh], ['bc', 'fa-bullhorn', 'طلبات عامة', bcNew]];
+    const tabs = [['home', 'fa-id-card', 'بطاقتي'], ['edit', 'fa-pen-to-square', 'تعديل البيانات'], ['leads', 'fa-inbox', 'طلبات موجهة لك', fresh], ['bc', 'fa-bullhorn', 'طلبات عامة', bcNew + Opps.unreadAds(t.id).length]];
     const annNew = News.unread(t.id).length;
     try { Push.setBadge(fresh + bcNew + Broadcast.noticesNew(t.id) + annNew + Opps.unread(t.id).length + Library.unread(t.id) + Reviews.unread(t.id)); } catch { /* ignore */ }
-    tabs.push(['opps', 'fa-handshake-angle', 'إعلانات عبر الإنترنت', Opps.unread(t.id).length]);
+    tabs.push(['opps', 'fa-briefcase', 'وظائف التدريب', Opps.unreadJobs(t.id).length]);
     if (featureOn('news')) tabs.push(['news', 'fa-newspaper', 'أخباري']);
     tabs.push(['vid', 'fa-circle-play', 'نماذج الفيديو']);
     tabs.push(['lib', 'fa-book-open', 'مكتبة المدرب', Library.unread(t.id)]);

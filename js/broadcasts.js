@@ -18,7 +18,7 @@ const Broadcast = (() => {
     const hasContact = b.contact && (b.phone || b.email || b.person);
     return `<div class="lead bc">
       <span class="ic"><i class="fa-solid fa-bullhorn"></i></span>
-      <div><b>${esc(b.org || 'جهة تدريبية')}</b> <span class="pill gold">من الإدارة</span> <small class="muted">${ago(b.ts)}</small>
+      <div><b>${esc(b.org || 'جهة تدريبية')}</b> <span class="pill gold">طلب جهة · أُعيد توجيهه للمدربين</span> <small class="muted">${ago(b.ts)}</small>
         <p><b>الموضوع:</b> ${esc(b.topic)}${b.spec ? ` · <b>التخصص:</b> ${esc(specName(b.spec))}` : ''}${b.region ? ` · <b>المنطقة:</b> ${esc(regionName(b.region))}` : ''}${b.size ? ` · <b class="num">${esc(b.size)}</b> متدرب` : ''}${b.when ? ` · <b>الموعد:</b> ${esc(b.when)}` : ''}</p>
         ${b.msg ? `<p>${nl2br(b.msg)}</p>` : ''}
         ${b.note ? `<p class="small"><i class="fa-solid fa-circle-info"></i> <b>ملاحظة الإدارة:</b> ${nl2br(b.note)}</p>` : ''}
@@ -32,14 +32,21 @@ const Broadcast = (() => {
     </div>`;
   }
 
-  /* ---------- تبويب «طلبات عامة» ---------- */
+  /* ---------- تبويب «طلبات عامة»: كل الإعلانات في مكان واحد ----------
+   * (1) طلبات جهات وصلت المنصة وأعادت الإدارة توجيهها للمدربين، (2) فرص وإعلانات تنشرها الإدارة من محتوى الإنترنت. */
+  const V = { f: 'all' };
   function tab(main, t) {
-    const list = all(), fresh = unread(t.id).length;
-    main.innerHTML = `<div class="dash-h"><h2>طلبات عامة</h2><span class="muted small">طلبات جهات تدريبية أعادت الإدارة توجيهها لكل المدربين${fresh ? ` · ${fresh} جديد` : ''}</span></div>
-      ${list.length ? list.map(b => card(b, t)).join('') : '<div class="empty"><i class="fa-solid fa-bullhorn"></i><h3>لا توجد طلبات عامة بعد</h3><p>حين تعيد الإدارة توجيه طلب من جهة تدريبية إلى المدربين يظهر هنا ويُحفظ.</p></div>'}`;
-    markSeen(t.id);
+    const adIds = new Set(Opps.unreadAds(t.id).map(o => o.id)), bcSeen = seenTs(t.id), fresh = unread(t.id).length + adIds.size;
+    const items = [...all().map(b => ({ k: 'req', ts: b.ts || 0, b })), ...Opps.approved().map(o => ({ k: 'net', ts: o.ts || 0, o }))].filter(x => V.f === 'all' || x.k === V.f).sort((a, b) => b.ts - a.ts);
+    const nReq = all().length, nNet = Opps.approved().length;
+    const chip = (k, l, n) => `<button type="button" class="chip ${V.f === k ? 'on' : ''}" data-f="${k}">${l} <small class="num">(${n})</small></button>`;
+    main.innerHTML = `<div class="dash-h"><h2>طلبات عامة</h2><span class="muted small">طلبات جهات أعادت الإدارة توجيهها لكل المدربين، وإعلانات تنشرها الإدارة من محتوى الإنترنت${fresh ? ` · ${fresh} جديد` : ''}</span></div>
+      <div class="chips" style="margin-bottom:12px">${chip('all', 'الكل', nReq + nNet)}${chip('req', '<i class="fa-solid fa-bullhorn"></i> طلبات الجهات', nReq)}${chip('net', '<i class="fa-solid fa-globe"></i> من محتوى الإنترنت', nNet)}</div>
+      ${items.length ? items.map(x => (x.k === 'req' ? card(x.b, t).replace('class="lead bc"', `class="lead bc ${(x.b.ts || 0) > bcSeen ? 'new' : ''}"`) : Opps.card(x.o, adIds.has(x.o.id), '<span class="pill info"><i class="fa-solid fa-globe"></i> من محتوى الإنترنت</span> '))).join('') : '<div class="empty"><i class="fa-solid fa-bullhorn"></i><h3>لا توجد إعلانات بعد</h3><p>تظهر هنا طلبات الجهات التي تعيد الإدارة توجيهها، والإعلانات التي تنشرها من الإنترنت، وتبقى محفوظة.</p></div>'}`;
+    $$('[data-f]', main).forEach(b => b.onclick = () => { V.f = b.dataset.f; tab(main, t); });
+    markSeen(t.id); Opps.markAdsSeen(t.id);
     // تحديث الشارات فوراً دون إعادة رسم الصفحة
-    $$('[data-tab="bc"] .badge').forEach(x => x.remove());
+    $$('[data-tab="bc"] .badge', document).forEach(x => x.remove());
     const bell = $('#bell'), n = Store.list('leads').filter(l => l.trainerId === t.id && l.status === 'new').length + noticesNew(t.id);
     if (bell) { bell.querySelector('.bdg')?.remove(); if (n) bell.insertAdjacentHTML('beforeend', `<span class="bdg num">${n}</span>`); }
   }
