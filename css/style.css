@@ -664,12 +664,13 @@ input[type=range] { accent-color: var(--g700); width: 100%; }
 .ord-track { display: flex; gap: 14px; width: max-content; animation: marq var(--dur, 40s) linear infinite; }
 .ord-slider:hover .ord-track { animation-play-state: paused; }
 .ord-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
-.ord { position: relative; isolation: isolate; width: 220px; aspect-ratio: 1; flex: none; border-radius: 24px; padding: 18px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; color: #fff;
+.ord { position: relative; isolation: isolate; width: 250px; min-height: 250px; flex: none; border-radius: 24px; padding: 18px; display: flex; flex-direction: column; gap: 6px; overflow: hidden; color: #fff;
   background: radial-gradient(120% 90% at 85% 0%, rgba(35,163,101,.55), transparent 60%), linear-gradient(150deg, var(--g800), var(--g950)); box-shadow: 0 18px 40px -20px rgba(0,26,14,.6); }
 .ord-grid .ord { width: auto; }
 .ord::before { content: ''; position: absolute; inset: 0; background: var(--pat); background-size: 260px; z-index: -1; }
 .ord-ic { width: 46px; height: 46px; border-radius: 14px; display: grid; place-content: center; background: var(--gold2); color: var(--g800); font-size: 1.15rem; margin-bottom: 4px; }
-.ord b { font-family: var(--f-display); font-size: 1.05rem; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.ord b { font-family: var(--f-display); font-size: 1.05rem; line-height: 1.5; display: block; overflow-wrap: anywhere; }
+.ord b.long { font-size: .95rem; line-height: 1.55; }
 .ord small { color: var(--gold); font-family: var(--f-ui); font-size: .82rem; }
 .ord-tr { font-family: var(--f-ui); font-size: .76rem; color: rgba(255,255,255,.8); }
 .ord-tr i, .ord-meta i { color: var(--gold); margin-inline-end: 4px; }

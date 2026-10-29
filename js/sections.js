@@ -165,7 +165,7 @@ const SECTION_TYPES = (() => {
       if (!list.length) return '';
       const tile = x => `<article class="ord" style="--pat:${Pattern.css('#EEF3E5', 0.12)}">
         <span class="ord-ic"><i class="fa-solid ${specOf(x.spec)?.icon || 'fa-chalkboard-user'}"></i></span>
-        <b>${esc(x.title)}</b>
+        <b class="${String(x.title).length > 48 ? 'long' : ''}">${esc(x.title)}</b>
         <small>${esc(x.org || 'جهة تدريبية')}</small>
         ${x.trainerName ? `<span class="ord-tr"><i class="fa-solid fa-user-tie"></i>${esc(x.trainerName)}</span>` : ''}
         <span class="ord-meta">${(x.city || x.region) ? `<span><i class="fa-solid ${x.city === 'عن بعد' ? 'fa-laptop' : 'fa-location-dot'}"></i>${esc(x.city || regionName(x.region))}</span>` : ''}<span><i class="fa-regular fa-calendar"></i>${esc(monthName(x.ts))}</span></span>
