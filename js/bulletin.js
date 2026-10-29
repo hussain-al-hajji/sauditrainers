@@ -132,13 +132,13 @@ const Bulletin = (() => {
   }
 
   /* ---------- هيكل الصفحات ---------- */
-  function chrome(ctx, i, total, from, to) {
+  function chrome(ctx, i, total, from, to, title = 'نشرة المدربين') {
     frameBg(ctx, false);
     const g = ctx.createLinearGradient(0, 0, W, 150); g.addColorStop(0, C.g950); g.addColorStop(1, C.g800); ctx.fillStyle = g; ctx.fillRect(0, 0, W, 150);
     try { ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, 150); ctx.clip(); ctx.fillStyle = ctx.createPattern(K().patternTile(C.sage, 0.1), 'repeat'); ctx.fillRect(0, 0, W, 150); ctx.restore(); } catch { /* */ }
     ctx.fillStyle = C.sage; ctx.fillRect(0, 150, W, 6);
     if (chrome.logo) { const lh = 74, lw = lh * chrome.logo.width / chrome.logo.height; ctx.drawImage(chrome.logo, W - PX - lw, 38, lw, lh); }
-    txt(ctx, 'نشرة المدربين', PX + 0, 76, { font: `900 44px ${FONT.head}`, color: '#fff', align: 'left' });
+    txt(ctx, title, PX + 0, 76, { font: `900 44px ${FONT.head}`, color: '#fff', align: 'left' });
     txt(ctx, rangeTxt(from, to), PX, 118, { font: `600 24px ${FONT.body}`, color: C.sage, align: 'left' });
     // التذييل
     ctx.fillStyle = C.line; ctx.fillRect(PX, H - 92, CW, 2);
@@ -387,5 +387,125 @@ const Bulletin = (() => {
     $$('.bl-th', m.el).forEach(b => b.onclick = () => busy(b, async () => { const i = +b.dataset.i; deliver(new Blob([await toPng(cvs[i])], { type: 'image/png' }), `${base}-${String(i + 1).padStart(2, '0')}.png`); }));
   }
 
-  return { make, build, zip, pdf, limit, og, deliver };
+  /* ---------- «التقرير الشهري»: غلاف ← أرقام الشهر ← موضوعات مطلوبة ← أخبار الشهر ← 3 بطاقات مزايا ← دعوة للتسجيل ---------- */
+  const RPT_CARDS = [
+    { ic: '', k: 'بطاقتك التعريفية', t: 'صفحة مهنية وبطاقة تعريفية باسمك', pts: ['رابط مختصر وبطاقة جاهزة للمشاركة', 'تظهر في دليل المدربين مع التخصص والمنطقة', 'تُثبَّت في الواجهة الرئيسية ليوم كامل'] },
+    { ic: '', k: 'فرص مباشرة', t: 'طلبات تدريب ووظائف تصلك مباشرة', pts: ['طلبات الجهات تُعاد توجيهها للمدربين', 'وظائف تدريب تُجلب آلياً وتصلك أولاً بأول', 'تنبيهات فورية على جوالك'] },
+    { ic: '', k: 'ظهور وأثر', t: 'أخبارك وإنجازاتك أمام الجهات', pts: ['تنشر أخبارك وتُصدَّر صوراً للسوشيال', 'توصيات وفيديوهات تعزّز ثقة الجهات', 'مكتبة قوالب وأدلة لعملك التدريبي'] }
+  ];
+  function rptCover(ctx, d) {
+    frameBg(ctx, true);
+    const glow = ctx.createRadialGradient(W * 0.2, H * 0.78, 20, W * 0.2, H * 0.78, W * 0.9); glow.addColorStop(0, 'rgba(35,163,101,.35)'); glow.addColorStop(1, 'rgba(35,163,101,0)'); ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = 'rgba(201,218,180,.16)'; ctx.lineWidth = 2; [260, 360, 460, 560].forEach(r => { ctx.beginPath(); ctx.arc(-40, H + 40, r, 0, Math.PI * 2); ctx.stroke(); });
+    const M = 38; ctx.strokeStyle = 'rgba(201,218,180,.8)'; ctx.lineWidth = 3; K().rr(ctx, M, M, W - 2 * M, H - 2 * M, 44); ctx.stroke();
+    if (chrome.logo) { const lh = 130, lw = lh * chrome.logo.width / chrome.logo.height; ctx.drawImage(chrome.logo, W - 100 - lw, 100, lw, lh); }
+    pill(ctx, 'حصاد المنصة', 100 + 200, 165, { bg: 'rgba(238,243,229,.14)', fg: C.cream, fs: 26 });
+    txt(ctx, 'التقرير', W - 100, 470, { font: `900 120px ${FONT.head}`, color: C.sage });
+    txt(ctx, 'الشهري', W - 100, 610, { font: `900 170px ${FONT.head}`, color: '#fff' });
+    ctx.fillStyle = C.sage; ctx.fillRect(W - 100 - 150, 650, 150, 8);
+    txt(ctx, 'أرقام وفرص وأخبار منصة', W - 100, 730, { font: `600 38px ${FONT.body}`, color: C.cream });
+    txt(ctx, 'مدرّبون سعوديّون', W - 100, 786, { font: `600 38px ${FONT.body}`, color: C.cream });
+    ctx.font = `800 40px ${FONT.body}`; const w = ctx.measureText(d.mname).width + 80; rrect(ctx, W - 100 - w, 830, w, 80, 40, 'rgba(238,243,229,.12)', 'rgba(201,218,180,.55)'); txt(ctx, d.mname, W - 100 - w / 2, 884, { font: ctx.font, color: C.cream, align: 'center' });
+    [[d.stats[0].num, 'زيارة للمنصة'], [d.stats[2].num, 'فرصة تعاون'], [d.stats[3].num, 'وظيفة']].forEach(([v, l], i) => { const x = W - 100 - i * 300; txt(ctx, String(v), x, 1180, { font: `900 74px ${FONT.head}`, color: '#fff', align: 'right', dir: 'ltr' }); txt(ctx, l, x, 1230, { font: `600 30px ${FONT.body}`, color: C.sage }); });
+    txt(ctx, 'sauditrainers.sa', 100, 1240, { font: `800 34px ${FONT.brand}`, color: C.cream, align: 'left', dir: 'ltr' });
+  }
+  function rptStats(ctx, d) {
+    const n = d.stats.length, gap = 24, h = Math.min(250, (BOT - TOP - 70 - (n - 1) * gap) / n);
+    txt(ctx, `أرقام المنصة في شهر ${d.mname}`, W - PX, TOP + 36, { font: `900 44px ${FONT.head}`, color: C.g900 });
+    d.stats.forEach((s, i) => {
+      const y = TOP + 70 + i * (h + gap), R = W - PX - 40;
+      rrect(ctx, PX, y, CW, h, 30, '#fff', C.line, 1.5); rrect(ctx, W - PX - 14, y + 26, 8, h - 52, 4, C.g800);
+      const nf = fitFont(ctx, s.num, 900, 120, 60, 330, FONT.head);
+      txt(ctx, s.num, PX + 50, y + h / 2 + nf * 0.34, { font: `900 ${nf}px ${FONT.head}`, color: C.g800, align: 'left', dir: 'ltr' });
+      const tw = CW - 400 - 60; ctx.font = `800 34px ${FONT.body}`; const tl = K().wrap(ctx, s.label, tw, 2);
+      ctx.font = `400 25px ${FONT.body}`; const nl = s.note ? K().wrap(ctx, s.note, tw, 3) : [];
+      let cy = y + (h - (tl.length * 46 + (nl.length ? 8 + nl.length * 36 : 0))) / 2;
+      tl.forEach(l => { cy += 46; txt(ctx, l, R, cy - 10, { font: `800 34px ${FONT.body}`, color: C.g900 }); });
+      if (nl.length) { cy += 8; nl.forEach(l => { cy += 36; txt(ctx, l, R, cy - 8, { font: `400 25px ${FONT.body}`, color: C.ink2 }); }); }
+    });
+  }
+  function rptTopicPages(ctx, titles) {
+    const rows = titles.map(t => { ctx.font = `700 29px ${FONT.body}`; const l = K().wrap(ctx, t.c, CW - 280, 2); return { ...t, l, h: 50 + l.length * 38 }; });
+    const pages = []; let cur = null, used = 0;
+    rows.forEach(r => { if (!cur || used + r.h + 14 > BOT - TOP - 84) { cur = []; pages.push(cur); used = 0; } cur.push(r); used += r.h + 14; });
+    return pages;
+  }
+  function rptTopics(ctx, rows, first, total, d) {
+    txt(ctx, first ? 'مجالات وموضوعات التدريب المطلوبة' : 'المجالات المطلوبة (تابع)', W - PX, TOP + 36, { font: `900 44px ${FONT.head}`, color: C.g900 });
+    if (first) txt(ctx, `الأكثر طلباً في ${d.mname} (${total} موضوعاً)`, W - PX, TOP + 82, { font: `500 26px ${FONT.body}`, color: C.muted });
+    let y = TOP + 84 + (first ? 6 : 0), idx = rows.start;
+    rows.forEach(r => {
+      rrect(ctx, PX, y, CW, r.h, 24, '#fff', C.line, 1.5);
+      const cx = W - PX - 46; ctx.beginPath(); ctx.arc(cx, y + r.h / 2, 24, 0, Math.PI * 2); ctx.fillStyle = C.g100; ctx.fill();
+      txt(ctx, String(++idx), cx, y + r.h / 2 + 9, { font: `900 24px ${FONT.body}`, color: C.g800, align: 'center', dir: 'ltr' });
+      const top = y + (r.h - r.l.length * 38) / 2;
+      r.l.forEach((l, i) => txt(ctx, l, cx - 44, top + 38 * (i + 1) - 9, { font: `700 29px ${FONT.body}`, color: C.ink }));
+      if (r.n > 0) pill(ctx, `${r.n.toLocaleString('en-US')} ${r.n === 1 ? 'فرصة' : 'فرص'}`, PX + 24 + 130, y + r.h / 2, { bg: C.g100, fg: C.g800, fs: 24 });
+      y += r.h + 14;
+    });
+  }
+  function rptCard(ctx, c, i) {
+    frameBg(ctx, true);
+    const glow = ctx.createRadialGradient(W * 0.15, H * 0.2, 20, W * 0.15, H * 0.2, W * 0.9); glow.addColorStop(0, 'rgba(35,163,101,.35)'); glow.addColorStop(1, 'rgba(35,163,101,0)'); ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
+    const M = 38; ctx.strokeStyle = 'rgba(201,218,180,.8)'; ctx.lineWidth = 3; K().rr(ctx, M, M, W - 2 * M, H - 2 * M, 44); ctx.stroke();
+    if (chrome.logo) { const lh = 84, lw = lh * chrome.logo.width / chrome.logo.height; ctx.drawImage(chrome.logo, W - 90 - lw, 82, lw, lh); }
+    pill(ctx, `من مزايا المنصة · ${i + 1} / ${RPT_CARDS.length}`, 90 + 290, 124, { bg: 'rgba(238,243,229,.14)', fg: C.cream, fs: 26 });
+    const cx = W / 2, cy = 400;
+    ctx.beginPath(); ctx.arc(cx, cy, 170, 0, Math.PI * 2); ctx.fillStyle = 'rgba(238,243,229,.10)'; ctx.fill(); ctx.strokeStyle = 'rgba(201,218,180,.35)'; ctx.lineWidth = 3; ctx.stroke();
+    ctx.beginPath(); ctx.arc(cx, cy, 120, 0, Math.PI * 2); ctx.fillStyle = C.cream; ctx.fill();
+    ctx.save(); ctx.font = '900 110px "Font Awesome 6 Free"'; ctx.fillStyle = C.g800; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'ltr'; ctx.fillText(c.ic, cx, cy + 4); ctx.restore();
+    txt(ctx, c.k, cx, 690, { font: `900 96px ${FONT.head}`, color: '#fff', align: 'center' });
+    ctx.fillStyle = C.sage; ctx.fillRect(cx - 75, 724, 150, 7);
+    ctx.font = `600 38px ${FONT.body}`; K().wrap(ctx, c.t, W - 240, 2).forEach((l, k) => txt(ctx, l, cx, 800 + k * 54, { font: ctx.font, color: C.cream, align: 'center' }));
+    c.pts.forEach((p, k) => {
+      const y = 880 + k * 118; rrect(ctx, 90, y, W - 180, 100, 26, 'rgba(238,243,229,.10)', 'rgba(201,218,180,.32)');
+      ctx.beginPath(); ctx.arc(W - 90 - 50, y + 50, 22, 0, Math.PI * 2); ctx.fillStyle = C.sage; ctx.fill();
+      ctx.save(); ctx.font = '900 24px "Font Awesome 6 Free"'; ctx.fillStyle = C.g900; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'ltr'; ctx.fillText('', W - 90 - 50, y + 52); ctx.restore();
+      ctx.font = `700 30px ${FONT.body}`; txt(ctx, K().wrap(ctx, p, W - 180 - 160, 1)[0], W - 90 - 94, y + 62, { font: ctx.font, color: '#fff' });
+    });
+    txt(ctx, 'sauditrainers.sa', cx, H - 70, { font: `800 30px ${FONT.brand}`, color: C.cream, align: 'center', dir: 'ltr' });
+  }
+  async function reportBuild(d) {
+    await prepare(); await K().ensureQR();
+    try { await document.fonts.load('900 32px "Font Awesome 6 Free"'); } catch { /* ignore */ }
+    chrome.logo = await K().loadImage(LOGO.cream);
+    const map = new Map();
+    [...d.news].sort((a, b) => (b.ts || 0) - (a.ts || 0)).forEach(n => { const t = Store.get(`trainers/${n.trainerId}`); if (!t) return; if (!map.has(t.id)) map.set(t.id, { t, items: [] }); map.get(t.id).items.push(n); });
+    const groups = [...map.values()], photos = new Map();
+    await Promise.all(groups.map(async g => photos.set(g.t.id, g.t.noPhoto ? null : await K().loadImage(Data.photo(g.t)))));
+    const attempt = () => {
+      const mk = () => { const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const c = cv.getContext('2d'); c.direction = 'rtl'; c.textAlign = 'right'; c.__links = cv.__links = []; return [cv, c]; };
+      const mc = mk()[1], tp = rptTopicPages(mc, d.titles), npages = groups.length ? paginate(mc, groups, 'compact') : [];
+      const total = 2 + tp.length + npages.length + RPT_CARDS.length + 1, out = []; let n = 1; let [cv, c] = mk();
+      rptCover(c, d); out.push(cv);
+      [cv, c] = mk(); chrome(c, ++n, total, 0, 0, 'التقرير الشهري'); txtMonth(c, d); rptStats(c, d); out.push(cv);
+      let start = 0; tp.forEach((rows, i) => { [cv, c] = mk(); chrome(c, ++n, total, 0, 0, 'التقرير الشهري'); txtMonth(c, d); rows.start = start; start += rows.length; rptTopics(c, rows, i === 0, d.titles.length, d); out.push(cv); });
+      npages.forEach(secs => {
+        [cv, c] = mk(); chrome(c, ++n, total, 0, 0, 'التقرير الشهري'); txtMonth(c, d);
+        let y = TOP; txt(c, `أخبار المدربين في ${d.mname}`, W - PX, y + 36, { font: `900 40px ${FONT.head}`, color: C.g900 });
+        secs.forEach(sec => { y = TOP + 56 + (sec.y || 0); const hh = drawHeader(c, sec.t, photos.get(sec.t.id), PX, y, sec.cont, false, sec.H); y += hh + 14; sec.L.forEach(L => { drawItem(c, L, PX, y); y += L.h + 14; }); });
+        out.push(cv);
+      });
+      RPT_CARDS.forEach((cd, i) => { [cv, c] = mk(); rptCard(c, cd, i); out.push(cv); });
+      [cv, c] = mk(); promo(c); out.push(cv);
+      return out;
+    };
+    const ok = cvs => { try { cvs.forEach(cv => cv.getContext('2d').getImageData(0, 0, 1, 1)); return true; } catch { return false; } };
+    usePhotos = true; let cvs = attempt();
+    if (!ok(cvs)) { usePhotos = false; cvs = attempt(); usePhotos = true; if (!ok(cvs)) throw new Error('تعذّر تصدير الصور'); }
+    return cvs;
+  }
+  const txtMonth = (ctx, d) => txt(ctx, d.mname, PX, 118, { font: `600 24px ${FONT.body}`, color: C.sage, align: 'left' });
+  async function report(d) {
+    toast('جارٍ تصميم التقرير الشهري…');
+    let cvs; try { cvs = await reportBuild(d); } catch (e) { console.error(e); return toast(`تعذّر إنشاء التقرير: ${e.message || e}`, 'error'); }
+    const base = `sauditrainers-monthly-${d.ym}`, thumbs = cvs.map(cv => cv.toDataURL('image/jpeg', 0.55));
+    const m = modal(`<h3><i class="fa-solid fa-file-pdf"></i> التقرير الشهري جاهز (${cvs.length} صفحة)</h3>
+      <div class="bl-grid">${thumbs.map((s, i) => `<button type="button" class="bl-th" data-i="${i}" title="تنزيل الصفحة ${i + 1}"><img src="${s}" alt="صفحة ${i + 1}"><span>${i + 1}</span></button>`).join('')}</div>
+      <div class="row" style="gap:8px;margin-top:12px;flex-wrap:wrap"><button class="btn primary" data-pdf><i class="fa-solid fa-file-pdf"></i> ملف PDF</button><button class="btn" data-close>إغلاق</button></div>`);
+    $('[data-pdf]', m.el).onclick = async e => { const b = e.currentTarget, h = b.innerHTML; b.disabled = true; b.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ التجهيز'; try { await deliver(pdf(cvs), `${base}.pdf`); } catch (x) { console.error(x); toast('تعذّر التصدير', 'error'); } b.disabled = false; b.innerHTML = h; };
+    $$('.bl-th', m.el).forEach(b => b.onclick = async () => { const i = +b.dataset.i; deliver(new Blob([await toPng(cvs[i])], { type: 'image/png' }), `${base}-${String(i + 1).padStart(2, '0')}.png`); });
+  }
+
+  return { make, build, zip, pdf, limit, og, deliver, report, reportBuild };
 })();

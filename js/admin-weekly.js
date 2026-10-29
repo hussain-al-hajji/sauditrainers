@@ -220,4 +220,29 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     $('#mm-gen', body).onclick = () => { const r = read(); Object.assign(U, r); save(r); U.doc = buildMonthly(r); show(U.doc); };
     if (U.doc) show(U.doc);
   };
+
+  // بيانات التقرير الشهري (PDF): هي نفسها أرقام الرسالة الشهرية لغير المسجلين حتى لا يختلف الرقم بين الموضعين
+  function reportData(ym) {
+    const mname = ymLabel(ym), last = new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0).getDate();
+    const T = homeStatTexts(), st = Store.get(`stats/month/${ym}`) || {}, comp = MonthStats.compute()[ym] || {};
+    const opp = Math.max(Number(st.requests) || 0, comp.requests || 0) + Math.max(Number(st.ads) || 0, comp.ads || 0), jobs = Math.max(Number(st.jobs) || 0, comp.jobs || 0);
+    const seen = new Map(), titles = [];
+    Store.list('showcase').filter(x => ymOfTs(x.ts) === ym).sort((a, b) => (b.ts || 0) - (a.ts || 0)).forEach(x => { const c = clean(x.title).replace(/\s+/g, ' '), k = c.toLowerCase(); if (!c) return; if (seen.has(k)) { seen.get(k).n += Number(x.n) || 0; return; } const o = { c, n: Number(x.n) || 0 }; seen.set(k, o); titles.push(o); });
+    titles.sort((a, b) => b.n - a.n);
+    return { ym, mname, titles, news: newsOf(`${ym}-01`, `${ym}-${String(last).padStart(2, '0')}`), stats: [
+      { num: num(monthVisits(ym)), label: `زيارات المنصة خلال شهر ${mname}` },
+      { num: num(platformVisitsTotal()), label: `إجمالي زيارات المنصة حتى ${fmt(Date.now())}` },
+      { num: num(opp), label: clean(T.lReq), note: clean(T.tReq) },
+      { num: num(jobs), label: clean(T.lJobs), note: clean(T.tJobs) }] };
+  }
+  window.mailMonthlyReport = function (body) {
+    const U = MonthlyUI; if (!U.ym) U.ym = prevMonth();
+    const months = [...new Set([U.ym, ...monthOptions()])].sort().reverse();
+    body.innerHTML = `<div class="pbox"><h3><i class="fa-solid fa-file-pdf"></i> التقرير الشهري (PDF)</h3>
+      <p class="small muted">ملف PDF بتصميم نشرة المدربين عن الشهر المختار، ومحتواه نفس الرسالة الشهرية لغير المسجلين: زيارات الشهر والإجمالي، فرص التعاون والوظائف، الموضوعات المطلوبة بعدد فرصها، أخبار المدربين، ثم ثلاث بطاقات لأهم المزايا وصفحة ختامية بدعوة للتسجيل.</p>
+      <div class="bl-bar"><label>الشهر<select id="mr-ym">${months.map(m => `<option value="${m}" ${m === U.ym ? 'selected' : ''}>${esc(ymLabel(m))}</option>`).join('')}</select></label>
+        <button class="btn primary" id="mr-gen"><i class="fa-solid fa-wand-magic-sparkles"></i> توليد التقرير</button></div></div>`;
+    $('#mr-ym', body).onchange = e => { U.ym = e.target.value; };
+    $('#mr-gen', body).onclick = () => { U.ym = $('#mr-ym', body).value; Bulletin.report(reportData(U.ym)); };
+  };
 })();
