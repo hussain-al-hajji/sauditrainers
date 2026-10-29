@@ -176,6 +176,31 @@ const SECTION_TYPES = (() => {
     let loop = [...list]; while (loop.length < 8) loop = loop.concat(list);
     return `<div class="ord-slider" aria-label="${esc(d.title)}"><div class="ord-track" style="--dur:${loop.length * 4}s">${[...loop, ...loop].map(ordTile).join('')}</div></div>`;
   };
+  // شريط «من طلبات هذا الشهر»: يتحرك تلقائياً، ويُسحب بالإصبع/الفأرة يميناً ويساراً ويكمل حركته بعد رفع الإصبع بقوة السحب ثم يعود لسرعته
+  function ordSlide(root) {
+    const sl = root.querySelector('.ord-slider'), tr = sl && sl.querySelector('.ord-track');
+    if (!sl || !tr || sl.__on || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    sl.__on = true; tr.style.animation = 'none'; sl.classList.add('drag');
+    let x = 0, inert = 0, down = false, lx = 0, lt = 0, vel = 0, hover = false, prev = performance.now();
+    const half = () => tr.scrollWidth / 2, speed = () => { const dur = parseFloat(getComputedStyle(tr).getPropertyValue('--dur')) || 40; return half() / dur; };
+    const wrap = () => { const h = half(); if (h > 0) x = ((x % h) + h) % h; };
+    const frame = now => {
+      if (!sl.isConnected) return;
+      const dt = Math.min(0.05, (now - prev) / 1000); prev = now;
+      if (!down && !document.hidden) { x += ((hover ? 0 : speed()) + inert) * dt; inert *= Math.pow(0.04, dt); if (Math.abs(inert) < 1) inert = 0; }
+      wrap(); tr.style.transform = `translateX(${x.toFixed(1)}px)`; requestAnimationFrame(frame);
+    };
+    sl.addEventListener('pointerdown', e => { down = true; lx = e.clientX; lt = performance.now(); vel = 0; inert = 0; try { sl.setPointerCapture(e.pointerId); } catch { /* ignore */ } });
+    sl.addEventListener('pointermove', e => {
+      if (e.pointerType === 'mouse') hover = true;
+      if (!down) return; const t = performance.now(), dx = e.clientX - lx, dt = Math.max(1, t - lt) / 1000;
+      x += dx; vel = vel * 0.6 + (dx / dt) * 0.4; lx = e.clientX; lt = t;
+    });
+    const up = () => { if (!down) return; down = false; inert = Math.max(-3500, Math.min(3500, vel)); if (performance.now() - lt > 120) inert = 0; };
+    sl.addEventListener('pointerup', up); sl.addEventListener('pointercancel', up);
+    sl.addEventListener('pointerleave', e => { if (e.pointerType === 'mouse') hover = false; });
+    requestAnimationFrame(frame);
+  }
   T.orders = {
     name: 'من طلبات هذا الشهر', icon: 'fa-table-cells-large',
     tpls: [['slider', 'مربعات متحركة'], ['grid', 'مربعات ثابتة']],
@@ -190,10 +215,11 @@ const SECTION_TYPES = (() => {
     view: { ym: null },
     mount(el, sec) {
       const d = { ...T.orders.def(), ...(sec.d || {}) };
+      ordSlide(el);
       el.querySelectorAll('.ord-chips [data-ym]').forEach(b => b.onclick = () => {
         const st = ordState(), ym = b.dataset.ym; T.orders.view.ym = ym === st.active(null) ? null : ym;
         const act = st.active(T.orders.view.ym);
-        el.querySelector('.ord-body').innerHTML = ordBody(sec, d, ordList(d, act));
+        el.querySelector('.ord-body').innerHTML = ordBody(sec, d, ordList(d, act)); ordSlide(el);
         el.querySelector('.ord-ym').innerHTML = `طلبات شهر <b>${esc(ordYmName(act))}</b>`;
         el.querySelectorAll('.ord-chips [data-ym]').forEach(x => x.classList.toggle('on', x.dataset.ym === act));
         const dt = el.querySelector('.ord-arch'); dt && dt.removeAttribute('open');

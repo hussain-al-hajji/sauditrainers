@@ -18,12 +18,26 @@ const Opps = (() => {
   const JOB_SUGGEST = ['مدرب تطوير ذاتي', 'مدرب معتمد', 'مطلوب مدرب', 'مدرب مبيعات', 'مدرب تنمية بشرية', 'مدرب لغة إنجليزية', 'مدرب حاسب آلي', 'مدرب سلامة مهنية', 'مدرب موارد بشرية', 'مدرب خدمة عملاء', 'مدرب إدارة مشاريع', 'مدرب تقنية', 'أخصائي تطوير مواهب', 'منسق تدريب', 'sales trainer', 'technical trainer', 'leadership trainer', 'certified trainer', 'L&D specialist', 'training coordinator', 'HR trainer', 'customer service trainer'];
   const jobs = () => Store.list('jobs').filter(j => j && j.title && j.url).sort((a, b) => (b.ts || 0) - (a.ts || 0));
   const JOB_DAYS = 45;   // تختفي الوظيفة من حسابات المدربين بعد 45 يوماً من إضافتها وتبقى محفوظة عند الإدارة (jobsOld)
+  const jobsAll = () => { const seen = new Set(), out = []; [...jobs(), ...Store.list('jobsOld').filter(j => j && j.title && j.url)].forEach(j => { const k = j.id || j.url; if (seen.has(k)) return; seen.add(k); out.push(j); }); return out.sort((a, b) => (b.ts || 0) - (a.ts || 0)); };
   const liveJobs = () => jobs().filter(j => (j.ts || 0) > Date.now() - JOB_DAYS * 864e5);
   const jobsAdmin = () => [...jobs().map(j => ({ ...j, _p: 'jobs' })), ...Store.list('jobsOld').filter(j => j && j.title && j.url).map(j => ({ ...j, _p: 'jobsOld' }))].sort((a, b) => (b.ts || 0) - (a.ts || 0));
-  const unreadAds = id => { const sn = lsGet(kAds(id)); return approved().filter(o => (o.ts || 0) > sn && isOpen(o)); };
-  const unreadJobs = id => { const sn = lsGet(kJobs(id)); return liveJobs().filter(j => (j.ts || 0) > sn); };
+  const joined = id => Number((Store.get(`trainers/${id}`) || {}).publishedAt) || 0;   // ما نُشر قبل انضمام المدرب متاح له كله لكنه لا يُحسب «جديداً»
+  const unreadAds = id => { const sn = Math.max(lsGet(kAds(id)), joined(id)); return approved().filter(o => (o.ts || 0) > sn && isOpen(o)); };
+  const unreadJobs = id => { const sn = Math.max(lsGet(kJobs(id)), joined(id)); return liveJobs().filter(j => (j.ts || 0) > sn); };
   const unread = id => [...unreadAds(id), ...unreadJobs(id)];
   const markAdsSeen = id => lsSet(kAds(id), Math.max(0, ...approved().map(o => o.ts || 0)));
+
+  // تجميع شهري: الشهر الحالي مفتوح والأشهر السابقة أرشيف قابل للفتح (لا شيء يُحذف من حساب المدرب)
+  const monthKey = ts => ymKey(ts);
+  function byMonth(items, render, label = 'أرشيف') {
+    const groups = new Map(); items.forEach(x => { const k = monthKey(x.ts); if (!groups.has(k)) groups.set(k, []); groups.get(k).push(x); });
+    const keys = [...groups.keys()].sort().reverse(), cur = monthKey(Date.now());
+    return keys.map((k, i) => {
+      const list = groups.get(k), open = k === cur || (i === 0 && !keys.includes(cur));
+      return open ? `<h3 class="mo-h"><i class="fa-regular fa-calendar"></i> ${esc(ymName(k))} <small class="num">(${list.length})</small></h3>${list.map(render).join('')}`
+        : `<details class="mo-arch"><summary><i class="fa-solid fa-box-archive"></i> ${esc(label)} ${esc(ymName(k))} <small class="num">(${list.length})</small></summary>${list.map(render).join('')}</details>`;
+    }).join('');
+  }
 
   function card(o, fresh, tag = '') {
     const k = KIND[o.kind] || KIND.post, u = safeUrl(o.url), closed = !isOpen(o);
@@ -38,11 +52,11 @@ const Opps = (() => {
   }
   // «وظائف التدريب»: الوظائف المجلوبة آلياً فقط (الفرص العامة والإعلانات صارت في تبويب «طلبات عامة»)
   function tab(main, t) {
-    const sj = lsGet(kJobs(t.id)), jl = liveJobs();
+    const sj = Math.max(lsGet(kJobs(t.id)), joined(t.id)), jl = liveJobs(), ja = jobsAll();
     main.innerHTML = `<div class="dash-h"><h2>وظائف التدريب</h2><span class="muted small">وظائف مدربين في السعودية تُجلب تلقائياً من عدة مصادر عبر الإنترنت</span></div>
-      <div class="banner warn" style="margin-bottom:10px"><i class="fa-solid fa-hourglass-half"></i><span><b>تنبيه:</b> الوظائف المعلنة تُمسح من هذه الصفحة بعد مرور 45 يوماً على إضافتها، فبادر بالتقديم قبل ذلك.</span></div>
+      <div class="banner warn" style="margin-bottom:10px"><i class="fa-solid fa-hourglass-half"></i><span><b>تنبيه:</b> الوظائف لا تُحذف: يبقى الشهر الحالي ظاهراً، وما قبله يُحفظ في «أرشيف وظائف» لكل شهر في هذه الصفحة. وقد تكون الوظائف القديمة انتهى التقديم عليها، فبادر بالتقديم مبكراً.</span></div>
       <div class="banner info" style="margin-bottom:12px"><i class="fa-solid fa-circle-info"></i><span>هذه الوظائف منقولة من مصادر عامة في الإنترنت دون مراجعة فردية. نحاول التحقق من المصدر، ونهيب بالمدربين التحقق دائماً قبل أي تعامل عبر الإنترنت.</span></div>
-      ${jl.length ? jl.map(j => jobCard(j, (j.ts || 0) > sj)).join('') : '<div class="empty"><i class="fa-solid fa-briefcase"></i><h3>لا توجد وظائف حالياً</h3><p>تُضاف الوظائف الجديدة تلقائياً وتصلك بشارة.</p></div>'}`;
+      ${ja.length ? byMonth(ja, j => jobCard(j, (j.ts || 0) > sj), 'أرشيف وظائف') : '<div class="empty"><i class="fa-solid fa-briefcase"></i><h3>لا توجد وظائف حالياً</h3><p>تُضاف الوظائف الجديدة تلقائياً وتصلك بشارة.</p></div>'}`;
     lsSet(kJobs(t.id), Math.max(0, ...jl.map(o => o.ts || 0)));
     const pb = $('[data-tab="opps"] .badge'); pb && pb.remove();
     // شارة الأيقونة والتبويب الآخر تتحدّث عند أول رسم لاحق
@@ -218,5 +232,5 @@ const Opps = (() => {
     $$('[data-jx]', main).forEach(b => b.onclick = () => saveCsv(`وظائف-التدريب-${b.dataset.jx}.csv`, jobRows(jl.filter(j => ymKey(j.ts) === b.dataset.jx))));
   }
 
-  return { approved, inbox, unread, tab, admin, adminOpps, statsHtml, exportAll, exportMonths, ymName, card, unreadAds, unreadJobs, markAdsSeen };
+  return { approved, inbox, unread, tab, admin, adminOpps, statsHtml, exportAll, exportMonths, ymName, card, unreadAds, unreadJobs, markAdsSeen, byMonth, jobsAll, joined };
 })();

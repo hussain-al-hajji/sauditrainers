@@ -11,7 +11,7 @@ const Broadcast = (() => {
   // إشعارات الموقع (notices/<id>): مثل «اختيرت بطاقتك للتثبيت 24 ساعة»
   const notices = id => Object.values(Store.get(`notices/${id}`) || {}).filter(n => n && n.title).sort((a, b) => (b.ts || 0) - (a.ts || 0));
   const noticesNew = id => notices(id).filter(n => !n.read).length;
-  const unread = id => { const s = seenTs(id); return all().filter(b => (b.ts || 0) > s); };
+  const unread = id => { const s = Math.max(seenTs(id), Opps.joined(id)); return all().filter(b => (b.ts || 0) > s); };
 
   /* ---------- بطاقة طلب عام (للمدرب) ---------- */
   function card(b, t) {
@@ -42,7 +42,7 @@ const Broadcast = (() => {
     const chip = (k, l, n) => `<button type="button" class="chip ${V.f === k ? 'on' : ''}" data-f="${k}">${l} <small class="num">(${n})</small></button>`;
     main.innerHTML = `<div class="dash-h"><h2>طلبات عامة</h2><span class="muted small">طلبات جهات أعادت الإدارة توجيهها لكل المدربين، وإعلانات تنشرها الإدارة من محتوى الإنترنت${fresh ? ` · ${fresh} جديد` : ''}</span></div>
       <div class="chips" style="margin-bottom:12px">${chip('all', 'الكل', nReq + nNet)}${chip('req', '<i class="fa-solid fa-bullhorn"></i> طلبات عبر الموقع', nReq)}${chip('net', '<i class="fa-solid fa-globe"></i> من محتوى الإنترنت', nNet)}</div>
-      ${items.length ? items.map(x => (x.k === 'req' ? card(x.b, t).replace('class="lead bc"', `class="lead bc ${(x.b.ts || 0) > bcSeen ? 'new' : ''}"`) : Opps.card(x.o, adIds.has(x.o.id), '<span class="pill info"><i class="fa-solid fa-globe"></i> من محتوى الإنترنت</span> '))).join('') : '<div class="empty"><i class="fa-solid fa-bullhorn"></i><h3>لا توجد إعلانات بعد</h3><p>تظهر هنا طلبات الجهات التي تعيد الإدارة توجيهها، والإعلانات التي تنشرها من الإنترنت، وتبقى محفوظة.</p></div>'}`;
+      ${items.length ? Opps.byMonth(items, x => (x.k === 'req' ? card(x.b, t).replace('class="lead bc"', `class="lead bc ${(x.b.ts || 0) > bcSeen ? 'new' : ''}"`) : Opps.card(x.o, adIds.has(x.o.id), '<span class="pill info"><i class="fa-solid fa-globe"></i> من محتوى الإنترنت</span> ')), 'أرشيف طلبات') : '<div class="empty"><i class="fa-solid fa-bullhorn"></i><h3>لا توجد إعلانات بعد</h3><p>تظهر هنا طلبات الجهات التي تعيد الإدارة توجيهها، والإعلانات التي تنشرها من الإنترنت، وتبقى محفوظة.</p></div>'}`;
     $$('[data-f]', main).forEach(b => b.onclick = () => { V.f = b.dataset.f; tab(main, t); });
     markSeen(t.id); Opps.markAdsSeen(t.id);
     // تحديث الشارات فوراً دون إعادة رسم الصفحة
