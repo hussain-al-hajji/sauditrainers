@@ -246,6 +246,20 @@ const SECTION_TYPES = (() => {
     }
   };
 
+  T.monthstats = {
+    name: 'إحصائيات الشهر', icon: 'fa-chart-column',
+    tpls: [['band', 'بطاقتان']],
+    schema: [{ k: 'title', label: 'عنوان الإحصائية' }, { k: 'lReq', label: 'نص طلبات التعاون' }, { k: 'lJobs', label: 'نص الوظائف' }],
+    def: () => ({ title: 'إحصائيات الشهر', lReq: 'طلبات التعاون في التدريب المنشورة على الموقع', lJobs: 'وظائف التدريب المنشورة على الموقع' }),
+    render(sec) {
+      const d = { ...T.monthstats.def(), ...(sec.d || {}) }, c = MonthStats.cur(), v = Store.get(`stats/month/${c.key}`);
+      if (!v) return '';
+      const f = x => (Number(x) || 0).toLocaleString('en-US');
+      return `<div class="wrap"><div class="mstat reveal"><div class="ms-h"><i class="fa-solid fa-chart-column"></i><b>${esc(d.title)} (${esc(c.name)})</b></div>
+        <div class="ms-g"><div class="ms-c"><b class="num">${f((Number(v.requests) || 0) + (Number(v.ads) || 0))}</b><span>${esc(d.lReq)}</span></div><div class="ms-c"><b class="num">${f(v.jobs)}</b><span>${esc(d.lJobs)}</span></div></div></div></div>`;
+    }
+  };
+
   /* «المثبّتة»: بطاقة مدرب عرضية تبقى 24 ساعة (بتوقيت الرياض) ثم تُستبدل ببطاقة مدرب آخر، ولا يتكرر مدرب حتى تكتمل دورة كل المدربين.
      الترتيب في كل دورة عشوائي ثابت (بذرة = رقم الدورة) فيراه كل الزوار نفسه دون حاجة لتخزين. */
   const pinPick = ids => {
@@ -337,8 +351,10 @@ const homeSections = () => {
   const l = arr(Store.get('content/home/list')), list = l.length ? l : defaultHome();
   // عدّاد الزيارات يُضاف تحت الواجهة الرئيسية تلقائياً إن لم يكن في القائمة (تخفيه الإدارة من تبويب الصفحة الرئيسية)
   if (!list.some(s => s.type === 'visits')) { const i = list.findIndex(s => s.type === 'hero'); list.splice(i + 1, 0, { id: 'visits', type: 'visits', tpl: 'band', bg: 'tint', vis: true, d: SECTION_TYPES.visits.def() }); }
+  // إحصائيات الشهر تحت عدّاد الزيارات
+  if (!list.some(s => s.type === 'monthstats')) { const i = list.findIndex(s => s.type === 'visits'); list.splice(i < 0 ? Math.min(2, list.length) : i + 1, 0, { id: 'monthstats', type: 'monthstats', tpl: 'band', bg: 'light', vis: true, d: SECTION_TYPES.monthstats.def() }); }
   // «المثبّتة» تحت عدّاد الزيارات
-  if (!list.some(s => s.type === 'pinned')) { const i = list.findIndex(s => s.type === 'visits'); list.splice(i < 0 ? Math.min(2, list.length) : i + 1, 0, { id: 'pinned', type: 'pinned', tpl: 'wide', bg: 'light', vis: true, d: SECTION_TYPES.pinned.def() }); }
+  if (!list.some(s => s.type === 'pinned')) { const i = list.findIndex(s => s.type === 'monthstats' || s.type === 'visits'); list.splice(i < 0 ? Math.min(2, list.length) : i + 1, 0, { id: 'pinned', type: 'pinned', tpl: 'wide', bg: 'light', vis: true, d: SECTION_TYPES.pinned.def() }); }
   return list;
 };
 

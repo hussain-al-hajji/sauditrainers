@@ -1341,3 +1341,12 @@ body.preview .local-flag { display: none; }
 .pc-bar{flex:1;min-width:120px;height:10px;border-radius:6px;background:#e8eee8;overflow:hidden}.pc-bar i{display:block;height:100%;background:var(--g700,#2f7d32);border-radius:6px}
 .pc-chips{display:flex;gap:8px;flex-wrap:wrap}
 .rv-links{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}.rv-links a{font-size:.85rem;padding:3px 10px;border:1px solid var(--line);border-radius:999px;direction:ltr}
+
+/* إحصائيات الشهر تحت عدّاد الزيارات */
+.mstat { background: #fff; border: 1.5px solid var(--line); border-radius: 22px; box-shadow: var(--sh1); padding: 18px 24px; max-width: 760px; margin-inline: auto; }
+.mstat .ms-h { display: flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--f-display); color: var(--g800); font-size: 1.1rem; margin-bottom: 12px; }
+.mstat .ms-g { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.mstat .ms-c { text-align: center; background: var(--g50); border-radius: 16px; padding: 12px 10px; display: flex; flex-direction: column; gap: 4px; }
+.mstat .ms-c b { font-family: var(--f-display); font-weight: 900; font-size: 2.2rem; color: var(--g800); line-height: 1.1; }
+.mstat .ms-c span { font-size: .92rem; color: var(--ink2); line-height: 1.5; }
+@media (max-width: 560px) { .mstat .ms-g { grid-template-columns: 1fr; } }

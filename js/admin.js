@@ -72,6 +72,7 @@ Pages.admin = {
   mount(root) {
     if (Auth.current()?.kind !== 'admin') return mountAdminLogin(root);
     this.wireMenu(root);
+    MonthStats.start();
     $$('[data-menu-edit]', root).forEach(b => b.onclick = () => { this.menuEdit = !this.menuEdit; this.wireMenu(root); });
     $('[data-out]', root).onclick = () => Auth.logout();
     $('[data-preview]', root).onclick = () => TrainerPreview.open();

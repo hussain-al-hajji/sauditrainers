@@ -347,3 +347,23 @@ const plainText = s => {
 // نمط «ليس ... بل ...»: لا يُعدَّل تلقائياً لأن إعادة صياغته تحتاج قراءة، بل يُبلَّغ عنه للمراجعة
 const CONTRAST_RE = /(ليس|ليست|لا|وليس)[^.\n؟!]{1,80}?[\s،]بل\s/;
 const flagContrast = s => typeof s === 'string' && CONTRAST_RE.test(s);
+
+/* إحصائيات الشهر في الرئيسية: شهر ميلادي بتوقيت الرياض، ويتبدّل يوم 5 من الشهر التالي (حتى ذلك اليوم يبقى الشهر السابق ظاهراً) */
+const MonthStats = (() => {
+  const NAMES = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'], RY = 3 * 36e5;
+  const cur = (now = Date.now()) => { const s = new Date(now + RY - 4 * 864e5), y = s.getUTCFullYear(), m = s.getUTCMonth(); return { key: `${y}-${String(m + 1).padStart(2, '0')}`, name: NAMES[m], from: Date.UTC(y, m, 1) - RY, to: Date.UTC(y, m + 1, 1) - RY }; };
+  // تحسبها لوحة الإدارة من البيانات الكاملة وتكتبها للعموم (والسكربت يفعل الشيء نفسه كل ساعة)
+  const compute = () => { const c = cur(), n = node => Store.list(node).filter(x => x && x.ts >= c.from && x.ts < c.to).length; return { c, requests: n('requests'), ads: n('opportunities'), jobs: n('jobs') }; };
+  let started = false, timer = 0;
+  const sync = () => {
+    try {
+      if (!Store.list('trainers').length) return;   // لم تُحمَّل البيانات بعد: لا نكتب أصفاراً فوق الأرقام الصحيحة
+      const { c, requests, ads, jobs } = compute(), old = Store.get(`stats/month/${c.key}`) || {};
+      if (old.requests === requests && old.ads === ads && old.jobs === jobs) return;
+      Store.update(`stats/month/${c.key}`, { requests, ads, jobs, ts: Date.now() });
+    } catch { /* ignore */ }
+  };
+  // تُشغَّل من لوحة الإدارة: تعيد المزامنة بعد كل تغيّر في البيانات (مع تأخير يجمّع التغيّرات)
+  const start = () => { if (started) return; started = true; Store.subscribe(() => { clearTimeout(timer); timer = setTimeout(sync, 4000); }); sync(); };
+  return { cur, compute, sync, start };
+})();
