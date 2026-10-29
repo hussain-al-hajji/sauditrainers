@@ -18,7 +18,7 @@ const Broadcast = (() => {
     const hasContact = b.contact && (b.phone || b.email || b.person);
     return `<div class="lead bc">
       <span class="ic"><i class="fa-solid fa-bullhorn"></i></span>
-      <div><b>${esc(b.org || 'جهة تدريبية')}</b> <span class="pill gold">طلب جهة · أُعيد توجيهه للمدربين</span> <small class="muted">${ago(b.ts)}</small>
+      <div><b>${esc(b.org || 'جهة تدريبية')}</b> <span class="pill gold">طلب عبر الموقع، أُعيد توجيهه للمدربين</span> <small class="muted">${ago(b.ts)}</small>
         <p><b>الموضوع:</b> ${esc(b.topic)}${b.spec ? ` · <b>التخصص:</b> ${esc(specName(b.spec))}` : ''}${b.region ? ` · <b>المنطقة:</b> ${esc(regionName(b.region))}` : ''}${b.size ? ` · <b class="num">${esc(b.size)}</b> متدرب` : ''}${b.when ? ` · <b>الموعد:</b> ${esc(b.when)}` : ''}</p>
         ${b.msg ? `<p>${nl2br(b.msg)}</p>` : ''}
         ${b.note ? `<p class="small"><i class="fa-solid fa-circle-info"></i> <b>ملاحظة الإدارة:</b> ${nl2br(b.note)}</p>` : ''}
@@ -41,7 +41,7 @@ const Broadcast = (() => {
     const nReq = all().length, nNet = Opps.approved().length;
     const chip = (k, l, n) => `<button type="button" class="chip ${V.f === k ? 'on' : ''}" data-f="${k}">${l} <small class="num">(${n})</small></button>`;
     main.innerHTML = `<div class="dash-h"><h2>طلبات عامة</h2><span class="muted small">طلبات جهات أعادت الإدارة توجيهها لكل المدربين، وإعلانات تنشرها الإدارة من محتوى الإنترنت${fresh ? ` · ${fresh} جديد` : ''}</span></div>
-      <div class="chips" style="margin-bottom:12px">${chip('all', 'الكل', nReq + nNet)}${chip('req', '<i class="fa-solid fa-bullhorn"></i> طلبات الجهات', nReq)}${chip('net', '<i class="fa-solid fa-globe"></i> من محتوى الإنترنت', nNet)}</div>
+      <div class="chips" style="margin-bottom:12px">${chip('all', 'الكل', nReq + nNet)}${chip('req', '<i class="fa-solid fa-bullhorn"></i> طلبات عبر الموقع', nReq)}${chip('net', '<i class="fa-solid fa-globe"></i> من محتوى الإنترنت', nNet)}</div>
       ${items.length ? items.map(x => (x.k === 'req' ? card(x.b, t).replace('class="lead bc"', `class="lead bc ${(x.b.ts || 0) > bcSeen ? 'new' : ''}"`) : Opps.card(x.o, adIds.has(x.o.id), '<span class="pill info"><i class="fa-solid fa-globe"></i> من محتوى الإنترنت</span> '))).join('') : '<div class="empty"><i class="fa-solid fa-bullhorn"></i><h3>لا توجد إعلانات بعد</h3><p>تظهر هنا طلبات الجهات التي تعيد الإدارة توجيهها، والإعلانات التي تنشرها من الإنترنت، وتبقى محفوظة.</p></div>'}`;
     $$('[data-f]', main).forEach(b => b.onclick = () => { V.f = b.dataset.f; tab(main, t); });
     markSeen(t.id); Opps.markAdsSeen(t.id);
