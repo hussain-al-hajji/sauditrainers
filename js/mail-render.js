@@ -78,7 +78,7 @@ function mailHtml(doc, vars, o) {
     '<div style="padding:26px 28px 10px;color:' + MAIL_BRAND.ink + '">' + body + '</div>' +
     '<div style="background:' + MAIL_BRAND.cream + ';padding:16px 20px;text-align:center;font-size:12.5px;line-height:1.9;color:#3A5244">' +
     '<b>' + mEsc(from) + '</b> · <a href="' + mEsc(site) + '" style="color:' + MAIL_BRAND.green + ';text-decoration:none">' + mEsc(site.replace(/^https?:\/\//, '').replace(/\/$/, '')) + '</a><br>' +
-    'وصلتك هذه الرسالة لأن بريدك مسجّل لدينا. إن لم ترغب باستلام رسائل المنصة فردّ عليها بكلمة «إلغاء».</div>' +
+    'إن لم ترغب باستلام رسائل المنصة فردّ عليها بكلمة «إلغاء».</div>' +
     '</div></div>';
 }
 

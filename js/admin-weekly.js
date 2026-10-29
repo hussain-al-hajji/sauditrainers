@@ -45,6 +45,7 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     });
     if (unreg) {
       blocks.push({ t: 'box', text: '✍️ **تريد أن يظهر خبرك هنا؟**\nبعد اكتمال تسجيلك النهائي تستطيع نشر أخبارك وإنجازاتك ودوراتك القادمة باسمك وصورتك في الصفحة الرئيسية وصفحتك الخاصة.' });
+      blocks.push({ t: 'p', text: '**مسجل مسبقاً؟**', align: 'center' });
       blocks.push({ t: 'btn', text: 'تابع حالة طلبك', url: `${base}#/status`, align: 'center' });
     } else {
       blocks.push({ t: 'box', text: '✍️ **هل لديك خبر أو إنجاز أو مشاركة أو دورة قادمة؟**\nادخل حسابك في المنصة ← تبويب «أخباري» واكتب خبرك في دقيقة، وسيظهر باسمك وصورتك في الصفحة الرئيسية وصفحتك، وقد يُضمَّن في الرسالة الأسبوعية القادمة.' });
@@ -154,12 +155,12 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     blocks.push({ ...reg });
     newsBlocks(blocks, `${ym}-01`, `${ym}-${String(last).padStart(2, '0')}`, base, `${base}#/login`, true, `📰 أخبار المدربين خلال شهر ${mname}`);
     blocks.push({ t: 'hr' });
-    lineBox('🌟 مزايا المنصة', parseLines(sub(features))).forEach(b => blocks.push(b));
-    lineBox('🪪 مزايا حساب المدرب', parseLines(sub(account))).forEach(b => blocks.push(b));
-    lineBox('💎 ما الذي ستحصل عليه', parseLines(sub(benefits))).forEach(b => blocks.push(b));
     blocks.push({ t: 'h', text: '🪧 هكذا تظهر بطاقتك التعريفية', align: 'start' });
     blocks.push({ t: 'img', url: `${base}assets/card-sample.jpg`, alt: 'نموذج افتراضي لبطاقة مدرب على المنصة', w: 'full', align: 'center', link: `${base}#/join` });
     blocks.push({ t: 'p', text: 'نموذج افتراضي للبطاقة التعريفية', align: 'center' });
+    lineBox('🌟 مزايا المنصة', parseLines(sub(features))).forEach(b => blocks.push(b));
+    lineBox('🪪 مزايا حساب المدرب', parseLines(sub(account))).forEach(b => blocks.push(b));
+    lineBox('💎 ما الذي ستحصل عليه', parseLines(sub(benefits))).forEach(b => blocks.push(b));
     blocks.push({ ...reg });
     blocks.push({ t: 'hr' });
     blocks.push({ t: 'p', text: sub(outro), align: 'start' });
