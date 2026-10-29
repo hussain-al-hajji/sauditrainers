@@ -601,17 +601,20 @@ function aRequests(main) {
   const all = [...reqs, ...leads].sort((a, b) => b.ts - a.ts);
   const show = Store.list('showcase').sort((a, b) => b.ts - a.ts);
   main.innerHTML = `<div class="dash-h"><h2>فرص التدريب</h2><span class="muted small">ما تضيفه الإدارة وما يصل من الجهات التدريبية، مع إحصاءاتهما</span></div>
+    <details class="pbox" open><summary style="cursor:pointer"><b><i class="fa-solid fa-table-cells-large" style="color:var(--g600)"></i> المعروض في «من طلبات هذا الشهر» (${show.length})</b></summary>
+      <p class="muted small">تظهر هذه البطاقات متحركة في الصفحة الرئيسية دون أي بيانات تواصل. اختر من الطلبات بالأسفل بزر <i class="fa-solid fa-table-cells-large"></i> أو أضف يدوياً.</p>
+      <div class="sc-admin">${show.map(x => `<div class="sc-mini"><b>${esc(x.title)}</b><small>${esc(x.org || 'جهة تدريبية')} · ${esc(regionName(x.region) || '')} · ${fmtDate(x.ts)}</small><div class="acts"><button class="btn sm icon" data-se="${esc(x.id)}"><i class="fa-solid fa-pen"></i></button><button class="btn sm icon" data-sx="${esc(x.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`).join('')}
+      <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn sm" id="sa"><i class="fa-solid fa-plus"></i> إضافة يدوياً</button>
+        <button class="btn sm" id="sup"><i class="fa-solid fa-file-arrow-up"></i> رفع ملف عناوين (CSV أو نص)</button><button class="btn sm ghost" id="stpl"><i class="fa-solid fa-file-arrow-down"></i> تنزيل القالب</button>
+        <input type="file" id="sfile" accept=".csv,.txt,text/csv,text/plain" hidden></div>
+      <p class="muted small" style="margin:6px 0 0">الملف: عمود واحد فيه <b>عنوان الدورة</b> في كل سطر (والسطر الأول عنوان العمود). تُضاف العناوين كبطاقات دون جهة ولا منطقة، ويُستبعد المكرر.</p></div>
+    </details>
     ${Opps.statsHtml(all)}
     <h3 class="rq-part"><i class="fa-solid fa-handshake-angle"></i> الجزء الأول: فرص تضيفها الإدارة</h3>
     <div id="rq-adm"></div>
     <h3 class="rq-part"><i class="fa-solid fa-inbox"></i> الجزء الثاني: طلبات الجهات التدريبية <small class="muted">(طلبات التواصل مع مدرب محدد + «اطلب مدرباً»)</small></h3>
     ${Automation.on ? '<div class="banner ok"><i class="fa-solid fa-envelope-circle-check"></i>الإرسال الآلي للبريد مفعّل: يصل كل طلب تواصل إلى بريد المدرب من بريد المنصة.</div>'
       : '<div class="banner info"><i class="fa-solid fa-circle-info"></i>الإرسال الآلي للبريد غير مفعّل بعد (يحتاج ربط Google Apps Script). يمكنك الآن إرسال الطلب للمدرب بزر واتساب أو البريد.</div>'}
-    <details class="pbox" ${show.length ? '' : 'open'}><summary style="cursor:pointer"><b><i class="fa-solid fa-table-cells-large" style="color:var(--g600)"></i> المعروض في «من طلبات هذا الشهر» (${show.length})</b></summary>
-      <p class="muted small">تظهر هذه البطاقات متحركة في الصفحة الرئيسية دون أي بيانات تواصل. اختر من الطلبات بالأسفل بزر <i class="fa-solid fa-table-cells-large"></i> أو أضف يدوياً.</p>
-      <div class="sc-admin">${show.map(x => `<div class="sc-mini"><b>${esc(x.title)}</b><small>${esc(x.org || 'جهة تدريبية')} · ${esc(regionName(x.region) || '')} · ${fmtDate(x.ts)}</small><div class="acts"><button class="btn sm icon" data-se="${esc(x.id)}"><i class="fa-solid fa-pen"></i></button><button class="btn sm icon" data-sx="${esc(x.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`).join('')}
-      <button class="btn sm" id="sa"><i class="fa-solid fa-plus"></i> إضافة يدوياً</button></div>
-    </details>
     ${all.length ? all.map(r => {
       const t = r.trainerId ? Store.get(`trainers/${r.trainerId}`) : null;
       const tp = r.trainerId ? Store.get(`private/${r.trainerId}`) : null;
@@ -654,6 +657,20 @@ function aRequests(main) {
     showcaseEditor(Store.list('showcase').find(x => x.src === r.id) || { src: r.id, title: r.topic, org: r.org, region: r.region || t?.region || '', spec: r.spec || Data.specs(t || {})[0] || '', trainerName: r.trainerName || '', ts: r.ts });
   });
   $('#sa', main).onclick = () => showcaseEditor({ ts: Date.now() });
+  $('#stpl', main).onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeffعنوان الدورة\nمهارات إدارة المشاريع\nحضورك الرقمي بوابتك للفرص\nالمالية لغير الماليين\nتدريب مهارات التخطيط والاستراتيجية\n'], { type: 'text/csv;charset=utf-8' })); a.download = 'قالب-عناوين-الدورات.csv'; a.click(); };
+  $('#sup', main).onclick = () => $('#sfile', main).click();
+  $('#sfile', main).onchange = async e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    // أول عمود فقط من كل سطر (يدعم علامات الاقتباس)، وتُتجاوز عناوين الأعمدة المعروفة
+    const first = l => { l = l.trim(); if (l[0] === '"') { const m = l.match(/^"((?:[^"]|"")*)"/); return m ? m[1].replace(/""/g, '"') : l; } return l.split(/[,;\t]/)[0]; };
+    const text = (await f.text()).replace(/^\ufeff/, ''), have = new Set(Store.list('showcase').map(x => String(x.title || '').trim().toLowerCase())), seen = new Set(); let dup = 0;
+    const titles = text.split(/\r?\n/).map(l => first(l).replace(/^[\s•\-–*·]+/, '').replace(/\s+/g, ' ').trim()).filter((t, i) => t && !(i === 0 && /^(عنوان الدورة|العنوان|عناوين الدورات|title)$/i.test(t))).map(t => t.slice(0, 90)).filter(t => { const k = t.toLowerCase(); if (have.has(k) || seen.has(k)) { dup++; return false; } seen.add(k); return true; });
+    if (!titles.length) return toast('لا عناوين جديدة في الملف', 'error');
+    const take = titles.slice(0, 60);
+    if (!await confirmBox(`إضافة ${take.length} عنوان إلى «من طلبات هذا الشهر»${dup ? ` (استُبعد ${dup} مكرراً)` : ''}${titles.length > take.length ? ` - أول 60 فقط من ${titles.length}` : ''}؟`, { ok: 'إضافة' })) return;
+    const now = Date.now(); take.forEach((t, i) => Store.push('showcase', { title: t, org: '', region: '', spec: '', trainerName: '', src: '', ts: now - i }));
+    Security.log('رفع عناوين «من طلبات هذا الشهر»', `${take.length} عنواناً`); toast(`أُضيف ${take.length} عنوان وتظهر في الصفحة الرئيسية`);
+  };
   $$('[data-se]', main).forEach(b => b.onclick = () => showcaseEditor(Store.get(`showcase/${b.dataset.se}`)));
   $$('[data-sx]', main).forEach(b => b.onclick = () => Store.remove(`showcase/${b.dataset.sx}`));
 }
