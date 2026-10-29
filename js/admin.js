@@ -607,11 +607,11 @@ function aRequests(main) {
       <p class="muted small" style="margin:4px 0 0">ملف واحد بصيغة موحّدة لكل ما نُشر خلال الشهر المختار: إعلانات الإدارة وطلبات «اطلب مدرباً» وطلبات التواصل المباشر، بلا بيانات تواصل شخصية.</p></div>
     <details class="pbox" open><summary style="cursor:pointer"><b><i class="fa-solid fa-table-cells-large" style="color:var(--g600)"></i> المعروض في «من طلبات هذا الشهر» (${show.length})</b></summary>
       <p class="muted small">تظهر هذه البطاقات متحركة في الصفحة الرئيسية دون أي بيانات تواصل. اختر من الطلبات بالأسفل بزر <i class="fa-solid fa-table-cells-large"></i> أو أضف يدوياً.</p>
-      <div class="sc-admin">${show.map(x => `<div class="sc-mini"><b>${esc(x.title)}</b><small>${esc(x.org || 'جهة تدريبية')}${(x.city || regionName(x.region)) ? ' · ' + esc(x.city || regionName(x.region)) : ''}</small><div class="acts"><button class="btn sm icon" data-se="${esc(x.id)}"><i class="fa-solid fa-pen"></i></button><button class="btn sm icon" data-sx="${esc(x.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`).join('')}
+      <div class="sc-admin">${show.map(x => `<div class="sc-mini"><b>${esc(x.title)}</b><small>${esc(x.org || 'جهة تدريبية')}${(x.city || regionName(x.region)) ? ' · ' + esc(x.city || regionName(x.region)) : ''}${x.spec ? ' · ' + esc(specName(x.spec)) : ''} · ${esc(new Date(x.ts).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { month: 'long', year: 'numeric' }))}</small><div class="acts"><button class="btn sm icon" data-se="${esc(x.id)}"><i class="fa-solid fa-pen"></i></button><button class="btn sm icon" data-sx="${esc(x.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`).join('')}
       <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn sm" id="sa"><i class="fa-solid fa-plus"></i> إضافة يدوياً</button>
         <button class="btn sm" id="sup"><i class="fa-solid fa-file-arrow-up"></i> رفع ملف عناوين (CSV أو نص)</button><button class="btn sm ghost" id="stpl"><i class="fa-solid fa-file-arrow-down"></i> تنزيل القالب</button>
         <input type="file" id="sfile" accept=".csv,.txt,text/csv,text/plain" hidden></div>
-      <p class="muted small" style="margin:6px 0 0">الملف: عمودان: <b>عنوان الدورة</b> و<b>المدينة</b> (اسم المدينة إن كان حضورياً ومذكوراً، وإلا «عن بعد»)، والسطر الأول عنوان الأعمدة. تُضاف كبطاقات دون جهة ولا تاريخ، ويُستبعد المكرر.</p></div>
+      <p class="muted small" style="margin:6px 0 0">الملف: الأعمدة: <b>عنوان الدورة، المدينة</b> (اسم المدينة للحضوري وإلا «عن بعد»)، <b>التخصص، الجهة، الشهر</b> (مثل 2026-10)، والسطر الأول عنوان الأعمدة وغير الموجود منها اختياري. ويُستبعد المكرر.</p></div>
     </details>
     ${Opps.statsHtml(all)}
     <h3 class="rq-part"><i class="fa-solid fa-handshake-angle"></i> الجزء الأول: فرص تضيفها الإدارة</h3>
@@ -662,18 +662,24 @@ function aRequests(main) {
     showcaseEditor(Store.list('showcase').find(x => x.src === r.id) || { src: r.id, title: r.topic, org: r.org, region: r.region || t?.region || '', spec: r.spec || Data.specs(t || {})[0] || '', trainerName: r.trainerName || '', ts: r.ts });
   });
   $('#sa', main).onclick = () => showcaseEditor({ ts: Date.now() });
-  $('#stpl', main).onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeffعنوان الدورة,المدينة\nمهارات إدارة المشاريع,عن بعد\nحضورك الرقمي بوابتك للفرص,بريدة\nالمالية لغير الماليين,الرياض\nتدريب مهارات التخطيط والاستراتيجية,عن بعد\n'], { type: 'text/csv;charset=utf-8' })); a.download = 'قالب-عناوين-الدورات.csv'; a.click(); };
+  $('#stpl', main).onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeffعنوان الدورة,المدينة,التخصص,الجهة,الشهر\nمهارات إدارة المشاريع,عن بعد,إدارة المشاريع,جهة تدريبية,2026-10\nالمالية لغير الماليين,الرياض,المحاسبة والماليّة,جهة تدريبية,2026-10\n'], { type: 'text/csv;charset=utf-8' })); a.download = 'قالب-عناوين-الدورات.csv'; a.click(); };
   $('#sup', main).onclick = () => $('#sfile', main).click();
   $('#sfile', main).onchange = async e => {
     const f = e.target.files[0]; e.target.value = ''; if (!f) return;
     // العمود الأول = عنوان الدورة، والثاني (اختياري) = المدينة أو «عن بعد»؛ يدعم علامات الاقتباس وتُتجاوز عناوين الأعمدة المعروفة
     const cols = l => { const out = []; let cur = '', q = false; for (let k = 0; k < l.length; k++) { const c = l[k]; if (q) { if (c === '"' && l[k + 1] === '"') { cur += '"'; k++; } else if (c === '"') q = false; else cur += c; } else if (c === '"') q = true; else if (c === ',' || c === ';' || c === '\t') { out.push(cur); cur = ''; } else cur += c; } out.push(cur); return out.map(x => x.replace(/\s+/g, ' ').trim()); };
     const text = (await f.text()).replace(/^\ufeff/, ''), have = new Set(Store.list('showcase').map(x => String(x.title || '').trim().toLowerCase())), seen = new Set(); let dup = 0;
-    const titles = text.split(/\r?\n/).map(cols).map(([t, c]) => ({ t: String(t || '').replace(/^[\s•\-–*·]+/, '').slice(0, 90), c: String(c || '').slice(0, 40) })).filter((x, i) => x.t && !(i === 0 && /^(عنوان الدورة|العنوان|عناوين الدورات|title)$/i.test(x.t))).filter(x => { const k = x.t.toLowerCase(); if (have.has(k) || seen.has(k)) { dup++; return false; } seen.add(k); return true; });
+    // الأعمدة تُعرف من السطر الأول (عنوان الدورة، المدينة، التخصص، الجهة، الشهر)، وإلا فبالترتيب: عنوان ثم مدينة
+    const lines = text.split(/\r?\n/).filter(l => l.trim()).map(cols), H = lines[0] || [], ix = n => H.findIndex(h => h === n), known = H.some(h => /^(عنوان الدورة|العنوان|title)$/i.test(h));
+    const col = known ? { t: Math.max(0, H.findIndex(h => /^(عنوان الدورة|العنوان|title)$/i.test(h))), c: ix('المدينة'), s: ix('التخصص'), o: ix('الجهة'), m: ix('الشهر') } : { t: 0, c: 1, s: -1, o: -1, m: -1 };
+    const specKey = v => { v = String(v || '').trim(); if (!v) return ''; const hit = SPECIALTIES.find(x => x.k === v || x.name === v) || SPECIALTIES.find(x => x.name.includes(v) || v.includes(x.name)); return hit ? hit.k : ''; };
+    const MN = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+    const monthOf = v => { v = String(v || '').trim(); let y, m, a = v.match(/^(\d{4})[-/](\d{1,2})/); if (a) { y = +a[1]; m = +a[2] - 1; } else { const k = MN.findIndex(n => v.includes(n)); a = v.match(/(\d{4})/); if (k >= 0) { m = k; y = a ? +a[1] : new Date().getFullYear(); } } return Number.isInteger(m) && m >= 0 && m < 12 ? { y, m } : null; };
+    const titles = lines.slice(known ? 1 : 0).map(r => ({ t: String(r[col.t] || '').replace(/^[\s•\-–*·]+/, '').slice(0, 90), c: String(col.c >= 0 ? r[col.c] || '' : '').slice(0, 40), s: specKey(col.s >= 0 ? r[col.s] : ''), o: String(col.o >= 0 ? r[col.o] || '' : '').slice(0, 60), m: monthOf(col.m >= 0 ? r[col.m] : '') })).filter(x => x.t).filter(x => { const k = x.t.toLowerCase(); if (have.has(k) || seen.has(k)) { dup++; return false; } seen.add(k); return true; });
     if (!titles.length) return toast('لا عناوين جديدة في الملف', 'error');
     const take = titles.slice(0, 250);
     if (!await confirmBox(`إضافة ${take.length} عنوان إلى «من طلبات هذا الشهر»${dup ? ` (استُبعد ${dup} مكرراً)` : ''}${titles.length > take.length ? ` - أول 250 فقط من ${titles.length}` : ''}؟`, { ok: 'إضافة' })) return;
-    const now = Date.now(); take.forEach((x, i) => Store.push('showcase', { title: x.t, org: '', region: '', city: x.c, spec: '', trainerName: '', src: '', ts: now - i }));
+    const now = Date.now(), cur = new Date(); take.forEach((x, i) => { const same = x.m && x.m.y === cur.getFullYear() && x.m.m === cur.getMonth(), base = x.m ? (same ? now : Date.UTC(x.m.y, x.m.m, 28, 9)) : now; Store.push('showcase', { title: x.t, org: x.o, region: '', city: x.c, spec: x.s, trainerName: '', src: '', ts: base - i * 1000 }); });
     Security.log('رفع عناوين «من طلبات هذا الشهر»', `${take.length} عنواناً`); toast(`أُضيف ${take.length} عنوان وتظهر في الصفحة الرئيسية`);
   };
   $$('[data-se]', main).forEach(b => b.onclick = () => showcaseEditor(Store.get(`showcase/${b.dataset.se}`)));

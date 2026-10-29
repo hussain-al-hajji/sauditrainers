@@ -168,7 +168,7 @@ const SECTION_TYPES = (() => {
         <b>${esc(x.title)}</b>
         <small>${esc(x.org || 'جهة تدريبية')}</small>
         ${x.trainerName ? `<span class="ord-tr"><i class="fa-solid fa-user-tie"></i>${esc(x.trainerName)}</span>` : ''}
-        <span class="ord-meta">${(x.city || x.region) ? `<span><i class="fa-solid ${x.city === 'عن بعد' ? 'fa-laptop' : 'fa-location-dot'}"></i>${esc(x.city || regionName(x.region))}</span>` : ''}</span>
+        <span class="ord-meta">${(x.city || x.region) ? `<span><i class="fa-solid ${x.city === 'عن بعد' ? 'fa-laptop' : 'fa-location-dot'}"></i>${esc(x.city || regionName(x.region))}</span>` : ''}<span><i class="fa-regular fa-calendar"></i>${esc(monthName(x.ts))}</span></span>
       </article>`;
       if (sec.tpl === 'grid') return `<div class="wrap">${head(d)}<div class="ord-grid">${list.map(tile).join('')}</div></div>`;
       let loop = [...list]; while (loop.length < 8) loop = loop.concat(list);
