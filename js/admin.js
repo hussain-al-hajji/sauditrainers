@@ -671,19 +671,20 @@ function aRequests(main) {
     const f = e.target.files[0]; e.target.value = ''; if (!f) return;
     // العمود الأول = عنوان الدورة، والثاني (اختياري) = المدينة أو «عن بعد»؛ يدعم علامات الاقتباس وتُتجاوز عناوين الأعمدة المعروفة
     const cols = l => { const out = []; let cur = '', q = false; for (let k = 0; k < l.length; k++) { const c = l[k]; if (q) { if (c === '"' && l[k + 1] === '"') { cur += '"'; k++; } else if (c === '"') q = false; else cur += c; } else if (c === '"') q = true; else if (c === ',' || c === ';' || c === '\t') { out.push(cur); cur = ''; } else cur += c; } out.push(cur); return out.map(x => x.replace(/\s+/g, ' ').trim()); };
-    const text = (await f.text()).replace(/^\ufeff/, ''), have = new Set(Store.list('showcase').map(x => String(x.title || '').trim().toLowerCase())), seen = new Set(); let dup = 0;
+    const text = (await f.text()).replace(/^\ufeff/, ''), have = new Map(Store.list('showcase').map(x => [String(x.title || '').trim().toLowerCase(), x])), seen = new Set(); let dup = 0; const upd = [];
     // الأعمدة تُعرف من السطر الأول (عنوان الدورة، المدينة، التخصص، الجهة، الشهر)، وإلا فبالترتيب: عنوان ثم مدينة
     const lines = text.split(/\r?\n/).filter(l => l.trim()).map(cols), H = lines[0] || [], ix = n => H.findIndex(h => h === n), known = H.some(h => /^(عنوان الدورة|العنوان|title)$/i.test(h));
     const col = known ? { t: Math.max(0, H.findIndex(h => /^(عنوان الدورة|العنوان|title)$/i.test(h))), c: ix('المدينة'), s: ix('التخصص'), o: ix('الجهة'), m: ix('الشهر'), n: ix('عدد الفرص') } : { t: 0, c: 1, s: -1, o: -1, m: -1, n: -1 };
     const specKey = v => { v = String(v || '').trim(); if (!v) return ''; const hit = SPECIALTIES.find(x => x.k === v || x.name === v) || SPECIALTIES.find(x => x.name.includes(v) || v.includes(x.name)); return hit ? hit.k : ''; };
     const MN = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
     const monthOf = v => { v = String(v || '').trim(); let y, m, a = v.match(/^(\d{4})[-/](\d{1,2})/); if (a) { y = +a[1]; m = +a[2] - 1; } else { const k = MN.findIndex(n => v.includes(n)); a = v.match(/(\d{4})/); if (k >= 0) { m = k; y = a ? +a[1] : new Date().getFullYear(); } } return Number.isInteger(m) && m >= 0 && m < 12 ? { y, m } : null; };
-    const titles = lines.slice(known ? 1 : 0).map(r => ({ t: String(r[col.t] || '').replace(/^[\s•\-–*·]+/, '').slice(0, 90), c: String(col.c >= 0 ? r[col.c] || '' : '').slice(0, 40), s: specKey(col.s >= 0 ? r[col.s] : ''), o: String(col.o >= 0 ? r[col.o] || '' : '').slice(0, 60), m: monthOf(col.m >= 0 ? r[col.m] : ''), n: Math.max(0, Math.min(9999, parseInt(String(col.n >= 0 ? r[col.n] || '' : '').replace(/[^\d]/g, ''), 10) || 0)) })).filter(x => x.t).filter(x => { const k = x.t.toLowerCase(); if (have.has(k) || seen.has(k)) { dup++; return false; } seen.add(k); return true; });
-    if (!titles.length) return toast('لا عناوين جديدة في الملف', 'error');
+    const titles = lines.slice(known ? 1 : 0).map(r => ({ t: String(r[col.t] || '').replace(/^[\s•\-–*·]+/, '').slice(0, 90), c: String(col.c >= 0 ? r[col.c] || '' : '').slice(0, 40), s: specKey(col.s >= 0 ? r[col.s] : ''), o: String(col.o >= 0 ? r[col.o] || '' : '').slice(0, 60), m: monthOf(col.m >= 0 ? r[col.m] : ''), n: Math.max(0, Math.min(9999, parseInt(String(col.n >= 0 ? r[col.n] || '' : '').replace(/[^\d]/g, ''), 10) || 0)) })).filter(x => x.t).filter(x => { const k = x.t.toLowerCase(); if (seen.has(k)) { dup++; return false; } seen.add(k); if (have.has(k)) { upd.push({ rec: have.get(k), x }); return false; } return true; });
+    if (!titles.length && !upd.length) return toast('لا عناوين جديدة في الملف', 'error');
     const take = titles.slice(0, 250);
-    if (!await confirmBox(`إضافة ${take.length} عنوان إلى «من طلبات هذا الشهر»${dup ? ` (استُبعد ${dup} مكرراً)` : ''}${titles.length > take.length ? ` - أول 250 فقط من ${titles.length}` : ''}؟`, { ok: 'إضافة' })) return;
+    if (!await confirmBox(`${take.length ? `إضافة ${take.length} عنوان` : ''}${take.length && upd.length ? ' و' : ''}${upd.length ? `تحديث ${upd.length} عنوان موجود (العدد والمدينة والتخصص)` : ''} في «من طلبات هذا الشهر»${dup ? ` (استُبعد ${dup} مكرراً داخل الملف)` : ''}${titles.length > take.length ? ` - أول 250 فقط من ${titles.length}` : ''}؟`, { ok: 'تنفيذ' })) return;
+    upd.forEach(({ rec, x }) => { const u = {}; if (x.n) u.n = x.n; if (x.c) u.city = x.c; if (x.s) u.spec = x.s; if (x.o) u.org = x.o; if (Object.keys(u).length) Store.update(`showcase/${rec.id}`, u); });
     const now = Date.now(), cur = new Date(); take.forEach((x, i) => { const same = x.m && x.m.y === cur.getFullYear() && x.m.m === cur.getMonth(), base = x.m ? (same ? now : Date.UTC(x.m.y, x.m.m, 28, 9)) : now; Store.push('showcase', { title: x.t, org: x.o, region: '', city: x.c, spec: x.s, trainerName: '', src: '', n: x.n || null, ts: base - i * 1000 }); });
-    Security.log('رفع عناوين «من طلبات هذا الشهر»', `${take.length} عنواناً`); toast(`أُضيف ${take.length} عنوان وتظهر في الصفحة الرئيسية`);
+    Security.log('رفع عناوين «من طلبات هذا الشهر»', `${take.length} عنواناً`); toast(`تمّ: ${take.length} إضافة و${upd.length} تحديث`);
   };
   $$('[data-se]', main).forEach(b => b.onclick = () => showcaseEditor(Store.get(`showcase/${b.dataset.se}`)));
   $$('[data-sx]', main).forEach(b => b.onclick = () => Store.remove(`showcase/${b.dataset.sx}`));
@@ -700,6 +701,7 @@ function showcaseEditor(x) {
         ${field('المدرب (اختياري)', `<input type="text" name="trainerName" maxlength="60" value="${esc(x.trainerName || '')}">`)}
         ${field('المدينة أو «عن بعد»', `<input type="text" name="city" maxlength="40" value="${esc(x.city || '')}" placeholder="مثال: الرياض أو عن بعد">`)}
         ${field('المنطقة', `<select name="region"><option value="">—</option>${REGIONS.map(r => opt(r.k, r.name, x.region)).join('')}</select>`)}
+        ${field('عدد الفرص في هذا المجال', `<input type="number" name="n" min="0" max="9999" inputmode="numeric" value="${esc(x.n || '')}" placeholder="مثال: 12">`)}
         ${field('التخصص', `<select name="spec"><option value="">—</option>${SPECIALTIES.map(s => opt(s.k, s.name, x.spec)).join('')}</select>`)}
       </div>
       <button class="btn primary">حفظ وعرض</button>
@@ -707,7 +709,7 @@ function showcaseEditor(x) {
   m.$('#sf').onsubmit = e => {
     e.preventDefault();
     const d = formData(e.target);
-    const rec = { ...d, src: x.src || '', ts: x.ts || Date.now() };
+    const rec = { ...d, n: Math.max(0, Math.min(9999, parseInt(d.n, 10) || 0)) || null, src: x.src || '', ts: x.ts || Date.now() };
     if (x.id) Store.update(`showcase/${x.id}`, rec); else Store.push('showcase', rec);
     Security.log('عرض طلب في الرئيسية', d.title); m.close(); toast('تم - يظهر في الصفحة الرئيسية');
   };
