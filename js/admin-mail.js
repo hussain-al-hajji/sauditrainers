@@ -87,8 +87,10 @@ function aMail(main) {
 }
 function mailBanner() {
   if (!Automation.on) return `<div class="banner warn"><i class="fa-solid fa-plug-circle-xmark"></i><span>الإرسال يحتاج ربط بريد المنصة (رابط السكربت <code>automationUrl</code> في <code>js/config.js</code> وإضافة ملف <code>Campaign.gs</code> للسكربت). يمكنك الكتابة والمعاينة الآن.</span></div>`;
-  const q = Number(Store.get('settings/automation/quota'));
-  return `<div class="banner ok"><i class="fa-solid fa-paper-plane"></i><span>الإرسال من بريد المنصة مفعّل.${q >= 0 && Store.get('settings/automation/quota') != null ? ` المتبقي اليوم في حصة Gmail: <b class="num">${q}</b> رسالة (تُرسل الباقي تلقائياً في اليوم التالي).` : ' الحصة اليومية لـ Gmail العادي 100 مستلم، ولحساب Workspace حتى 1500.'}</span></div>`;
+  const q = Number(Store.get('settings/automation/quota')), mu = Store.get('settings/automation/mailuse');
+  const KN = { lead: 'طلبات التواصل مع مدرب', request: 'إشعارات الطلبات الجديدة', application: 'طلبات التسجيل', outbox: 'ردود الحالة', campaign: 'الحملات', review: 'التقييمات', sweepPending: 'إعادة محاولة رسائل متأخرة' };
+  const use = mu && mu.day === dayKeyRiyadh() && mu.by ? `<br><small>ما استُهلك اليوم بحسب النوع: ${Object.entries(mu.by).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${esc(KN[k.replace('doPost:', '')] || k)} <b class="num">${v}</b>`).join(' · ')}</small>` : '';
+  return `<div class="banner ok"><i class="fa-solid fa-paper-plane"></i><span>الإرسال من بريد المنصة مفعّل.${q >= 0 && Store.get('settings/automation/quota') != null ? ` المتبقي اليوم في حصة Gmail: <b class="num">${q}</b> رسالة (تُرسل الباقي تلقائياً في اليوم التالي).${use}` : ' الحصة اليومية لـ Gmail العادي 100 مستلم، ولحساب Workspace حتى 1500.'}</span></div>`;
 }
 
 /* ----- كتابة الرسالة ----- */
