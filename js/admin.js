@@ -601,6 +601,10 @@ function aRequests(main) {
   const all = [...reqs, ...leads].sort((a, b) => b.ts - a.ts);
   const show = Store.list('showcase').sort((a, b) => b.ts - a.ts);
   main.innerHTML = `<div class="dash-h"><h2>فرص التدريب</h2><span class="muted small">ما تضيفه الإدارة وما يصل من الجهات التدريبية، مع إحصاءاتهما</span></div>
+    <div class="pbox" style="margin-bottom:12px"><div class="bl-bar"><b><i class="fa-solid fa-file-export"></i> تصدير الفرص والطلبات</b>
+      <label>الشهر<select id="ex-m"><option value="">كل الأشهر</option>${Opps.exportMonths(all).map(m => `<option value="${m}">${esc(Opps.ymName(m))}</option>`).join('')}</select></label>
+      <button class="btn primary" id="ex-go"><i class="fa-solid fa-file-csv"></i> تصدير CSV (إعلانات الإدارة + طلبات الجهات)</button></div>
+      <p class="muted small" style="margin:4px 0 0">ملف واحد بصيغة موحّدة لكل ما نُشر خلال الشهر المختار: إعلانات الإدارة وطلبات «اطلب مدرباً» وطلبات التواصل المباشر، بلا بيانات تواصل شخصية.</p></div>
     <details class="pbox" open><summary style="cursor:pointer"><b><i class="fa-solid fa-table-cells-large" style="color:var(--g600)"></i> المعروض في «من طلبات هذا الشهر» (${show.length})</b></summary>
       <p class="muted small">تظهر هذه البطاقات متحركة في الصفحة الرئيسية دون أي بيانات تواصل. اختر من الطلبات بالأسفل بزر <i class="fa-solid fa-table-cells-large"></i> أو أضف يدوياً.</p>
       <div class="sc-admin">${show.map(x => `<div class="sc-mini"><b>${esc(x.title)}</b><small>${esc(x.org || 'جهة تدريبية')} · ${esc(regionName(x.region) || '')} · ${fmtDate(x.ts)}</small><div class="acts"><button class="btn sm icon" data-se="${esc(x.id)}"><i class="fa-solid fa-pen"></i></button><button class="btn sm icon" data-sx="${esc(x.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`).join('')}
@@ -641,6 +645,7 @@ function aRequests(main) {
       </div></div>`;
     }).join('') : '<div class="empty"><i class="fa-solid fa-inbox"></i><h3>لا توجد طلبات بعد</h3></div>'}`;
   Opps.adminOpps($('#rq-adm', main), () => aRequests(main));
+  $('#ex-go', main).onclick = () => Opps.exportAll($('#ex-m', main).value, all);
   const path = k => (k === 'req' ? 'requests' : 'leads');
   $$('[data-wa]', main).forEach(a => a.addEventListener('click', e => {
     if (a.getAttribute('href') === '#') { e.preventDefault(); toast('لا يوجد رقم جوال لهذا المدرب في بياناته الإدارية', 'error'); return; }

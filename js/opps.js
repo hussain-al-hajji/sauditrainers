@@ -123,6 +123,18 @@ const Opps = (() => {
       </div>`;
   }
 
+  // تصدير موحّد لكل ما نُشر: إعلانات الإدارة + طلبات الجهات (اطلب مدرباً والتواصل المباشر) في جدول واحد بصيغة واحدة، لشهر يُختار أو لكل الأشهر
+  const exportMonths = orgs => [...new Set([...approved().map(o => ymKey(o.ts)), ...orgs.map(r => ymKey(r.ts))])].sort().reverse();
+  function exportAll(ym, orgs) {
+    const inM = x => !ym || ymKey(x.ts) === ym, row = (src, kind, x, extra) => [src, kind, dayOf(x.ts), ymKey(x.ts), x.title || x.topic, x.org, x.spec ? specName(x.spec) : '', x.region ? regionName(x.region) : '', x.url || '', x.desc || x.msg, extra, x.note || ''];
+    const rows = [
+      ...approved().filter(inM).map(o => row('الإدارة', (KIND[o.kind] || KIND.post)[0], o, o.deadline ? `آخر موعد ${dayOf(o.deadline)}` : '')),
+      ...orgs.filter(inM).map(r => row('جهة', r.kind === 'lead' ? 'طلب تواصل مع مدرب' : 'طلب «اطلب مدرباً»', r, r.status === 'new' ? 'جديد' : 'تمت المتابعة'))
+    ].sort((a, b) => (a[2] < b[2] ? -1 : 1));
+    if (!rows.length) return toast('لا فرص أو طلبات في هذا الشهر', 'error');
+    saveCsv(`فرص-وطلبات-التدريب-${ym || 'كل-الأشهر'}.csv`, [['المصدر', 'النوع', 'التاريخ', 'الشهر', 'العنوان / الموضوع', 'الجهة', 'التخصص', 'المنطقة', 'الرابط', 'النص / التفاصيل', 'ملاحظات', 'ملاحظة للمدربين'], ...rows]);
+  }
+
   function adminOpps(box, rerender) {
     const ib = inbox(), news = ib.filter(o => o.status === 'new'), all = approved(), months = [...new Set(all.map(o => ymKey(o.ts)))].sort().reverse();
     if (OV.m && !months.includes(OV.m)) OV.m = '';
@@ -201,5 +213,5 @@ const Opps = (() => {
     $$('[data-jx]', main).forEach(b => b.onclick = () => saveCsv(`وظائف-التدريب-${b.dataset.jx}.csv`, jobRows(jl.filter(j => ymKey(j.ts) === b.dataset.jx))));
   }
 
-  return { approved, inbox, unread, tab, admin, adminOpps, statsHtml };
+  return { approved, inbox, unread, tab, admin, adminOpps, statsHtml, exportAll, exportMonths, ymName };
 })();
