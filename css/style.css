@@ -1350,3 +1350,4 @@ body.preview .local-flag { display: none; }
 .mstat .ms-c b { font-family: var(--f-display); font-weight: 900; font-size: 2.2rem; color: var(--g800); line-height: 1.1; }
 .mstat .ms-c span { font-size: .92rem; color: var(--ink2); line-height: 1.5; }
 @media (max-width: 560px) { .mstat .ms-g { grid-template-columns: 1fr; } }
+.rq-part{margin:26px 0 12px;padding-top:14px;border-top:2px solid var(--line);color:var(--g800)}

@@ -96,14 +96,73 @@ const Opps = (() => {
     };
   }
 
-  function admin(main) {
-    const jl = jobs(), set = Store.get('settings/opps') || {}, jq = arr(set.jobQueries).length ? arr(set.jobQueries) : JOB_DEFAULT, last = set.lastRun || {}, ib = inbox(), news = ib.filter(o => o.status === 'new'), ap = approved();
+  /* ---------- أدوات مشتركة لصفحتي «فرص التدريب» و«الوظائف» في لوحة الإدارة ---------- */
+  const ymKey = ts => { const d = new Date((ts || 0) + 3 * 36e5); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; };
+  const ymName = ym => `${['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'][+ym.slice(5, 7) - 1]} ${ym.slice(0, 4)}`;
+  const csvCell = v => `"${String(v == null ? '' : v).replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`;
+  const saveCsv = (name, rows) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + rows.map(r => r.map(csvCell).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' })); a.download = name; a.click(); };
+  const tally = (list, f, n = 8) => { const m = new Map(); list.forEach(x => { const k = f(x); if (k) m.set(k, (m.get(k) || 0) + 1); }); return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, n); };
+  const dayOf = ts => (ts ? new Date(ts).toLocaleDateString('en-CA') : '');
+  const OV = { m: '' };   // فلتر الشهر في جدول فرص الإدارة
+
+  /* ---------- صفحة «فرص التدريب»: إحصاءات + جزء الإدارة (إضافة وجدول) ---------- */
+  // orgs = طلبات الجهات (اطلب مدرباً + التواصل المباشر) تمرّرها صفحة الطلبات لتُحسب إحصاءاتها
+  function statsHtml(orgs) {
+    const ap = approved(), reqs = orgs.filter(r => r.kind === 'req'), leads = orgs.filter(r => r.kind === 'lead'), cm = MonthStats.cur().key;
+    const thisM = [...ap, ...orgs].filter(x => ymKey(x.ts) === cm).length;
+    const sp = k => (k ? specName(k) : ''), rg = k => (k ? regionName(k) : ''), norm = t => String(t || '').replace(/\s+/g, ' ').trim().slice(0, 60);
+    const mon = list => anBars(tally(list, x => ymKey(x.ts), 6).sort((a, b) => (a[0] < b[0] ? -1 : 1)), ymName);
+    const none = 'لا بيانات بعد';
+    return `<div class="kpis">${anKpi('fa-layer-group', anNum(ap.length + orgs.length), 'إجمالي فرص التدريب')}${anKpi('fa-handshake-angle', anNum(ap.length), 'مضافة من الإدارة')}${anKpi('fa-wand-magic-sparkles', anNum(reqs.length), 'طلبات «اطلب مدرباً»')}${anKpi('fa-paper-plane', anNum(leads.length), 'طلبات تواصل مع مدرب')}${anKpi('fa-calendar-day', anNum(thisM), 'هذا الشهر (الإدارة + الجهات)')}</div>
+      <div class="grid2">
+        ${anBox('fa-handshake-angle', `إحصاءات إضافات الإدارة (${ap.length})`, `<h4 class="an-h4">حسب النوع</h4>${anBars(tally(ap, o => (KIND[o.kind] || KIND.post)[0]), x => x, none)}<h4 class="an-h4">أكثر التخصصات</h4>${anBars(tally(ap, o => sp(o.spec)), x => x, none)}<h4 class="an-h4">أكثر المناطق</h4>${anBars(tally(ap, o => rg(o.region)), x => x, none)}<h4 class="an-h4">حسب الشهر</h4>${mon(ap)}`)}
+        ${anBox('fa-inbox', `إحصاءات طلبات الجهات (${orgs.length})`, `<h4 class="an-h4">أكثر البرامج طلباً</h4>${anBars(tally(orgs, r => norm(r.topic), 10), x => x, none)}<h4 class="an-h4">أكثر التخصصات</h4>${anBars(tally(orgs, r => sp(r.spec)), x => x, none)}<h4 class="an-h4">أكثر المناطق</h4>${anBars(tally(orgs, r => rg(r.region)), x => x, none)}<h4 class="an-h4">حسب الشهر</h4>${mon(orgs)}`)}
+      </div>`;
+  }
+
+  function adminOpps(box, rerender) {
+    const ib = inbox(), news = ib.filter(o => o.status === 'new'), all = approved(), months = [...new Set(all.map(o => ymKey(o.ts)))].sort().reverse();
+    if (OV.m && !months.includes(OV.m)) OV.m = '';
+    const ap = OV.m ? all.filter(o => ymKey(o.ts) === OV.m) : all;
     const row = (o, btns) => `<div class="lead"><span class="ic"><i class="fa-solid ${(KIND[o.kind] || KIND.post)[1]}"></i></span><div><b><a href="${esc(safeUrl(o.url) || '#')}" target="_blank" rel="noopener nofollow">${esc(o.title)}</a></b> <small class="muted">${esc(o.site || host(o.url))} · ${ago(o.ts)}${o.src === 'jobs' ? ' · Google Jobs' : o.src === 'etimad' ? ' · اعتماد' : o.src === 'google' ? ' · بحث Google' : ''}${o.deadline ? ' · آخر موعد ' + fmtDate(o.deadline) : ''}</small>${o.desc ? `<p class="small">${esc(String(o.desc).slice(0, 220))}</p>` : ''}</div><div class="acts" style="flex-direction:column">${btns}</div></div>`;
-    main.innerHTML = `<div class="dash-h"><h2>إعلانات عبر الإنترنت</h2><span class="muted small">طلبات بحث عن مدربين: تُجلب أو تُضاف، ثم تُعتمد لتظهر في حسابات المدربين فقط</span></div>
-      <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-plus"></i> إضافة فرصة (إعلان نصي · إعلان نصي برابط · رابط)</h3>
+    box.innerHTML = `      <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-plus"></i> إضافة فرصة (إعلان نصي · إعلان نصي برابط · رابط)</h3>
         <p class="small muted">الصق نص الإعلان كما وصلك (من واتساب مثلاً) و/أو رابطه (لينكدإن، إنستقرام، تيك توك…). يظهر للمدربين كما هو، ومع الرابط تظهر لهم معاينته. اكتب نصاً أو رابطاً أو الاثنين.</p>
         <textarea id="op-text" rows="5" maxlength="2000" placeholder="نص الإعلان (اختياري إن وضعت رابطاً)" style="width:100%;margin-bottom:8px"></textarea>
         <div class="row" style="gap:8px"><input id="op-url" type="url" dir="ltr" placeholder="رابط (اختياري) https://…" style="flex:1"><button class="btn primary" id="op-add"><i class="fa-solid fa-plus"></i> إضافة ومراجعة</button></div></div>
+      ${news.length ? `<div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-inbox"></i> الوارد بانتظار المراجعة (${news.length})</h3>${news.map(o => row(o, `<button class="btn sm primary" data-ap="${esc(o.id)}"><i class="fa-solid fa-circle-check"></i> اعتماد</button><button class="btn sm danger" data-rj="${esc(o.id)}"><i class="fa-solid fa-xmark"></i> رفض</button>`)).join('')}</div>` : ''}
+      <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-table-list"></i> جدول فرص التدريب المضافة من الإدارة (${ap.length})</h3>
+        <p class="small muted">اضغط على عنوان الفرصة لعرض تفاصيلها. صدّر الجدول بكامل حقوله (العنوان والنص والرابط والتخصص والمنطقة...) لتحليله لاحقاً، مثل استخراج أكثر البرامج طلباً.</p>
+        <div class="bl-bar"><label>الشهر<select id="op-m"><option value="">كل الأشهر</option>${months.map(m => `<option value="${m}" ${OV.m === m ? 'selected' : ''}>${esc(ymName(m))}</option>`).join('')}</select></label><button class="btn sm" id="op-csv" ${ap.length ? '' : 'disabled'}><i class="fa-solid fa-file-csv"></i> تصدير CSV</button></div>
+        ${ap.length ? `<div class="tbl-wrap" style="max-height:480px;overflow:auto"><table class="tbl"><thead><tr><th>التاريخ</th><th>العنوان</th><th>الجهة</th><th>النوع</th><th>التخصص</th><th>المنطقة</th><th>آخر موعد</th></tr></thead><tbody>
+          ${ap.map(o => `<tr><td class="num">${esc(dayOf(o.ts))}</td><td><button type="button" class="btn sm ghost" data-x="${esc(o.id)}" style="text-align:start;white-space:normal">${esc(String(o.title).slice(0, 70))}</button></td><td>${esc(o.org || '')}</td><td>${esc((KIND[o.kind] || KIND.post)[0])}</td><td>${esc(o.spec ? specName(o.spec) : '')}</td><td>${esc(o.region ? regionName(o.region) : '')}</td><td class="num">${o.deadline ? esc(dayOf(o.deadline)) : ''}</td></tr>
+            <tr hidden data-dx="${esc(o.id)}"><td colspan="7" style="background:var(--g50)"><div style="display:grid;gap:6px">${o.desc ? `<div>${nl2br(o.desc)}</div>` : ''}${o.note ? `<div class="small"><b>ملاحظة للمدربين:</b> ${nl2br(o.note)}</div>` : ''}${o.url ? `<div class="small"><a href="${esc(safeUrl(o.url) || '#')}" target="_blank" rel="noopener nofollow" dir="ltr">${esc(o.url)}</a></div>` : ''}<div class="small muted">المصدر: ${esc(o.site || host(o.url) || '')}</div><div class="row" style="gap:8px"><button class="btn sm" data-ed="${esc(o.id)}"><i class="fa-solid fa-pen"></i> تعديل</button><button class="btn sm danger" data-dl="${esc(o.id)}"><i class="fa-solid fa-trash"></i> سحب</button></div></div></td></tr>`).join('')}
+        </tbody></table></div>` : '<p class="muted small">لم تُضف فرص بعد.</p>'}</div>`;
+    const again = rerender;
+    $('#op-m', box).onchange = e => { OV.m = e.target.value; again(); };
+    $('#op-csv', box).onclick = () => saveCsv(`فرص-التدريب-${OV.m || 'الكل'}.csv`, [['التاريخ', 'العنوان', 'الجهة', 'النوع', 'التخصص', 'المنطقة', 'آخر موعد', 'المصدر', 'الرابط', 'النص', 'ملاحظة'], ...ap.slice().sort((a, b) => (a.ts || 0) - (b.ts || 0)).map(o => [dayOf(o.ts), o.title, o.org, (KIND[o.kind] || KIND.post)[0], o.spec ? specName(o.spec) : '', o.region ? regionName(o.region) : '', o.deadline ? dayOf(o.deadline) : '', o.site || host(o.url), o.url, o.desc, o.note])]);
+    $$('[data-x]', box).forEach(b => b.onclick = () => { const r = box.querySelector(`[data-dx="${b.dataset.x}"]`); if (r) r.hidden = !r.hidden; });
+    $('#op-add', box).onclick = async e => {
+      const text = $('#op-text', box).value.trim(), raw = $('#op-url', box).value.trim(), u = raw ? safeUrl(raw) : '';
+      if (!text && !raw) return toast('اكتب نص الإعلان أو ضع رابطاً', 'error');
+      if (raw && (!u || !/^https:\/\//i.test(u))) return toast('الرابط يجب أن يبدأ بـ https://', 'error');
+      if (u && (all.some(o => o.url === u) || ib.some(o => o.url === u))) return toast('الرابط موجود مسبقاً', 'error');
+      const first = text.split('\n').map(x => x.trim()).find(Boolean) || '';
+      const b = e.currentTarget, h = b.innerHTML; b.disabled = true; b.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+      const p = u ? await News.fetchPreview(u.slice(0, 500)) : null; b.disabled = false; b.innerHTML = h;
+      editor({ url: u || '', title: (first || p?.title || '').slice(0, 200), desc: text || p?.desc || '', lt: p?.title || '', ld: p?.desc || '', img: p?.img || '', site: p?.site || '', kind: 'post' }, { onDone: () => { $('#op-text', box).value = ''; $('#op-url', box).value = ''; again(); } });
+    };
+    $$('[data-ap]', box).forEach(b => b.onclick = () => editor(Store.get(`oppInbox/${b.dataset.ap}`), { fromInbox: true, onDone: again }));
+    $$('[data-rj]', box).forEach(b => b.onclick = () => Store.update(`oppInbox/${b.dataset.rj}`, { status: 'rejected' }));
+    $$('[data-ed]', box).forEach(b => b.onclick = () => editor({ ...Store.get(`opportunities/${b.dataset.ed}`), pub: true }, { onDone: again }));
+    $$('[data-dl]', box).forEach(b => b.onclick = async () => { if (await confirmBox('سحب هذه الفرصة من حسابات المدربين؟', { ok: 'سحب', danger: true })) { Store.remove(`opportunities/${b.dataset.dl}`); Security.log('سحب فرصة تدريب', b.dataset.dl); } });
+  }
+
+  /* ---------- صفحة «الوظائف»: الجلب الآلي + قائمة الوظائف + تصدير شهري ---------- */
+  const jobRows = list => [['التاريخ', 'العنوان', 'الجهة', 'الموقع', 'المصدر', 'نوع الدوام', 'الرابط', 'عبارة البحث', 'الوصف'], ...list.slice().sort((a, b) => (a.ts || 0) - (b.ts || 0)).map(j => [dayOf(j.ts), j.title, j.org, j.loc, j.site, j.sched, j.url, j.q, j.desc])];
+  function admin(main) {
+    const jl = jobs(), set = Store.get('settings/opps') || {}, jq = arr(set.jobQueries).length ? arr(set.jobQueries) : JOB_DEFAULT, last = set.lastRun || {};
+    const arch = Store.get('jobsArchive') || {}, stat = Store.get('stats/month') || {}, jm = [...new Set([...Object.keys(arch), ...jl.map(j => ymKey(j.ts))])].sort().reverse();
+    main.innerHTML = `<div class="dash-h"><h2>وظائف</h2><span class="muted small">وظائف التدريب المجلوبة آلياً من Google Jobs وتظهر في حسابات المدربين</span></div>
       <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-robot"></i> الجلب الآلي</h3>
         <p class="small muted">${last.ts ? `آخر تشغيل: ${ago(last.ts)} - ${last.jobsFound ?? 0} نتيجة في السعودية، ${last.jobs ?? 0} جديدة.` : 'لم يُشغَّل بعد.'} يعمل يومياً بعد تفعيل المشغّل في سكربت Google، أو اضغط «جلب الآن».</p>
         ${arr(last.log).length ? `<details class="small" style="margin:0 0 10px"><summary style="color:var(--warn);cursor:pointer">رسائل آخر تشغيل (${arr(last.log).length}) - قد تكون قديمة</summary><div style="color:var(--warn);margin-top:6px" dir="auto">${arr(last.log).map(x => `<div>${esc(x)}</div>`).join('')}</div><button class="btn sm ghost" id="op-clrlog" style="margin-top:8px"><i class="fa-solid fa-broom"></i> مسح الرسائل</button></details>` : ''}
@@ -119,21 +178,10 @@ const Opps = (() => {
       <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-brands fa-google"></i> وظائف Google Jobs المنشورة تلقائياً (${jl.length}) ${jl.length ? '<button class="btn sm danger" id="op-jclr" style="margin-inline-start:10px"><i class="fa-solid fa-broom"></i> حذف الكل</button>' : ''}</h3>
         <p class="small muted">تُنشر مباشرة في قسم «وظائف مدربين من Google Jobs» داخل حسابات المدربين بلا مراجعة، وتُحذف تلقائياً بعد 45 يوماً. احذف ما لا يناسب.</p>
         ${jl.slice(0, 30).map(j => `<div class="lead"><span class="ic"><i class="fa-solid fa-briefcase"></i></span><div><b><a href="${esc(safeUrl(j.url) || '#')}" target="_blank" rel="noopener nofollow">${esc(j.title)}</a></b> <small class="muted">${esc(j.org || '')} ${esc(j.loc || '')} · ${ago(j.ts)}</small></div><div class="acts"><button class="btn sm danger" data-jdel="${esc(j.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`).join('') || '<p class="muted small">لا توجد وظائف بعد.</p>'}</div>
-      <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-inbox"></i> الوارد بانتظار المراجعة (${news.length})</h3>
-        ${news.length ? news.map(o => row(o, `<button class="btn sm primary" data-ap="${esc(o.id)}"><i class="fa-solid fa-circle-check"></i> اعتماد</button><button class="btn sm danger" data-rj="${esc(o.id)}"><i class="fa-solid fa-xmark"></i> رفض</button>`)).join('') : '<p class="muted small">لا توجد نتائج جديدة.</p>'}</div>
-      <div class="pbox"><h3><i class="fa-solid fa-handshake-angle"></i> المعتمدة للمدربين (${ap.length})</h3>
-        ${ap.length ? ap.map(o => row(o, `<button class="btn sm" data-ed="${esc(o.id)}"><i class="fa-solid fa-pen"></i> تعديل</button><button class="btn sm danger" data-dl="${esc(o.id)}"><i class="fa-solid fa-trash"></i> سحب</button>`)).join('') : '<p class="muted small">لم تُعتمد فرص بعد.</p>'}</div>`;
-    const again = () => admin(main);
-    $('#op-add', main).onclick = async e => {
-      const text = $('#op-text', main).value.trim(), raw = $('#op-url', main).value.trim(), u = raw ? safeUrl(raw) : '';
-      if (!text && !raw) return toast('اكتب نص الإعلان أو ضع رابطاً', 'error');
-      if (raw && (!u || !/^https:\/\//i.test(u))) return toast('الرابط يجب أن يبدأ بـ https://', 'error');
-      if (u && (ap.some(o => o.url === u) || ib.some(o => o.url === u))) return toast('الرابط موجود مسبقاً', 'error');
-      const first = text.split('\n').map(x => x.trim()).find(Boolean) || '';
-      const b = e.currentTarget, h = b.innerHTML; b.disabled = true; b.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-      const p = u ? await News.fetchPreview(u.slice(0, 500)) : null; b.disabled = false; b.innerHTML = h;
-      editor({ url: u || '', title: (first || p?.title || '').slice(0, 200), desc: text || p?.desc || '', lt: p?.title || '', ld: p?.desc || '', img: p?.img || '', site: p?.site || '', kind: 'post' }, { onDone: () => { $('#op-text', main).value = ''; $('#op-url', main).value = ''; again(); } });
-    };
+      <div class="pbox"><h3><i class="fa-solid fa-file-export"></i> تصدير الوظائف الشهرية</h3>
+        <p class="small muted">في بداية كل شهر يُجهّز السكربت تلقائياً ملف CSV بوظائف الشهر المنتهي (قبل حذفها بعد 45 يوماً) ويظهر رابطه هنا للتحميل. ويمكنك تصدير أي شهر من الوظائف المتاحة الآن مباشرة.</p>
+        ${jm.length ? `<div class="tbl-wrap"><table class="tbl"><thead><tr><th>الشهر</th><th>عدد الوظائف</th><th>ملف الشهر التلقائي</th><th>تصدير الآن</th></tr></thead><tbody>${jm.map(m => { const a = arch[m], n = (stat[m] || {}).jobs, live = jl.filter(j => ymKey(j.ts) === m).length; return `<tr><td><b>${esc(ymName(m))}</b></td><td class="num">${anNum(n != null ? n : live)}</td><td>${a && /^https:\/\//.test(a.url || '') ? `<a class="btn sm primary" href="${esc(a.url)}" target="_blank" rel="noopener"><i class="fa-solid fa-download"></i> تحميل (${anNum(a.count || 0)} وظيفة)</a>` : '<span class="muted small">لم يُجهَّز بعد</span>'}</td><td>${live ? `<button class="btn sm" data-jx="${m}"><i class="fa-solid fa-file-csv"></i> CSV (${anNum(live)})</button>` : '<span class="muted small">انتهت مدة حفظها</span>'}</td></tr>`; }).join('')}</tbody></table></div>` : '<p class="muted small">لا وظائف مجلوبة بعد.</p>'}
+      </div>`;
     const cnt = () => { const n = Math.min(20, [...new Set($('#op-jq', main).value.split('\n').map(x => x.trim()).filter(Boolean))].length), d = Number($('#op-jd', main).value) || 1, m = Math.round(n * 30 / d); $('#op-jqn', main).innerHTML = `<b>${n}</b> عبارة كل ${d === 1 ? 'يوم' : d + ' أيام'} ≈ <b>${m}</b> بحثاً شهرياً في SerpApi (الخطة المجانية نحو 100 بحث شهرياً).${m > 100 ? ' <span style="color:var(--bad)">أعلى من الحصة المجانية: قلّل العبارات أو زد الفاصل.</span>' : ' <span style="color:var(--ok)">ضمن الحصة المجانية.</span>'}`; };
     $('#op-jq', main).oninput = cnt; $('#op-jd', main).onchange = cnt; cnt();
     $$('[data-sg]', main).forEach(b => b.onclick = () => { const t = $('#op-jq', main), cur = t.value.split('\n').map(x => x.trim()).filter(Boolean); if (!cur.includes(b.dataset.sg)) cur.push(b.dataset.sg); t.value = cur.join('\n'); cnt(); });
@@ -145,11 +193,8 @@ const Opps = (() => {
     $('#op-clrlog', main) && ($('#op-clrlog', main).onclick = () => { Store.remove('settings/opps/lastRun/log'); toast('تم مسح الرسائل'); });
     $('#op-jclr', main) && ($('#op-jclr', main).onclick = async () => { if (await confirmBox(`حذف ${jl.length} وظيفة من حسابات المدربين؟`, { ok: 'حذف', danger: true })) { jl.forEach(j => Store.remove(`jobs/${j.id}`)); toast('تم الحذف'); } });
     $$('[data-jdel]', main).forEach(b => b.onclick = () => Store.remove(`jobs/${b.dataset.jdel}`));
-    $$('[data-ap]', main).forEach(b => b.onclick = () => editor(Store.get(`oppInbox/${b.dataset.ap}`), { fromInbox: true, onDone: again }));
-    $$('[data-rj]', main).forEach(b => b.onclick = () => Store.update(`oppInbox/${b.dataset.rj}`, { status: 'rejected' }));
-    $$('[data-ed]', main).forEach(b => b.onclick = () => editor({ ...Store.get(`opportunities/${b.dataset.ed}`), pub: true }, { onDone: again }));
-    $$('[data-dl]', main).forEach(b => b.onclick = async () => { if (await confirmBox('سحب هذه الفرصة من حسابات المدربين؟', { ok: 'سحب', danger: true })) { Store.remove(`opportunities/${b.dataset.dl}`); Security.log('سحب فرصة تدريب', b.dataset.dl); } });
+    $$('[data-jx]', main).forEach(b => b.onclick = () => saveCsv(`وظائف-التدريب-${b.dataset.jx}.csv`, jobRows(jl.filter(j => ymKey(j.ts) === b.dataset.jx))));
   }
 
-  return { approved, inbox, unread, tab, admin };
+  return { approved, inbox, unread, tab, admin, adminOpps, statsHtml };
 })();

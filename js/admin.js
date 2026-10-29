@@ -11,7 +11,7 @@ Pages.admin = {
     const newReq = Store.list('requests').filter(r => r.status === 'new').length + Store.list('leads').filter(r => r.status === 'new').length;
     const all = [
       ['dash', 'fa-chart-pie', 'المؤشرات'], ['apps', 'fa-user-plus', 'طلبات التسجيل', apps.filter(a => a.status === 'new').length], ['trainers', 'fa-id-card', 'المدربون'],
-      ['requests', 'fa-inbox', 'طلبات الجهات', newReq], ['mail', 'fa-envelope', 'المراسلة'], ['news', 'fa-newspaper', 'الأخبار والإعلانات'], ['health', 'fa-heart-pulse', 'صحة الموقع', healthAlerts().length], ['library', 'fa-book-open', 'مكتبة المدرب', Store.list('librarySuggest').filter(s => s && s.status === 'pending').length], ['reviews', 'fa-star', 'مراجعات وتوصيات', Store.list('reviews').filter(r => r && r.status === 'pending').length], ['opps', 'fa-handshake-angle', 'إعلانات عبر الإنترنت', Opps.inbox().filter(o => o.status === 'new').length], ['social', 'fa-share-nodes', 'النشر الاجتماعي', Store.list('social').filter(p => p.status === 'failed').length],
+      ['requests', 'fa-handshake-angle', 'فرص التدريب', newReq + Opps.inbox().filter(o => o.status === 'new').length], ['mail', 'fa-envelope', 'المراسلة'], ['news', 'fa-newspaper', 'الأخبار والإعلانات'], ['health', 'fa-heart-pulse', 'صحة الموقع', healthAlerts().length], ['library', 'fa-book-open', 'مكتبة المدرب', Store.list('librarySuggest').filter(s => s && s.status === 'pending').length], ['reviews', 'fa-star', 'مراجعات وتوصيات', Store.list('reviews').filter(r => r && r.status === 'pending').length], ['opps', 'fa-briefcase', 'وظائف'], ['social', 'fa-share-nodes', 'النشر الاجتماعي', Store.list('social').filter(p => p.status === 'failed').length],
       ['home', 'fa-house', 'الصفحة الرئيسية'], ['forms', 'fa-rectangle-list', 'النماذج'], ['templates', 'fa-envelope-open-text', 'قوالب'], ['seo', 'fa-magnifying-glass-chart', 'SEO'], ['specs', 'fa-shapes', 'التخصصات'], ['halls', 'fa-building-columns', 'القاعات', Store.list('hallReqs').filter(r => r.status === 'new').length],
       ['content', 'fa-pen-ruler', 'المحتوى العام'], ['admins', 'fa-user-shield', 'المشرفون'], ['backup', 'fa-database', 'البيانات والسجل']
     ];
@@ -584,7 +584,7 @@ function exportCSV() {
   download(`sauditrainers-${new Date().toISOString().slice(0, 10)}.csv`, '﻿' + [cols.join(','), ...rows].join('\n'), 'text/csv;charset=utf-8');
 }
 
-/* ===================== طلبات الجهات ===================== */
+/* ===================== فرص التدريب: إحصاءات + إضافة الإدارة + طلبات الجهات ===================== */
 const leadDraft = (r, t) => `السلام عليكم ${withTitle(t?.name || r.trainerName || '')} 🌟
 وصلك طلب تواصل جديد عبر منصة «مدرّبون سعوديّون»:
 
@@ -600,7 +600,11 @@ function aRequests(main) {
   const leads = Store.list('leads').map(r => ({ ...r, kind: 'lead' }));
   const all = [...reqs, ...leads].sort((a, b) => b.ts - a.ts);
   const show = Store.list('showcase').sort((a, b) => b.ts - a.ts);
-  main.innerHTML = `<div class="dash-h"><h2>طلبات الجهات التدريبية</h2><span class="muted small">طلبات التواصل مع مدرب محدد + «اطلب مدرباً»</span></div>
+  main.innerHTML = `<div class="dash-h"><h2>فرص التدريب</h2><span class="muted small">ما تضيفه الإدارة وما يصل من الجهات التدريبية، مع إحصاءاتهما</span></div>
+    ${Opps.statsHtml(all)}
+    <h3 class="rq-part"><i class="fa-solid fa-handshake-angle"></i> الجزء الأول: فرص تضيفها الإدارة</h3>
+    <div id="rq-adm"></div>
+    <h3 class="rq-part"><i class="fa-solid fa-inbox"></i> الجزء الثاني: طلبات الجهات التدريبية <small class="muted">(طلبات التواصل مع مدرب محدد + «اطلب مدرباً»)</small></h3>
     ${Automation.on ? '<div class="banner ok"><i class="fa-solid fa-envelope-circle-check"></i>الإرسال الآلي للبريد مفعّل: يصل كل طلب تواصل إلى بريد المدرب من بريد المنصة.</div>'
       : '<div class="banner info"><i class="fa-solid fa-circle-info"></i>الإرسال الآلي للبريد غير مفعّل بعد (يحتاج ربط Google Apps Script). يمكنك الآن إرسال الطلب للمدرب بزر واتساب أو البريد.</div>'}
     <details class="pbox" ${show.length ? '' : 'open'}><summary style="cursor:pointer"><b><i class="fa-solid fa-table-cells-large" style="color:var(--g600)"></i> المعروض في «من طلبات هذا الشهر» (${show.length})</b></summary>
@@ -633,6 +637,7 @@ function aRequests(main) {
         <button class="btn sm ghost" data-del="${r.kind}" data-id="${esc(r.id)}" title="حذف"><i class="fa-solid fa-trash"></i></button>
       </div></div>`;
     }).join('') : '<div class="empty"><i class="fa-solid fa-inbox"></i><h3>لا توجد طلبات بعد</h3></div>'}`;
+  Opps.adminOpps($('#rq-adm', main), () => aRequests(main));
   const path = k => (k === 'req' ? 'requests' : 'leads');
   $$('[data-wa]', main).forEach(a => a.addEventListener('click', e => {
     if (a.getAttribute('href') === '#') { e.preventDefault(); toast('لا يوجد رقم جوال لهذا المدرب في بياناته الإدارية', 'error'); return; }
