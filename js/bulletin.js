@@ -424,25 +424,34 @@ const Bulletin = (() => {
       if (nl.length) { cy += 8; nl.forEach(l => { cy += 36; txt(ctx, l, R, cy - 8, { font: `400 25px ${FONT.body}`, color: C.ink2 }); }); }
     });
   }
-  function rptTopicPages(ctx, titles) {
-    const rows = titles.map(t => { ctx.font = `700 29px ${FONT.body}`; const l = K().wrap(ctx, t.c, CW - 280, 2); return { ...t, l, h: 50 + l.length * 38 }; });
-    const pages = []; let cur = null, used = 0;
-    rows.forEach(r => { if (!cur || used + r.h + 14 > BOT - TOP - 84) { cur = []; pages.push(cur); used = 0; } cur.push(r); used += r.h + 14; });
-    return pages;
+  const rptGlyph = cls => { try { const i = document.createElement('i'); i.className = `fa-solid ${cls}`; i.style.cssText = 'position:absolute;left:-99px'; document.body.appendChild(i); const c = getComputedStyle(i, '::before').content; i.remove(); return String(c).replace(/^["']|["']$/g, '') || ''; } catch { return ''; } };
+  const RPT_COLS = 2, RPT_CW = (CW - 22) / RPT_COLS, RPT_CH = 282, RPT_ROWS = 3;
+  const rptTopicPages = items => { const per = RPT_COLS * RPT_ROWS, pages = []; for (let i = 0; i < items.length; i += per) pages.push(items.slice(i, i + per)); return pages; };
+  // بطاقة طلب بتصميم بطاقات الواجهة (أيقونة ثم العنوان فالجهة فالمدينة والشهر فعدد الفرص) بخلفية فاتحة
+  function rptTile(ctx, it, x, y, d) {
+    const w = RPT_CW, h = RPT_CH, pad = 22, R = x + w - pad;
+    const g = ctx.createLinearGradient(x, y, x + w, y + h); g.addColorStop(0, '#fff'); g.addColorStop(1, C.paper);
+    rrect(ctx, x, y, w, h, 26, g, C.line, 1.5);
+    try { ctx.save(); K().rr(ctx, x, y, w, h, 26); ctx.clip(); ctx.fillStyle = ctx.createPattern(K().patternTile(C.g800, 0.045), 'repeat'); ctx.fillRect(x, y, w, h); ctx.restore(); } catch { /* بلا نقش */ }
+    const ic = x + w - pad - 28 - 8, cy = y + pad + 28;
+    ctx.beginPath(); ctx.arc(ic, cy, 28, 0, Math.PI * 2); ctx.fillStyle = C.g100; ctx.fill();
+    ctx.save(); ctx.font = '900 26px "Font Awesome 6 Free"'; ctx.fillStyle = C.g800; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'ltr'; ctx.fillText(rptGlyph((specOf(it.spec) || {}).icon || 'fa-chalkboard-user'), ic, cy + 2); ctx.restore();
+    const tw = w - 2 * pad - 14; let cyy = y + pad + 56 + 12;
+    const long = String(it.c).length > 48, fs = long ? 25 : 28, lh = long ? 36 : 40;
+    ctx.font = `900 ${fs}px ${FONT.head}`; const tl = K().wrap(ctx, it.c, tw, 3);
+    tl.forEach((l, i) => txt(ctx, l, R - 8, cyy + lh * (i + 1) - 10, { font: ctx.font, color: C.g900 })); cyy += tl.length * lh;
+    txt(ctx, it.org || 'جهة تدريبية', R - 8, cyy + 34, { font: `700 22px ${FONT.body}`, color: C.g700 });
+    // أسفل البطاقة: المدينة والشهر، ثم عدد الفرص
+    const by = y + h - pad;
+    const meta = [it.city || '', d.mname.split(' ')[0]].filter(Boolean).join(' · ');
+    txt(ctx, meta, R - 8, by - 54, { font: `500 21px ${FONT.body}`, color: C.muted });
+    if (it.n > 0) pill(ctx, `${it.n.toLocaleString('en-US')} ${it.n === 1 ? 'فرصة' : 'فرص'} في هذا المجال`, R - 8, by - 16, { bg: C.g100, fg: C.g800, fs: 20 });
   }
   function rptTopics(ctx, rows, first, total, d) {
-    txt(ctx, first ? 'مجالات وموضوعات التدريب المطلوبة' : 'المجالات المطلوبة (تابع)', W - PX, TOP + 36, { font: `900 44px ${FONT.head}`, color: C.g900 });
-    if (first) txt(ctx, `الأكثر طلباً في ${d.mname} (${total} موضوعاً)`, W - PX, TOP + 82, { font: `500 26px ${FONT.body}`, color: C.muted });
-    let y = TOP + 84 + (first ? 6 : 0), idx = rows.start;
-    rows.forEach(r => {
-      rrect(ctx, PX, y, CW, r.h, 24, '#fff', C.line, 1.5);
-      const cx = W - PX - 46; ctx.beginPath(); ctx.arc(cx, y + r.h / 2, 24, 0, Math.PI * 2); ctx.fillStyle = C.g100; ctx.fill();
-      txt(ctx, String(++idx), cx, y + r.h / 2 + 9, { font: `900 24px ${FONT.body}`, color: C.g800, align: 'center', dir: 'ltr' });
-      const top = y + (r.h - r.l.length * 38) / 2;
-      r.l.forEach((l, i) => txt(ctx, l, cx - 44, top + 38 * (i + 1) - 9, { font: `700 29px ${FONT.body}`, color: C.ink }));
-      if (r.n > 0) pill(ctx, `${r.n.toLocaleString('en-US')} ${r.n === 1 ? 'فرصة' : 'فرص'}`, PX + 24 + 130, y + r.h / 2, { bg: C.g100, fg: C.g800, fs: 24 });
-      y += r.h + 14;
-    });
+    txt(ctx, first ? 'فرص وطلبات التدريب هذا الشهر' : 'فرص وطلبات التدريب (تابع)', W - PX, TOP + 36, { font: `900 44px ${FONT.head}`, color: C.g900 });
+    if (first) txt(ctx, `الأكثر طلباً في ${d.mname} (${total} مجالاً)`, W - PX, TOP + 82, { font: `500 26px ${FONT.body}`, color: C.muted });
+    const y0 = TOP + 100;
+    rows.forEach((it, i) => { const col = i % RPT_COLS, row = Math.floor(i / RPT_COLS); rptTile(ctx, it, W - PX - RPT_CW - col * (RPT_CW + 22), y0 + row * (RPT_CH + 22), d); });
   }
   function rptCard(ctx, c, i) {
     frameBg(ctx, true);
@@ -475,11 +484,11 @@ const Bulletin = (() => {
     await Promise.all(groups.map(async g => photos.set(g.t.id, g.t.noPhoto ? null : await K().loadImage(Data.photo(g.t)))));
     const attempt = () => {
       const mk = () => { const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const c = cv.getContext('2d'); c.direction = 'rtl'; c.textAlign = 'right'; c.__links = cv.__links = []; return [cv, c]; };
-      const mc = mk()[1], tp = rptTopicPages(mc, d.titles), npages = groups.length ? paginate(mc, groups, 'compact') : [];
+      const mc = mk()[1], tp = rptTopicPages(d.titles), npages = groups.length ? paginate(mc, groups, 'compact') : [];
       const total = 2 + tp.length + npages.length + RPT_CARDS.length + 1, out = []; let n = 1; let [cv, c] = mk();
       rptCover(c, d); out.push(cv);
       [cv, c] = mk(); chrome(c, ++n, total, 0, 0, 'التقرير الشهري'); txtMonth(c, d); rptStats(c, d); out.push(cv);
-      let start = 0; tp.forEach((rows, i) => { [cv, c] = mk(); chrome(c, ++n, total, 0, 0, 'التقرير الشهري'); txtMonth(c, d); rows.start = start; start += rows.length; rptTopics(c, rows, i === 0, d.titles.length, d); out.push(cv); });
+      tp.forEach((rows, i) => { [cv, c] = mk(); chrome(c, ++n, total, 0, 0, 'التقرير الشهري'); txtMonth(c, d); rptTopics(c, rows, i === 0, d.titles.length, d); out.push(cv); });
       npages.forEach(secs => {
         [cv, c] = mk(); chrome(c, ++n, total, 0, 0, 'التقرير الشهري'); txtMonth(c, d);
         let y = TOP; txt(c, `أخبار المدربين في ${d.mname}`, W - PX, y + 36, { font: `900 40px ${FONT.head}`, color: C.g900 });

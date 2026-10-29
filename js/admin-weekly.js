@@ -147,7 +147,7 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     blocks.push({ t: 'stat', num: num(jobs), text: clean(T.lJobs), note: clean(T.tJobs) });
     // عناوين البرامج المطلوبة: تُسحب تلقائياً من بطاقات قسم «من طلبات هذا الشهر» للشهر المختار (المرفوعة من ملف العناوين)، بلا تكرار
     const seen = new Map(), titles = [];
-    Store.list('showcase').filter(x => ymOfTs(x.ts) === ym).sort((a, b) => (b.ts || 0) - (a.ts || 0)).forEach(x => { const c = clean(x.title).replace(/\s+/g, ' '), k = c.toLowerCase(); if (!c) return; if (seen.has(k)) { seen.get(k).n += Number(x.n) || 0; return; } const o = { c, n: Number(x.n) || 0 }; seen.set(k, o); titles.push(o); });
+    Store.list('showcase').filter(x => ymOfTs(x.ts) === ym).sort((a, b) => (b.ts || 0) - (a.ts || 0)).forEach(x => { const c = clean(x.title).replace(/\s+/g, ' '), k = c.toLowerCase(); if (!c) return; if (seen.has(k)) { seen.get(k).n += Number(x.n) || 0; return; } const o = { c, n: Number(x.n) || 0, spec: x.spec, org: clean(x.org), city: clean(x.city), ts: x.ts }; seen.set(k, o); titles.push(o); });
     titles.sort((a, b) => b.n - a.n);   // الأكثر طلباً أولاً
     if (titles.length) {
       blocks.push({ t: 'h', text: '🎯 مجالات وموضوعات التدريب المطلوبة هذا الشهر', align: 'start' });
@@ -227,7 +227,7 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     const T = homeStatTexts(), st = Store.get(`stats/month/${ym}`) || {}, comp = MonthStats.compute()[ym] || {};
     const opp = Math.max(Number(st.requests) || 0, comp.requests || 0) + Math.max(Number(st.ads) || 0, comp.ads || 0), jobs = Math.max(Number(st.jobs) || 0, comp.jobs || 0);
     const seen = new Map(), titles = [];
-    Store.list('showcase').filter(x => ymOfTs(x.ts) === ym).sort((a, b) => (b.ts || 0) - (a.ts || 0)).forEach(x => { const c = clean(x.title).replace(/\s+/g, ' '), k = c.toLowerCase(); if (!c) return; if (seen.has(k)) { seen.get(k).n += Number(x.n) || 0; return; } const o = { c, n: Number(x.n) || 0 }; seen.set(k, o); titles.push(o); });
+    Store.list('showcase').filter(x => ymOfTs(x.ts) === ym).sort((a, b) => (b.ts || 0) - (a.ts || 0)).forEach(x => { const c = clean(x.title).replace(/\s+/g, ' '), k = c.toLowerCase(); if (!c) return; if (seen.has(k)) { seen.get(k).n += Number(x.n) || 0; return; } const o = { c, n: Number(x.n) || 0, spec: x.spec, org: clean(x.org), city: clean(x.city), ts: x.ts }; seen.set(k, o); titles.push(o); });
     titles.sort((a, b) => b.n - a.n);
     return { ym, mname, titles, news: newsOf(`${ym}-01`, `${ym}-${String(last).padStart(2, '0')}`), stats: [
       { num: num(monthVisits(ym)), label: `زيارات المنصة خلال شهر ${mname}` },
