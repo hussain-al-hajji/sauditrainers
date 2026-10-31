@@ -132,14 +132,14 @@ const Bulletin = (() => {
   }
 
   /* ---------- هيكل الصفحات ---------- */
-  function chrome(ctx, i, total, from, to, title = 'نشرة المدربين') {
+  function chrome(ctx, i, total, from, to, title = 'نشرة المدربين', pal = null) {   // pal: ألوان بطاقة المدرب {a,b,accent,fg,light} للشريط العلوي
     frameBg(ctx, false);
-    const g = ctx.createLinearGradient(0, 0, W, 150); g.addColorStop(0, C.g950); g.addColorStop(1, C.g800); ctx.fillStyle = g; ctx.fillRect(0, 0, W, 150);
-    try { ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, 150); ctx.clip(); ctx.fillStyle = ctx.createPattern(K().patternTile(C.sage, 0.1), 'repeat'); ctx.fillRect(0, 0, W, 150); ctx.restore(); } catch { /* */ }
-    ctx.fillStyle = C.sage; ctx.fillRect(0, 150, W, 6);
+    const g = ctx.createLinearGradient(0, 0, W, 150); g.addColorStop(0, pal ? pal.a : C.g950); g.addColorStop(1, pal ? pal.b : C.g800); ctx.fillStyle = g; ctx.fillRect(0, 0, W, 150);
+    try { ctx.save(); ctx.beginPath(); ctx.rect(0, 0, W, 150); ctx.clip(); ctx.fillStyle = ctx.createPattern(K().patternTile(pal ? (pal.light ? '#005430' : pal.accent) : C.sage, pal && pal.light ? 0.08 : 0.1), 'repeat'); ctx.fillRect(0, 0, W, 150); ctx.restore(); } catch { /* */ }
+    ctx.fillStyle = pal ? pal.accent : C.sage; ctx.fillRect(0, 150, W, 6);
     if (chrome.logo) { const lh = 74, lw = lh * chrome.logo.width / chrome.logo.height; ctx.drawImage(chrome.logo, W - PX - lw, 38, lw, lh); }
-    txt(ctx, title, PX + 0, 76, { font: `900 44px ${FONT.head}`, color: '#fff', align: 'left' });
-    txt(ctx, rangeTxt(from, to), PX, 118, { font: `600 24px ${FONT.body}`, color: C.sage, align: 'left' });
+    txt(ctx, title, PX + 0, 76, { font: `900 44px ${FONT.head}`, color: pal ? pal.fg : '#fff', align: 'left' });
+    txt(ctx, rangeTxt(from, to), PX, 118, { font: `600 24px ${FONT.body}`, color: pal ? pal.accent : C.sage, align: 'left' });
     // التذييل
     ctx.fillStyle = C.line; ctx.fillRect(PX, H - 92, CW, 2);
     txt(ctx, 'sauditrainers.sa', W - PX, H - 42, { font: `800 30px ${FONT.brand}`, color: C.g800, dir: 'ltr' });

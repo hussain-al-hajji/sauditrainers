@@ -80,14 +80,14 @@ const TrainerPdf = (() => {
     await Card.kit.ensureQR();
     try { await document.fonts.load('900 32px "Font Awesome 6 Free"'); } catch { /* ignore */ }
     const { C, W, H, PX, CW, TOP, BOT } = K, FONT = K.FONT, KT = Card.kit, url = profileUrl(t), data = collect(t);
-    const logo = await K.logo(); const photo = t.noPhoto ? null : await KT.loadImage(Data.photo(t));
+    const th = KT.themed(t), logo = await KT.loadImage(th.light ? LOGO.green : LOGO.cream); const photo = t.noPhoto ? null : await KT.loadImage(Data.photo(t));
     const thumbs = await Promise.all(data.videos.map(v => (v.thumb ? KT.loadImage(v.thumb) : null)));
     const attempt = total => {
       const pages = []; let cv, ctx, y;
       const newPage = () => {
         cv = document.createElement('canvas'); cv.width = W; cv.height = H; ctx = cv.getContext('2d'); ctx.direction = 'rtl'; ctx.textAlign = 'right'; ctx.__links = cv.__links = [];
-        pages.push(cv); K.chrome.logo = logo; K.chrome(ctx, pages.length, total, 0, 0, 'ملف المدرب');
-        K.txt(ctx, clean(t.name), PX, 118, { font: `600 24px ${FONT.body}`, color: C.sage, align: 'left' });
+        pages.push(cv); K.chrome.logo = logo; K.chrome(ctx, pages.length, total, 0, 0, 'ملف المدرب', th);
+        K.txt(ctx, clean(t.name), PX, 118, { font: `600 24px ${FONT.body}`, color: th.accent, align: 'left' });
         y = TOP;
       };
       const center2 = (x, str, cx, yy, o) => K.txt(x, str, cx, yy, { ...o, align: 'center' });
@@ -122,18 +122,20 @@ const TrainerPdf = (() => {
 
       /* غلاف أمامي بروح البطاقة التعريفية: صورة وشارة توثيق واسم وسطر تعريفي ومنطقة وإحصاءات وتخصصات وتذييل بالرمز */
       const mkPage = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); x.direction = 'rtl'; x.textAlign = 'right'; x.__links = c.__links = []; return [c, x]; };
+      const A = (c, a) => KT.hex(c, a), soft = th.accent, main = th.fg;
       const darkBase = (x, glowX, glowY) => {
-        K.frameBg(x, true);
-        const gl = x.createRadialGradient(glowX, glowY, 20, glowX, glowY, W * 0.85); gl.addColorStop(0, 'rgba(35,163,101,.32)'); gl.addColorStop(1, 'rgba(35,163,101,0)'); x.fillStyle = gl; x.fillRect(0, 0, W, H);
-        const M = 38; x.strokeStyle = 'rgba(201,218,180,.8)'; x.lineWidth = 3; KT.rr(x, M, M, W - 2 * M, H - 2 * M, 44); x.stroke();
-        x.strokeStyle = 'rgba(201,218,180,.26)'; x.lineWidth = 1.5; KT.rr(x, M + 14, M + 14, W - 2 * M - 28, H - 2 * M - 28, 34); x.stroke();
+        const g = x.createLinearGradient(0, 0, W, H); g.addColorStop(0, th.a); g.addColorStop(0.55, th.b); g.addColorStop(1, th.a); x.fillStyle = g; x.fillRect(0, 0, W, H);
+        try { x.save(); x.fillStyle = x.createPattern(KT.patternTile(th.light ? '#005430' : th.accent, th.light ? 0.06 : 0.1), 'repeat'); x.fillRect(0, 0, W, H); x.restore(); } catch { /* بلا نقش */ }
+        const gl = x.createRadialGradient(glowX, glowY, 20, glowX, glowY, W * 0.85); gl.addColorStop(0, A(th.c, th.light ? 0.4 : 0.5)); gl.addColorStop(1, A(th.c, 0)); x.fillStyle = gl; x.fillRect(0, 0, W, H);
+        const M = 38; x.strokeStyle = A(th.accent, 0.8); x.lineWidth = 3; KT.rr(x, M, M, W - 2 * M, H - 2 * M, 44); x.stroke();
+        x.strokeStyle = A(th.accent, 0.26); x.lineWidth = 1.5; KT.rr(x, M + 14, M + 14, W - 2 * M - 28, H - 2 * M - 28, 34); x.stroke();
       };
       const center = (x, str, cy, o) => K.txt(x, str, W / 2, cy, { ...o, align: 'center' });
       const pillC = (x, str, cy, o) => { x.font = `700 ${o.fs || 24}px ${FONT.body}`; const w = x.measureText(str).width + 34; return K.pill(x, str, W / 2 + w / 2, cy, o); };
       {
         const [c0, x0] = mkPage(); pages.push(c0); darkBase(x0, W * 0.5, H * 0.3);
         if (logo) { const lh = 92, lw = lh * logo.width / logo.height; x0.drawImage(logo, W - 96 - lw, 84, lw, lh); }
-        K.pill(x0, 'ملف المدرب', 96 + 190, 130, { bg: 'rgba(238,243,229,.14)', fg: C.cream, fs: 25 });
+        K.pill(x0, 'ملف المدرب', 96 + 190, 130, { bg: A(th.accent, 0.14), fg: main, fs: 25 });
         // التخطيط يُحسب من المساحة المتاحة فوق التذييل: يصغّر حجم الصورة تدريجياً (ثم يقلّل التخصصات) حتى لا يتداخل شيء مع التذييل
         const cx = W / 2, fy = H - 38 - 14 - 150, limit = fy - 24, Y0 = 204;
         const nfs = K.fitFont(x0, clean(t.name), 900, 78, 40, 880, FONT.head);
@@ -156,35 +158,35 @@ const TrainerPdf = (() => {
         }
         if (!L) L = plan(92, 0, false);
         const cy = Y0 + L.R;
-        K.avatar(x0, { ...t }, photo, cx, cy, L.R, C.sage);
-        seal(x0, cx + L.R * 0.7, cy + L.R * 0.7, Math.round(30 + L.R * 0.13), C.cream, C.g900);
-        center(x0, clean(t.name), L.nameY, { font: `900 ${nfs}px ${FONT.head}`, color: '#fff' });
-        tl.forEach((l, i) => center(x0, l, L.tY + i * 46, { font: `600 33px ${FONT.body}`, color: C.sage }));
+        K.avatar(x0, { ...t }, photo, cx, cy, L.R, th.accent);
+        seal(x0, cx + L.R * 0.7, cy + L.R * 0.7, Math.round(30 + L.R * 0.13), th.accent, th.light ? '#FFFFFF' : th.a);
+        center(x0, clean(t.name), L.nameY, { font: `900 ${nfs}px ${FONT.head}`, color: main });
+        tl.forEach((l, i) => center(x0, l, L.tY + i * 46, { font: `600 33px ${FONT.body}`, color: soft }));
         let ly = L.tY + (tl.length - 1) * 46 + 26 + 34;
-        if (loc) { pillC(x0, loc, ly, { bg: 'rgba(238,243,229,.12)', fg: C.cream, fs: 25 }); ly += 62; }
-        if (L.tot) pillC(x0, 'حاصل على شهادة تدريب المدربين', ly, { bg: 'rgba(238,243,229,.12)', fg: C.sage, fs: 22 });
+        if (loc) { pillC(x0, loc, ly, { bg: A(th.accent, 0.13), fg: main, fs: 25 }); ly += 62; }
+        if (L.tot) pillC(x0, 'حاصل على شهادة تدريب المدربين', ly, { bg: A(th.accent, 0.13), fg: soft, fs: 22 });
         if (stats.length) {
           const sw = 270, gap = 18, tw = stats.length * sw + (stats.length - 1) * gap, sy = L.statsY;
           stats.forEach((s, i) => {
-            const sx = W / 2 + tw / 2 - sw - i * (sw + gap); K.rrect(x0, sx, sy, sw, 118, 26, 'rgba(238,243,229,.10)', 'rgba(201,218,180,.32)');
-            center2(x0, `+${Number(s[0]).toLocaleString('en-US')}`, sx + sw / 2, sy + 66, { font: `900 52px ${FONT.head}`, color: '#fff', dir: 'ltr' });
-            center2(x0, s[1], sx + sw / 2, sy + 100, { font: `600 23px ${FONT.body}`, color: C.sage });
+            const sx = W / 2 + tw / 2 - sw - i * (sw + gap); K.rrect(x0, sx, sy, sw, 118, 26, A(th.accent, 0.10), A(th.accent, 0.32));
+            center2(x0, `+${Number(s[0]).toLocaleString('en-US')}`, sx + sw / 2, sy + 66, { font: `900 52px ${FONT.head}`, color: main, dir: 'ltr' });
+            center2(x0, s[1], sx + sw / 2, sy + 100, { font: `600 23px ${FONT.body}`, color: soft });
           });
         }
         // التخصصات (رقاقات تشبه رقاقات البطاقة)
         let cy2 = L.chipsY;
         rowsW.slice(0, L.rows).forEach(row => {
           const tw = row.reduce((a, r) => a + r[1], 0) + (row.length - 1) * 12; let rx = W / 2 + tw / 2;
-          row.forEach(([sn, w]) => { K.rrect(x0, rx - w, cy2, w, 56, 28, 'rgba(238,243,229,.10)', 'rgba(201,218,180,.35)'); x0.save(); x0.beginPath(); x0.rect(rx - w + 12, cy2, w - 24, 56); x0.clip(); center2(x0, sn, rx - w / 2, cy2 + 37, { font: `700 26px ${FONT.body}`, color: C.cream }); x0.restore(); rx -= w + 12; });
+          row.forEach(([sn, w]) => { K.rrect(x0, rx - w, cy2, w, 56, 28, A(th.accent, 0.10), A(th.accent, 0.35)); x0.save(); x0.beginPath(); x0.rect(rx - w + 12, cy2, w - 24, 56); x0.clip(); center2(x0, sn, rx - w / 2, cy2 + 37, { font: `700 26px ${FONT.body}`, color: main }); x0.restore(); rx -= w + 12; });
           cy2 += 68;
         });
         // تذييل بنفس روح البطاقة: رمز QR ونص الدعوة واسم المنصة
-        const fh = 150; K.rrect(x0, 70, fy, W - 140, fh, 28, 'rgba(0,26,14,.45)', 'rgba(201,218,180,.22)');
+        const fh = 150; K.rrect(x0, 70, fy, W - 140, fh, 28, th.light ? A(th.accent, 0.08) : A(th.a, 0.55), A(th.accent, 0.25));
         const qs = 100; K.qr(x0, url, 100, fy + (fh - qs - 16) / 2, qs); c0.__links.push({ x: 100, y: fy + (fh - qs - 16) / 2, w: qs + 16, h: qs + 16, url });
-        K.txt(x0, 'لقراءة السيرة الذاتية والتواصل تفضل بزيارة منصة', W - 100, fy + 62, { font: `500 25px ${FONT.body}`, color: C.sage });
-        K.txt(x0, 'مدرّبون سعوديّون', W - 100, fy + 112, { font: `900 38px ${FONT.head}`, color: '#fff' });
+        K.txt(x0, 'لقراءة السيرة الذاتية والتواصل تفضل بزيارة منصة', W - 100, fy + 62, { font: `500 25px ${FONT.body}`, color: soft });
+        K.txt(x0, 'مدرّبون سعوديّون', W - 100, fy + 112, { font: `900 38px ${FONT.head}`, color: main });
         x0.font = `900 38px ${FONT.head}`; const bw = x0.measureText('مدرّبون سعوديّون').width;
-        K.txt(x0, 'SaudiTrainers.sa', W - 100 - bw - 26, fy + 112, { font: `800 30px ${FONT.brand}`, color: C.cream, dir: 'ltr' });
+        K.txt(x0, 'SaudiTrainers.sa', W - 100 - bw - 26, fy + 112, { font: `800 30px ${FONT.brand}`, color: soft, dir: 'ltr' });
         c0.__links.push({ x: 70, y: fy, w: W - 140, h: fh, url });
       }
       newPage();
@@ -281,17 +283,17 @@ const TrainerPdf = (() => {
         const [c1, x1] = mkPage(); pages.push(c1); darkBase(x1, W * 0.5, H * 0.75);
         const base = siteBase();
         if (logo) { const lh = 130, lw = lh * logo.width / logo.height; x1.drawImage(logo, W / 2 - lw / 2, 190, lw, lh); }
-        center(x1, 'دليل المدربين السعوديين', 470, { font: `900 62px ${FONT.head}`, color: '#fff' });
-        x1.fillStyle = C.sage; x1.fillRect(W / 2 - 60, 504, 120, 6);
-        x1.font = `500 31px ${FONT.body}`; KT.wrap(x1, 'مدربون ومدربات سعوديون بسيرهم الذاتية في مكان واحد، تتصفحها وتتواصل معهم مباشرة.', 800, 2).forEach((l, i) => center(x1, l, 575 + i * 46, { font: x1.font, color: C.cream }));
+        center(x1, 'دليل المدربين السعوديين', 470, { font: `900 62px ${FONT.head}`, color: main });
+        x1.fillStyle = soft; x1.fillRect(W / 2 - 60, 504, 120, 6);
+        x1.font = `500 31px ${FONT.body}`; KT.wrap(x1, 'مدربون ومدربات سعوديون بسيرهم الذاتية في مكان واحد، تتصفحها وتتواصل معهم مباشرة.', 800, 2).forEach((l, i) => center(x1, l, 575 + i * 46, { font: x1.font, color: main }));
         [['للجهات التدريبية', 'تصفّح السير الذاتية واختر المدرب المناسب لبرنامجك، أو أرسل طلبك.'], ['للمدربين السعوديين', 'سجّل بطاقتك وصفحتك المهنية لتظهر أمام الجهات وتصلك الفرص.']].forEach(([h, tx], i) => {
-          const by = 700 + i * 170; K.rrect(x1, 90, by, W - 180, 146, 28, 'rgba(238,243,229,.08)', 'rgba(201,218,180,.28)');
-          K.txt(x1, h, W - 90 - 34, by + 52, { font: `900 32px ${FONT.head}`, color: C.sage });
-          x1.font = `500 26px ${FONT.body}`; KT.wrap(x1, tx, W - 180 - 70, 2).forEach((l, k) => K.txt(x1, l, W - 90 - 34, by + 96 + k * 36, { font: x1.font, color: C.cream }));
+          const by = 700 + i * 170; K.rrect(x1, 90, by, W - 180, 146, 28, A(th.accent, 0.08), A(th.accent, 0.28));
+          K.txt(x1, h, W - 90 - 34, by + 52, { font: `900 32px ${FONT.head}`, color: soft });
+          x1.font = `500 26px ${FONT.body}`; KT.wrap(x1, tx, W - 180 - 70, 2).forEach((l, k) => K.txt(x1, l, W - 90 - 34, by + 96 + k * 36, { font: x1.font, color: main }));
         });
         const qs = 150, qy = 1030; K.qr(x1, base, W / 2 - (qs + 16) / 2, qy, qs); c1.__links.push({ x: W / 2 - (qs + 16) / 2, y: qy, w: qs + 16, h: qs + 16, url: base });
         const site = base.replace(/^https?:\/\//, '').replace(/\/$/, ''); x1.font = `800 34px ${FONT.brand}`; x1.direction = 'ltr'; const sw = x1.measureText(site).width + 60; x1.direction = 'rtl';
-        K.rrect(x1, W / 2 - sw / 2, qy + qs + 38, sw, 62, 31, 'rgba(238,243,229,.14)', 'rgba(201,218,180,.45)'); center2(x1, site, W / 2, qy + qs + 38 + 42, { font: `800 34px ${FONT.brand}`, color: '#fff', dir: 'ltr' });
+        K.rrect(x1, W / 2 - sw / 2, qy + qs + 38, sw, 62, 31, A(th.accent, 0.14), A(th.accent, 0.45)); center2(x1, site, W / 2, qy + qs + 38 + 42, { font: `800 34px ${FONT.brand}`, color: main, dir: 'ltr' });
         c1.__links.push({ x: W / 2 - sw / 2, y: qy + qs + 38, w: sw, h: 62, url: base });
       }
       return pages;
