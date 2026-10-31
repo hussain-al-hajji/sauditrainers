@@ -1414,3 +1414,5 @@ body.preview .local-flag { display: none; }
 .lib-tbl { margin: 8px 0 14px; overflow-x: auto; } .lib-tbl table { width: 100%; border-collapse: collapse; font-size: .92rem; background: #fff; border-radius: 12px; overflow: hidden; }
 .lib-tbl th, .lib-tbl td { padding: 8px 12px; border: 1px solid var(--line); text-align: start; vertical-align: top; } .lib-tbl th { background: var(--g100, #E2F0E4); color: var(--g800); font-family: var(--f-ui); }
 .lib-cks { display: grid; gap: 6px; margin: 6px 0 12px; } .lib-ck { display: flex; gap: 10px; align-items: flex-start; padding: 8px 12px; border-radius: 12px; background: #fff; border: 1px solid var(--line); cursor: pointer; } .lib-ck input { margin-top: 6px; accent-color: var(--g700, #0B6A3E); } .lib-ck input:checked + span { text-decoration: line-through; opacity: .55; }
+
+.price-per { margin-top: 4px; font-size: .86rem; color: var(--gold2, #C9DAB4); opacity: .95; }

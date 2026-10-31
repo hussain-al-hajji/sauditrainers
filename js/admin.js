@@ -754,12 +754,21 @@ function aContent(main) {
   const sec = (k, title, fields) => `<div class="pbox"><h3><i class="fa-solid fa-pen"></i>${title}</h3><div style="display:grid;gap:12px">${fields.map(([f, l, type, hint]) => field(l, type === 'area' ? `<textarea data-k="${k}.${f}">${esc(c[k][f])}</textarea>` : `<input type="${type || 'text'}" data-k="${k}.${f}" value="${esc(c[k][f])}">`, hint || '')).join('')}</div></div>`;
   main.innerHTML = `<div class="dash-h"><h2>المحتوى العام</h2><button class="btn primary" id="sv"><i class="fa-solid fa-floppy-disk"></i> حفظ كل التغييرات</button></div>
     <div class="banner info"><i class="fa-solid fa-house"></i>محتوى الصفحة الرئيسية وأقسامها يُعدَّل من تبويب «الصفحة الرئيسية»، وحقول نموذج التسجيل من «النماذج».</div>
+    <div class="banner info" id="pitchbar"><i class="fa-solid fa-wand-magic-sparkles"></i><span>صياغة الاشتراك التسويقية الجديدة: الاشتراك كاستثمار لمرة واحدة (فرص وظائف تتجدد، ملف احترافي، ومنصة حصرية للمدربين السعوديين). المزايا والعنوان الظاهران حالياً محفوظان في قاعدة البيانات، فلن يتغيرا إلا بتطبيقها.</span> <button class="btn sm primary" id="pitch" type="button">تطبيق الصياغة الجديدة</button></div>
     ${sec('join', 'التسجيل والرسوم', [['fee', 'الرسوم (ريال)', 'number'], ['feeNote', 'وصف الرسوم'], ['period', 'مدة الاشتراك'], ['requirements', 'المتطلبات', 'area', 'كل متطلب في سطر'], ['benefits', 'المزايا', 'area', 'كل ميزة في سطر بصيغة: العنوان | الوصف'], ['payment', 'تعليمات السداد', 'area'], ['disclaimer', 'إقرار الفرص التدريبية (آخر النموذج ولوحة المدرب)', 'area']])}
     <div id="jpromo"></div>
     ${sec('about', 'عن المنصة', [['intro', 'التعريف', 'area'], ['problem', 'المشكلة', 'area'], ['solution', 'الحل', 'area'], ['vision', 'الرؤية', 'area']])}
     ${sec('halls', 'القاعات', [['intro', 'النص التعريفي', 'area']])}
     ${sec('contact', 'تواصل المنصة (يظهر في التذييل)', [['email', 'البريد', 'email'], ['whatsapp', 'واتساب المنصة'], ['instagram', 'إنستقرام', 'url'], ['x', 'إكس', 'url'], ['linkedin', 'لينكدإن', 'url']])}`;
   joinPromoBox($('#jpromo', main));
+  $('#pitch', main).onclick = async () => {
+    if (!await confirmBox('تُستبدل المزايا ووصف الرسوم في «التسجيل والرسوم» (تُعبأ في الحقول لتراجعها ثم تحفظ) وعنوان قسم «انضم كمدرب» في الصفحة الرئيسية (يُحفظ فوراً). متابعة؟', { ok: 'تطبيق' })) return;
+    const set = (k, v) => { const el = $(`[data-k="${k}"]`, main); if (el) el.value = v; };
+    set('join.feeNote', JOIN_PITCH.feeNote); set('join.benefits', JOIN_PITCH.benefits);
+    const list = arr(Store.get('content/home/list')).map(x => (x && x.type === 'join' ? { ...x, d: { ...(x.d || {}), ...JOIN_PITCH.home } } : x));
+    if (list.length) Store.set('content/home/list', list);
+    Security.log('تطبيق صياغة الاشتراك التسويقية'); toast('عُبّئت الحقول: راجعها ثم اضغط «حفظ كل التغييرات»');
+  };
   $('#sv', main).onclick = () => {
     const out = {};
     $$('[data-k]', main).forEach(el => { const [k, f] = el.dataset.k.split('.'); (out[k] = out[k] || {})[f] = el.type === 'number' ? Number(el.value) || 0 : el.value.trim(); });

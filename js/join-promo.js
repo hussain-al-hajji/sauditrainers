@@ -21,16 +21,30 @@ const PromoSlides = (() => {
 
   // كل شريحة: المعرّف، الاسم في لوحة الإدارة، الثيم، وعنوان الشارة ودالة بناء المحتوى (تصميم بطاقات الدعاية نفسه)
   const SLIDES = [
-    { id: 'intro', name: 'التعريف والاشتراك', theme: 'dark', kick: 'المنصة الأولى لتسويق خبرات المدربين السعوديين', html: c => `
-      <div class="pmx-t"><h3>كفاءات سعودية<span class="acc">في بطاقة واحدة</span></h3>
-        <p class="sub">سيرة المدرب وتخصصه وخبرته ومنطقته، موثّقة في بطاقة تعريفية تصل إلى الجهات التدريبية في دقائق.</p>
+    { id: 'intro', name: 'التعريف والاشتراك', theme: 'dark', kick: 'المنصة الحصرية للمدربين السعوديين', html: c => `
+      <div class="pmx-t"><h3>استثمار واحد<span class="acc">يعمل لأجلك دائماً</span></h3>
+        <p class="sub">بطاقتك وصفحتك وملفك الاحترافي، وفرص تدريب ووظائف تتجدد من عشرات المصادر، في منصة لا يظهر فيها إلا المدربون السعوديون.</p>
         <div class="pmx-price"><span>اشتراك واحد<br>${esc(c.join.period.replace(/^اشتراك\s*/, '') || 'مدى الحياة')}</span><strong class="num">${esc(c.join.fee)}</strong><span>ريال</span></div>${cta('ابدأ التسجيل الآن')}</div>
       <div class="pmx-v pmx-fan"><div class="fc c2">${sampleCard(1)}</div><div class="fc c3">${sampleCard(2)}</div><div class="fc c1">${sampleCard(0)}</div></div>` },
+    { id: 'value', name: 'ماذا تحصل عليه؟', theme: 'light', kick: 'قيمة الاشتراك', html: c => `
+      <div class="pmx-t"><h3>دفعة واحدة<span class="acc">وعوائد تتجدد</span></h3><p class="sub"><b class="num">${esc(c.join.fee)}</b> ريال لمرة واحدة، ${esc(JOIN_PITCH.perDay(c.join.fee))}. لا تجديد سنوي ولا عمولة على عقودك.</p>${cta()}</div>
+      <div class="pmx-v pmx-tiles">${tile('fa-briefcase', 'فرص تدريب متجددة', 'طلبات جهات وإعلانات تصلك بإشعار فوري')}${tile('fa-magnifying-glass-dollar', 'وظائف تدريب', 'من عشرات المصادر على الإنترنت')}${tile('fa-id-card', 'ملف احترافي', 'بطاقة وصفحة وPDF تحدّثها متى شئت')}${tile('fa-flag', 'منصة حصرية', 'للمدربين السعوديين فقط')}${tile('fa-bullhorn', 'ظهور مستمر', 'منطقتك وتخصصك ونتائج البحث')}${tile('fa-book-open', 'مكتبة المدرب', 'قوالب وأدوات لكل مراحل برنامجك')}</div>` },
     { id: 'perks', name: 'مزايا الاشتراك', theme: 'dark', kick: 'للمدربين السعوديين', html: () => `
-      <div class="pmx-t"><h3>خبرتك تستحق<span class="acc">بطاقة تليق بها</span></h3><p class="sub">كل ما تحتاجه ليعرفك من يبحث عن مدرب مثلك.</p>${cta()}</div>
-      <div class="pmx-v pmx-bens">${ben('fa-location-dot', 'حضورك في صفحة منطقتك', 'سيرتك وتخصصك تقرؤها الجهات التدريبية وتطلب التواصل معك')}${ben('fa-bullhorn', 'بطاقتك تتحدث عنك في كل مكان', 'تُنشر باستمرار في قنوات المنصة الاجتماعية')}${ben('fa-handshake', 'جسر مباشر إلى الجهات التدريبية', 'نختصر عليهم البحث ونربطهم بالمدرب المناسب')}${ben('fa-medal', 'ترشيحك أينما وُجدت الفرصة', 'نرشّحك للجهات التي تبحث عن أسماء لبرامجها')}</div>` },
+      <div class="pmx-t"><h3>اشتراك واحد<span class="acc">بأربع عوائد</span></h3><p class="sub">ما تحتاجه لتُرى وتُطلب، دون أن تتفرغ للتسويق.</p>${cta()}</div>
+      <div class="pmx-v pmx-bens">${ben('fa-briefcase', 'فرص تدريبية متجددة', 'طلبات الجهات وإعلانات التدريب تصلك أولاً بأول')}${ben('fa-magnifying-glass-dollar', 'وظائف تدريب من عشرات المصادر', 'تُجلب آلياً إلى لوحتك مع أرشيف شهري')}${ben('fa-id-card', 'ملف احترافي يتجدد معك', 'بطاقة وصفحة وPDF وصور جاهزة للمشاركة')}${ben('fa-flag', 'ظهور أقوى بين أقرانك', 'منصة لا يدخلها إلا المدربون السعوديون')}</div>` },
+    { id: 'opps', name: 'فرص ووظائف متجددة', theme: 'dark', kick: 'فرص تتجدد كل يوم', html: () => `
+      <div class="pmx-t"><h3>فرص ووظائف<span class="acc">تصلك دون أن تبحث</span></h3><p class="sub">ما يصل المنصة من الجهات، وما تنشره الإدارة، وما يُجلب آلياً من الإنترنت، كله في لوحتك.</p>${cta()}</div>
+      <div class="pmx-v pmx-bens">${ben('fa-inbox', 'طلبات من الجهات التدريبية', 'تُعاد توجيهها لكل المدربين المسجلين')}${ben('fa-globe', 'إعلانات تدريب من الإنترنت', 'تنتقيها الإدارة وتنشرها لك')}${ben('fa-briefcase', 'وظائف المدربين', 'من عشرات المصادر، وتحفظ في أرشيف شهري')}${ben('fa-bell', 'إشعار فوري على جوالك', 'تعرف بالجديد قبل غيرك')}</div>` },
+    { id: 'exclusive', name: 'منصة حصرية للسعوديين', theme: 'light', kick: 'حصرية للمدربين السعوديين', html: () => `
+      <div class="pmx-t"><h3>منصة لا يدخلها إلا<span class="acc">المدربون السعوديون</span></h3><p class="sub">حين تبحث الجهة عن مدرب سعودي، تجد مكاناً واحداً متخصصاً، وتجدك فيه بين أقرانك لا بين آلاف الحسابات العامة.</p>
+        <div class="pmx-chips"><span>تسجيل بشروط</span><span>توثيق للبطاقات</span><span>13 منطقة</span></div>${cta()}</div>
+      <div class="pmx-v pmx-tiles">${tile('fa-flag', 'ظهور أقوى في القطاع', 'جمهورك جهات تبحث عن سعوديين')}${tile('fa-circle-check', 'بطاقة موثّقة', 'تزيد ثقة من يقرأ سيرتك')}${tile('fa-users', 'مجتمع مهني', 'أخبار وتوصيات ونشرة أسبوعية')}${tile('fa-star', 'تمييز لا زحام', 'بحث بالتخصص والمنطقة')}</div>` },
+    { id: 'pdf', name: 'ملف احترافي يتجدد', theme: 'dark', kick: 'ملفك المهني', html: () => `
+      <div class="pmx-t"><h3>ملف احترافي<span class="acc">يتجدد ويُشارك في ثوانٍ</span></h3><p class="sub">حدّث بياناتك مرة واحدة فتتحدث بطاقتك وصفحتك وملف PDF، وأرسلها لأي جهة في أي وقت.</p>
+        <div class="pmx-fm"><span><i class="fa-solid fa-file-pdf"></i> ملف PDF</span><span><i class="fa-solid fa-image"></i> 3 مقاسات</span><span><i class="fa-solid fa-qrcode"></i> رمز QR</span></div>${cta()}</div>
+      <div class="pmx-v pmx-cardv"><div class="cw">${sampleCard(1)}</div><span class="fl f1"><i class="fa-solid fa-file-pdf"></i> ملف PDF بغلاف أنيق</span><span class="fl f2"><i class="fa-solid fa-pen"></i> عدّل متى شئت</span><span class="fl f3"><i class="fa-solid fa-share-nodes"></i> شارك بنقرة</span></div>` },
     { id: 'zero', name: 'بدون عمولة', theme: 'dark', kick: 'للمدربين السعوديين', html: () => `
-      <div class="pmx-t"><h3>عمولة على عقودك<span class="acc">لا تستحق المنصة أي عمولة</span></h3><p class="sub">ما تحصل عليه من عقود تدريبية عبر المنصة كله لك، باشتراك واحد دفعة واحدة وبلا تجديد سنوي.</p>${cta()}</div>
+      <div class="pmx-t"><h3>كل ما تحصل عليه<span class="acc">يبقى لك</span></h3><p class="sub">لا عمولة على عقودك، ولا تجديد سنوي للاشتراك: تدفع مرة واحدة وتبقى مستفيداً منها.</p>${cta()}</div>
       <div class="pmx-v pmx-zero"><span class="rg r1"></span><span class="rg r2"></span><b class="num">0%</b></div>` },
     { id: 'panel', name: 'لوحة التحكم الخاصة', theme: 'dark', kick: 'لوحتك الخاصة', html: () => `
       <div class="pmx-t"><h3>لكل مدرب<span class="acc">لوحة تحكم خاصة</span></h3><p class="sub">ادخل برمز الدخول الخاص بك وأدر حضورك بنفسك: تعديل فوري يظهر للزوار، وطلبات تصلك مباشرة بالبريد وفي لوحتك.</p></div>
