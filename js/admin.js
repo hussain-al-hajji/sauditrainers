@@ -601,22 +601,11 @@ function aRequests(main) {
   const all = [...reqs, ...leads].sort((a, b) => b.ts - a.ts);
   const show = Store.list('showcase').sort((a, b) => b.ts - a.ts);
   main.innerHTML = `<div class="dash-h"><h2>فرص التدريب</h2><span class="muted small">ما تضيفه الإدارة وما يصل من الجهات التدريبية، مع إحصاءاتهما</span></div>
+    ${Opps.statsHtml(all)}
     <div class="pbox" style="margin-bottom:12px"><div class="bl-bar"><b><i class="fa-solid fa-file-export"></i> تصدير الفرص والطلبات</b>
       <label>الشهر<select id="ex-m"><option value="">كل الأشهر</option>${Opps.exportMonths(all).map(m => `<option value="${m}">${esc(Opps.ymName(m))}</option>`).join('')}</select></label>
       <button class="btn primary" id="ex-go"><i class="fa-solid fa-file-csv"></i> تصدير CSV (إعلانات الإدارة + طلبات الجهات)</button></div>
       <p class="muted small" style="margin:4px 0 0">ملف واحد بصيغة موحّدة لكل ما نُشر خلال الشهر المختار: إعلانات الإدارة وطلبات «اطلب مدرباً» وطلبات التواصل المباشر، بلا بيانات تواصل شخصية.</p></div>
-    <details class="pbox" open><summary style="cursor:pointer"><b><i class="fa-solid fa-table-cells-large" style="color:var(--g600)"></i> «من طلبات هذا الشهر»: المعروض والأرشيف (${show.length})</b></summary>
-      <p class="muted small">تظهر هذه البطاقات متحركة في الصفحة الرئيسية دون أي بيانات تواصل. اختر من الطلبات بالأسفل بزر <i class="fa-solid fa-table-cells-large"></i> أو أضف يدوياً.</p>
-      ${(() => { const ym = ts => { const d = new Date((ts || 0) + 3 * 36e5); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; }, nm = k => new Date(Date.UTC(+k.slice(0, 4), +k.slice(5, 7) - 1, 15)).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { month: 'long', year: 'numeric', timeZone: 'UTC' });
-        const g = {}; show.forEach(x => (g[ym(x.ts)] = g[ym(x.ts)] || []).push(x)); const ks = Object.keys(g).sort().reverse(), cur = g[MonthStats.cur().key] ? MonthStats.cur().key : ks[0];
-        const mini = x => `<div class="sc-mini"><b>${esc(x.title)}</b><small>${esc(x.org || 'جهة تدريبية')}${(x.city || regionName(x.region)) ? ' · ' + esc(x.city || regionName(x.region)) : ''}${x.spec ? ' · ' + esc(specName(x.spec)) : ''}${x.n ? ' · ' + x.n + ' فرصة' : ''} · ${esc(new Date(x.ts).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { month: 'long', year: 'numeric' }))}</small><div class="acts"><button class="btn sm icon" data-se="${esc(x.id)}"><i class="fa-solid fa-pen"></i></button><button class="btn sm icon" data-sx="${esc(x.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`;
-        return ks.map(k => `<details class="sc-month" ${k === cur ? 'open' : ''}><summary><b>${k === cur ? 'المعروض حالياً: ' : 'أرشيف: '}${esc(nm(k))}</b> <span class="pill ${k === cur ? 'gold' : 'gray'}">${g[k].length}</span></summary><div class="sc-admin">${g[k].map(mini).join('')}</div></details>`).join(''); })()}
-      <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn sm" id="sa"><i class="fa-solid fa-plus"></i> إضافة يدوياً</button>
-        <button class="btn sm" id="sup"><i class="fa-solid fa-file-arrow-up"></i> رفع ملف عناوين (CSV أو نص)</button><button class="btn sm ghost" id="stpl"><i class="fa-solid fa-file-arrow-down"></i> تنزيل القالب</button>
-        <input type="file" id="sfile" accept=".csv,.txt,text/csv,text/plain" hidden></div>
-      <p class="muted small" style="margin:6px 0 0">الملف: الأعمدة: <b>عنوان الدورة، المدينة</b> (اسم المدينة للحضوري وإلا «عن بعد»)، <b>التخصص، الجهة، الشهر</b> (مثل 2026-10)، <b>عدد الفرص</b>، والسطر الأول عنوان الأعمدة وغير الموجود منها اختياري. ويُستبعد المكرر.</p></div>
-    </details>
-    ${Opps.statsHtml(all)}
     <h3 class="rq-part"><i class="fa-solid fa-handshake-angle"></i> الجزء الأول: فرص تضيفها الإدارة</h3>
     <div id="rq-adm"></div>
     <h3 class="rq-part"><i class="fa-solid fa-inbox"></i> الجزء الثاني: طلبات الجهات التدريبية <small class="muted">(طلبات التواصل مع مدرب محدد + «اطلب مدرباً»)</small></h3>
@@ -646,7 +635,18 @@ function aRequests(main) {
         <button class="btn sm" data-t="${r.kind}" data-id="${esc(r.id)}" title="تبديل الحالة"><i class="fa-solid fa-check"></i></button>
         <button class="btn sm ghost" data-del="${r.kind}" data-id="${esc(r.id)}" title="حذف"><i class="fa-solid fa-trash"></i></button>
       </div></div>`;
-    }).join('') : '<div class="empty"><i class="fa-solid fa-inbox"></i><h3>لا توجد طلبات بعد</h3></div>'}`;
+    }).join('') : '<div class="empty"><i class="fa-solid fa-inbox"></i><h3>لا توجد طلبات بعد</h3></div>'}
+    <details class="pbox" open><summary style="cursor:pointer"><b><i class="fa-solid fa-table-cells-large" style="color:var(--g600)"></i> «من طلبات هذا الشهر»: المعروض والأرشيف (${show.length})</b></summary>
+      <p class="muted small">تظهر هذه البطاقات متحركة في الصفحة الرئيسية دون أي بيانات تواصل. اختر من الطلبات بالأسفل بزر <i class="fa-solid fa-table-cells-large"></i> أو أضف يدوياً.</p>
+      ${(() => { const ym = ts => { const d = new Date((ts || 0) + 3 * 36e5); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; }, nm = k => new Date(Date.UTC(+k.slice(0, 4), +k.slice(5, 7) - 1, 15)).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+        const g = {}; show.forEach(x => (g[ym(x.ts)] = g[ym(x.ts)] || []).push(x)); const ks = Object.keys(g).sort().reverse(), cur = g[MonthStats.cur().key] ? MonthStats.cur().key : ks[0];
+        const mini = x => `<div class="sc-mini"><b>${esc(x.title)}</b><small>${esc(x.org || 'جهة تدريبية')}${(x.city || regionName(x.region)) ? ' · ' + esc(x.city || regionName(x.region)) : ''}${x.spec ? ' · ' + esc(specName(x.spec)) : ''}${x.n ? ' · ' + x.n + ' فرصة' : ''} · ${esc(new Date(x.ts).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { month: 'long', year: 'numeric' }))}</small><div class="acts"><button class="btn sm icon" data-se="${esc(x.id)}"><i class="fa-solid fa-pen"></i></button><button class="btn sm icon" data-sx="${esc(x.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`;
+        return ks.map(k => `<details class="sc-month" ${k === cur ? 'open' : ''}><summary><b>${k === cur ? 'المعروض حالياً: ' : 'أرشيف: '}${esc(nm(k))}</b> <span class="pill ${k === cur ? 'gold' : 'gray'}">${g[k].length}</span></summary><div class="sc-admin">${g[k].map(mini).join('')}</div></details>`).join(''); })()}
+      <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn sm" id="sa"><i class="fa-solid fa-plus"></i> إضافة يدوياً</button>
+        <button class="btn sm" id="sup"><i class="fa-solid fa-file-arrow-up"></i> رفع ملف عناوين (CSV أو نص)</button><button class="btn sm ghost" id="stpl"><i class="fa-solid fa-file-arrow-down"></i> تنزيل القالب</button>
+        <input type="file" id="sfile" accept=".csv,.txt,text/csv,text/plain" hidden></div>
+      <p class="muted small" style="margin:6px 0 0">الملف: الأعمدة: <b>عنوان الدورة، المدينة</b> (اسم المدينة للحضوري وإلا «عن بعد»)، <b>التخصص، الجهة، الشهر</b> (مثل 2026-10)، <b>عدد الفرص</b>، والسطر الأول عنوان الأعمدة وغير الموجود منها اختياري. ويُستبعد المكرر.</p></div>
+    </details>`;
   Opps.adminOpps($('#rq-adm', main), () => aRequests(main));
   $('#ex-go', main).onclick = () => Opps.exportAll($('#ex-m', main).value, all);
   const path = k => (k === 'req' ? 'requests' : 'leads');

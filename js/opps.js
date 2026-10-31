@@ -120,7 +120,7 @@ const Opps = (() => {
   const saveCsv = (name, rows) => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeff' + rows.map(r => r.map(csvCell).join(',')).join('\n')], { type: 'text/csv;charset=utf-8' })); a.download = name; a.click(); };
   const tally = (list, f, n = 8) => { const m = new Map(); list.forEach(x => { const k = f(x); if (k) m.set(k, (m.get(k) || 0) + 1); }); return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, n); };
   const dayOf = ts => (ts ? new Date(ts).toLocaleDateString('en-CA') : '');
-  const OV = { m: '' };   // فلتر الشهر في جدول فرص الإدارة
+  const OV = { m: '', open: false };   // فلتر الشهر في جدول فرص الإدارة
 
   /* ---------- صفحة «فرص التدريب»: إحصاءات + جزء الإدارة (إضافة وجدول) ---------- */
   // orgs = طلبات الجهات (اطلب مدرباً + التواصل المباشر) تمرّرها صفحة الطلبات لتُحسب إحصاءاتها
@@ -130,11 +130,7 @@ const Opps = (() => {
     const sp = k => (k ? specName(k) : ''), rg = k => (k ? regionName(k) : ''), norm = t => String(t || '').replace(/\s+/g, ' ').trim().slice(0, 60);
     const mon = list => anBars(tally(list, x => ymKey(x.ts), 6).sort((a, b) => (a[0] < b[0] ? -1 : 1)), ymName);
     const none = 'لا بيانات بعد';
-    return `<div class="kpis">${anKpi('fa-layer-group', anNum(ap.length + orgs.length), 'إجمالي فرص التدريب')}${anKpi('fa-handshake-angle', anNum(ap.length), 'مضافة من الإدارة')}${anKpi('fa-wand-magic-sparkles', anNum(reqs.length), 'طلبات «اطلب مدرباً»')}${anKpi('fa-paper-plane', anNum(leads.length), 'طلبات تواصل مع مدرب')}${anKpi('fa-calendar-day', anNum(thisM), 'هذا الشهر (الإدارة + الجهات)')}</div>
-      <div class="grid2">
-        ${anBox('fa-handshake-angle', `إحصاءات إضافات الإدارة (${ap.length})`, `<h4 class="an-h4">حسب النوع</h4>${anBars(tally(ap, o => (KIND[o.kind] || KIND.post)[0]), x => x, none)}<h4 class="an-h4">أكثر التخصصات</h4>${anBars(tally(ap, o => sp(o.spec)), x => x, none)}<h4 class="an-h4">أكثر المناطق</h4>${anBars(tally(ap, o => rg(o.region)), x => x, none)}<h4 class="an-h4">حسب الشهر</h4>${mon(ap)}`)}
-        ${anBox('fa-inbox', `إحصاءات طلبات الجهات (${orgs.length})`, `<h4 class="an-h4">أكثر البرامج طلباً</h4>${anBars(tally(orgs, r => norm(r.topic), 10), x => x, none)}<h4 class="an-h4">أكثر التخصصات</h4>${anBars(tally(orgs, r => sp(r.spec)), x => x, none)}<h4 class="an-h4">أكثر المناطق</h4>${anBars(tally(orgs, r => rg(r.region)), x => x, none)}<h4 class="an-h4">حسب الشهر</h4>${mon(orgs)}`)}
-      </div>`;
+    return `<div class="kpis">${anKpi('fa-layer-group', anNum(ap.length + orgs.length), 'إجمالي فرص التدريب')}${anKpi('fa-handshake-angle', anNum(ap.length), 'مضافة من الإدارة')}${anKpi('fa-wand-magic-sparkles', anNum(reqs.length), 'طلبات «اطلب مدرباً»')}${anKpi('fa-paper-plane', anNum(leads.length), 'طلبات تواصل مع مدرب')}${anKpi('fa-calendar-day', anNum(thisM), 'هذا الشهر (الإدارة + الجهات)')}</div>`;
   }
 
   // تصدير موحّد لكل ما نُشر: إعلانات الإدارة + طلبات الجهات (اطلب مدرباً والتواصل المباشر) في جدول واحد بصيغة واحدة، لشهر يُختار أو لكل الأشهر
@@ -161,14 +157,15 @@ const Opps = (() => {
         <div class="row" style="gap:8px;flex-wrap:wrap"><input id="op-wa" type="tel" dir="ltr" inputmode="tel" maxlength="20" placeholder="رقم واتساب للتواصل (اختياري) 05xxxxxxxx" style="flex:1;min-width:200px"><input id="op-em" type="email" dir="ltr" maxlength="120" placeholder="بريد للتواصل (اختياري)" style="flex:1;min-width:200px"><button class="btn primary" id="op-add"><i class="fa-solid fa-plus"></i> إضافة ومراجعة</button></div>
         <p class="small muted" style="margin:6px 0 0">الرقم والبريد يظهران للمدربين كأيقونتين: واتساب يفتح المحادثة مباشرة، والبريد يفتح رسالة جديدة.</p></div>
       ${news.length ? `<div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-inbox"></i> الوارد بانتظار المراجعة (${news.length})</h3>${news.map(o => row(o, `<button class="btn sm primary" data-ap="${esc(o.id)}"><i class="fa-solid fa-circle-check"></i> اعتماد</button><button class="btn sm danger" data-rj="${esc(o.id)}"><i class="fa-solid fa-xmark"></i> رفض</button>`)).join('')}</div>` : ''}
-      <div class="pbox" style="margin-bottom:12px"><h3><i class="fa-solid fa-table-list"></i> جدول فرص التدريب المضافة من الإدارة (${ap.length})</h3>
+      <details class="pbox" id="op-det" style="margin-bottom:12px" ${OV.open ? 'open' : ''}><summary style="cursor:pointer"><b><i class="fa-solid fa-table-list" style="color:var(--g600)"></i> جدول فرص التدريب المضافة من الإدارة (${ap.length})</b> <small class="muted">اضغط للعرض</small></summary>
         <p class="small muted">اضغط على عنوان الفرصة لعرض تفاصيلها. صدّر الجدول بكامل حقوله (العنوان والنص والرابط والتخصص والمنطقة...) لتحليله لاحقاً، مثل استخراج أكثر البرامج طلباً.</p>
         <div class="bl-bar"><label>الشهر<select id="op-m"><option value="">كل الأشهر</option>${months.map(m => `<option value="${m}" ${OV.m === m ? 'selected' : ''}>${esc(ymName(m))}</option>`).join('')}</select></label><button class="btn sm" id="op-csv" ${ap.length ? '' : 'disabled'}><i class="fa-solid fa-file-csv"></i> تصدير CSV</button></div>
         ${ap.length ? `<div class="tbl-wrap" style="max-height:480px;overflow:auto"><table class="tbl"><thead><tr><th>التاريخ</th><th>العنوان</th><th>الجهة</th><th>النوع</th><th>التخصص</th><th>المنطقة</th><th>آخر موعد</th></tr></thead><tbody>
           ${ap.map(o => `<tr><td class="num">${esc(dayOf(o.ts))}</td><td><button type="button" class="btn sm ghost" data-x="${esc(o.id)}" style="text-align:start;white-space:normal">${esc(String(o.title).slice(0, 70))}</button></td><td>${esc(o.org || '')}</td><td>${esc((KIND[o.kind] || KIND.post)[0])}</td><td>${esc(o.spec ? specName(o.spec) : '')}</td><td>${esc(o.region ? regionName(o.region) : '')}</td><td class="num">${o.deadline ? esc(dayOf(o.deadline)) : ''}</td></tr>
             <tr hidden data-dx="${esc(o.id)}"><td colspan="7" style="background:var(--g50)"><div style="display:grid;gap:6px">${o.desc ? `<div>${nl2br(o.desc)}</div>` : ''}${o.note ? `<div class="small"><b>ملاحظة للمدربين:</b> ${nl2br(o.note)}</div>` : ''}${o.url ? `<div class="small"><a href="${esc(safeUrl(o.url) || '#')}" target="_blank" rel="noopener nofollow" dir="ltr">${esc(o.url)}</a></div>` : ''}<div class="small muted">المصدر: ${esc(o.site || host(o.url) || '')}</div>${o.wa || o.email ? `<div class="small">التواصل: ${o.wa ? `<span dir="ltr">+${esc(o.wa)}</span> ` : ''}${o.email ? `<span dir="ltr">${esc(o.email)}</span>` : ''}</div>` : ''}<div class="row" style="gap:8px"><button class="btn sm" data-ed="${esc(o.id)}"><i class="fa-solid fa-pen"></i> تعديل</button><button class="btn sm danger" data-dl="${esc(o.id)}"><i class="fa-solid fa-trash"></i> سحب</button></div></div></td></tr>`).join('')}
-        </tbody></table></div>` : '<p class="muted small">لم تُضف فرص بعد.</p>'}</div>`;
+        </tbody></table></div>` : '<p class="muted small">لم تُضف فرص بعد.</p>'}</details>`;
     const again = rerender;
+    $('#op-det', box).ontoggle = e => { OV.open = e.target.open; };
     $('#op-m', box).onchange = e => { OV.m = e.target.value; again(); };
     $('#op-csv', box).onclick = () => saveCsv(`فرص-التدريب-${OV.m || 'الكل'}.csv`, [['التاريخ', 'العنوان', 'الجهة', 'النوع', 'التخصص', 'المنطقة', 'آخر موعد', 'المصدر', 'الرابط', 'النص', 'ملاحظة'], ...ap.slice().sort((a, b) => (a.ts || 0) - (b.ts || 0)).map(o => [dayOf(o.ts), o.title, o.org, (KIND[o.kind] || KIND.post)[0], o.spec ? specName(o.spec) : '', o.region ? regionName(o.region) : '', o.deadline ? dayOf(o.deadline) : '', o.site || host(o.url), o.url, o.desc, o.note])]);
     $$('[data-x]', box).forEach(b => b.onclick = () => { const r = box.querySelector(`[data-dx="${b.dataset.x}"]`); if (r) r.hidden = !r.hidden; });
