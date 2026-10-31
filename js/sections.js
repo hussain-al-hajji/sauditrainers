@@ -341,7 +341,7 @@ const SECTION_TYPES = (() => {
         <a class="pin-card ${Card.themeCls(t, tp)}" href="${url}" style="${Card.themeVars(t, tp)}" aria-label="${esc(t.name)}">
           <i class="pn-frame"></i>
           ${tp.show.logo ? logoImg(th.light ? 'green' : 'cream', 'pn-logo') : ''}
-          <div class="pn-main"><div class="pn-ring">${Card.avatar(t, 'pn-photo')}${tp.show.badge ? '<span class="tc-verified" title="مدرب موثّق"><i class="fa-solid fa-certificate"></i><i class="fa-solid fa-check"></i></span>' : ''}</div>
+          <div class="pn-main"><div class="pn-ring">${Card.avatar(t, 'pn-photo')}${tp.show.badge && t.plan !== 'trial' ? '<span class="tc-verified" title="مدرب موثّق"><i class="fa-solid fa-certificate"></i><i class="fa-solid fa-check"></i></span>' : ''}</div>
             <h3 class="pn-name">${esc(t.name || '')}</h3>${regionsOf(t).length ? `<div class="pn-loc"><i class="fa-solid fa-location-dot"></i>${esc(regionsLabel(t, true, tp.maxRegions))}</div>` : ''}</div>
           <div class="pn-info">${t.title ? `<p class="pn-title">${esc(t.title)}</p>` : ''}
             ${stats.length ? `<div class="pn-stats">${stats.map(([v, l]) => `<div><b class="num">${fmtNum(v)}+</b><span>${l}</span></div>`).join('')}</div>` : ''}

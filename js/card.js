@@ -46,7 +46,7 @@ const Card = (() => {
         ${tp.show.logo ? logoImg(th.light ? 'green' : 'cream', 'tc-logo') : '<span></span>'}
         <span class="tc-code">${preview ? esc(x.preview) : ''}</span>
       </header>
-      <div class="tc-ring">${avatar(t, 'tc-photo')}${tp.show.badge ? '<span class="tc-verified" title="مدرب موثّق"><i class="fa-solid fa-certificate"></i><i class="fa-solid fa-check"></i></span>' : ''}</div>
+      <div class="tc-ring">${avatar(t, 'tc-photo')}${tp.show.badge && t.plan !== 'trial' ? '<span class="tc-verified" title="مدرب موثّق"><i class="fa-solid fa-certificate"></i><i class="fa-solid fa-check"></i></span>' : ''}</div>
       <h2 class="tc-name">${esc(t.name || 'اسم المدرب')}</h2>
       ${tp.show.title && t.title ? `<p class="tc-title">${esc(t.title)}</p>` : ''}
       ${tp.show.region && regionsOf(t).length ? `<div class="tc-meta"><span><i class="fa-solid fa-location-dot"></i>${esc(regionsLabel(t, true, tp.maxRegions))}</span></div>` : ''}
@@ -228,7 +228,7 @@ const Card = (() => {
       nameInCircle(ctx, t.name, cx, cy, D, fg, HEAD);
     }
     ctx.restore();
-    if (tp.show.badge) {
+    if (tp.show.badge && t.plan !== 'trial') {   // شارة التوثيق للمشتركين فقط، لا للتجربة المجانية
       const bx = cx + D * 0.36, by = cy + D * 0.36;
       ctx.fillStyle = th.accent; seal(ctx, bx, by, 38); ctx.fill();
       ctx.strokeStyle = light ? '#FFFFFF' : th.b; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
@@ -380,7 +380,7 @@ const Card = (() => {
     }
     ctx.restore();
     // شارة التوثيق
-    if (tp.show.badge) {
+    if (tp.show.badge && t.plan !== 'trial') {   // شارة التوثيق للمشتركين فقط، لا للتجربة المجانية
       const bx = cx + D * 0.36, by = cy + D * 0.36;
       ctx.fillStyle = th.accent; seal(ctx, bx, by, wide ? 38 : 44); ctx.fill();
       ctx.strokeStyle = light ? '#FFFFFF' : th.b; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
