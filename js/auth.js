@@ -13,7 +13,7 @@ const Auth = {
   current() { if (window.ST_CONFIG.previewMode) return window.__auth || null; try { return JSON.parse(sessionStorage.getItem(this.KEY) || 'null') || window.__auth || null; } catch { return window.__auth || null; } },
   set(v) { window.__auth = v; if (window.ST_CONFIG.previewMode) return; try { v ? sessionStorage.setItem(this.KEY, JSON.stringify(v)) : sessionStorage.removeItem(this.KEY); } catch { /* ignore */ } },
   async logout() {
-    try { if (window.Push && Auth.current()?.kind === 'trainer') await Push.disable(); } catch { /* ignore */ }
+    try { if (window.Push && ['trainer', 'admin'].includes(Auth.current()?.kind)) await Push.disable(); } catch { /* ignore */ }
     try { window.Push && Push.setBadge(0); } catch { /* ignore */ }
     this.set(null);
     if (Store.auth) await Store.auth.signOut().catch(() => {});
@@ -68,7 +68,7 @@ const Security = (() => {
   const keyOf = kind => (kind === 'trainer' ? T_ACTIVE_KEY : ACTIVE_KEY);
   const touch = (kind = 'admin') => { try { localStorage.setItem(keyOf(kind), String(Date.now())); } catch { /* ignore */ } };
   const lastActive = (kind = 'admin') => { try { return Number(localStorage.getItem(keyOf(kind)) || 0); } catch { return 0; } };
-  const idleExpired = (kind = 'admin') => { const t = lastActive(kind); return !t || Date.now() - t > idleMs(kind); };
+  const idleExpired = (kind = 'admin') => { if (kind === 'admin') return false; const t = lastActive(kind); return !t || Date.now() - t > idleMs(kind); };
   let lastTouch = 0;
   ['click', 'keydown', 'scroll', 'touchstart'].forEach(ev => window.addEventListener(ev, () => {
     const k = Auth.current()?.kind; if (!k || Date.now() - lastTouch < 60000) return;
@@ -103,8 +103,7 @@ const Security = (() => {
     const user = await new Promise(res => { const un = Store.auth.onAuthStateChanged(u => { un(); res(u); }); });
     let session = await roleFor(user);
     if (session?.kind === 'admin') {
-      if (lastActive() && idleExpired()) { session = null; setTimeout(() => toast('انتهت جلسة الإدارة لعدم النشاط، سجّل الدخول من جديد'), 800); }
-      else touch();
+      touch();
     } else if (session?.kind === 'trainer') {
       // أول فتح بعد هذا التحديث بلا سجل نشاط: نعدّه نشطاً الآن
       if (lastActive('trainer') && idleExpired('trainer')) { session = null; setTimeout(() => toast('انتهت جلستك لعدم الدخول أكثر من 3 أيام، أدخل رمزك من جديد'), 800); }

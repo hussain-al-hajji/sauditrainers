@@ -10,7 +10,8 @@ const Push = (() => {
   const available = () => !!CFG().firebase && !!CFG().vapidKey && Store.mode === 'firebase';
   const hash = s => { let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h.toString(36) + s.length.toString(36); };
   const loadScript = src => new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = rej; document.head.appendChild(s); });
-  const myId = () => { const a = Auth.current(); return a?.kind === 'trainer' ? a.id : ''; };
+  const myId = () => { const a = Auth.current(); return a?.kind === 'trainer' ? a.id : a?.kind === 'admin' ? (Store.auth?.currentUser?.uid || '') : ''; };
+  const base = id => (Auth.current()?.kind === 'admin' ? `adminPushTokens/${id}` : `pushTokens/${id}`);
   let reg = null;
   async function register() {
     if (reg) return reg;
@@ -23,10 +24,10 @@ const Push = (() => {
   }
   async function save(tok) {
     const id = myId(); if (!id || !tok) return;
-    const h = hash(tok), cur = Store.get(`pushTokens/${id}/${h}`);
+    const h = hash(tok), cur = Store.get(`${base(id)}/${h}`);
     let last = 0; try { last = localStorage.getItem(KEY) === h ? Number(localStorage.getItem(KEY + '-ts') || 0) : 0; } catch { /* ignore */ }
     if ((cur && Date.now() - (cur.ts || 0) < 12 * 3600e3) || Date.now() - last < 12 * 3600e3) { try { localStorage.setItem(KEY, h); } catch { /* ignore */ } return; }   // مسجّل حديثاً: لا نكتب (الكتابة تُعيد رسم الصفحة)
-    await Store.set(`pushTokens/${id}/${h}`, { t: tok, ts: Date.now(), ua: (ios() ? 'iOS' : /android/i.test(navigator.userAgent) ? 'Android' : 'Web') + (standalone() ? ' · تطبيق' : ' · متصفح') });
+    await Store.set(`${base(id)}/${h}`, { t: tok, ts: Date.now(), ua: (ios() ? 'iOS' : /android/i.test(navigator.userAgent) ? 'Android' : 'Web') + (standalone() ? ' · تطبيق' : ' · متصفح') });
     try { localStorage.setItem(KEY, h); localStorage.setItem(KEY + '-ts', String(Date.now())); } catch { /* ignore */ }
   }
   const state = () => {
@@ -45,7 +46,7 @@ const Push = (() => {
   async function disable() {
     const id = myId(); let h = ''; try { h = localStorage.getItem(KEY) || ''; localStorage.removeItem(KEY); } catch { /* ignore */ }
     try { if (window.firebase?.messaging) await firebase.messaging().deleteToken(); } catch { /* ignore */ }
-    if (id && h) { try { await Store.remove(`pushTokens/${id}/${h}`); } catch { /* ignore */ } }
+    if (id && h) { try { await Store.remove(`${base(id)}/${h}`); } catch { /* ignore */ } }
   }
   // عند فتح اللوحة: إن كان مفعّلاً نجدّد الرمز (قد يتغيّر) ونجهّز استقبال الرسائل والصفحة مفتوحة
   let syncedOnce = false;
@@ -64,7 +65,7 @@ const Push = (() => {
     const el = document.createElement('div'); el.id = 'push-ask'; el.className = 'push-ask';
     el.innerHTML = st === 'ios-install'
       ? `<i class="fa-solid fa-bell"></i><div><b>فعّل إشعارات الجوال</b><small>على الآيفون: افتح الموقع في سفاري ← زر المشاركة ← «إضافة إلى الشاشة الرئيسية»، ثم افتحه من الأيقونة لتصلك طلبات التواصل فوراً.</small></div><button class="btn sm ghost" data-x>حسناً</button>`
-      : `<i class="fa-solid fa-bell"></i><div><b>فعّل إشعارات الجوال</b><small>يصلك إشعار فور وصول طلب تواصل أو طلب عام أو إعلان من الإدارة. وإن ثبّتَّ الموقع كتطبيق ظهر على أيقونته عدد الجديد.</small></div><button class="btn sm primary" data-ok>تفعيل الآن</button><button class="btn sm ghost" data-x>لاحقاً</button>`;
+      : `<i class="fa-solid fa-bell"></i><div><b>فعّل إشعارات الجوال</b><small>${Auth.current()?.kind === 'admin' ? 'يصلك إشعار على هذا الجهاز فور وصول أي طلب من جهة تدريبية، سواء لمدرب محدد أو عام.' : 'يصلك إشعار فور وصول طلب تواصل أو طلب عام أو إعلان من الإدارة.'} وإن ثبّتَّ الموقع كتطبيق ظهر على أيقونته عدد الجديد.</small></div><button class="btn sm primary" data-ok>تفعيل الآن</button><button class="btn sm ghost" data-x>لاحقاً</button>`;
     document.body.appendChild(el);
     const close = () => { try { localStorage.setItem(ASK, String(Date.now())); } catch { /* ignore */ } el.remove(); };
     el.querySelector('[data-x]').onclick = close;

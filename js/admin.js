@@ -39,6 +39,7 @@ Pages.admin = {
         <button class="side-sort-m" data-menu-edit title="ترتيب القائمة"><i class="fa-solid fa-arrow-down-up-across-line"></i>ترتيب</button>
         <hr style="border:0;border-top:1px solid rgba(255,255,255,.08)">
         <button data-preview><i class="fa-solid fa-user-gear"></i>معاينة كمدرب</button>
+        <button data-push title="إشعار على هذا الجهاز عند وصول طلب من جهة"><i class="fa-solid fa-bell"></i><span data-push-t>إشعارات الجوال</span></button>
         <button data-out><i class="fa-solid fa-right-from-bracket"></i>خروج</button>
       </aside>
       <main id="at"></main>
@@ -75,6 +76,16 @@ Pages.admin = {
     MonthStats.start();
     $$('[data-menu-edit]', root).forEach(b => b.onclick = () => { this.menuEdit = !this.menuEdit; this.wireMenu(root); });
     $('[data-out]', root).onclick = () => Auth.logout();
+    // إشعارات جوال الإدارة: زر تفعيل/إيقاف على هذا الجهاز، ودعوة تلقائية عند أول دخول
+    const pb = $('[data-push]', root), pstate = () => { const st = Push.state(); pb.classList.toggle('on', st === 'on'); $('[data-push-t]', pb).textContent = st === 'on' ? 'إشعارات الجوال: مفعّلة' : 'تفعيل إشعارات الجوال'; };
+    if (pb) {
+      if (!Push.available()) pb.hidden = true;
+      else {
+        pstate(); Push.sync().then(pstate);
+        pb.onclick = async () => { if (Push.state() === 'on') { await Push.disable(); toast('أُوقفت إشعارات هذا الجهاز'); } else await Push.enable(); pstate(); };
+        setTimeout(() => Push.invite(pstate), 1500);
+      }
+    }
     $('[data-preview]', root).onclick = () => TrainerPreview.open();
     const main = $('#at', root);
     ({ dash: aDash, apps: aApps, trainers: aTrainers, requests: aRequests, mail: aMail, social: aSocial, news: News.admin, reviews: Reviews.admin, library: Library.admin, health: aHealth, opps: Opps.admin, home: aHome, forms: aForms, templates: aTemplates, seo: aSeo, specs: aSpecs, halls: aHalls, content: aContent, admins: aAdmins, backup: aBackup })[this.tab](main);

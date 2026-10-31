@@ -23,7 +23,7 @@ window.ST_CONFIG = {
   // مفتاح Web Push العام (VAPID) لإشعارات الجوال: Firebase Console ← Project settings ← Cloud Messaging ← Web Push certificates ← Generate key pair (ليس سراً). اتركه فارغاً لتعطيل الإشعارات
   vapidKey: 'BEFVcX1wJbAa5vFww0D-QT5Kca5uS_oqOT-hrIphl7HCErw9YgPPf-NNcezb7iVr1-J9eGhy1cHauLZHtTOEHcY',
   // يبقى المشرف مسجلاً على جهازه، ويُطلب منه الدخول من جديد بعد هذه المدة دون أي نشاط
-  adminIdleHours: 72,
+  adminIdleHours: 0,   // 0 = بلا مهلة: تبقى جلسة الإدارة على الجهاز حتى «خروج» يدوي
   // وكذلك المدرب: يبقى مسجلاً على جهازه حتى يخرج بنفسه، أو تنتهي جلسته تلقائياً بعد هذه المدة دون أي فتح للموقع
   trainerIdleHours: 72,
   // رابط Google Apps Script للأتمتة (بريد المدربين من حساب المنصة + النشر المجدول). اتركه فارغاً لتعطيلها.

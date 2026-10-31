@@ -112,7 +112,7 @@ const Store = (() => {
     if (window.firebase.auth && CFG.firebase.apiKey) {
       authApi = app.auth();
       if (CFG.emulators?.auth) authApi.useEmulator(CFG.emulators.auth, { disableWarnings: true });
-      await authApi.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(() => {});
+      await authApi.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {});   // الدخول يبقى على الجهاز حتى الخروج اليدوي
     }
     mode = 'firebase';
     // تنبيه قبل إغلاق الصفحة إذا وُجدت تعديلات لم تصل للقاعدة بعد
