@@ -5,7 +5,7 @@
 
 const TrainerPdf = (() => {
   const GOLD = '#D9B44A';
-  const clean = s => (typeof plainText === 'function' ? plainText(s) : String(s == null ? '' : s)).replace(/\r/g, '').trim();
+  const clean = s => { s = String(s == null ? '' : s); if (typeof plainText === 'function') s = String(plainText(s) ?? s); return s.replace(/\r/g, '').trim(); };
   const hasLatinOnly = w => /[A-Za-z0-9]/.test(w) && !/[؀-ۿ]/.test(w);
 
   /* ---------- تقسيم النص إلى أسطر متساوية الأطراف ---------- */
