@@ -245,7 +245,7 @@ Pages.profile = {
     const fitCard = () => {
       if (!card) return; card.style.zoom = '';
       if (!matchMedia('(min-width: 961px)').matches) return;
-      const top = side.getBoundingClientRect().top + scrollY, room = innerHeight - top - act.offsetHeight - ($('.share-pl', side)?.offsetHeight || 0) - 46;
+      const top = side.getBoundingClientRect().top + scrollY, room = innerHeight - top - act.offsetHeight - ($('.share-pl', side)?.offsetHeight || 0) - ($('.dl-box', side)?.offsetHeight || 0) - 64;
       card.style.zoom = String(Math.min(1, Math.max(0.42, room / card.offsetHeight)));
     };
     if (card) { fitCard(); addEventListener('resize', fitCard); document.fonts && document.fonts.ready.then(fitCard); }
