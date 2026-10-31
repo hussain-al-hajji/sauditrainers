@@ -132,40 +132,52 @@ const TrainerPdf = (() => {
         const [c0, x0] = mkPage(); pages.push(c0); darkBase(x0, W * 0.5, H * 0.3);
         if (logo) { const lh = 92, lw = lh * logo.width / logo.height; x0.drawImage(logo, W - 96 - lw, 84, lw, lh); }
         K.pill(x0, 'ملف المدرب', 96 + 190, 130, { bg: 'rgba(238,243,229,.14)', fg: C.cream, fs: 25 });
-        const R = 170, cx = W / 2, cy = 410;
-        K.avatar(x0, { ...t }, photo, cx, cy, R, C.sage);
-        seal(x0, cx + R * 0.7, cy + R * 0.7, 52, C.cream, C.g900);
+        // التخطيط يُحسب من المساحة المتاحة فوق التذييل: يصغّر حجم الصورة تدريجياً (ثم يقلّل التخصصات) حتى لا يتداخل شيء مع التذييل
+        const cx = W / 2, fy = H - 38 - 14 - 150, limit = fy - 24, Y0 = 204;
         const nfs = K.fitFont(x0, clean(t.name), 900, 78, 40, 880, FONT.head);
-        center(x0, clean(t.name), 700, { font: `900 ${nfs}px ${FONT.head}`, color: '#fff' });
         x0.font = `600 33px ${FONT.body}`; const tl = KT.wrap(x0, clean(t.title), 860, 2);
-        tl.forEach((l, i) => center(x0, l, 764 + i * 46, { font: x0.font, color: C.sage }));
-        let ly = 764 + (tl.length - 1) * 46 + 66;
         const loc = [regionsLabel(t), t.city].filter(Boolean).join(' · ');
-        if (loc) { pillC(x0, loc, ly, { bg: 'rgba(238,243,229,.12)', fg: C.cream, fs: 25 }); ly += 62; }
-        if (t.tot) { pillC(x0, 'حاصل على شهادة تدريب المدربين', ly, { bg: 'rgba(238,243,229,.12)', fg: C.sage, fs: 22 }); ly += 62; }
         const stats = [[t.years, 'سنة خبرة'], [t.hours, 'ساعة تدريبية'], [t.programs, 'برنامج ودورة']].filter(s => Number(s[0]) > 0);
-        let sy = Math.max(ly + 18, 880);
+        x0.font = `700 26px ${FONT.body}`;
+        const rowsW = []; { let cur = [], cw = 0; data.sp.slice(0, 4).forEach(sn0 => { const sn = KT.wrap(x0, sn0, 516, 1)[0] || sn0, w = Math.min(560, x0.measureText(sn).width + 44); if (cur.length && cw + 12 + w > 900) { rowsW.push(cur); cur = []; cw = 0; } cw += (cur.length ? 12 : 0) + w; cur.push([sn, w]); }); if (cur.length) rowsW.push(cur); }
+        const plan = (R, rows, tot) => {
+          const nameY = Y0 + 2 * R + 92, tY = nameY + 58; let y = tY + (tl.length - 1) * 46 + 26;
+          const pills = (loc ? 1 : 0) + (tot ? 1 : 0); y += pills * 62 + 18;
+          const statsY = y; if (stats.length) y += 148;
+          const chipsY = y; y += rows * 68;
+          return { R, nameY, tY, pills, statsY, chipsY, end: y - 12, rows, tot };
+        };
+        let L = null;
+        for (const [rows, tot] of [[Math.min(2, rowsW.length), !!t.tot], [Math.min(1, rowsW.length), !!t.tot], [Math.min(1, rowsW.length), false], [0, false]]) {
+          for (let R = 170; R >= 92; R -= 6) { const c = plan(R, rows, tot); if (c.end <= limit) { L = c; break; } }
+          if (L) break;
+        }
+        if (!L) L = plan(92, 0, false);
+        const cy = Y0 + L.R;
+        K.avatar(x0, { ...t }, photo, cx, cy, L.R, C.sage);
+        seal(x0, cx + L.R * 0.7, cy + L.R * 0.7, Math.round(30 + L.R * 0.13), C.cream, C.g900);
+        center(x0, clean(t.name), L.nameY, { font: `900 ${nfs}px ${FONT.head}`, color: '#fff' });
+        tl.forEach((l, i) => center(x0, l, L.tY + i * 46, { font: `600 33px ${FONT.body}`, color: C.sage }));
+        let ly = L.tY + (tl.length - 1) * 46 + 26 + 34;
+        if (loc) { pillC(x0, loc, ly, { bg: 'rgba(238,243,229,.12)', fg: C.cream, fs: 25 }); ly += 62; }
+        if (L.tot) pillC(x0, 'حاصل على شهادة تدريب المدربين', ly, { bg: 'rgba(238,243,229,.12)', fg: C.sage, fs: 22 });
         if (stats.length) {
-          const sw = 270, gap = 18, tw = stats.length * sw + (stats.length - 1) * gap;
+          const sw = 270, gap = 18, tw = stats.length * sw + (stats.length - 1) * gap, sy = L.statsY;
           stats.forEach((s, i) => {
             const sx = W / 2 + tw / 2 - sw - i * (sw + gap); K.rrect(x0, sx, sy, sw, 118, 26, 'rgba(238,243,229,.10)', 'rgba(201,218,180,.32)');
             center2(x0, `+${Number(s[0]).toLocaleString('en-US')}`, sx + sw / 2, sy + 66, { font: `900 52px ${FONT.head}`, color: '#fff', dir: 'ltr' });
             center2(x0, s[1], sx + sw / 2, sy + 100, { font: `600 23px ${FONT.body}`, color: C.sage });
           });
-          sy += 118 + 30;
         }
         // التخصصات (رقاقات تشبه رقاقات البطاقة)
-        const specs = data.sp.slice(0, 4); x0.font = `700 26px ${FONT.body}`;
-        const rowsW = []; let cur = [], cw = 0;
-        specs.forEach(sn => { const w = Math.min(560, x0.measureText(sn).width + 44); if (cur.length && cw + 12 + w > 900) { rowsW.push(cur); cur = []; cw = 0; } cw += (cur.length ? 12 : 0) + w; cur.push([sn, w]); });
-        if (cur.length) rowsW.push(cur);
-        rowsW.slice(0, 2).forEach(row => {
+        let cy2 = L.chipsY;
+        rowsW.slice(0, L.rows).forEach(row => {
           const tw = row.reduce((a, r) => a + r[1], 0) + (row.length - 1) * 12; let rx = W / 2 + tw / 2;
-          row.forEach(([sn, w]) => { K.rrect(x0, rx - w, sy, w, 56, 28, 'rgba(238,243,229,.10)', 'rgba(201,218,180,.35)'); x0.save(); x0.beginPath(); x0.rect(rx - w + 12, sy, w - 24, 56); x0.clip(); center2(x0, sn, rx - w / 2, sy + 37, { font: `700 26px ${FONT.body}`, color: C.cream }); x0.restore(); rx -= w + 12; });
-          sy += 68;
+          row.forEach(([sn, w]) => { K.rrect(x0, rx - w, cy2, w, 56, 28, 'rgba(238,243,229,.10)', 'rgba(201,218,180,.35)'); x0.save(); x0.beginPath(); x0.rect(rx - w + 12, cy2, w - 24, 56); x0.clip(); center2(x0, sn, rx - w / 2, cy2 + 37, { font: `700 26px ${FONT.body}`, color: C.cream }); x0.restore(); rx -= w + 12; });
+          cy2 += 68;
         });
         // تذييل بنفس روح البطاقة: رمز QR ونص الدعوة واسم المنصة
-        const fy = H - 38 - 14 - 150, fh = 150; K.rrect(x0, 70, fy, W - 140, fh, 28, 'rgba(0,26,14,.45)', 'rgba(201,218,180,.22)');
+        const fh = 150; K.rrect(x0, 70, fy, W - 140, fh, 28, 'rgba(0,26,14,.45)', 'rgba(201,218,180,.22)');
         const qs = 100; K.qr(x0, url, 100, fy + (fh - qs - 16) / 2, qs); c0.__links.push({ x: 100, y: fy + (fh - qs - 16) / 2, w: qs + 16, h: qs + 16, url });
         K.txt(x0, 'لقراءة السيرة الذاتية والتواصل تفضل بزيارة منصة', W - 100, fy + 62, { font: `500 25px ${FONT.body}`, color: C.sage });
         K.txt(x0, 'مدرّبون سعوديّون', W - 100, fy + 112, { font: `900 38px ${FONT.head}`, color: '#fff' });
