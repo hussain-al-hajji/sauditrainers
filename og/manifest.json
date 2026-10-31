@@ -1,5 +1,5 @@
 {
- "sig": "b7d2c3ed5386a7ddcad92ba19c936f8d02027373",
+ "sig": "568a8f9dfbdf2bdd32b728a2f9c565002d1057cd",
  "trainers": {
   "st0132": "60344d6142788f7d4c2d2f6121d9207cdc20b4de",
   "st0131": "d576fd8f7f541294af7f5ce5a952144c484efd76",
@@ -32,7 +32,7 @@
   "st0104": "dc23fc569788bd016ce8cce42f37227126f8e42f",
   "st0103": "79730ec8c83d0ee230e885557565323a5fef6926",
   "st0102": "fe201add6d56ecd21db628287f706f6826b9f585",
-  "st0101": "1904a733106d18dcbea8701dd679af62b859a125",
+  "st0101": "5054bb686769c5d7277f3cbf49048a8afa5d1903",
   "st0100": "29e78638b68c6e8a2ccbf5fb3a4edbd326230981",
   "st0099": "844f7bbbcaadaa3818d54d118bb1d77d698ae2de",
   "st0098": "1bce5cd3ea0f8af8f5c5a0247b8242e4de157b3d",
@@ -54,17 +54,17 @@
   "st0025": "99b8a39de2a6d9d29c7d7de1bf2898d055f4c843"
  },
  "news": {
-  "mvqzw4uoqgc5f": "288b1d4e2190ac296999dce4903d5833df5fea59",
-  "mvjuwgww8gkus": "fad22fd9f5f5742282fa4cb87cb7117c42bed69b",
-  "mvhx1usvykfsl": "4d0f5ce76381a7ead66f9541885b8529f4754bcc",
-  "mvdiitkvogehc": "7d9d667f0b62ffa26f4b6fb790cdee033e06aef4",
+  "mvqzw4uoqgc5f": "4d7f5c5bc1d83ec8ba75a9157f9b0246adb9b803",
+  "mvjuwgww8gkus": "51074fd8b9b0b5393b5c5e539d30f74ad3d6c262",
+  "mvhx1usvykfsl": "66fae13f126494744a393dd136b5dc1e6c08006f",
+  "mvdiitkvogehc": "5d9232364e60422642ce0b553f8fe9e5d7cfe8b2",
   "mv844mv30ejos": "fe2d6cde40084374adfd1fe6589b06d076feeb5d",
   "mv83uv0xaxwgh": "a37f926f5a8abdd706bd0bbbdc462bcada26dafd",
   "mv83jvqpa2t4z": "d67a3e0684bf01e95ca2b3429b9560c1525aed23",
   "mv838xps0pic1": "fb267a58bd606adf213ff6282023cb695c724e76",
   "mv82ze4hqazwi": "9e43e1841a4c82e8ebb3edf96012394830eb80fd",
   "mv6a409qc9zln": "5c957e0ac86caf25c1c2d745785138b4f45bd4b2",
-  "mv3vvoax7nrwa": "c76b491ee606af458877ee5fab4e4fd167fbdcd2",
+  "mv3vvoax7nrwa": "e642f91fb8233aca87a0c2b8ef0ab3ae9a2567f6",
   "mv3ole1331ro9": "37ab39daaaa8d5e195cb307ddf4ad84d9b2b6ecc",
   "mv3n6au8no705": "82e6e75a6598c2a6cbf8e77cf1a76852cdc04700"
  }
