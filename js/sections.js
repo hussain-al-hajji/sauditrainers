@@ -230,12 +230,12 @@ const SECTION_TYPES = (() => {
   T.join = {
     name: 'انضم كمدرب (الرسوم والمزايا)', icon: 'fa-user-plus',
     tpls: [['cards', 'مع نماذج البطاقات'], ['compact', 'شريط مختصر']],
-    schema: [{ k: 'eyebrow', label: 'العنوان الصغير' }, { k: 'title', label: 'العنوان' }, { k: 'text', label: 'النص', t: 'area' }],
-    def: () => ({ ...JOIN_PITCH.home }),
+    schema: [],   // العنوان والمزايا من «المحتوى العام ← المزايا والعوائد» (مصدر واحد لكل القنوات)
+    def: () => ({}),
     render(sec) {
-      const c = Data.content(), d = sec.d;
-      const price = `<div class="price"><span class="ribbon">${esc(c.join.period)}</span><div class="amt num">${esc(c.join.fee)}<small>ريال</small></div><div class="price-note">${esc(c.join.feeNote)}</div><div class="price-per">${esc(JOIN_PITCH.perDay(c.join.fee))}</div>
-        <ul>${benefitList(c.join.benefits).slice(0, 5).map(b => `<li><i class="fa-solid fa-circle-check"></i>${esc(b.t)}</li>`).join('')}</ul>
+      const c = Data.content(), P = Pitch.get(), d = { eyebrow: P.eyebrow, title: P.title, text: P.text };
+      const price = `<div class="price"><span class="ribbon">${esc(c.join.period)}</span><div class="amt num">${esc(c.join.fee)}<small>ريال</small></div><div class="price-note">${esc(P.feeNote)}</div><div class="price-per">${esc(Pitch.perDay(c.join.fee))}</div>
+        <ul>${Pitch.top(5).map(b => `<li><i class="fa-solid fa-circle-check"></i>${esc(b.t)}${Pitch.tag(b.x)}</li>`).join('')}</ul>
         <div class="row"><a class="btn gold lg" href="#/join">سجّل كمدرب الآن <i class="fa-solid fa-arrow-left"></i></a><a class="btn glass" href="#/status">متابعة طلب</a></div></div>`;
       if (sec.tpl === 'compact') return `<div class="wrap"><div class="cta-band reveal"><div><span class="eyebrow">${esc(d.eyebrow)}</span><h2>${esc(d.title)}</h2><p>${esc(d.text)}</p></div><div class="row"><span class="amt-inline"><b class="num">${esc(c.join.fee)}</b> ريال · ${esc(c.join.period)}</span><a class="btn gold lg" href="#/join">سجّل الآن</a></div></div></div>`;
       const samples = [

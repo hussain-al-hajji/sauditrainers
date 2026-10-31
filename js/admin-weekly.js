@@ -11,12 +11,9 @@ const WEEKLY_DEFAULT = {
 const MONTHLY_DEFAULT = {
   subject: 'حصاد منصة مدرّبون سعوديّون لشهر {month}',
   intro: 'السلام عليكم ورحمة الله وبركاته\n\nزميلنا المدرب / زميلتنا المدربة،\n\nنضع بين يديك **حصاد منصة «مدرّبون سعوديّون» لشهر {month}**: أرقام الزيارات وفرص التدريب والوظائف، وأبرز أخبار المدربين، وتعريف بما تقدمه المنصة للمدرب السعودي.',
-  features: '🧭 | منصة حصرية للمدربين السعوديين | لا يظهر فيها إلا المدربون والمدربات السعوديون، فتبحث الجهات عن المدرب السعودي في مكان واحد وتجدك بين أقرانك.\n💼 | فرص تدريب تتجدد | طلبات الجهات تُعاد توجيهها للمدربين، وإعلانات تنشرها الإدارة من الإنترنت، وتصلك بإشعار فوري.\n🔎 | وظائف تدريب من عشرات المصادر | نجلبها آلياً إلى لوحتك مع أرشيف شهري لما سبق.\n📢 | ظهور مستمر | بطاقتك في صفحة منطقتك وتخصصك ونتائج البحث، وتثبيت دوري في الواجهة الرئيسية، ونشر في قنوات المنصة.',
-  account: '🪪 | ملف احترافي يتجدد معك | بطاقة وصفحة خاصة وملف PDF بغلاف أنيق، تحدّثها متى شئت وتشاركها في ثوانٍ.\n🖼️ | بطاقتك صورة بثلاثة مقاسات | منشور وقصة وعرضية، برمز QR يفتح صفحتك.\n📰 | أخبارك وإنجازاتك | تظهر في الصفحة الرئيسية وصفحتك ونشرة المدربين الأسبوعية.\n⭐ | توصيات وفيديو | تعرض توصيات الجهات ونماذج من جلساتك المصورة.\n🔔 | إشعارات فورية | الطلبات والفرص تصلك على جوالك وفي لوحتك.\n📚 | مكتبة المدرب | عشرات القوالب والأدوات لكل مراحل برنامجك.',
-  benefits: '♾️ | استثمار لمرة واحدة | رسوم {fee} ريالاً دفعة واحدة، بلا تجديد سنوي، أي أقل من ريالين يومياً في السنة الأولى.\n💰 | بلا عمولة | كل ما تحصل عليه من عقود عبر المنصة يعود لك.\n📈 | ظهور أقوى في القطاع | منصة حصرية للمدربين السعوديين تبحث فيها الجهات عن تخصصك.\n🏅 | ترشيح للجهات | نرشّحك للجهات التي تبحث عن تخصصك.',
   outro: 'يسعدنا انضمامك إلى مجتمع المدربين السعوديين، وإن كان لديك أي استفسار فنحن بخدمتك.\n\nمع خالص التحية،\n**فريق منصة مدرّبون سعوديّون**'
 };
-const MonthlyUI = { ym: '', subject: null, intro: null, features: null, account: null, benefits: null, outro: null, doc: null };
+const MonthlyUI = { ym: '', subject: null, intro: null, outro: null, doc: null };
 const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro: null, outro: null };
 
 (() => {
@@ -118,10 +115,6 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
   const num = n => (Number(n) || 0).toLocaleString('en-US');
   // النص المحفوظ سابقاً يتحدّث تلقائياً إلى الصياغة الجديدة («وتعريف» بدل «وتذكير»)
   const getM = () => { const m = { ...MONTHLY_DEFAULT, ...(Store.get('settings/monthly') || {}) }; m.intro = String(m.intro || '').replace('وتذكير بما تقدمه', 'وتعريف بما تقدمه');
-    // النصوص المحفوظة بالصياغة القديمة تتحدّث تلقائياً إلى الصياغة التسويقية الجديدة
-    if (/دليل مصنّف للمدربين/.test(m.features)) m.features = MONTHLY_DEFAULT.features;
-    if (/صفحة مهنية خاصة \|/.test(m.account)) m.account = MONTHLY_DEFAULT.account;
-    if (/اشتراك مدى الحياة \| رسوم/.test(m.benefits)) m.benefits = MONTHLY_DEFAULT.benefits;
     return m; };
   const monthOptions = () => Array.from({ length: 14 }, (_, k) => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - k); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; });
   const prevMonth = () => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`; };
@@ -137,7 +130,7 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     return Object.keys(days).filter(k => k.startsWith(pre)).reduce((t, k) => t + (Number((days[k] || {}).visits) || 0), 0);
   };
   const ymOfTs = ts => { const d = new Date((ts || 0) + 3 * 36e5); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; };
-  function buildMonthly({ ym, subject, intro, features, account, benefits, outro }) {
+  function buildMonthly({ ym, subject, intro, outro }) {
     const base = siteBase(), blocks = [], mname = ymLabel(ym), last = new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0).getDate(), fee = (Data.content().join || {}).fee || 720;
     const T = homeStatTexts(), st = Store.get(`stats/month/${ym}`) || {}, comp = MonthStats.compute()[ym] || {};
     const opp = Math.max(Number(st.requests) || 0, comp.requests || 0) + Math.max(Number(st.ads) || 0, comp.ads || 0), jobs = Math.max(Number(st.jobs) || 0, comp.jobs || 0);
@@ -164,9 +157,14 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     blocks.push({ t: 'h', text: '🪧 هكذا تظهر بطاقتك التعريفية', align: 'start' });
     blocks.push({ t: 'img', url: `${base}assets/card-sample.jpg`, alt: 'نموذج افتراضي لبطاقة مدرب على المنصة', w: 'full', align: 'center', link: `${base}#/join` });
     blocks.push({ t: 'p', text: 'نموذج افتراضي للبطاقة التعريفية', align: 'center' });
-    lineBox('🌟 مزايا المنصة', parseLines(sub(features))).forEach(b => blocks.push(b));
-    lineBox('🪪 مزايا حساب المدرب', parseLines(sub(account))).forEach(b => blocks.push(b));
-    lineBox('💎 ما الذي ستحصل عليه', parseLines(sub(benefits))).forEach(b => blocks.push(b));
+    // المزايا من المحتوى التسويقي المركزي (لوحة الإدارة ← المحتوى العام ← المزايا والعوائد): الحصرية للمسجلين تُوسم بلون مختلف
+    const P = Pitch.get(), HEAD = { platform: '🌟 ', account: '🪪 ', value: '💎 ' };
+    Object.entries(PITCH_GROUPS).forEach(([g, label]) => {
+      const list = P.items.filter(i => i.g === g); if (!list.length) return;
+      blocks.push({ t: 'h', text: HEAD[g] + label, align: 'start' });
+      list.forEach(i => blocks.push({ t: 'box', text: `${i.em || '✨'}  **${clean(i.t)}**${i.x ? ' [[حصرية للمسجلين]]' : ''}${i.d ? '\n' + clean(i.d) : ''}` }));
+      if (g === 'value') blocks.push({ t: 'p', text: sub(`رسوم الاشتراك **{fee} ريالاً** لمرة واحدة، ${Pitch.perDay(fee)}.`), align: 'start' });
+    });
     blocks.push({ ...reg });
     blocks.push({ t: 'hr' });
     blocks.push({ t: 'p', text: sub(outro), align: 'start' });
@@ -181,7 +179,7 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
   }
   window.mailWeeklyUnreg = function (body, main) {
     const U = MonthlyUI; if (!U.ym) U.ym = prevMonth();
-    const S = { ...getM(), ...Object.fromEntries(['subject', 'intro', 'features', 'account', 'benefits', 'outro'].filter(k => U[k] != null).map(k => [k, U[k]])) };
+    const S = { ...getM(), ...Object.fromEntries(['subject', 'intro', 'outro'].filter(k => U[k] != null).map(k => [k, U[k]])) };
     const months = [...new Set([U.ym, ...monthOptions()])].sort().reverse();
     body.innerHTML = `<div class="pbox">
       <h3><i class="fa-solid fa-calendar-check"></i> الرسالة الشهرية لغير المسجلين</h3>
@@ -194,14 +192,12 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
       <details style="margin-top:12px"><summary style="cursor:pointer"><b><i class="fa-solid fa-pen"></i> النصوص الثابتة (العنوان والمقدمة والمزايا والخاتمة)</b></summary>
         ${field('عنوان الرسالة (Subject)', `<input id="mm-sub" value="${esc(S.subject)}">`, 'استعمل {month} لاسم الشهر')}
         ${field('المقدمة', `<textarea id="mm-intro" rows="5">${esc(S.intro)}</textarea>`, 'استعمل {month} لاسم الشهر و**نص** للخط العريض')}
-        ${field('مزايا المنصة (سطر لكل ميزة)', `<textarea id="mm-feat" rows="5" style="font-size:.9rem">${esc(S.features)}</textarea>`, 'الصيغة: أيقونة | العنوان | الوصف')}
-        ${field('مزايا حساب المدرب', `<textarea id="mm-acc" rows="6" style="font-size:.9rem">${esc(S.account)}</textarea>`, 'الصيغة: أيقونة | العنوان | الوصف')}
-        ${field('الفوائد التي سيحصل عليها المدرب', `<textarea id="mm-ben" rows="5" style="font-size:.9rem">${esc(S.benefits)}</textarea>`, 'الصيغة: أيقونة | العنوان | الوصف، و{fee} لرسوم الاشتراك')}
+        <div class="banner info"><i class="fa-solid fa-gem"></i><span>مزايا المنصة وحساب المدرب والعوائد (ومنها الموسومة «حصرية للمسجلين») تُسحب تلقائياً من «المحتوى العام ← المزايا والعوائد»، فلا تُكتب هنا.</span></div>
         ${field('الخاتمة', `<textarea id="mm-outro" rows="4">${esc(S.outro)}</textarea>`)}
         <button class="btn" id="mm-save"><i class="fa-solid fa-floppy-disk"></i> حفظ النصوص</button></details></div>`;
-    const read = () => ({ ym: $('#mm-ym', body).value, subject: $('#mm-sub', body).value.trim(), intro: $('#mm-intro', body).value.trim(), features: $('#mm-feat', body).value.trim(), account: $('#mm-acc', body).value.trim(), benefits: $('#mm-ben', body).value.trim(), outro: $('#mm-outro', body).value.trim() });
+    const read = () => ({ ym: $('#mm-ym', body).value, subject: $('#mm-sub', body).value.trim(), intro: $('#mm-intro', body).value.trim(), outro: $('#mm-outro', body).value.trim() });
     const sync = () => Object.assign(U, read());
-    const save = r => Store.set('settings/monthly', { subject: r.subject, intro: r.intro, features: r.features, account: r.account, benefits: r.benefits, outro: r.outro });
+    const save = r => Store.set('settings/monthly', { subject: r.subject, intro: r.intro, outro: r.outro });
     $('#mm-ym', body).onchange = () => { sync(); U.doc = null; mailWeeklyUnreg(body, main); };
     $('#mm-save', body).onclick = () => { save(read()); toast('تم الحفظ'); };
     const show = doc => {

@@ -1416,3 +1416,12 @@ body.preview .local-flag { display: none; }
 .lib-cks { display: grid; gap: 6px; margin: 6px 0 12px; } .lib-ck { display: flex; gap: 10px; align-items: flex-start; padding: 8px 12px; border-radius: 12px; background: #fff; border: 1px solid var(--line); cursor: pointer; } .lib-ck input { margin-top: 6px; accent-color: var(--g700, #0B6A3E); } .lib-ck input:checked + span { text-decoration: line-through; opacity: .55; }
 
 .price-per { margin-top: 4px; font-size: .86rem; color: var(--gold2, #C9DAB4); opacity: .95; }
+
+/* وسم «حصرية للمسجلين»: بلون مختلف (عنبري) عن بقية الوسوم الخضراء */
+.ex-tag { display: inline-flex; align-items: center; gap: 5px; margin-inline-start: 8px; padding: 2px 10px; border-radius: 999px; background: #FFF1CC; color: #8A5A00; border: 1px solid #F0D38A; font: 700 .72rem/1.6 var(--f-ui); white-space: nowrap; vertical-align: middle; }
+.ex-tag i { font-size: .66rem; }
+.price li .ex-tag { margin-inline-start: 6px; } .pmx .ex-tag { background: #FFF1CC; color: #8A5A00; }
+
+.pt-box .pt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; } @media (max-width: 800px) { .pt-box .pt-grid { grid-template-columns: 1fr; } }
+.pt-it { margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); display: grid; gap: 8px; }
+.pt-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; } .pt-top b { width: 28px; height: 28px; border-radius: 50%; background: var(--g800); color: #fff; display: grid; place-items: center; font-size: .85rem; }

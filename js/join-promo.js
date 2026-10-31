@@ -8,6 +8,10 @@ const PromoSlides = (() => {
   const n = x => Number(x || 0).toLocaleString('en-US');
   const ben = (ic, t, d = '') => `<div class="pmx-ben"><span class="pmx-ic"><i class="fa-solid ${ic}"></i></span><div><h4>${t}</h4>${d ? `<p>${d}</p>` : ''}</div></div>`;
   const tile = (ic, t, d = '') => `<div class="pmx-tile"><span class="pmx-ic"><i class="fa-solid ${ic}"></i></span><h4>${t}</h4>${d ? `<p>${d}</p>` : ''}</div>`;
+  // المزايا تُسحب من المحتوى التسويقي المركزي (Pitch) فتتحدث الشرائح بتحديثه
+  const pit = id => Pitch.byId(id), tg = x => (x && x.x ? Pitch.tag(true) : '');
+  const bi = id => { const x = pit(id); return x ? ben(x.ic, esc(x.s || x.t), esc(x.sd || '') + tg(x)) : ''; };
+  const ti = id => { const x = pit(id); return x ? tile(x.ic, esc(x.s || x.t), esc(x.sd || '') + tg(x)) : ''; };
   const cta = (txt = 'سجّل كمدرب سعودي') => `<button type="button" class="pmx-cta" data-pm-go>${txt}</button>`;
   // بطاقات نموذجية حقيقية (نفس مكوّن بطاقة المدرب) بلا بيانات أشخاص
   const sampleCard = (i = 0) => {
@@ -23,29 +27,32 @@ const PromoSlides = (() => {
   const SLIDES = [
     { id: 'intro', name: 'التعريف والاشتراك', theme: 'dark', kick: 'المنصة الحصرية للمدربين السعوديين', html: c => `
       <div class="pmx-t"><h3>استثمار واحد<span class="acc">يعمل لأجلك دائماً</span></h3>
-        <p class="sub">بطاقتك وصفحتك وملفك الاحترافي، وفرص تدريب ووظائف تتجدد من عشرات المصادر، في منصة لا يظهر فيها إلا المدربون السعوديون.</p>
+        <p class="sub">بطاقتك وصفحتك وملفك الاحترافي، وفرص تدريب ووظائف تتجدد من عشرات المصادر، في منصة التسجيل فيها حصري للمدربين السعوديين.</p>
         <div class="pmx-price"><span>اشتراك واحد<br>${esc(c.join.period.replace(/^اشتراك\s*/, '') || 'مدى الحياة')}</span><strong class="num">${esc(c.join.fee)}</strong><span>ريال</span></div>${cta('ابدأ التسجيل الآن')}</div>
       <div class="pmx-v pmx-fan"><div class="fc c2">${sampleCard(1)}</div><div class="fc c3">${sampleCard(2)}</div><div class="fc c1">${sampleCard(0)}</div></div>` },
     { id: 'value', name: 'ماذا تحصل عليه؟', theme: 'light', kick: 'قيمة الاشتراك', html: c => `
-      <div class="pmx-t"><h3>دفعة واحدة<span class="acc">وعوائد تتجدد</span></h3><p class="sub"><b class="num">${esc(c.join.fee)}</b> ريال لمرة واحدة، ${esc(JOIN_PITCH.perDay(c.join.fee))}. لا تجديد سنوي ولا عمولة على عقودك.</p>${cta()}</div>
-      <div class="pmx-v pmx-tiles">${tile('fa-briefcase', 'فرص تدريب متجددة', 'طلبات جهات وإعلانات تصلك بإشعار فوري')}${tile('fa-magnifying-glass-dollar', 'وظائف تدريب', 'من عشرات المصادر على الإنترنت')}${tile('fa-id-card', 'ملف احترافي', 'بطاقة وصفحة وPDF تحدّثها متى شئت')}${tile('fa-flag', 'منصة حصرية', 'للمدربين السعوديين فقط')}${tile('fa-bullhorn', 'ظهور مستمر', 'منطقتك وتخصصك ونتائج البحث')}${tile('fa-book-open', 'مكتبة المدرب', 'قوالب وأدوات لكل مراحل برنامجك')}</div>` },
+      <div class="pmx-t"><h3>دفعة واحدة<span class="acc">وعوائد تتجدد</span></h3><p class="sub"><b class="num">${esc(c.join.fee)}</b> ريال لمرة واحدة، ${esc(Pitch.perDay(c.join.fee))}. لا تجديد سنوي ولا عمولة على عقودك.</p>${cta()}</div>
+      <div class="pmx-v pmx-tiles">${['opps', 'jobs', 'profile', 'pdf', 'library', 'exclusive'].map(ti).join('')}</div>` },
     { id: 'perks', name: 'مزايا الاشتراك', theme: 'dark', kick: 'للمدربين السعوديين', html: () => `
       <div class="pmx-t"><h3>اشتراك واحد<span class="acc">بأربع عوائد</span></h3><p class="sub">ما تحتاجه لتُرى وتُطلب، دون أن تتفرغ للتسويق.</p>${cta()}</div>
-      <div class="pmx-v pmx-bens">${ben('fa-briefcase', 'فرص تدريبية متجددة', 'طلبات الجهات وإعلانات التدريب تصلك أولاً بأول')}${ben('fa-magnifying-glass-dollar', 'وظائف تدريب من عشرات المصادر', 'تُجلب آلياً إلى لوحتك مع أرشيف شهري')}${ben('fa-id-card', 'ملف احترافي يتجدد معك', 'بطاقة وصفحة وPDF وصور جاهزة للمشاركة')}${ben('fa-flag', 'ظهور أقوى بين أقرانك', 'منصة لا يدخلها إلا المدربون السعوديون')}</div>` },
+      <div class="pmx-v pmx-bens">${['opps', 'jobs', 'profile', 'exclusive'].map(bi).join('')}</div>` },
     { id: 'opps', name: 'فرص ووظائف متجددة', theme: 'dark', kick: 'فرص تتجدد كل يوم', html: () => `
       <div class="pmx-t"><h3>فرص ووظائف<span class="acc">تصلك دون أن تبحث</span></h3><p class="sub">ما يصل المنصة من الجهات، وما تنشره الإدارة، وما يُجلب آلياً من الإنترنت، كله في لوحتك.</p>${cta()}</div>
-      <div class="pmx-v pmx-bens">${ben('fa-inbox', 'طلبات من الجهات التدريبية', 'تُعاد توجيهها لكل المدربين المسجلين')}${ben('fa-globe', 'إعلانات تدريب من الإنترنت', 'تنتقيها الإدارة وتنشرها لك')}${ben('fa-briefcase', 'وظائف المدربين', 'من عشرات المصادر، وتحفظ في أرشيف شهري')}${ben('fa-bell', 'إشعار فوري على جوالك', 'تعرف بالجديد قبل غيرك')}</div>` },
+      <div class="pmx-v pmx-bens">${['opps', 'jobs', 'alerts', 'stats'].map(bi).join('')}</div>` },
     { id: 'exclusive', name: 'منصة حصرية للسعوديين', theme: 'light', kick: 'حصرية للمدربين السعوديين', html: () => `
-      <div class="pmx-t"><h3>منصة لا يدخلها إلا<span class="acc">المدربون السعوديون</span></h3><p class="sub">حين تبحث الجهة عن مدرب سعودي، تجد مكاناً واحداً متخصصاً، وتجدك فيه بين أقرانك لا بين آلاف الحسابات العامة.</p>
+      <div class="pmx-t"><h3>التسجيل حصري<span class="acc">للمدربين السعوديين</span></h3><p class="sub">حين تبحث الجهة عن مدرب سعودي، تجد مكاناً واحداً متخصصاً، وتجدك فيه بين أقرانك لا بين آلاف الحسابات العامة.</p>
         <div class="pmx-chips"><span>تسجيل بشروط</span><span>توثيق للبطاقات</span><span>13 منطقة</span></div>${cta()}</div>
-      <div class="pmx-v pmx-tiles">${tile('fa-flag', 'ظهور أقوى في القطاع', 'جمهورك جهات تبحث عن سعوديين')}${tile('fa-circle-check', 'بطاقة موثّقة', 'تزيد ثقة من يقرأ سيرتك')}${tile('fa-users', 'مجتمع مهني', 'أخبار وتوصيات ونشرة أسبوعية')}${tile('fa-star', 'تمييز لا زحام', 'بحث بالتخصص والمنطقة')}</div>` },
+      <div class="pmx-v pmx-tiles">${['exclusive', 'reach', 'reviews', 'directory'].map(ti).join('')}</div>` },
     { id: 'pdf', name: 'ملف احترافي يتجدد', theme: 'dark', kick: 'ملفك المهني', html: () => `
-      <div class="pmx-t"><h3>ملف احترافي<span class="acc">يتجدد ويُشارك في ثوانٍ</span></h3><p class="sub">حدّث بياناتك مرة واحدة فتتحدث بطاقتك وصفحتك وملف PDF، وأرسلها لأي جهة في أي وقت.</p>
+      <div class="pmx-t"><h3>ملف احترافي<span class="acc">يتجدد ويُشارك في ثوانٍ</span></h3><p class="sub">${esc((pit('pdf') || {}).d || 'حدّث بياناتك مرة واحدة فتتحدث بطاقتك وصفحتك وملف PDF.')}</p>
         <div class="pmx-fm"><span><i class="fa-solid fa-file-pdf"></i> ملف PDF</span><span><i class="fa-solid fa-image"></i> 3 مقاسات</span><span><i class="fa-solid fa-qrcode"></i> رمز QR</span></div>${cta()}</div>
       <div class="pmx-v pmx-cardv"><div class="cw">${sampleCard(1)}</div><span class="fl f1"><i class="fa-solid fa-file-pdf"></i> ملف PDF بغلاف أنيق</span><span class="fl f2"><i class="fa-solid fa-pen"></i> عدّل متى شئت</span><span class="fl f3"><i class="fa-solid fa-share-nodes"></i> شارك بنقرة</span></div>` },
     { id: 'zero', name: 'بدون عمولة', theme: 'dark', kick: 'للمدربين السعوديين', html: () => `
       <div class="pmx-t"><h3>كل ما تحصل عليه<span class="acc">يبقى لك</span></h3><p class="sub">لا عمولة على عقودك، ولا تجديد سنوي للاشتراك: تدفع مرة واحدة وتبقى مستفيداً منها.</p>${cta()}</div>
       <div class="pmx-v pmx-zero"><span class="rg r1"></span><span class="rg r2"></span><b class="num">0%</b></div>` },
+    { id: 'library', name: 'مكتبة المدرب', theme: 'light', kick: 'مكتبة المدرب', html: () => `
+      <div class="pmx-t"><h3>مكتبة عملية<span class="acc">لكل مراحل برنامجك</span></h3><p class="sub">${esc((pit('library') || {}).d || '')} ${tg(pit('library'))}</p>${cta()}</div>
+      <div class="pmx-v pmx-tiles">${tile('fa-clipboard-list', 'قبل البرنامج', 'عروض أسعار وعقود وتحديد الاحتياج')}${tile('fa-chalkboard-user', 'أثناء البرنامج', 'أنشطة وأسئلة وإدارة القاعة')}${tile('fa-flag-checkered', 'بعد البرنامج', 'تقييم وتقرير ومتابعة')}${tile('fa-file-word', 'قوالب Word جاهزة', 'تنزّلها وتعدّلها بنفسك')}</div>` },
     { id: 'panel', name: 'لوحة التحكم الخاصة', theme: 'dark', kick: 'لوحتك الخاصة', html: () => `
       <div class="pmx-t"><h3>لكل مدرب<span class="acc">لوحة تحكم خاصة</span></h3><p class="sub">ادخل برمز الدخول الخاص بك وأدر حضورك بنفسك: تعديل فوري يظهر للزوار، وطلبات تصلك مباشرة بالبريد وفي لوحتك.</p></div>
       <div class="pmx-v">${win('SaudiTrainers.sa/#/me', `<div class="pmx-dash"><aside><b><i class="fa-solid fa-user"></i> لوحتي</b><span class="on"><i class="fa-solid fa-id-card"></i> بطاقتي</span><span><i class="fa-solid fa-pen-to-square"></i> تعديل البيانات</span><span><i class="fa-solid fa-inbox"></i> طلبات موجهة لك <em>3</em></span><span><i class="fa-solid fa-arrow-up-right-from-square"></i> صفحتي العامة</span></aside>
@@ -76,7 +83,7 @@ const PromoSlides = (() => {
       <div class="pmx-v pmx-st"><div><b class="num">${n(v('impressionsAll'))}</b><span>مرة ظهور في نتائج بحث Google</span></div><div><b class="num">${n(v('sessionsAll'))}</b><span>جلسة زيارة</span></div><div><b class="num">${n(v('usersAll'))}</b><span>مستخدم</span></div><div><b class="num">${n(v('viewsAll'))}</b><span>مشاهدة للصفحة الرئيسية</span></div></div>`; } },
     { id: 'start', name: 'ابدأ في ثلاث خطوات', theme: 'dark', kick: 'ابدأ الآن', html: c => `
       <div class="pmx-t"><h3>انضم إلى المنصة<span class="acc">في ثلاث خطوات</span></h3>${cta('سجّل كمدرب سعودي')}</div>
-      <div class="pmx-v pmx-steps"><div><span class="n">1</span><div><h4>أكمل نموذج التسجيل</h4><p>بياناتك وخبرتك وتخصصاتك مع معاينة حيّة لبطاقتك</p></div></div><div><span class="n">2</span><div><h4>بعد القبول المبدئي، سدّد الاشتراك</h4><p>${esc(c.join.feeNote)} - <span class="num">${esc(c.join.fee)}</span> ريال، ${esc(c.join.period)}</p></div></div><div><span class="n">3</span><div><h4>استلم رمز دخولك وانشر بطاقتك</h4><p>تظهر في المنصة ويصلك رمز الدخول إلى لوحتك</p></div></div></div>` }
+      <div class="pmx-v pmx-steps"><div><span class="n">1</span><div><h4>أكمل نموذج التسجيل</h4><p>بياناتك وخبرتك وتخصصاتك مع معاينة حيّة لبطاقتك</p></div></div><div><span class="n">2</span><div><h4>بعد القبول المبدئي، سدّد الاشتراك</h4><p>${esc(Pitch.get().feeNote)} - <span class="num">${esc(c.join.fee)}</span> ريال، ${esc(c.join.period)}</p></div></div><div><span class="n">3</span><div><h4>استلم رمز دخولك وانشر بطاقتك</h4><p>تظهر في المنصة ويصلك رمز الدخول إلى لوحتك</p></div></div></div>` }
   ];
 
   const cfg = () => { const o = Store.get('content/joinPromo') || {}; return { on: o.on !== false, hidden: Array.isArray(o.hidden) ? o.hidden : Object.values(o.hidden || {}), sec: Math.min(15, Math.max(3, Number(o.sec) || 7)) }; };

@@ -193,8 +193,12 @@ const Bulletin = (() => {
 
 
   /* ---------- الصفحة الختامية الدعائية: مزايا المنصة + دعوة للتسجيل برمز QR لصفحة الانضمام ---------- */
-  const PROMO_FEATS = [['', 'ملف احترافي يتجدد: بطاقة وصفحة وPDF'], ['', 'أخبارك تظهر في الرئيسية والنشرة'], ['', 'فرص تدريب تتجدد وتصلك بإشعار'], ['', 'وظائف تدريب من عشرات المصادر'],
-    ['', 'مكتبة قوالب لكل مراحل برنامجك'], ['', 'منصة حصرية للمدربين السعوديين'], ['', 'توصيات وفيديوهات تعزّز الثقة'], ['', 'اشتراك واحد بلا عمولة ولا تجديد']];
+  // رمز أيقونة Font Awesome من اسم صنفها (للرسم على اللوحة)
+  const faGlyph = cls => { try { const i = document.createElement('i'); i.className = `fa-solid ${cls}`; i.style.cssText = 'position:absolute;left:-99px'; document.body.appendChild(i); const c = getComputedStyle(i, '::before').content; i.remove(); return String(c).replace(/^["']|["']$/g, '') || '\uf005'; } catch { return '\uf005'; } };
+  // وسم «حصرية للمسجلين» بلون عنبري مميّز على الصور
+  const exPill = (ctx, cxRight, cy, fs = 19) => pill(ctx, 'حصرية للمسجلين', cxRight, cy, { bg: '#FFF1CC', fg: '#8A5A00', fs });
+  // المزايا من المحتوى التسويقي المركزي (Pitch)
+  const promoFeats = () => Pitch.get().items.slice(0, 8).map(i => ({ ic: faGlyph(i.ic || 'fa-star'), label: i.s || i.t, x: !!i.x }));
   function promo(ctx) {
     frameBg(ctx, true);
     const glow = ctx.createRadialGradient(W * 0.85, H * 0.15, 20, W * 0.85, H * 0.15, W * 0.8); glow.addColorStop(0, 'rgba(35,163,101,.35)'); glow.addColorStop(1, 'rgba(35,163,101,0)'); ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
@@ -207,14 +211,15 @@ const Bulletin = (() => {
     txt(ctx, 'استثمار لمرة واحدة: ملفك وفرصك وظهورك في مكان واحد', W - 90, 500, { font: `600 33px ${FONT.body}`, color: C.cream });
     // بطاقات المزايا (عمودان × أربعة صفوف)
     const colW = (W - 180 - 20) / 2, rowH = 104, gy = 16, y0 = 540;
-    PROMO_FEATS.forEach(([ic, label], i) => {
+    promoFeats().forEach(({ ic, label, x: ex }, i) => {
       const col = i % 2, row = Math.floor(i / 2), x = W - 90 - colW - col * (colW + 20), y = y0 + row * (rowH + gy);
       rrect(ctx, x, y, colW, rowH, 24, 'rgba(238,243,229,.10)', 'rgba(201,218,180,.32)');
       const cx = x + colW - 20 - 36, cy = y + rowH / 2;
       ctx.beginPath(); ctx.arc(cx, cy, 36, 0, Math.PI * 2); ctx.fillStyle = C.cream; ctx.fill();
       ctx.save(); ctx.font = '900 32px "Font Awesome 6 Free"'; ctx.fillStyle = C.g800; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'ltr'; ctx.fillText(ic, cx, cy + 2); ctx.restore();
       ctx.font = `700 26px ${FONT.body}`; const lines = K().wrap(ctx, label, colW - 36 - 72 - 16, 2), lh = 34, top = cy - (lines.length * lh) / 2 + 26;
-      lines.forEach((l, k) => txt(ctx, l, cx - 36 - 18, top + k * lh, { font: ctx.font, color: '#fff' }));
+      lines.forEach((l, k) => txt(ctx, l, cx - 36 - 18, top + k * lh - (ex ? 10 : 0), { font: ctx.font, color: '#fff' }));
+      if (ex) exPill(ctx, cx - 36 - 18, y + rowH - 20, 15);
     });
     // الدعوة + الباركود
     const by = y0 + 4 * (rowH + gy) + 14, bh = H - 90 - by;
@@ -388,11 +393,8 @@ const Bulletin = (() => {
   }
 
   /* ---------- «التقرير الشهري»: غلاف ← أرقام الشهر ← موضوعات مطلوبة ← أخبار الشهر ← 3 بطاقات مزايا ← دعوة للتسجيل ---------- */
-  const RPT_CARDS = [
-    { ic: '', k: 'بطاقتك التعريفية', t: 'صفحة مهنية وبطاقة تعريفية باسمك', pts: ['رابط مختصر وبطاقة جاهزة للمشاركة', 'تظهر في دليل المدربين مع التخصص والمنطقة', 'تُثبَّت في الواجهة الرئيسية ليوم كامل'] },
-    { ic: '', k: 'فرص تتجدد', t: 'طلبات تدريب ووظائف من عشرات المصادر', pts: ['طلبات الجهات تُعاد توجيهها للمدربين', 'وظائف تدريب تُجلب آلياً مع أرشيف شهري', 'تنبيهات فورية على جوالك'] },
-    { ic: '', k: 'منصة حصرية', t: 'للمدربين السعوديين فقط', pts: ['ظهور أقوى بين أقرانك في القطاع', 'ملف احترافي PDF وصور يتجدد معك', 'اشتراك واحد بلا عمولة ولا تجديد'] }
-  ];
+  // البطاقات الثلاث من المزايا المركزية: الملف الاحترافي، الفرص، المنصة الحصرية
+  const rptCards = () => ['profile', 'opps', 'exclusive'].map(id => Pitch.byId(id)).filter(Boolean).map(i => ({ ic: faGlyph(i.ic || 'fa-star'), k: i.s || i.t, t: i.t, pts: (i.pts && i.pts.length ? i.pts : [i.sd || '']).slice(0, 3), x: !!i.x }));
   function rptCover(ctx, d) {
     frameBg(ctx, true);
     const glow = ctx.createRadialGradient(W * 0.2, H * 0.78, 20, W * 0.2, H * 0.78, W * 0.9); glow.addColorStop(0, 'rgba(35,163,101,.35)'); glow.addColorStop(1, 'rgba(35,163,101,0)'); ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
@@ -458,11 +460,12 @@ const Bulletin = (() => {
     const glow = ctx.createRadialGradient(W * 0.15, H * 0.2, 20, W * 0.15, H * 0.2, W * 0.9); glow.addColorStop(0, 'rgba(35,163,101,.35)'); glow.addColorStop(1, 'rgba(35,163,101,0)'); ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
     const M = 38; ctx.strokeStyle = 'rgba(201,218,180,.8)'; ctx.lineWidth = 3; K().rr(ctx, M, M, W - 2 * M, H - 2 * M, 44); ctx.stroke();
     if (chrome.logo) { const lh = 84, lw = lh * chrome.logo.width / chrome.logo.height; ctx.drawImage(chrome.logo, W - 90 - lw, 82, lw, lh); }
-    pill(ctx, `من مزايا المنصة · ${i + 1} / ${RPT_CARDS.length}`, 90 + 290, 124, { bg: 'rgba(238,243,229,.14)', fg: C.cream, fs: 26 });
+    pill(ctx, `من مزايا المنصة · ${i + 1} / ${rptCards().length}`, 90 + 290, 124, { bg: 'rgba(238,243,229,.14)', fg: C.cream, fs: 26 });
     const cx = W / 2, cy = 400;
     ctx.beginPath(); ctx.arc(cx, cy, 170, 0, Math.PI * 2); ctx.fillStyle = 'rgba(238,243,229,.10)'; ctx.fill(); ctx.strokeStyle = 'rgba(201,218,180,.35)'; ctx.lineWidth = 3; ctx.stroke();
     ctx.beginPath(); ctx.arc(cx, cy, 120, 0, Math.PI * 2); ctx.fillStyle = C.cream; ctx.fill();
     ctx.save(); ctx.font = '900 110px "Font Awesome 6 Free"'; ctx.fillStyle = C.g800; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'ltr'; ctx.fillText(c.ic, cx, cy + 4); ctx.restore();
+    if (c.x) { ctx.font = `700 22px ${FONT.body}`; exPill(ctx, cx + (ctx.measureText('حصرية للمسجلين').width + 34) / 2, 598, 22); }
     txt(ctx, c.k, cx, 690, { font: `900 96px ${FONT.head}`, color: '#fff', align: 'center' });
     ctx.fillStyle = C.sage; ctx.fillRect(cx - 75, 724, 150, 7);
     ctx.font = `600 38px ${FONT.body}`; K().wrap(ctx, c.t, W - 240, 2).forEach((l, k) => txt(ctx, l, cx, 800 + k * 54, { font: ctx.font, color: C.cream, align: 'center' }));
@@ -485,7 +488,7 @@ const Bulletin = (() => {
     const attempt = () => {
       const mk = () => { const cv = document.createElement('canvas'); cv.width = W; cv.height = H; const c = cv.getContext('2d'); c.direction = 'rtl'; c.textAlign = 'right'; c.__links = cv.__links = []; return [cv, c]; };
       const mc = mk()[1], tp = rptTopicPages(d.titles), npages = groups.length ? paginate(mc, groups, 'compact') : [];
-      const total = 2 + tp.length + npages.length + RPT_CARDS.length + 1, out = []; let n = 1; let [cv, c] = mk();
+      const total = 2 + tp.length + npages.length + rptCards().length + 1, out = []; let n = 1; let [cv, c] = mk();
       rptCover(c, d); out.push(cv);
       [cv, c] = mk(); chrome(c, ++n, total, 0, 0, 'التقرير الشهري'); txtMonth(c, d); rptStats(c, d); out.push(cv);
       tp.forEach((rows, i) => { [cv, c] = mk(); chrome(c, ++n, total, 0, 0, 'التقرير الشهري'); txtMonth(c, d); rptTopics(c, rows, i === 0, d.titles.length, d); out.push(cv); });
@@ -495,7 +498,7 @@ const Bulletin = (() => {
         secs.forEach(sec => { y = TOP + 56 + (sec.y || 0); const hh = drawHeader(c, sec.t, photos.get(sec.t.id), PX, y, sec.cont, false, sec.H); y += hh + 14; sec.L.forEach(L => { drawItem(c, L, PX, y); y += L.h + 14; }); });
         out.push(cv);
       });
-      RPT_CARDS.forEach((cd, i) => { [cv, c] = mk(); rptCard(c, cd, i); out.push(cv); });
+      rptCards().forEach((cd, i) => { [cv, c] = mk(); rptCard(c, cd, i); out.push(cv); });
       [cv, c] = mk(); promo(c); out.push(cv);
       return out;
     };
