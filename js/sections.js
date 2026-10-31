@@ -234,10 +234,10 @@ const SECTION_TYPES = (() => {
     def: () => ({}),
     render(sec) {
       const c = Data.content(), P = Pitch.get(), d = { eyebrow: P.eyebrow, title: P.title, text: P.text };
-      const price = `<div class="price"><span class="ribbon">${esc(c.join.period)}</span><div class="amt num">${esc(c.join.fee)}<small>ريال</small></div><div class="price-note">${esc(P.feeNote)}</div><div class="price-per">${esc(Pitch.perDay(c.join.fee))}</div>
+      const price = `<div class="price"><span class="ribbon">${esc(c.join.period)}</span><div class="amt num">${esc(c.join.fee)}<small>ريال</small></div><div class="price-note">${Pitch.renewTag()}</div><div class="price-per">${esc(Pitch.perDay(c.join.fee))}</div>
         <ul>${P.items.map(b => `<li><i class="fa-solid fa-circle-check"></i>${esc(b.s || b.t)}${Pitch.tag(b.x)}</li>`).join('')}</ul>
         <div class="row"><a class="btn gold lg" href="#/join">سجّل كمدرب الآن <i class="fa-solid fa-arrow-left"></i></a><a class="btn glass" href="#/status">متابعة طلب</a></div></div>`;
-      if (sec.tpl === 'compact') return `<div class="wrap"><div class="cta-band reveal"><div><span class="eyebrow">${esc(d.eyebrow)}</span><h2>${esc(d.title)}</h2><p>${esc(d.text)}</p></div><div class="row"><span class="amt-inline"><b class="num">${esc(c.join.fee)}</b> ريال · ${esc(c.join.period)}</span><a class="btn gold lg" href="#/join">سجّل الآن</a></div></div></div>`;
+      if (sec.tpl === 'compact') return `<div class="wrap"><div class="cta-band reveal"><div><span class="eyebrow">${esc(d.eyebrow)}</span><h2>${esc(d.title)}</h2><p>${esc(d.text)}</p></div><div class="row"><span class="amt-inline"><b class="num">${esc(c.join.fee)}</b> ريال ${esc(c.join.period)} ${Pitch.renewTag()}</span><a class="btn gold lg" href="#/join">سجّل الآن</a></div></div></div>`;
       const samples = [
         { name: 'بطاقتك الاحترافية', title: 'مدربة في التحول الرقمي', region: 'eastern', theme: 'cream', specs: ['digital'], years: 6, hours: 900, code: 'ST0000' },
         { name: 'اسمك هنا', title: 'مدرب معتمد في القيادة والتطوير', region: 'riyadh', theme: 'deep', specs: ['leadership'], years: 8, hours: 1200, code: 'ST0000' },

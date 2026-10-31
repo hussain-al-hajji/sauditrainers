@@ -17,7 +17,7 @@ Pages.join = {
       ${PromoSlides.html()}
       <div class="cards3" style="margin-bottom:26px">
         <div class="icard reveal"><div class="ic"><i class="fa-solid fa-list-check"></i></div><h3>المتطلبات</h3><ul style="margin:0;padding-inline-start:18px;color:var(--ink2)">${lines(c.join.requirements).map(r => `<li>${esc(r)}</li>`).join('')}</ul></div>
-        <div class="icard reveal" style="--d:160ms"><div class="ic"><i class="fa-solid fa-receipt"></i></div><h3><span class="num">${esc(c.join.fee)}</span> ريال</h3><p><b>${esc(Pitch.get().feeNote)}</b> - ${esc(c.join.period)}.<br><span class="small" style="color:var(--g700)">${esc(Pitch.perDay(c.join.fee))}.</span><br><span class="small muted">لا يُطلب السداد إلا بعد قبول الطلب.</span></p></div>
+        <div class="icard reveal" style="--d:160ms"><div class="ic"><i class="fa-solid fa-receipt"></i></div><h3><span class="num">${esc(c.join.fee)}</span> ريال <small>${esc(c.join.period)}</small></h3><p>${Pitch.renewTag()}<br><span class="small" style="color:var(--g700)">${esc(Pitch.perDay(c.join.fee))}.</span><br><span class="small muted">لا يُطلب السداد إلا بعد قبول الطلب.</span></p></div>
       </div>
       <section class="perks reveal"><div class="perks-h"><span class="eyebrow">${esc(Pitch.get().eyebrow)}</span><h2>ماذا تحصل عليه باشتراك واحد؟</h2><p>${esc(Pitch.get().text)}</p></div>
         <div class="perks-grid">${Pitch.get().items.map((b, i) => `<article class="perk"><span class="perk-n num">${i + 1}</span><div class="perk-ic"><i class="fa-solid ${esc(b.ic || BENEFIT_ICONS[i % BENEFIT_ICONS.length])}"></i></div><h3>${esc(b.t)}</h3>${Pitch.tag(b.x)}${b.d ? `<p>${esc(b.d)}</p>` : ''}</article>`).join('')}</div></section>
@@ -44,7 +44,7 @@ Pages.join = {
       + `<div class="wiz-pane" data-p="${last}"><h2>المراجعة والإرسال</h2><div id="sum"></div>
         <div class="req-box"><b>السداد</b><p class="small" style="margin:.3em 0 0">${nl2br(c.join.payment)}</p></div>
         <div class="ack-box"><i class="fa-solid fa-circle-info"></i><p>${nl2br(c.join.disclaimer)}</p></div>
-        <label class="chk consent"><input type="checkbox" name="agree"><span><i class="fa-solid fa-file-signature"></i> أقرّ بصحة البيانات، وأوافق على نشرها في المنصة، وعلى رسوم الاشتراك (<span class="num">${esc(c.join.fee)}</span> ريال، ${esc(c.join.period)}) بعد القبول، وأطّلعت على الإقرار أعلاه</span></label>
+        <label class="chk consent"><input type="checkbox" name="agree"><span><i class="fa-solid fa-file-signature"></i> أقرّ بصحة البيانات، وأوافق على نشرها في المنصة، وعلى رسوم الاشتراك (<span class="num">${esc(c.join.fee)}</span> ريال ${esc(c.join.period)}، ${esc(Pitch.renew)}) بعد القبول، وأطّلعت على الإقرار أعلاه</span></label>
       </div>`;
     const form = $('#wf', root);
     const panes = $$('.wiz-pane', root), stepsBtns = $$('#ws button', root);

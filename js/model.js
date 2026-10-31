@@ -6,8 +6,9 @@ const Data = (() => {
     const out = {};
     Object.keys(d).forEach(k => { out[k] = Array.isArray(d[k]) ? (Array.isArray(c[k]) ? c[k] : d[k]) : { ...d[k], ...(c[k] || {}) }; });
     // نصوص قديمة محفوظة تتحدث عن اشتراك سنوي: يُستبدل بنص الاشتراك مدى الحياة
-    if (/سنة|سنوي|عام كامل/.test(out.join.period || '')) out.join.period = d.join.period;
-    if (/والنشر/.test(out.join.feeNote || '')) out.join.feeNote = d.join.feeNote;
+    if (/اشتراك مدى الحياة|سنوي|عام كامل/.test(out.join.period || '')) out.join.period = d.join.period;
+    if (/والنشر|دفعة واحدة|بلا تجديد/.test(out.join.feeNote || '')) out.join.feeNote = d.join.feeNote;
+    out.join.payment = String(out.join.payment || '').replace('الرسوم تُدفع مرة واحدة فقط والاشتراك مدى الحياة.', d.join.payment.match(/الرسوم للسنة[^.]*\./)[0]);
     return out;
   };
 
@@ -185,7 +186,7 @@ const Tpl = {
   // متغيرات الرسالة: من الطلب (a) والمدرب المنشور (t) والرمز السري
   vars({ a = {}, t = null, secret = '' } = {}) {
     const c = Data.content(), name = (t?.name || a.name || '').trim();
-    return { name, first: name.replace(/^(د|م|أ)\.\s*/, '').split(/\s+/)[0] || name, appId: a.id || t?.appId || '', fee: c.join.fee, period: c.join.period,
+    return { name, first: name.replace(/^(د|م|أ)\.\s*/, '').split(/\s+/)[0] || name, appId: a.id || t?.appId || '', fee: c.join.fee, period: `${c.join.period} [${Pitch.renew}]`,
       benefits: Pitch.listText('mail'), payment: c.join.payment, bank: Store.get('settings/payment/bank') || '(أضف بيانات الحساب البنكي في الإدارة ← قوالب)', memberCode: t?.code || '', secret,
       loginUrl: `${siteBase()}#/login`, profileUrl: t ? profileUrl(t) : '', statusUrl: `${siteBase()}#/status?id=${a.id || ''}` };
   },

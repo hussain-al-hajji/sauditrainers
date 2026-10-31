@@ -208,7 +208,7 @@ const Bulletin = (() => {
     txt(ctx, 'سجّل في منصة', W - 90, 300, { font: `900 76px ${FONT.head}`, color: '#fff' });
     txt(ctx, 'مدرّبون سعوديّون', W - 90, 396, { font: `900 96px ${FONT.head}`, color: C.sage });
     ctx.fillStyle = C.sage; ctx.fillRect(W - 90 - 150, 438, 150, 7);
-    txt(ctx, 'استثمار لمرة واحدة: ملفك وفرصك وظهورك في مكان واحد', W - 90, 500, { font: `600 33px ${FONT.body}`, color: C.cream });
+    txt(ctx, 'استثمار يتجدد مجاناً: ملفك وفرصك وظهورك في مكان واحد', W - 90, 500, { font: `600 33px ${FONT.body}`, color: C.cream });
     // بطاقات المزايا (عمودان × أربعة صفوف)
     const colW = (W - 180 - 20) / 2, rowH = 104, gy = 16, y0 = 540;
     promoFeats().forEach(({ ic, label, x: ex }, i) => {
