@@ -1399,3 +1399,18 @@ body.preview .local-flag { display: none; }
 .dl-box { margin-top: 10px; padding: 10px 12px; gap: 8px; border-radius: 18px; }
 .dl-t { font-size: .82rem; } .dl-row { gap: 6px; } .dl-row .btn { padding: 7px 4px; font-size: .76rem; }
 .dl-pdf { padding: 9px 14px; font-size: .92rem; }
+
+/* مكتبة المدرب: مراحل البرنامج وعرض المحتوى المنسّق */
+.lib-phases { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 12px 0 6px; }
+.lib-ph { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 16px; border: 1.5px solid var(--line); background: #fff; font-family: var(--f-ui); cursor: pointer; text-align: start; color: var(--ink2); }
+.lib-ph i { width: 36px; height: 36px; border-radius: 12px; background: var(--g50, #EEF3E5); color: var(--g700, #0B6A3E); display: grid; place-items: center; flex: none; }
+.lib-ph b { flex: 1; font-size: .92rem; } .lib-ph span { font-size: .8rem; color: var(--muted); }
+.lib-ph.on { background: var(--g800); color: #fff; border-color: var(--g800); } .lib-ph.on i { background: rgba(255,255,255,.16); color: #fff; } .lib-ph.on span { color: rgba(255,255,255,.75); }
+@media (max-width: 640px) { .lib-phases { grid-template-columns: 1fr 1fr; } }
+.lib-body .lib-h { margin: 18px 0 6px; font-family: var(--f-display); font-size: 1.05rem; color: var(--g800); } .lib-body .lib-h:first-child { margin-top: 0; }
+.lib-body .lib-p { margin: 0 0 10px; text-align: justify; }
+.lib-body .lib-ul { margin: 0 0 12px; padding-inline-start: 20px; } .lib-body .lib-ul li { margin-bottom: 4px; }
+.lib-tip { margin: 12px 0; padding: 12px 16px; border-radius: 12px; background: #fff; border-inline-start: 4px solid var(--g700, #0B6A3E); color: var(--ink2); line-height: 1.85; }
+.lib-tbl { margin: 8px 0 14px; overflow-x: auto; } .lib-tbl table { width: 100%; border-collapse: collapse; font-size: .92rem; background: #fff; border-radius: 12px; overflow: hidden; }
+.lib-tbl th, .lib-tbl td { padding: 8px 12px; border: 1px solid var(--line); text-align: start; vertical-align: top; } .lib-tbl th { background: var(--g100, #E2F0E4); color: var(--g800); font-family: var(--f-ui); }
+.lib-cks { display: grid; gap: 6px; margin: 6px 0 12px; } .lib-ck { display: flex; gap: 10px; align-items: flex-start; padding: 8px 12px; border-radius: 12px; background: #fff; border: 1px solid var(--line); cursor: pointer; } .lib-ck input { margin-top: 6px; accent-color: var(--g700, #0B6A3E); } .lib-ck input:checked + span { text-decoration: line-through; opacity: .55; }
