@@ -94,6 +94,8 @@ const TrainerPdf = (() => {
       const need = h => { if (y + h > BOT) newPage(); };
       const link = (x, yy, w, h, u) => { if (/^https:\/\//.test(u)) ctx.__links.push({ x, y: yy, w, h, url: u }); };
       const heading = (title, count, keep = 80) => {
+        // قسم جديد لا يبدأ في أسفل الصفحة: إن بقي أقل من ثلث الصفحة يُرحَّل للصفحة التالية
+        if (y > TOP + 4 && BOT - y < (BOT - TOP) / 3) newPage();
         need(90 + keep); const R = W - PX;
         K.rrect(ctx, R - 10, y + 6, 10, 46, 5, C.g800);
         K.txt(ctx, title, R - 28, y + 46, { font: `900 38px ${FONT.head}`, color: C.g900 });
@@ -109,7 +111,7 @@ const TrainerPdf = (() => {
         const fs = 26, h = 58, gap = 12; let rx = W - PX, rowY = null;
         ctx.font = `700 ${fs}px ${FONT.body}`;
         items.forEach(s => {
-          s = clean(s); if (!s) return; const w = Math.min(CW, ctx.measureText(s).width + 44);
+          s = clean(s); if (!s) return; ctx.font = `700 ${fs}px ${FONT.body}`; const w = Math.min(CW, ctx.measureText(s).width + 44);
           if (rowY == null || rx - w < PX) { if (rowY != null) y += h + gap; need(h + gap); rowY = y; rx = W - PX; }
           K.rrect(ctx, rx - w, y, w, h, h / 2, C.g100, 'rgba(0,84,48,.18)', 1.5);
           ctx.save(); ctx.beginPath(); ctx.rect(rx - w + 14, y, w - 28, h); ctx.clip(); K.txt(ctx, s, rx - w / 2, y + h / 2 + 9, { font: `700 ${fs}px ${FONT.body}`, color: C.g800, align: 'center' }); ctx.restore();
@@ -188,9 +190,9 @@ const TrainerPdf = (() => {
       newPage();
 
       /* الأقسام بترتيب الصفحة العامة */
-      if (clean(t.bio)) { heading('نبذة تعريفية'); paragraph(t.bio); }
+      if (clean(t.bio)) { heading('نبذة تعريفية', null, 140); paragraph(t.bio); }
       if (data.videos.length) {
-        heading('نماذج من جلساتي التدريبية', data.videos.length);
+        heading('نماذج من جلساتي التدريبية', data.videos.length, 330);
         const cw = (CW - 22) / 2, th = Math.round(cw * 9 / 16);
         for (let i = 0; i < data.videos.length; i += 2) {
           const pair = data.videos.slice(i, i + 2);
@@ -216,7 +218,7 @@ const TrainerPdf = (() => {
       if (data.proCerts.length) { heading('شهادات احترافية يدرّب عليها'); chips(data.proCerts); }
       if (data.partners.length) { heading('جهات تم التعاون معها'); chips(data.partners); }
       if (data.reviews.length) {
-        heading('مراجعات وتوصيات', data.reviews.length);
+        heading('مراجعات وتوصيات', data.reviews.length, 200);
         data.reviews.forEach(r => {
           const font = `400 27px ${FONT.body}`, lines = wrapJ(ctx, r.text, CW - 90, font, 9), lh = 46, h = 40 + lines.length * lh + 82;
           need(h); K.rrect(ctx, PX, y, CW, h, 26, '#fff', C.line, 1.5); K.rrect(ctx, W - PX - 10, y + 24, 6, h - 48, 3, C.g800);
@@ -229,9 +231,9 @@ const TrainerPdf = (() => {
         });
         y += 10;
       }
-      if (clean(t.certs)) { heading('الشهادات والاعتمادات والعضويات'); paragraph(t.certs); }
+      if (clean(t.certs)) { heading('الشهادات والاعتمادات والعضويات', null, 140); paragraph(t.certs); }
       if (data.extras.length) {
-        heading('معلومات إضافية');
+        heading('معلومات إضافية', null, 90);
         data.extras.forEach(f => {
           const val = clean(String(t.extra[f.k]).replace(/\|/g, '، ')); ctx.font = `600 27px ${FONT.body}`; const vl = KT.wrap(ctx, val, CW - 340, 3), h = Math.max(64, vl.length * 40 + 22);
           need(h + 10); K.rrect(ctx, PX, y, CW, h, 20, C.paper, C.line, 1.5);
@@ -241,7 +243,7 @@ const TrainerPdf = (() => {
         });
         y += 14;
       }
-      heading('معلومات سريعة');
+      heading('معلومات سريعة', null, 130);
       const kw = (CW - 18) / 2;
       for (let i = 0; i < data.kv.length; i += 2) {
         const row = data.kv.slice(i, i + 2); ctx.font = `700 27px ${FONT.body}`;
