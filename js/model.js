@@ -7,7 +7,7 @@ const Data = (() => {
     Object.keys(d).forEach(k => { out[k] = Array.isArray(d[k]) ? (Array.isArray(c[k]) ? c[k] : d[k]) : { ...d[k], ...(c[k] || {}) }; });
     // نصوص قديمة محفوظة تتحدث عن اشتراك سنوي: يُستبدل بنص الاشتراك مدى الحياة
     if (/اشتراك مدى الحياة|سنوي|عام كامل/.test(out.join.period || '')) out.join.period = d.join.period;
-    if (/والنشر|دفعة واحدة|بلا تجديد/.test(out.join.feeNote || '')) out.join.feeNote = d.join.feeNote;
+    if (/والنشر|دفعة واحدة|بلا تجديد|مجاناً مدى الحياة/.test(out.join.feeNote || '')) out.join.feeNote = d.join.feeNote;
     out.join.payment = String(out.join.payment || '').replace('الرسوم تُدفع مرة واحدة فقط والاشتراك مدى الحياة.', d.join.payment.match(/الرسوم للسنة[^.]*\./)[0]);
     return out;
   };

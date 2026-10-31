@@ -48,7 +48,7 @@ const PromoSlides = (() => {
         <div class="pmx-fm"><span><i class="fa-solid fa-file-pdf"></i> ملف PDF</span><span><i class="fa-solid fa-image"></i> 3 مقاسات</span><span><i class="fa-solid fa-qrcode"></i> رمز QR</span></div>${cta()}</div>
       <div class="pmx-v pmx-cardv"><div class="cw">${sampleCard(1)}</div><span class="fl f1"><i class="fa-solid fa-file-pdf"></i> ملف PDF بغلاف أنيق</span><span class="fl f2"><i class="fa-solid fa-pen"></i> عدّل متى شئت</span><span class="fl f3"><i class="fa-solid fa-share-nodes"></i> شارك بنقرة</span></div>` },
     { id: 'zero', name: 'بدون عمولة', theme: 'dark', kick: 'للمدربين السعوديين', html: () => `
-      <div class="pmx-t"><h3>كل ما تحصل عليه<span class="acc">يبقى لك</span></h3><p class="sub">لا عمولة على عقودك، والاشتراك يتجدد مجاناً مدى الحياة بعد السنة الأولى.</p>${cta()}</div>
+      <div class="pmx-t"><h3>كل ما تحصل عليه<span class="acc">يبقى لك</span></h3><p class="sub">لا عمولة على عقودك، والاشتراك يتجدد مجاناً بشكل تلقائي مدى الحياة بعد السنة الأولى.</p>${cta()}</div>
       <div class="pmx-v pmx-zero"><span class="rg r1"></span><span class="rg r2"></span><b class="num">0%</b></div>` },
     { id: 'library', name: 'مكتبة المدرب', theme: 'light', kick: 'مكتبة المدرب', html: () => `
       <div class="pmx-t"><h3>مكتبة عملية<span class="acc">لكل مراحل برنامجك</span></h3><p class="sub">${esc((pit('library') || {}).d || '')} ${tg(pit('library'))}</p>${cta()}</div>
