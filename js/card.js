@@ -585,7 +585,7 @@ const Card = (() => {
   async function shareTo(t, pl) {
     Analytics.event('share');
     const text = memberPost(t, pl), enc = encodeURIComponent;
-    if (pl === 'whatsapp') { window.open(`https://wa.me/?text=${enc(text)}`, '_blank', 'noopener'); return; }
+    if (pl === 'whatsapp') { window.open(`https://wa.me/?text=${enc(waSafe(text))}`, '_blank', 'noopener'); return; }
     if (pl === 'x') { window.open(`https://x.com/intent/post?text=${enc(text)}`, '_blank', 'noopener'); return; }
     if (pl === 'linkedin') { copyText(text, 'نُسخ النص أيضاً - إن لم يظهر في نافذة لينكدإن فالصقه'); window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${enc(text)}`, '_blank', 'noopener'); return; }
     // إنستقرام لا يوفّر رابط مشاركة ويب: على الجوال نرسل الصورة والنص عبر قائمة المشاركة، وإلا ننسخ النص ونعرض الصور للتنزيل
@@ -607,10 +607,10 @@ const Card = (() => {
   function shareSheet(t) {
     const url = profileUrl(t);
     const text = `تعرّف على المدرب ${t.name}${t.title ? ' - ' + t.title : ''}`;
-    const u = encodeURIComponent(url), tx = encodeURIComponent(text);
+    const u = encodeURIComponent(url), tx = encodeURIComponent(text), txw = encodeURIComponent(waSafe(text));
     const m = modal(`<h3><i class="fa-solid fa-share-nodes"></i> مشاركة البطاقة</h3>
       <div class="share-grid">
-        <a class="sh wa" target="_blank" rel="noopener" href="https://wa.me/?text=${tx}%0A${u}"><i class="fa-brands fa-whatsapp"></i>واتساب</a>
+        <a class="sh wa" target="_blank" rel="noopener" href="https://wa.me/?text=${txw}%0A${u}"><i class="fa-brands fa-whatsapp"></i>واتساب</a>
         <a class="sh x" target="_blank" rel="noopener" href="https://x.com/intent/post?text=${tx}&url=${u}"><i class="fa-brands fa-x-twitter"></i>إكس</a>
         <a class="sh li" target="_blank" rel="noopener" href="https://www.linkedin.com/sharing/share-offsite/?url=${u}"><i class="fa-brands fa-linkedin-in"></i>لينكدإن</a>
         <a class="sh tg" target="_blank" rel="noopener" href="https://t.me/share/url?url=${u}&text=${tx}"><i class="fa-brands fa-telegram"></i>تيليجرام</a>

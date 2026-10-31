@@ -89,7 +89,7 @@ const Reviews = (() => {
       <p class="muted small">أرسله لجهة واحدة فقط: يقبل توصية واحدة وينتهي بعد ${DAYS} يوماً. لن تُنشر التوصية إلا بعد موافقتك.</p>
       <input id="rvu" readonly dir="ltr" value="${esc(url)}" style="width:100%;margin:8px 0" onclick="this.select()">
       <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn" id="rvcp"><i class="fa-regular fa-copy"></i> نسخ الرابط</button>
-        <a class="btn primary" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(msg)}"><i class="fa-brands fa-whatsapp"></i> مشاركة عبر واتساب</a>
+        <a class="btn primary" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(waSafe(msg))}"><i class="fa-brands fa-whatsapp"></i> مشاركة عبر واتساب</a>
         <button class="btn ghost" data-close>إغلاق</button></div>`);
     $('#rvcp', m.el).onclick = async () => { try { await navigator.clipboard.writeText(url); toast('تم نسخ الرابط'); } catch { $('#rvu', m.el).select(); toast('حدّد الرابط وانسخه'); } };
   }

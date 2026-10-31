@@ -152,7 +152,10 @@ function leaksContact(text) {
 }
 const safeUrl = u => { u = String(u || '').trim(); if (!u) return ''; if (!/^https?:\/\//i.test(u)) u = 'https://' + u; return /^https?:\/\/[^\s"'<>]+$/i.test(u) ? u : ''; };
 const phoneDigits = p => { let d = toEnDigits(p).replace(/\D/g, ''); if (d.startsWith('00')) d = d.slice(2); if (d.startsWith('05')) d = '966' + d.slice(1); else if (d.startsWith('5') && d.length === 9) d = '966' + d; return d; };
-const waLink = (p, text = '') => { const d = phoneDigits(p); return d ? `https://wa.me/${d}${text ? '?text=' + encodeURIComponent(text) : ''}` : ''; };
+// رموز تعبيرية خارج المستوى الأساسي (🌟 🎁 🔒 🎉) تظهر «�» في بعض نسخ واتساب (ويب/سطح المكتب) عند فتحها من رابط wa.me؛ نستبدلها ببدائل مضمونة ونحذف الباقي
+const WA_EMOJI = { '🌟': '✨', '🎁': '✨', '🎉': '✨', '🔒': '❌', '👋': '', '🙏': '' };
+const waSafe = t => String(t || '').replace(/\uFE0F/g, '').replace(/[\u{10000}-\u{10FFFF}]/gu, ch => (WA_EMOJI[ch] != null ? WA_EMOJI[ch] : '')).replace(/[ \t]+\n/g, '\n').replace(/^ +/gm, m => m);
+const waLink = (p, text = '') => { const d = phoneDigits(p); text = waSafe(text); return d ? `https://wa.me/${d}${text ? '?text=' + encodeURIComponent(text) : ''}` : ''; };
 const validPhone = p => /^9665\d{8}$/.test(phoneDigits(p));
 const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(e || '').trim());
 // رابط المنصة الذي يراه المستخدمون: الدومين الرسمي دائماً (siteUrl)، إلا عند تفعيل useCurrentOrigin للاختبار على الرابط المؤقت

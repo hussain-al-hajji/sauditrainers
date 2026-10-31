@@ -58,7 +58,7 @@ const News = (() => {
   }
   const shareRow = (n, compact) => { const u = shareUrl(n), q = encodeURIComponent(u), st = shareText(n), full = `${st}\n${u}`;
     return `<div class="nshare${compact ? ' compact' : ''}">${compact ? '' : '<b class="small"><i class="fa-solid fa-share-nodes"></i> شارك الخبر مع البطاقة الشخصية</b>'}
-      <a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(full)}"><i class="fa-brands fa-whatsapp"></i> واتساب</a>
+      <a class="btn sm" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(waSafe(full))}"><i class="fa-brands fa-whatsapp"></i> واتساب</a>
       <a class="btn sm" target="_blank" rel="noopener" href="https://twitter.com/intent/tweet?text=${encodeURIComponent(st)}&url=${q}"><i class="fa-brands fa-x-twitter"></i> إكس</a>
       <a class="btn sm" target="_blank" rel="noopener" href="https://www.linkedin.com/feed/?shareActive=true&text=${encodeURIComponent(full)}" data-lk="${esc(full)}"><i class="fa-brands fa-linkedin"></i> لينكدإن</a>
       <button type="button" class="btn sm ghost" data-cp="${esc(full)}" data-msg="تم نسخ النص مع الرابط"><i class="fa-regular fa-copy"></i> نسخ النص والرابط</button>
@@ -276,7 +276,7 @@ const News = (() => {
       <label class="field"><span>رقم واتساب التواصل (يظهر في الخاتمة)</span><input id="wd-ph" dir="ltr" inputmode="tel" placeholder="9665XXXXXXXX" value="${esc(saved || cfgWa)}"></label>
       <label class="field"><span>نص الرسالة (قابل للتعديل)</span><textarea id="wd-tx" rows="16"></textarea></label>
       <div class="row end" style="gap:8px;flex-wrap:wrap"><button class="btn" id="wd-cp"><i class="fa-regular fa-copy"></i> نسخ الرسالة</button><a class="btn primary" id="wd-go" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> فتح في واتساب</a></div>`, { wide: true });
-    const ta = $('#wd-tx', m.el), ph = $('#wd-ph', m.el), go = () => { $('#wd-go', m.el).href = `https://wa.me/?text=${encodeURIComponent(ta.value)}`; };
+    const ta = $('#wd-tx', m.el), ph = $('#wd-ph', m.el), go = () => { $('#wd-go', m.el).href = `https://wa.me/?text=${encodeURIComponent(waSafe(ta.value))}`; };
     ta.value = build(ph.value); go(); ta.oninput = go;
     ph.onchange = () => { try { localStorage.setItem(LS, ph.value.trim()); } catch { /* ignore */ } ta.value = build(ph.value); go(); };
     $('#wd-cp', m.el).onclick = async () => { try { await navigator.clipboard.writeText(ta.value); toast('تم نسخ الرسالة'); } catch { ta.select(); toast('حدّد النص وانسخه يدوياً'); } };
