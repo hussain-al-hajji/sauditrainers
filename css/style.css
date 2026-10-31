@@ -1391,3 +1391,6 @@ body.preview .local-flag { display: none; }
 /* علامة ✓ في منتصف الشارة تماماً */
 .tc-verified i { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; line-height: 1; }
 .tc-verified .fa-check { font-size: 19px; }
+
+/* البطاقة المثبّتة: السطر التعريفي ومجالات التدريب في وسط البطاقة */
+.pn-title { text-align: center; text-wrap: balance; } .pn-chips { justify-content: center; }
