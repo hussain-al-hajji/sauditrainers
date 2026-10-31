@@ -148,6 +148,7 @@ function aDash(main) {
   main.innerHTML = `
     <div class="dash-h"><h2>نظرة عامة</h2><span class="muted small">${fmtTs(Date.now())}</span></div>
     <div id="anx"></div>
+    <div style="margin:14px 0">${actHTML}</div>
     <div class="an-ext-h"><h2><i class="fa-solid fa-id-card"></i> المدربون والطلبات</h2></div>
     <div class="kpis">
       <div class="kpi dark"><i class="fa-solid fa-id-card"></i><b class="num" data-count="${live.length}">0</b><span>مدرب منشور</span></div>
@@ -162,7 +163,6 @@ function aDash(main) {
       <div class="pbox"><h3><i class="fa-solid fa-layer-group"></i>أكثر التخصصات</h3><div class="bars">${bars(sc, specName, 10)}</div></div>
       <div class="pbox"><h3><i class="fa-solid fa-fire"></i>الأكثر مشاهدة</h3>${top.length ? top.map(t => `<div class="bar"><span>${esc(t.name)}</span><div class="t"><span style="width:${Data.views(t.id) / Math.max(1, Data.views(top[0].id)) * 100}%"></span></div><b class="num">${Data.views(t.id)}</b></div>`).join('') : '<p class="muted small">لا بيانات بعد</p>'}</div>
       <div class="pbox"><h3><i class="fa-solid fa-clock-rotate-left"></i>آخر النشاطات</h3><div class="log">${Store.list('adminLog').sort((a, b) => b.ts - a.ts).slice(0, 8).map(l => `<div><small>${ago(l.ts)}</small><span><b>${esc(l.action)}</b> ${esc(l.target)} <small>— ${esc(l.by?.name || '')}</small></span></div>`).join('') || '<p class="muted small">لا نشاط بعد</p>'}</div></div>
-      ${actHTML}
     </div>`;
   if (!aDash.synced) { aDash.synced = true; Data.syncSlugs(); }   // ترحيل: حجز روابط المدربين الحاليين
   statsMount(main);
