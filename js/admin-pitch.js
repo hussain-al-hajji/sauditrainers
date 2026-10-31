@@ -17,14 +17,15 @@ Pitch.admin = function (el) {
       <label class="field"><span>اسم مختصر (للبطاقات)</span><input data-f="s" value="${esc(it.s || '')}" maxlength="40"></label>
       <label class="field"><span>وصف مختصر</span><input data-f="sd" value="${esc(it.sd || '')}" maxlength="70"></label>
       <label class="field"><span>أيقونة الموقع (Font Awesome)</span><input data-f="ic" dir="ltr" value="${esc(it.ic || '')}" placeholder="fa-briefcase"></label>
-      <label class="field"><span>إيموجي الرسائل</span><input data-f="em" value="${esc(it.em || '')}" maxlength="4"></label></div>
+      <label class="field"><span>إيموجي الرسائل</span><input data-f="em" value="${esc(it.em || '')}" maxlength="4"></label>
+      <label class="field" style="grid-column:1/-1"><span>سطر تعريفي موجز للرسائل (اختياري، وإلا يُؤخذ من أول جملة في الوصف)</span><input data-f="b" value="${esc(it.b || '')}" maxlength="120"></label></div>
     <label class="field"><span>الوصف الكامل</span><textarea data-f="d" rows="3" maxlength="420">${esc(it.d || '')}</textarea></label>
     <label class="field"><span>ثلاث نقاط للبطاقات الدعائية (سطر لكل نقطة)</span><textarea data-f="pts" rows="3">${esc((it.pts || []).join('\n'))}</textarea></label></div>`;
   const read = () => {
     ['eyebrow', 'title', 'text', 'feeNote'].forEach(k => { const e = el.querySelector(`[data-h="${k}"]`); if (e) st[k] = e.value.trim(); });
     st.items = [...el.querySelectorAll('.pt-it')].map((box, i) => {
       const g = f => box.querySelector(`[data-f="${f}"]`), o = { ...(st.items[i] || {}) };
-      ['t', 's', 'sd', 'ic', 'em', 'd'].forEach(f => { o[f] = g(f).value.trim(); });
+      ['t', 's', 'sd', 'ic', 'em', 'd', 'b'].forEach(f => { o[f] = g(f).value.trim(); });
       o.g = g('g').value; o.x = g('x').checked; o.top = g('top').checked;
       const pts = g('pts').value.split('\n').map(x => x.trim()).filter(Boolean); if (pts.length) o.pts = pts; else delete o.pts;
       o.id = o.id || `m${Date.now().toString(36)}${i}`; return o;

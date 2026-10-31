@@ -169,7 +169,16 @@ const Automation = {
 
 /* قوالب رسائل مراحل التسجيل */
 const Tpl = {
-  get(key) { return { ...defaultTemplates()[key], ...(Store.get(`settings/templates/${key}`) || {}) }; },
+  // القوالب المحفوظة بلا {benefits} (للقبول المبدئي والنهائي) تُضاف لها قائمة المزايا تلقائياً قبل سطر التحية الختامي
+  withBenefits(key, text) {
+    text = String(text || ''); if (!text || !['initial', 'final'].includes(key) || /\{benefits\}/.test(text)) return text;
+    const head = key === 'initial' ? 'وبمجرد التفعيل تصبح هذه المزايا متاحة لك:' : 'ومن الآن أصبحت هذه المزايا متاحة لك:', ps = text.split('\n\n'), last = ps[ps.length - 1];
+    if (ps.length > 1 && /^(مع التحية|منصة مدرّبون)/.test(last.trim())) ps.splice(ps.length - 1, 0, `${head}\n{benefits}`); else ps.push(`${head}\n{benefits}`);
+    return ps.join('\n\n');
+  },
+  get(key) { const t = { ...defaultTemplates()[key], ...(Store.get(`settings/templates/${key}`) || {}) }; return { ...t, body: this.withBenefits(key, t.body), wa: t.wa == null ? t.wa : this.withBenefits(key, t.wa) }; },
+  // نص واتساب: {benefits} بصيغة الواتساب (عناوين بخط عريض)
+  waText(text, vars) { return String(text || '').replace(/\{benefits\}/g, Pitch.listText('wa')).replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? '')).trim(); },
   render(text, vars) {
     return String(text || '').replace(/\{(\w+)\}/g, (_, k) => (vars[k] == null ? '' : String(vars[k]))).replace(/\*\*(.+?)\*\*/g, '$1').replace(/\n{3,}/g, '\n\n').trim();
   },
@@ -177,12 +186,12 @@ const Tpl = {
   vars({ a = {}, t = null, secret = '' } = {}) {
     const c = Data.content(), name = (t?.name || a.name || '').trim();
     return { name, first: name.replace(/^(د|م|أ)\.\s*/, '').split(/\s+/)[0] || name, appId: a.id || t?.appId || '', fee: c.join.fee, period: c.join.period,
-      payment: c.join.payment, bank: Store.get('settings/payment/bank') || '(أضف بيانات الحساب البنكي في الإدارة ← قوالب)', memberCode: t?.code || '', secret,
+      benefits: Pitch.listText('mail'), payment: c.join.payment, bank: Store.get('settings/payment/bank') || '(أضف بيانات الحساب البنكي في الإدارة ← قوالب)', memberCode: t?.code || '', secret,
       loginUrl: `${siteBase()}#/login`, profileUrl: t ? profileUrl(t) : '', statusUrl: `${siteBase()}#/status?id=${a.id || ''}` };
   },
   // الواتساب يستخدم *نص عريض* بدل ** في البريد
   mail(key, ctx) { const t = this.get(key); return { subject: this.render(t.subject, this.vars(ctx)), body: this.render(t.body, this.vars(ctx)) }; },
-  wa(key, ctx) { const t = this.get(key); return String(t.wa || '').replace(/\{(\w+)\}/g, (_, k) => (this.vars(ctx)[k] ?? '')).trim(); }
+  wa(key, ctx) { return this.waText(this.get(key).wa, this.vars(ctx)); }
 };
 
 // الاسم القديم «القاعات» المحفوظ في إعدادات القائمة يُعرض «قاعات التدريب»

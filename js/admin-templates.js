@@ -147,7 +147,7 @@ function sendToTrainer(k, tid, val) {
   const meta = TPL_META[k], priv = Store.get(`private/${tid}`) || {}, secret = Store.get(`secrets/codes/${tid}`) || '';
   const app = Store.list('applications').find(a => a.trainerId === tid) || null, a = app || { id: t.appId || '', name: t.name };
   const v = Tpl.vars({ a, t, secret }), to = priv.email || app?.email || '', phone = priv.phone || app?.phone || '';
-  const wa = meta.wa ? String(val('wa')).replace(/\{(\w+)\}/g, (_, x) => v[x] ?? '').trim() : '';
+  const wa = meta.wa ? Tpl.waText(val('wa'), v) : '';
   const needsSecret = meta.vars.includes('secret') && !secret;
   const m = modal(`<h3><i class="fa-solid fa-paper-plane"></i> إرسال «${esc(meta.name)}» إلى ${esc(t.name)}</h3>
     <p class="muted small">الرسالة مخصّصة للمدرب (${esc(t.code || '')}). يمكنك تعديلها قبل الإرسال.</p>
