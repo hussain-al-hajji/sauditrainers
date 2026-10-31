@@ -44,7 +44,7 @@ const PromoSlides = (() => {
         <div class="pmx-chips"><span>تسجيل بشروط</span><span>توثيق للبطاقات</span><span>13 منطقة</span></div>${cta()}</div>
       <div class="pmx-v pmx-tiles">${['exclusive', 'reach', 'reviews', 'directory'].map(ti).join('')}</div>` },
     { id: 'pdf', name: 'ملف احترافي يتجدد', theme: 'dark', kick: 'ملفك المهني', html: () => `
-      <div class="pmx-t"><h3>ملف احترافي<span class="acc">يتجدد ويُشارك في ثوانٍ</span></h3><p class="sub">${esc((pit('pdf') || {}).d || 'حدّث بياناتك مرة واحدة فتتحدث بطاقتك وصفحتك وملف PDF.')}</p>
+      <div class="pmx-t"><h3>ملف سيرة احترافي<span class="acc">PDF بضغطة زر</span></h3><p class="sub">${esc((pit('pdf') || {}).d || 'حدّث بياناتك مرة واحدة فتتحدث بطاقتك وصفحتك وملف PDF.')}</p>
         <div class="pmx-fm"><span><i class="fa-solid fa-file-pdf"></i> ملف PDF</span><span><i class="fa-solid fa-image"></i> 3 مقاسات</span><span><i class="fa-solid fa-qrcode"></i> رمز QR</span></div>${cta()}</div>
       <div class="pmx-v pmx-cardv"><div class="cw">${sampleCard(1)}</div><span class="fl f1"><i class="fa-solid fa-file-pdf"></i> ملف PDF بغلاف أنيق</span><span class="fl f2"><i class="fa-solid fa-pen"></i> عدّل متى شئت</span><span class="fl f3"><i class="fa-solid fa-share-nodes"></i> شارك بنقرة</span></div>` },
     { id: 'zero', name: 'بدون عمولة', theme: 'dark', kick: 'للمدربين السعوديين', html: () => `

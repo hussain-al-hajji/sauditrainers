@@ -191,7 +191,7 @@ Pages.profile = {
         <div class="dl-box">
           <b class="dl-t"><i class="fa-solid fa-download"></i> تنزيل بطاقة المدرب كصورة</b>
           <div class="dl-row"><button type="button" class="btn sm" data-dl="post"><i class="fa-solid fa-image"></i> منشور 4:5</button><button type="button" class="btn sm" data-dl="story"><i class="fa-solid fa-mobile-screen"></i> قصة 9:16</button><button type="button" class="btn sm" data-dl="wide"><i class="fa-solid fa-panorama"></i> عرضية 16:9</button></div>
-          <button type="button" class="btn lg dl-pdf" id="tpdf"><i class="fa-solid fa-file-pdf"></i> حفظ ملف المدرب PDF</button>
+          <button type="button" class="btn lg dl-pdf" id="tpdf"><i class="fa-solid fa-file-pdf"></i> حفظ ملف سيرة احترافي PDF</button>
         </div>
         ${!Data.isLive(t) ? `<div class="banner warn" style="margin-top:14px"><i class="fa-solid fa-eye-slash"></i>هذه البطاقة غير ظاهرة للزوار حالياً.</div>` : ''}
       </aside>

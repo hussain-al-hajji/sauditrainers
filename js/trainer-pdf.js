@@ -1,4 +1,4 @@
-/* «حفظ ملف المدرب PDF»: يولّد من الصفحة العامة للمدرب ملف PDF بمقاس صفحات نشرة المدربين (1080×1350) وبهويتها،
+/* «حفظ ملف سيرة احترافي PDF»: يولّد من الصفحة العامة للمدرب ملف PDF بمقاس صفحات نشرة المدربين (1080×1350) وبهويتها،
  * بنفس ترتيب محتوى الصفحة: ترويسة المدرب (صورة وشارة توثيق واسم وسطر تعريفي ورمز QR) ثم نبذة، فيديوهات (غلاف وعنوان)،
  * تخصصات، دورات، شهادات احترافية، جهات تعاون، توصيات، شهادات واعتمادات، معلومات إضافية وسريعة، وأخيراً عناوين الأخبار في صفحة واحدة.
  * النصوص الطويلة متساوية الأطراف (توزيع الفراغات بين الكلمات في كل سطر عدا الأخير). */
@@ -86,7 +86,7 @@ const TrainerPdf = (() => {
       const pages = []; let cv, ctx, y;
       const newPage = () => {
         cv = document.createElement('canvas'); cv.width = W; cv.height = H; ctx = cv.getContext('2d'); ctx.direction = 'rtl'; ctx.textAlign = 'right'; ctx.__links = cv.__links = [];
-        pages.push(cv); K.chrome.logo = logo; K.chrome(ctx, pages.length, total, 0, 0, 'ملف المدرب', th);
+        pages.push(cv); K.chrome.logo = logo; K.chrome(ctx, pages.length, total, 0, 0, 'ملف سيرة احترافي', th);
         K.txt(ctx, clean(t.name), PX, 118, { font: `600 24px ${FONT.body}`, color: th.accent, align: 'left' });
         y = TOP;
       };
@@ -135,7 +135,7 @@ const TrainerPdf = (() => {
       {
         const [c0, x0] = mkPage(); pages.push(c0); darkBase(x0, W * 0.5, H * 0.3);
         if (logo) { const lh = 92, lw = lh * logo.width / logo.height; x0.drawImage(logo, W - 96 - lw, 84, lw, lh); }
-        K.pill(x0, 'ملف المدرب', 96 + 190, 130, { bg: A(th.accent, 0.14), fg: main, fs: 25 });
+        K.pill(x0, 'ملف سيرة احترافي', 96 + 230, 130, { bg: A(th.accent, 0.14), fg: main, fs: 25 });
         // التخطيط يُحسب من المساحة المتاحة فوق التذييل: يصغّر حجم الصورة تدريجياً (ثم يقلّل التخصصات) حتى لا يتداخل شيء مع التذييل
         const cx = W / 2, fy = H - 38 - 14 - 150, limit = fy - 24, Y0 = 204;
         const nfs = K.fitFont(x0, clean(t.name), 900, 78, 40, 880, FONT.head);
@@ -307,11 +307,11 @@ const TrainerPdf = (() => {
   const usePhotosOn = () => !window.__tpdfNoImg;
 
   async function make(t) {
-    toast('جارٍ تجهيز ملف المدرب…');
+    toast('جارٍ تجهيز ملف السيرة…');
     await Bulletin.kit().prepare();
     const K = Bulletin.kit();   // بعد prepare() تكون الخطوط جاهزة
     let cvs; try { cvs = await build(t, K); } catch (e) { console.error(e); return toast(`تعذّر إنشاء الملف: ${e && e.message || e}`, 'error'); }
-    try { await K.deliver(Bulletin.pdf(cvs), `sauditrainers-${t.slug || 'trainer'}.pdf`); toast('تم تجهيز ملف المدرب'); }
+    try { await K.deliver(Bulletin.pdf(cvs), `sauditrainers-${t.slug || 'trainer'}.pdf`); toast('تم تجهيز ملف السيرة'); }
     catch (e) { console.error(e); toast('تعذّر حفظ الملف', 'error'); }
   }
   return { make, build };
