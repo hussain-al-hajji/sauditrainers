@@ -286,9 +286,12 @@ const SECTION_TYPES = (() => {
     },
     mount(el, sec) {
       const d = { ...T.visits.def(), ...(sec?.d || {}) }, n = el.querySelector('.v-n'); if (!n) return;
-      Analytics.visit().then(({ n: v, mine }) => {
+      Analytics.visit().then(async ({ n: v, mine }) => {
+        for (let i = 0; i < 12 && Store.mode === 'firebase' && Store.get('stats/platform') == null && el.isConnected; i++) await new Promise(r => setTimeout(r, 250));   // لا نحسب قبل وصول ملخص المنصة (وإلا يظهر رقم أقل أولاً)
         if (!el.isConnected) return;
-        const P = Store.get('stats/platform') || {}, target = (Number(P.sessionsAll) || 0) + Math.max(0, v - (Number(P.visitsAtSync) || 0)) + (Number(d.base) || 0), l = el.querySelector('.v-l'), e = el.querySelector('.v-e');
+        const P = Store.get('stats/platform') || {}; let target = (Number(P.sessionsAll) || 0) + Math.max(0, v - (Number(P.visitsAtSync) || 0)) + (Number(d.base) || 0), l = el.querySelector('.v-l'), e = el.querySelector('.v-e');
+        // لا يقلّ الرقم المعروض عن آخر رقم رآه هذا المتصفح (فروق زمنية بسيطة بين جلسات Google Analytics والعدّاد الذاتي لا تُظهر نقصاً)
+        try { const k = 'st-vtot', prev = Number(localStorage.getItem(k)) || 0; if (target < prev && prev - target < 2000) target = prev; else if (target > prev) localStorage.setItem(k, String(target)); } catch { /* ignore */ }
         if (!mine) { l.textContent = d.textTotal; e.textContent = ''; }
         const t0 = performance.now(), dur = 1100;
         const step = t => { const k = Math.min(1, (t - t0) / dur); n.textContent = Math.round(target * (1 - Math.pow(1 - k, 3))).toLocaleString('en-US'); if (k < 1 && el.isConnected) requestAnimationFrame(step); };
