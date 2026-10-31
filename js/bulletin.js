@@ -516,5 +516,7 @@ const Bulletin = (() => {
     $$('.bl-th', m.el).forEach(b => b.onclick = async () => { const i = +b.dataset.i; deliver(new Blob([await toPng(cvs[i])], { type: 'image/png' }), `${base}-${String(i + 1).padStart(2, '0')}.png`); });
   }
 
-  return { make, build, zip, pdf, limit, og, deliver, report, reportBuild };
+  // أدوات الرسم لملفات PDF أخرى (مثل «ملف المدرب»): تُسلَّم كدالة لأن الخطوط تُحمَّل عند prepare()
+  const kit = () => ({ C, W, H, PX, CW, TOP, BOT, FONT, txt, pill, rrect, fitFont, qr, avatar, frameBg, chrome, prepare, pdf, deliver, toPng, setPhotos: v => { usePhotos = v; }, logo: () => K().loadImage(LOGO.cream) });
+  return { make, build, zip, pdf, limit, og, deliver, report, reportBuild, kit };
 })();

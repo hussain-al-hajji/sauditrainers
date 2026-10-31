@@ -1375,3 +1375,15 @@ body.preview .local-flag { display: none; }
 
 .mo-h { font-family: var(--f-display); font-size: 1.05rem; margin: 16px 0 8px; color: var(--g800); } .mo-h small { color: var(--muted); font-family: var(--f-ui); }
 .mo-arch { margin: 10px 0; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); padding: 4px 12px; } .mo-arch > summary { cursor: pointer; padding: 10px 2px; font-family: var(--f-ui); font-weight: 700; color: var(--g800); } .mo-arch > summary small { color: var(--muted); } .mo-arch[open] { padding-bottom: 10px; }
+
+/* شارة التوثيق: علامة ✓ فوق النجمة دائماً (النجمة عليها filter فتنشئ طبقة تغطي ما تحتها ما لم نرفع العلامة) */
+.tc-verified .fa-check { position: relative; z-index: 2; }
+/* نصوص متساوية الأطراف في المحتوى الطويل: الصفحة العامة للمدرب والأخبار والتوصيات والأقسام التعريفية */
+.pbox p, .pbox .n-det, .rv blockquote, .icard p, .ack-box p, .req-box p, .n-det, .n-sum, .ncard p, .ncard .n-det { text-align: justify; text-justify: inter-word; hyphens: manual; }
+.pbox .kv p, .pbox .center, .icard.center p { text-align: start; }
+
+/* تنزيل البطاقة كصورة وحفظ ملف المدرب PDF تحت أيقونات المشاركة */
+.dl-box { margin-top: 14px; padding: 14px; border-radius: 20px; background: #fff; border: 1px solid var(--line); display: grid; gap: 10px; }
+.dl-t { font-family: var(--f-ui); font-size: .92rem; color: var(--g800); }
+.dl-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; } .dl-row .btn { padding: 10px 6px; font-size: .82rem; white-space: nowrap; }
+.dl-pdf { background: var(--g800); color: #fff; border-color: transparent; width: 100%; } .dl-pdf:disabled { opacity: .7; }

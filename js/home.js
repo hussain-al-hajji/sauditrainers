@@ -188,6 +188,11 @@ Pages.profile = {
           </div>
         </div>
         ${Card.shareIcons()}
+        <div class="dl-box">
+          <b class="dl-t"><i class="fa-solid fa-download"></i> تنزيل بطاقة المدرب كصورة</b>
+          <div class="dl-row"><button type="button" class="btn sm" data-dl="post"><i class="fa-solid fa-image"></i> منشور 4:5</button><button type="button" class="btn sm" data-dl="story"><i class="fa-solid fa-mobile-screen"></i> قصة 9:16</button><button type="button" class="btn sm" data-dl="wide"><i class="fa-solid fa-panorama"></i> عرضية 16:9</button></div>
+          <button type="button" class="btn lg dl-pdf" id="tpdf"><i class="fa-solid fa-file-pdf"></i> حفظ ملف المدرب PDF</button>
+        </div>
         ${!Data.isLive(t) ? `<div class="banner warn" style="margin-top:14px"><i class="fa-solid fa-eye-slash"></i>هذه البطاقة غير ظاهرة للزوار حالياً.</div>` : ''}
       </aside>
       <div>
@@ -232,6 +237,8 @@ Pages.profile = {
     $$('[data-sp]', root).forEach(b => b.onclick = () => Card.shareTo(t, b.dataset.sp));
     $('#cpl', root) && ($('#cpl', root).onclick = () => copyText(profileUrl(t), 'تم نسخ رابط الصفحة'));
     $('#sv', root) && ($('#sv', root).onclick = () => Card.shareSheet(t));
+    $$('[data-dl]', root).forEach(b => b.onclick = () => Card.save(t, b.dataset.dl));
+    $('#tpdf', root) && ($('#tpdf', root).onclick = e => { const b = e.currentTarget, h = b.innerHTML; b.disabled = true; b.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جارٍ التجهيز'; TrainerPdf.make(t).finally(() => { b.disabled = false; b.innerHTML = h; }); });
     $('#ask', root) && ($('#ask', root).onclick = () => leadForm(t));
     // على اللابتوب: تُصغَّر البطاقة تلقائياً لتظهر مع أزرارها تحتها في الشاشة الأولى دون تمرير
     const side = $('.profile-side', root), card = side && $('.tcard', side), act = side && $('.profile-actions', side);
