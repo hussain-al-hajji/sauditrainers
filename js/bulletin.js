@@ -195,8 +195,8 @@ const Bulletin = (() => {
   /* ---------- الصفحة الختامية الدعائية: مزايا المنصة + دعوة للتسجيل برمز QR لصفحة الانضمام ---------- */
   // رمز أيقونة Font Awesome من اسم صنفها (للرسم على اللوحة)
   const faGlyph = cls => { try { const i = document.createElement('i'); i.className = `fa-solid ${cls}`; i.style.cssText = 'position:absolute;left:-99px'; document.body.appendChild(i); const c = getComputedStyle(i, '::before').content; i.remove(); return String(c).replace(/^["']|["']$/g, '') || '\uf005'; } catch { return '\uf005'; } };
-  // وسم «حصرية للمسجلين» بلون عنبري مميّز على الصور
-  const exPill = (ctx, cxRight, cy, fs = 19, tr = false) => tr ? pill(ctx, 'متاحة للتجربة المجانية', cxRight, cy, { bg: '#DDF3E4', fg: '#12643A', fs }) : pill(ctx, 'حصرية للمسجلين', cxRight, cy, { bg: '#FFF1CC', fg: '#8A5A00', fs });
+  // وسم «حصرية للمشتركين» بلون عنبري مميّز على الصور
+  const exPill = (ctx, cxRight, cy, fs = 19, tr = false) => tr ? pill(ctx, 'متاحة للتجربة المجانية', cxRight, cy, { bg: '#DDF3E4', fg: '#12643A', fs }) : pill(ctx, 'حصرية للمشتركين', cxRight, cy, { bg: '#FFF1CC', fg: '#8A5A00', fs });
   // المزايا من المحتوى التسويقي المركزي (Pitch)
   const promoFeats = () => Pitch.top(8).map(i => ({ ic: faGlyph(i.ic || 'fa-star'), label: i.s || i.t, x: !!(i.x || i.tr), tr: !!i.tr }));
   function promo(ctx) {
@@ -465,7 +465,7 @@ const Bulletin = (() => {
     ctx.beginPath(); ctx.arc(cx, cy, 170, 0, Math.PI * 2); ctx.fillStyle = 'rgba(238,243,229,.10)'; ctx.fill(); ctx.strokeStyle = 'rgba(201,218,180,.35)'; ctx.lineWidth = 3; ctx.stroke();
     ctx.beginPath(); ctx.arc(cx, cy, 120, 0, Math.PI * 2); ctx.fillStyle = C.cream; ctx.fill();
     ctx.save(); ctx.font = '900 110px "Font Awesome 6 Free"'; ctx.fillStyle = C.g800; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'ltr'; ctx.fillText(c.ic, cx, cy + 4); ctx.restore();
-    if (c.x) { ctx.font = `700 22px ${FONT.body}`; exPill(ctx, cx + (ctx.measureText(c.tr ? 'متاحة للتجربة المجانية' : 'حصرية للمسجلين').width + 34) / 2, 598, 22, c.tr); }
+    if (c.x) { ctx.font = `700 22px ${FONT.body}`; exPill(ctx, cx + (ctx.measureText(c.tr ? 'متاحة للتجربة المجانية' : 'حصرية للمشتركين').width + 34) / 2, 598, 22, c.tr); }
     txt(ctx, c.k, cx, 690, { font: `900 96px ${FONT.head}`, color: '#fff', align: 'center' });
     ctx.fillStyle = C.sage; ctx.fillRect(cx - 75, 724, 150, 7);
     ctx.font = `600 38px ${FONT.body}`; K().wrap(ctx, c.t, W - 240, 2).forEach((l, k) => txt(ctx, l, cx, 800 + k * 54, { font: ctx.font, color: C.cream, align: 'center' }));

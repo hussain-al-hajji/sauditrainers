@@ -9,7 +9,7 @@ Pitch.admin = function (el) {
   const itemHtml = (it, i) => `<div class="pt-it" data-i="${i}">
     <div class="pt-top"><b class="num">${i + 1}</b>
       <select data-f="g">${Object.entries(PITCH_GROUPS).map(([k, l]) => sel([k, l], it.g)).join('')}</select>
-      <label class="chk"><input type="checkbox" data-f="x" ${it.x ? 'checked' : ''}><span>حصرية للمسجلين</span></label>
+      <label class="chk"><input type="checkbox" data-f="x" ${it.x ? 'checked' : ''}><span>حصرية للمشتركين</span></label>
       <label class="chk"><input type="checkbox" data-f="tr" ${it.tr ? 'checked' : ''}><span>متاحة للتجربة المجانية</span></label>
       <label class="chk"><input type="checkbox" data-f="top" ${it.top ? 'checked' : ''}><span>تظهر في بطاقة السعر</span></label>
       <span class="grow"></span><button type="button" class="btn sm" data-mv="-1" title="أعلى">↑</button><button type="button" class="btn sm" data-mv="1" title="أسفل">↓</button><button type="button" class="btn sm danger" data-rm title="حذف">✕</button></div>
@@ -34,7 +34,7 @@ Pitch.admin = function (el) {
   };
   const draw = () => {
     el.innerHTML = `<div class="pbox pt-box"><h3><i class="fa-solid fa-gem"></i>المزايا والعوائد (مصدر واحد لكل القنوات)</h3>
-      <p class="small muted">كل ما تكتبه هنا يظهر تلقائياً في: صفحة التسجيل، وقسم «انضم كمدرب» بالرئيسية، وشرائح الدعاية، والرسالة الشهرية لغير المسجلين، وملف النشرة الشهرية. الميزة الموسومة «حصرية للمسجلين» تظهر في كل مكان بوسم بلون مختلف.</p>
+      <p class="small muted">كل ما تكتبه هنا يظهر تلقائياً في: صفحة التسجيل، وقسم «انضم كمدرب» بالرئيسية، وشرائح الدعاية، والرسالة الشهرية لغير المسجلين، وملف النشرة الشهرية. الميزة الموسومة «حصرية للمشتركين» تظهر في كل مكان بوسم بلون مختلف.</p>
       <div class="pt-grid">
         <label class="field"><span>العنوان الصغير</span><input data-h="eyebrow" value="${ex('eyebrow')}"></label>
         <label class="field"><span>العنوان</span><input data-h="title" value="${ex('title')}"></label>

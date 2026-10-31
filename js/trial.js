@@ -28,7 +28,7 @@ const Trial = (() => {
   const body = (t, k) => {
     const L = LOCKED[k], p = pit(k), pts = (p.pts || []).filter(Boolean);
     return `<div class="tl-card"><div class="tl-ic"><i class="fa-solid ${L.ic}"></i></div>
-      <h2>${esc(p.t || L.name)}</h2><span class="ex-tag"><i class="fa-solid fa-lock"></i> حصرية للمسجلين</span>
+      <h2>${esc(p.t || L.name)}</h2><span class="ex-tag"><i class="fa-solid fa-lock"></i> حصرية للمشتركين</span>
       <p class="tl-d">${esc(p.d || p.sd || '')}</p>
       ${pts.length ? `<ul class="tl-pts">${pts.map(x => `<li><i class="fa-solid fa-circle-check"></i>${esc(x)}</li>`).join('')}</ul>` : ''}
       <div class="tl-note"><i class="fa-solid fa-circle-info"></i><div><b>متاحة عند تأكيد الاشتراك الكامل</b><br>${esc(rule())}. ${plan(t) === 'trial' ? `أنت الآن في فترة التجربة المجانية (متبقٍ ${daysLeft(t)} ${unit(daysLeft(t))}) وتتاح لك بقية مزايا المنصة.` : 'انتهت فترة تجربتك المجانية.'}</div></div>

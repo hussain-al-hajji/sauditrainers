@@ -31,7 +31,7 @@ function mailVars(text, vars) { return String(text == null ? '' : text).replace(
 function mailText(text, vars) {
   let s = mEsc(mailVars(text, vars));
   s = s.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
-  // وسم ملوّن: [[حصرية للمسجلين]]
+  // وسم ملوّن: [[حصرية للمشتركين]]
   s = s.replace(/\[\[t:(.+?)\]\]/g, '<span style="display:inline-block;background:#DDF3E4;color:#12643A;border:1px solid #A9DDBC;border-radius:999px;padding:1px 10px;font-size:12.5px;font-weight:bold;white-space:nowrap">$1</span>');
   s = s.replace(/\[\[(.+?)\]\]/g, '<span style="display:inline-block;background:#FFF1CC;color:#8A5A00;border:1px solid #F0D38A;border-radius:999px;padding:1px 10px;font-size:12.5px;font-weight:bold;white-space:nowrap">$1</span>');
   s = s.replace(/\[([^\]]+)\]\((https:\/\/[^\s)"']+|mailto:[^\s)"']+)\)/g, (m, t, u) => '<a href="' + u + '" style="color:' + MAIL_BRAND.green + ';font-weight:bold">' + t + '</a>');

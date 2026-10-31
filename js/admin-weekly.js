@@ -157,12 +157,12 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     blocks.push({ t: 'h', text: '🪧 هكذا تظهر بطاقتك التعريفية', align: 'start' });
     blocks.push({ t: 'img', url: `${base}assets/card-sample.jpg`, alt: 'نموذج افتراضي لبطاقة مدرب على المنصة', w: 'full', align: 'center', link: `${base}#/join` });
     blocks.push({ t: 'p', text: 'نموذج افتراضي للبطاقة التعريفية', align: 'center' });
-    // المزايا من المحتوى التسويقي المركزي (لوحة الإدارة ← المحتوى العام ← المزايا والعوائد): الحصرية للمسجلين تُوسم بلون مختلف
+    // المزايا من المحتوى التسويقي المركزي (لوحة الإدارة ← المحتوى العام ← المزايا والعوائد): الحصرية للمشتركين تُوسم بلون مختلف
     const P = Pitch.get(), HEAD = { platform: '🌟 ', account: '🪪 ', value: '💎 ' };
     Object.entries(PITCH_GROUPS).forEach(([g, label]) => {
       const list = P.items.filter(i => i.g === g); if (!list.length) return;
       blocks.push({ t: 'h', text: HEAD[g] + label, align: 'start' });
-      list.forEach(i => blocks.push({ t: 'box', text: `${i.em || '✨'}  **${clean(i.t)}**${i.tr ? ' [[t:متاحة للتجربة المجانية]]' : i.x ? ' [[حصرية للمسجلين]]' : ''}${Pitch.brief(i) ? '\n' + clean(Pitch.brief(i)) : ''}` }));
+      list.forEach(i => blocks.push({ t: 'box', text: `${i.em || '✨'}  **${clean(i.t)}**${i.tr ? ' [[t:متاحة للتجربة المجانية]]' : i.x ? ' [[حصرية للمشتركين]]' : ''}${Pitch.brief(i) ? '\n' + clean(Pitch.brief(i)) : ''}` }));
       if (g === 'value') blocks.push({ t: 'p', text: sub(`رسوم الاشتراك **{fee} ريالاً** للسنة الأولى [[${Pitch.renew}]]، ${Pitch.perDay(fee)}.`), align: 'start' });
     });
     blocks.push({ ...reg });
@@ -192,7 +192,7 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
       <details style="margin-top:12px"><summary style="cursor:pointer"><b><i class="fa-solid fa-pen"></i> النصوص الثابتة (العنوان والمقدمة والمزايا والخاتمة)</b></summary>
         ${field('عنوان الرسالة (Subject)', `<input id="mm-sub" value="${esc(S.subject)}">`, 'استعمل {month} لاسم الشهر')}
         ${field('المقدمة', `<textarea id="mm-intro" rows="5">${esc(S.intro)}</textarea>`, 'استعمل {month} لاسم الشهر و**نص** للخط العريض')}
-        <div class="banner info"><i class="fa-solid fa-gem"></i><span>مزايا المنصة وحساب المدرب والعوائد (ومنها الموسومة «حصرية للمسجلين») تُسحب تلقائياً من «المحتوى العام ← المزايا والعوائد»، فلا تُكتب هنا.</span></div>
+        <div class="banner info"><i class="fa-solid fa-gem"></i><span>مزايا المنصة وحساب المدرب والعوائد (ومنها الموسومة «حصرية للمشتركين») تُسحب تلقائياً من «المحتوى العام ← المزايا والعوائد»، فلا تُكتب هنا.</span></div>
         ${field('الخاتمة', `<textarea id="mm-outro" rows="4">${esc(S.outro)}</textarea>`)}
         <button class="btn" id="mm-save"><i class="fa-solid fa-floppy-disk"></i> حفظ النصوص</button></details></div>`;
     const read = () => ({ ym: $('#mm-ym', body).value, subject: $('#mm-sub', body).value.trim(), intro: $('#mm-intro', body).value.trim(), outro: $('#mm-outro', body).value.trim() });

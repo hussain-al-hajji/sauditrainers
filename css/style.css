@@ -1417,7 +1417,7 @@ body.preview .local-flag { display: none; }
 
 .price-per { margin-top: 4px; font-size: .86rem; color: var(--gold2, #C9DAB4); opacity: .95; }
 
-/* وسم «حصرية للمسجلين»: بلون مختلف (عنبري) عن بقية الوسوم الخضراء */
+/* وسم «حصرية للمشتركين»: بلون مختلف (عنبري) عن بقية الوسوم الخضراء */
 .ex-tag { display: inline-flex; align-items: center; gap: 5px; margin-inline-start: 8px; padding: 2px 10px; border-radius: 999px; background: #FFF1CC; color: #8A5A00; border: 1px solid #F0D38A; font: 700 .72rem/1.6 var(--f-ui); white-space: nowrap; vertical-align: middle; }
 .ex-tag i { font-size: .66rem; }
 .price li .ex-tag { margin-inline-start: 6px; } .pmx .ex-tag { background: #FFF1CC; color: #8A5A00; }
@@ -1428,7 +1428,7 @@ body.preview .local-flag { display: none; }
 
 .price ul { display: grid; gap: 8px; } .price li { line-height: 1.7; }
 
-/* وسم «متاحة للتجربة المجانية» (أخضر) مقابل «حصرية للمسجلين» (عنبري) */
+/* وسم «متاحة للتجربة المجانية» (أخضر) مقابل «حصرية للمشتركين» (عنبري) */
 .ex-tag.tr { background: #DDF3E4; color: #12643A; border-color: #A9DDBC; } .pmx .ex-tag.tr { background: #DDF3E4; color: #12643A; }
 
 /* فترة التجربة المجانية: ميزات باهتة مقفلة وصفحة الشرح */
