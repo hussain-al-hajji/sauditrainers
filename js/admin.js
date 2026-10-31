@@ -215,7 +215,7 @@ const gmailCompose = (to, su, body, cc = '') => `https://mail.google.com/mail/?v
 async function sendMailNotice(to, msg, applog) {
   if (!to) { toast('لا يوجد بريد إلكتروني لهذا المسجّل', 'error'); return false; }
   if (Automation.on) {
-    const id = Store.push('outbox', { to, subject: msg.subject, body: msg.body, ts: Date.now() });
+    const id = Store.push('outbox', { to, subject: msg.subject, body: msg.body, ...(msg.html ? { html: msg.html } : {}), ts: Date.now() });
     await Automation.notify('outbox', id);
     toast('أُرسل الإشعار من بريد المنصة');
   } else {
@@ -246,7 +246,7 @@ function noticeButtons(a, stage, ctx) {
 async function autoInitialMail(a, r) {
   if (!Automation.on || !a.email) return;
   const cur = Store.get(`applications/${a.id}`) || a;
-  await sendMailNotice(a.email, Tpl.mail('initial', { a: cur, t: r.trainer, secret: r.secret }), { id: a.id, key: 'noticeInitialMail' });
+  await sendMailNotice(a.email, Tpl.mailFull('initial', { a: cur, t: r.trainer, secret: r.secret }), { id: a.id, key: 'noticeInitialMail' });
 }
 
 function appDetail(a) {
@@ -329,8 +329,8 @@ function appDetail(a) {
   });
   m.el.querySelectorAll('[data-mail]').forEach(b => b.onclick = () => {
     const stage = b.dataset.mail, cur = Store.get(`applications/${a.id}`);
-    if (stage === 'initial') { sendMailNotice(a.email, Tpl.mail('initial', { a: cur, t: trainer, secret }), { id: a.id, key: 'noticeInitialMail' }); }
-    else { const priv = Store.get(`private/${a.trainerId}`) || {}; sendMailNotice(priv.email || a.email, Tpl.mail('final', { a: cur, t: trainer, secret }), { id: a.id, key: 'noticeFinalMail' }); }
+    if (stage === 'initial') { sendMailNotice(a.email, Tpl.mailFull('initial', { a: cur, t: trainer, secret }), { id: a.id, key: 'noticeInitialMail' }); }
+    else { const priv = Store.get(`private/${a.trainerId}`) || {}; sendMailNotice(priv.email || a.email, Tpl.mailFull('final', { a: cur, t: trainer, secret }), { id: a.id, key: 'noticeFinalMail' }); }
   });
   m.el.querySelectorAll('[data-wa]').forEach(b => b.onclick = () => {
     const stage = b.dataset.wa;
@@ -364,7 +364,7 @@ function showSecret(t, secret, isNew) {
     </div>
     ${priv.email || priv.phone ? '' : '<p class="small muted">لا توجد بيانات تواصل محفوظة لهذا المدرب؛ انسخ الرسالة وأرسلها له.</p>'}`);
   m.$('#cs').onclick = () => copyText(secret, 'تم نسخ الرمز');
-  m.$('#sm').onclick = () => sendMailNotice(priv.email, Tpl.mail('final', ctx), log('noticeFinalMail'));
+  m.$('#sm').onclick = () => sendMailNotice(priv.email, Tpl.mailFull('final', ctx), log('noticeFinalMail'));
   m.$('#sw').onclick = () => sendWaNotice(priv.phone, Tpl.wa('final', ctx), log('noticeFinalWa'));
   m.$('#cm').onclick = () => copyText(Tpl.wa('final', ctx), 'تم نسخ الرسالة');
   m.$('#ci').onclick = () => Card.save(t, 'post');

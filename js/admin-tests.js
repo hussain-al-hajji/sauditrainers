@@ -16,9 +16,9 @@ function mailTests(body) {
   });
   const wa = (title, text) => ({ subject: `${title} (نص واتساب)`, body: `هذا نص رسالة الواتساب أُرسل بالبريد للمعاينة فقط:\n\n${text}` });
   const LIST = [
-    ['initial', 'fa-gift', 'رسالة القبول المبدئي والتجربة المجانية (بريد)', () => Tpl.mail('initial', ctxT)],
+    ['initial', 'fa-gift', 'رسالة القبول المبدئي والتجربة المجانية (بريد)', () => Tpl.mailFull('initial', ctxT)],
     ['initialwa', 'fa-brands fa-whatsapp', 'رسالة القبول المبدئي والتجربة المجانية (واتساب)', () => wa('القبول المبدئي والتجربة المجانية', Tpl.wa('initial', ctxT))],
-    ['final', 'fa-certificate', 'رسالة القبول النهائي والاشتراك الكامل (بريد)', () => Tpl.mail('final', ctxF)],
+    ['final', 'fa-certificate', 'رسالة القبول النهائي والاشتراك الكامل (بريد)', () => Tpl.mailFull('final', ctxF)],
     ['finalwa', 'fa-brands fa-whatsapp', 'رسالة القبول النهائي والاشتراك الكامل (واتساب)', () => wa('القبول النهائي والاشتراك الكامل', Tpl.wa('final', ctxF))],
     ['received', 'fa-inbox', 'رسالة استلام طلب التسجيل (بريد)', () => Tpl.mail('received', { a })],
     ['rem5', 'fa-bell', 'تذكير قبل انتهاء التجربة بخمسة أيام (بريد)', () => remind(5)],
@@ -41,10 +41,10 @@ function mailTests(body) {
       ${Automation.on ? '' : '<p class="small muted" style="margin:8px 0 0">الأتمتة غير مفعّلة: سيُفتح Gmail برسالة جاهزة بدل الإرسال المباشر.</p>'}
     </div>
     <div class="pbox"><p class="small" style="margin:0 0 6px"><b>العنوان:</b> ${esc('[تجربة] ' + msg.subject)}</p>
-      <pre dir="rtl" style="white-space:pre-wrap;margin:0;padding:16px;background:var(--g50,#f6f9f2);border-radius:12px;font:14px/1.9 Tahoma,Arial,sans-serif;text-align:right;max-height:520px;overflow:auto">${esc(msg.body)}</pre></div>`;
+      ${msg.html ? `<div style="padding:16px;background:#fff;border:1px solid var(--line,#e0e8d8);border-radius:12px;max-height:620px;overflow:auto">${msg.html}</div>` : `<pre dir="rtl" style="white-space:pre-wrap;margin:0;padding:16px;background:var(--g50,#f6f9f2);border-radius:12px;font:14px/1.9 Tahoma,Arial,sans-serif;text-align:right;max-height:520px;overflow:auto">${esc(msg.body)}</pre>`}</div>`;
 
   $('#mt-pick', body).onchange = e => { MailTests.k = e.target.value; mailTests(body); };
-  const send = async x => { const to = $('#mt-to', body).value.trim(); if (!mailEmailRe.test(to)) { toast('اكتب بريداً صحيحاً', 'error'); return false; } const m = x[3](); return sendMailNotice(to, { subject: '[تجربة] ' + m.subject, body: m.body }); };
+  const send = async x => { const to = $('#mt-to', body).value.trim(); if (!mailEmailRe.test(to)) { toast('اكتب بريداً صحيحاً', 'error'); return false; } const m = x[3](); return sendMailNotice(to, { subject: '[تجربة] ' + m.subject, body: m.body, html: m.html }); };
   $('#mt-send', body).onclick = e => { const b = e.currentTarget; b.disabled = true; send(cur).finally(() => { b.disabled = false; }); };
   $('#mt-all', body).onclick = async e => {
     if (!Automation.on) { toast('الإرسال الجماعي يحتاج تفعيل الأتمتة', 'error'); return; }

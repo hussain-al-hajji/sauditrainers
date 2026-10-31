@@ -210,6 +210,14 @@ const Tpl = {
       loginUrl: `${siteBase()}#/login`, profileUrl: t ? profileUrl(t) : '', statusUrl: `${siteBase()}#/status?id=${a.id || ''}` };
   },
   // الواتساب يستخدم *نص عريض* بدل ** في البريد
+  // نسخة HTML للبريد: النص من القالب نفسه، وقوائم المزايا تصير جداول (ميزة بخلفية خفيفة ونبذتها تحتها)
+  mailHtml(key, ctx) {
+    const t = this.get(key), v = this.vars(ctx), sub = x => String(x || '').replace(/\{(\w+)\}/g, (m, k) => (/^benefits/.test(k) ? m : (v[k] == null ? '' : String(v[k]))));
+    const T = { benefitsSplit: () => Pitch.splitHtml(), benefitsAll: () => Pitch.tableHtml('all'), benefits: () => Pitch.tableHtml('') };
+    const html = String(t.body || '').split(/(\{benefits(?:Split|All)?\})/).map(p => (T[p.slice(1, -1)] && /^\{benefits/.test(p) ? T[p.slice(1, -1)]() : mailText(sub(p).replace(/(^|[\s(])(https:\/\/[^\s)]+)/g, '$1[$2]($2)').replace(/^\n+|\n+$/g, '')))).join('');
+    return `<div dir="rtl" style="font:15px/1.95 Tahoma,Arial,sans-serif;text-align:right;color:#1c2a21">${html}</div>`;
+  },
+  mailFull(key, ctx) { return { ...this.mail(key, ctx), html: this.mailHtml(key, ctx) }; },
   mail(key, ctx) { const t = this.get(key); return { subject: this.render(t.subject, this.vars(ctx)), body: this.render(t.body, this.vars(ctx)) }; },
   wa(key, ctx) { return this.waText(this.get(key).wa, this.vars(ctx)); }
 };

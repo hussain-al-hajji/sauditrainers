@@ -15,11 +15,7 @@ function mailInitial(body) {
   const priv = a.trainerId ? Store.get(`private/${a.trainerId}`) || {} : {}, to = priv.email || a.email || '';
   const ctx = { a, t: trainer, secret }, tpl = Tpl.get('initial'), v = Tpl.vars(ctx);
 
-  // نسخة منسّقة: العناوين وأسماء المزايا عريضة، والروابط قابلة للنقر
-  const styled = Pitch.splitText('mail').split('\n').map(l => (/^(✅|🔒)/.test(l) ? `**${l}**` : /^• /.test(l) ? `• **${l.slice(2)}**` : l)).join('\n');
-  const raw = String(tpl.body || '').replace(/\{(\w+)\}/g, (m, k) => (k === 'benefitsSplit' ? styled : k === 'benefits' ? Pitch.listText('mail') : (v[k] == null ? '' : String(v[k]))));
-  const withLinks = raw.replace(/(^|[\s(])(https:\/\/[^\s)]+)/g, (m, p, u) => `${p}[${u}](${u})`);
-  const html = mailText(withLinks.replace(/\n{3,}/g, '\n\n').trim());
+  const html = Tpl.mailHtml('initial', ctx);
   const subject = Tpl.render(tpl.subject, v), plain = Tpl.mail('initial', ctx).body;
 
   body.innerHTML = `
