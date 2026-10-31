@@ -153,16 +153,13 @@ const FormKit = (() => {
       <input type="url" name="photoUrl" dir="ltr" maxlength="300" value="${esc(d.photoUrl)}" placeholder="https://drive.google.com/file/d/.../view">
       <small class="muted"><i class="fa-solid fa-link"></i> ضع رابط مشاركة الصورة هنا (Google Drive أو أي مساحة تخزين سحابية).</small>
       <div class="pf-row">
-        <span class="pf-circle avw ${d.noPhoto ? 'sym' : src ? '' : 'ph'}" data-i="${initials(d.name || '؟')}">${d.noPhoto ? Card.symbol(d.gender) : src ? `<img src="${esc(src)}" alt="" referrerpolicy="no-referrer" style="${Card.imgStyle(f)}">` : '<i class="fa-solid fa-user"></i>'}</span>
+        <span class="pf-circle avw ${src ? '' : 'ph'}" data-i="${initials(d.name || '؟')}">${src ? `<img src="${esc(src)}" alt="" referrerpolicy="no-referrer" style="${Card.imgStyle(f)}">` : '<i class="fa-solid fa-user"></i>'}</span>
         <div class="pf-ranges">
           <label><span><i class="fa-solid fa-arrows-left-right"></i> الموضع الأفقي</span><input type="range" dir="ltr" name="photoX" min="0" max="100" value="${f.x}"></label>
           <label><span><i class="fa-solid fa-arrows-up-down"></i> الموضع الرأسي</span><input type="range" dir="ltr" name="photoY" min="0" max="100" value="${f.y}"></label>
           <label><span><i class="fa-solid fa-magnifying-glass-plus"></i> التكبير</span><input type="range" dir="ltr" name="photoZ" min="1" max="2.5" step="0.05" value="${f.z}"></label>
         </div>
       </div>
-      <div class="pf-np ${d.gender === 'f' ? '' : 'hidden'}"><input type="hidden" name="noPhoto" value="${d.noPhoto ? '1' : ''}">
-        <button type="button" class="btn sm ${d.noPhoto ? 'primary' : 'ghost'}" data-nophoto><i class="fa-solid fa-user-slash"></i> <span>${d.noPhoto ? 'ستظهر بطاقتي بصورة رمزية - اضغط للتراجع وإضافة صورة' : 'لا أرغب بنشر الصورة الشخصية مطلقاً'}</span></button>
-        <small class="muted">تظهر في بطاقتك صورة رمزية بلا ملامح تشير إلى أن صاحبة البطاقة مدربة.</small></div>
       <p class="pf-msg small muted">${src ? '' : 'اختيارية - يمكنك تأجيل هذه الخطوة الآن وإضافة صورتك لاحقاً من لوحتك عند الرغبة في نشرها.'}</p>
       <details class="drive-help"><summary><i class="fa-solid fa-cloud-arrow-up"></i> كيف أضيف رابط صورتي؟</summary>
         <ol><li>ارفع صورة شخصية واضحة إلى Google Drive أو Dropbox أو OneDrive (أو أي مساحة تخزين تعطي رابطاً مباشراً للصورة).</li><li>اجعل المشاركة «أي شخص لديه الرابط» (عارض).</li><li>انسخ رابط المشاركة والصقه هنا، ثم نسّق الصورة داخل الدائرة. إن لم تظهر المعاينة فالرابط غير مباشر أو المشاركة مغلقة.</li></ol></details>
@@ -295,11 +292,6 @@ const FormKit = (() => {
     const photo = () => {
       if (!pf) return;
       const d = read(form), c = $('.pf-circle', pf), msg = $('.pf-msg', pf), src = Data.photo(d), f = Card.fit(d);
-      pf.classList.toggle('np', !!d.noPhoto);
-      $('.pf-np', pf).classList.toggle('hidden', d.gender !== 'f');
-      const npb = $('[data-nophoto]', pf); npb.classList.toggle('primary', !!d.noPhoto); npb.classList.toggle('ghost', !d.noPhoto);
-      $('span', npb).textContent = d.noPhoto ? 'ستظهر بطاقتي بصورة رمزية - اضغط للتراجع وإضافة صورة' : 'لا أرغب بنشر الصورة الشخصية مطلقاً';
-      if (d.noPhoto) { c.className = 'pf-circle avw sym'; c.innerHTML = Card.symbol('f'); msg.textContent = 'ستظهر في بطاقتك صورة رمزية بلا ملامح تشير إلى أن صاحبتها مدربة.'; return; }
       c.classList.remove('sym');
       if (!d.photoUrl) { c.classList.add('ph'); c.innerHTML = '<i class="fa-solid fa-user"></i>'; msg.textContent = ''; return; }
       if (!isImageLink(d.photoUrl)) { msg.textContent = 'الصق رابط مشاركة الصورة (Google Drive أو Dropbox أو OneDrive أو رابط مباشر)'; return; }
@@ -315,10 +307,6 @@ const FormKit = (() => {
     };
     form.addEventListener('input', e => { if (pf && pf.contains(e.target)) photo(); });
     if (pf) {
-      $('[data-nophoto]', pf).onclick = () => { const h = pf.querySelector('[name=noPhoto]'); h.value = h.value ? '' : '1'; photo(); preview(); };
-      // تغيير الجنس: يظهر الزر للمدربات فقط، ويُلغى خيار الصورة الرمزية عند اختيار «مدرب»
-      const g = form.querySelector('[name=gender]');
-      g && g.addEventListener('change', () => { if (g.value !== 'f') pf.querySelector('[name=noPhoto]').value = ''; photo(); });
     }
     form.addEventListener('input', debounce(preview, 140));
     form.addEventListener('change', preview);

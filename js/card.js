@@ -17,8 +17,9 @@ const Card = (() => {
   const symbol = g => (g === 'f'
     ? `<svg viewBox="0 0 100 100" aria-hidden="true"><path d="${SYM_F}" fill="var(--acc,#EEF3E5)"/></svg>`
     : `<svg viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="36" r="17" fill="var(--acc,#EEF3E5)"/><path d="${SYM_M_BODY}" fill="var(--acc,#EEF3E5)"/></svg>`);
+  // الصورة الرمزية أُلغيت: من لا يضيف صورة يظهر اسمه داخل الدائرة (للجنسين)
+  const SYMBOL_AVATAR = false;
   function avatar(t, cls = '') {
-    if (t.noPhoto) return `<span class="${cls} avw sym" role="img" aria-label="${t.gender === 'f' ? 'صورة رمزية لمدربة' : 'صورة رمزية'}">${symbol(t.gender)}</span>`;
     const p = Data.photo(t), ini = initials(t.name);
     const big = /^(t[cm]|pn)-photo$/.test(cls), full = nameFL(t.name).map(esc).join('<br>');
     if (!p) return big ? `<span class="${cls} avw ph ph-full"><span class="ph-n">${full}</span></span>` : `<span class="${cls} avw ph">${ini}</span>`;
@@ -213,7 +214,7 @@ const Card = (() => {
     ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, D / 2, 0, Math.PI * 2); ctx.clip();
     const photo = t.noPhoto ? null : await loadImage(Data.photo(t));
     const pg = ctx.createLinearGradient(cx - D / 2, cy - D / 2, cx + D / 2, cy + D / 2); pg.addColorStop(0, th.c); pg.addColorStop(1, th.a);
-    if (t.noPhoto) {
+    if (SYMBOL_AVATAR && t.noPhoto) {
       ctx.fillStyle = pg; ctx.fillRect(cx - D / 2, cy - D / 2, D, D);
       ctx.save(); ctx.translate(cx - D / 2, cy - D / 2); ctx.scale(D / 100, D / 100); ctx.fillStyle = th.accent;
       if (t.gender === 'f') ctx.fill(new Path2D(SYM_F)); else { ctx.beginPath(); ctx.arc(50, 36, 17, 0, Math.PI * 2); ctx.fill(); ctx.fill(new Path2D(SYM_M_BODY)); }
@@ -361,7 +362,7 @@ const Card = (() => {
     ctx.beginPath(); ctx.arc(cx, cy, D / 2 + 6, 0, Math.PI * 2); ctx.fillStyle = th.b; ctx.fill();
     ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, D / 2, 0, Math.PI * 2); ctx.clip();
     const photo = t.noPhoto ? null : await loadImage(Data.photo(t));
-    if (t.noPhoto) {
+    if (SYMBOL_AVATAR && t.noPhoto) {
       const pg = ctx.createLinearGradient(cx - D / 2, cy - D / 2, cx + D / 2, cy + D / 2); pg.addColorStop(0, th.c); pg.addColorStop(1, th.a);
       ctx.fillStyle = pg; ctx.fillRect(cx - D / 2, cy - D / 2, D, D);
       ctx.save(); ctx.translate(cx - D / 2, cy - D / 2); ctx.scale(D / 100, D / 100); ctx.fillStyle = th.accent;

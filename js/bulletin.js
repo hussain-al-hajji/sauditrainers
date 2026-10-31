@@ -37,7 +37,7 @@ const Bulletin = (() => {
       ctx.translate(ox, oy); ctx.scale(f.z, f.z); ctx.translate(-ox, -oy); ctx.drawImage(img, x0 + (D - iw) * f.x / 100, y0 + (D - ih) * f.y / 100, iw, ih);
     } else {
       const g = ctx.createLinearGradient(x0, y0, x0 + D, y0 + D); g.addColorStop(0, C.g700); g.addColorStop(1, C.g900); ctx.fillStyle = g; ctx.fillRect(x0, y0, D, D);
-      if (t.noPhoto) { ctx.translate(x0, y0); ctx.scale(D / 100, D / 100); ctx.fillStyle = C.sage; if (t.gender === 'f') ctx.fill(new Path2D(K().SYM_F)); else { ctx.beginPath(); ctx.arc(50, 36, 17, 0, Math.PI * 2); ctx.fill(); ctx.fill(new Path2D(K().SYM_M_BODY)); } }
+      if (false && t.noPhoto) { ctx.translate(x0, y0); ctx.scale(D / 100, D / 100); ctx.fillStyle = C.sage; if (t.gender === 'f') ctx.fill(new Path2D(K().SYM_F)); else { ctx.beginPath(); ctx.arc(50, 36, 17, 0, Math.PI * 2); ctx.fill(); ctx.fill(new Path2D(K().SYM_M_BODY)); } }
       else { const tmp = document.createElement('div'); tmp.innerHTML = initials(t.name); ctx.fillStyle = C.cream; ctx.font = `900 ${R * 0.8}px ${FONT.head}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(tmp.textContent, cx, cy + 3); ctx.textBaseline = 'alphabetic'; }
     }
     ctx.restore(); ctx.beginPath(); ctx.arc(cx, cy, R + 4, 0, Math.PI * 2); ctx.strokeStyle = ring; ctx.lineWidth = 4; ctx.stroke();
