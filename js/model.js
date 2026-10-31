@@ -196,7 +196,15 @@ const Tpl = {
       : '🎁 **فُعّلت لك فترة تجربة مجانية لمدة شهر** (حتى {trialEnd}) تتاح فيها مزايا الاشتراك عدا النشر في السوشيال، وملف PDF، والمثبّتة، ومكتبة المدرب، ووظائف التدريب، وكتابة الأخبار؛ وتُفتح عند تأكيد الاشتراك الكامل.\n• رقم العضوية: {memberCode}\n• رابط الدخول: {loginUrl}\n• رمز الدخول السري: {secret}';
     let i = -2; for (let k = wa ? 2 : 3; k > 0 && i !== -1; k--) i = text.indexOf('\n\n', i + 2); return i < 0 ? `${text}\n\n${blk}` : `${text.slice(0, i)}\n\n${blk}${text.slice(i)}`;
   },
-  get(key) { const t = { ...defaultTemplates()[key], ...(Store.get(`settings/templates/${key}`) || {}) }; const sp = x => (x && key === 'initial' ? x.replace(/\{benefits\}/g, '{benefitsSplit}') : x && key === 'final' ? x.replace(/\{benefits\}/g, '{benefitsAll}') : x); return { ...t, body: sp(this.withBenefits(key, this.withTrial(key, t.body, false))), wa: t.wa == null ? t.wa : sp(this.withBenefits(key, this.withTrial(key, t.wa, true))) }; },
+  get(key) {
+    const def = defaultTemplates()[key], sv = { ...(Store.get(`settings/templates/${key}`) || {}) };
+    // قالب «القبول المبدئي» المحفوظ قبل فترة التجربة (بلا {trialEnd}) يُتجاهل ويُستبدل بالنص الجديد؛ أما ما عدّلته بعد ذلك فيبقى
+    if (key === 'initial') {
+      const old = x => x != null && !/\{trialEnd\}/.test(x);
+      if (old(sv.body)) { delete sv.body; delete sv.subject; }
+      if (old(sv.wa)) delete sv.wa;
+    }
+    const t = { ...def, ...sv }; const sp = x => (x && key === 'initial' ? x.replace(/\{benefits\}/g, '{benefitsSplit}') : x && key === 'final' ? x.replace(/\{benefits\}/g, '{benefitsAll}') : x); return { ...t, body: sp(this.withBenefits(key, this.withTrial(key, t.body, false))), wa: t.wa == null ? t.wa : sp(this.withBenefits(key, this.withTrial(key, t.wa, true))) }; },
   // نص واتساب: {benefits} بصيغة الواتساب (عناوين بخط عريض)
   waText(text, vars) { return String(text || '').replace(/\{benefitsSplit\}/g, Pitch.splitText('wa')).replace(/\{benefitsAll\}/g, Pitch.listText('wa', 'all')).replace(/\{benefits\}/g, Pitch.listText('wa')).replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? '')).trim(); },
   render(text, vars) {
