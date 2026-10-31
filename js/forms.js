@@ -11,7 +11,9 @@ const NATIONALITIES = ['المملكة العربية السعودية', 'الأ
 
 // الحقول الأساسية: lock = لا تُخفى ولا يُلغى إلزامها، priv = بيانات إدارية لا تظهر لأحد، joinOnly = في طلب التسجيل فقط
 const CORE_FIELDS = {
-  name: { label: 'الاسم كما يظهر في البطاقة', type: 'text', max: 60, ph: 'مثال: أ. سارة العتيبي', req: true, lock: true },
+  // اللقب يُحفظ في extra/hon (بيانات إدارية) ويُستخدم في المراسلات؛ ولا يظهر في البطاقة تلقائياً إلا «د.»
+  hon: { label: 'اللقب (يظهر في مراسلاتك)', type: 'select', opts: ['أ.', 'م.', 'د.'], priv: true, asExtra: true, hint: 'أ. أو م. أو د. يسبق اسمك في مراسلات المنصة معك. ولا يظهر في البطاقة إلا «د.»' },
+  name: { label: 'الاسم كما يظهر في البطاقة', type: 'text', max: 60, ph: 'مثال: سارة العتيبي', req: true, lock: true },
   nameEn: { label: 'الاسم بالإنجليزية', type: 'text', max: 60, ltr: true, ph: 'Sarah Alotaibi', hint: 'يُكتب تلقائياً من اسمك العربي ويمكنك تعديله، ويُستخدم في رابط صفحتك المختصر، ويتحدّث الرابط تلقائياً عند تعديله (والرابط القديم يبقى يعمل)' },
   gender: { label: 'الجنس', type: 'gender', req: true },
   // تُحفظ إجابتها في extra/nationality (بيانات إدارية لا تظهر في البطاقة) فلا تحتاج تعديل قواعد قاعدة البيانات
@@ -57,13 +59,13 @@ function defaultForms() {
   const f = ks => ks.map(k => ({ k }));
   return {
     join: { steps: [
-      { id: 's1', title: 'البيانات', icon: 'fa-id-card', desc: 'بيانات التواصل الإداري لا تظهر لأحد في المنصة.', fields: f(['name', 'nameEn', 'gender', 'nationality', 'region', 'city', 'travel', 'phone', 'email']) },
+      { id: 's1', title: 'البيانات', icon: 'fa-id-card', desc: 'بيانات التواصل الإداري لا تظهر لأحد في المنصة.', fields: f(['hon', 'name', 'nameEn', 'gender', 'nationality', 'region', 'city', 'travel', 'phone', 'email']) },
       { id: 's2', title: 'التخصص', icon: 'fa-layer-group', desc: 'اختر ما تمارس التدريب فيه فعلياً؛ تظهر بطاقتك في نتائج هذه التخصصات.', fields: f(['title', 'specs', 'topics', 'modes']) },
       { id: 's3', title: 'الخبرة', icon: 'fa-award', desc: 'الأرقام تظهر في بطاقتك كمؤشرات بارزة.', fields: [{ k: 'cvUrl', hidden: true }, ...f(['years', 'hours', 'programs', 'certs', 'proCerts', 'partners', 'bio', 'langs', 'tot'])] },
       { id: 's4', title: 'الصورة والتصميم', icon: 'fa-camera', desc: 'هذه الخطوة اختيارية: عند الرغبة في نشر صورتك أضف رابط مشاركتها من Google Drive أو أي مساحة تخزين سحابية ونسّقها داخل الدائرة، أو أجّلها الآن وأضفها لاحقاً من لوحتك. واختر تصميم بطاقتك.', fields: f(['photoUrl', 'theme']) }
     ] },
     admin: { steps: [
-      { id: 'a1', title: 'البيانات الأساسية', icon: 'fa-id-card', fields: f(['name', 'nameEn', 'gender', 'nationality', 'region', 'city', 'travel', 'phone', 'email']) },
+      { id: 'a1', title: 'البيانات الأساسية', icon: 'fa-id-card', fields: f(['hon', 'name', 'nameEn', 'gender', 'nationality', 'region', 'city', 'travel', 'phone', 'email']) },
       { id: 'a2', title: 'التخصص', icon: 'fa-layer-group', fields: f(['title', 'specs', 'bio', 'topics', 'modes']) },
       { id: 'a3', title: 'الخبرة', icon: 'fa-award', fields: f(['years', 'hours', 'programs', 'certs', 'proCerts', 'partners', 'langs', 'tot']) },
       { id: 'a4', title: 'الصورة والتصميم', icon: 'fa-camera', fields: f(['photoUrl', 'theme']) }
@@ -81,7 +83,7 @@ const FormKit = (() => {
     def.steps.forEach(ds => ds.fields.forEach((df, i) => {
       if (have.has(df.k)) return;
       const tgt = steps.find(s => s.id === ds.id) || steps[0], prev = ds.fields[i - 1], at = prev ? tgt.fields.findIndex(f => f.k === prev.k) : -1;
-      if (at >= 0) tgt.fields.splice(at + 1, 0, { k: df.k }); else tgt.fields.push({ k: df.k });   // يوضع بعد الحقل الذي يسبقه في الإعداد الافتراضي
+      if (at >= 0) tgt.fields.splice(at + 1, 0, { k: df.k }); else if (i === 0) tgt.fields.unshift({ k: df.k }); else tgt.fields.push({ k: df.k });   // يوضع بعد الحقل الذي يسبقه في الإعداد الافتراضي
     }));
     return steps.map(s => ({ ...s, fields: s.fields.map(f => (f.custom ? { w: ['textarea', 'multi', 'consent'].includes(f.type) ? 'full' : '', ...f } : CORE_FIELDS[f.k]?.asExtra ? { ...CORE_FIELDS[f.k], ...f, custom: true, core: true, priv: true, ...(kind === 'admin' ? { req: false } : {}) } : CORE_FIELDS[f.k] ? { ...CORE_FIELDS[f.k], ...f, core: true, lock: CORE_FIELDS[f.k].lock, priv: CORE_FIELDS[f.k].priv, joinOnly: CORE_FIELDS[f.k].joinOnly, type: CORE_FIELDS[f.k].type } : null)).filter(Boolean) }));
   }

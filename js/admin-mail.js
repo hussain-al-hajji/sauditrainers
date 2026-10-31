@@ -41,12 +41,12 @@ const mailOpts = () => ({ site: siteBase(), assets: siteBase() });
 
 /* ===== المستلمون ===== */
 function mailTrainers() {
-  return Store.list('trainers').map(t => ({ k: 't:' + t.id, type: 't', id: t.id, name: t.name || '', email: String(Store.get(`private/${t.id}`)?.email || '').trim(), slug: t.slug || t.id, meta: regionsLabel(t) })).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+  return Store.list('trainers').map(t => ({ k: 't:' + t.id, type: 't', id: t.id, name: t.name || '', hon: honOf(null, t), email: String(Store.get(`private/${t.id}`)?.email || '').trim(), slug: t.slug || t.id, meta: regionsLabel(t) })).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
 }
 // «غير المسجلين»: المتقدمون الذين لم يكتمل قبولهم النهائي (طلب جديد / قيد المراجعة / مقابلة / قبول مبدئي بانتظار السداد)، دون المرفوضين ودون من صار مدرباً مسجلاً
 function mailApplicants() {
   const have = new Set(mailTrainers().map(t => t.email.toLowerCase()).filter(Boolean)), seen = new Set();
-  return Store.list('applications').filter(a => ['new', 'review', 'interview', 'accepted'].includes(a.status)).sort((x, y) => (y.ts || 0) - (x.ts || 0)).map(a => ({ k: 'a:' + a.id, type: 'a', id: a.id, name: a.name || '', email: String(a.email || '').trim(), meta: APP_STATUS[a.status]?.name || '' }))
+  return Store.list('applications').filter(a => ['new', 'review', 'interview', 'accepted'].includes(a.status)).sort((x, y) => (y.ts || 0) - (x.ts || 0)).map(a => ({ k: 'a:' + a.id, type: 'a', id: a.id, name: a.name || '', hon: honOf(a), email: String(a.email || '').trim(), meta: APP_STATUS[a.status]?.name || '' }))
     .filter(r => { const e = r.email.toLowerCase(); if (!e || have.has(e) || seen.has(e)) return false; seen.add(e); return true; });
 }
 function mailInvitees() {
@@ -339,7 +339,7 @@ async function mailSend(test, main) {
     if (!await confirmBox(`سيُرسل «${esc(D.subject)}» إلى <b>${recips.length}</b> مستلم من بريد المنصة. لا يمكن التراجع بعد الإرسال.`, { ok: 'إرسال الآن' })) return;
   }
   const id = Store.newId(), rec = {};
-  recips.forEach((r, i) => { rec['r' + i] = { email: r.email.slice(0, 120), name: (r.name || '').slice(0, 80), type: r.type, rid: r.id, ...(r.slug ? { slug: String(r.slug).slice(0, 80) } : {}) }; });
+  recips.forEach((r, i) => { rec['r' + i] = { email: r.email.slice(0, 120), name: (r.type === 't' || r.type === 'a' ? addrName(r.name, r.hon) : (r.name || '')).slice(0, 80), type: r.type, rid: r.id, ...(r.slug ? { slug: String(r.slug).slice(0, 80) } : {}) }; });
   const doc = { blocks: D.blocks.map(b => ({ ...b })), atts: D.atts.filter(a => a.url).map(a => ({ name: a.name.trim().slice(0, 80), url: a.url.trim() })) };
   const camp = { id, ts: Date.now(), subject: D.subject.trim().slice(0, 150), doc, recipients: rec, total: recips.length, sent: 0, failed: 0, status: 'queued', test: !!test, by: Security.adminName?.() || u?.email || 'مشرف' };
   if (!await Store.setConfirmed(`campaigns/${id}`, camp)) { toast('تعذّر حفظ الحملة (الصلاحيات)', 'error'); return; }

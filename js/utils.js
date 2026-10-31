@@ -155,6 +155,11 @@ const phoneDigits = p => { let d = toEnDigits(p).replace(/\D/g, ''); if (d.start
 // الرموز التعبيرية كلها (✅ ⚠️ 🎁 🌟 ...) قد تظهر «�» في واتساب (ويب/سطح المكتب) عند فتح الرسالة من رابط wa.me، فتُحذف من نص الرابط كله
 // (⚠ تصير «تنبيه:»)، ويبقى النص العربي والنجوم العريضة وسليماً. ونسخ النص بالأزرار «نسخ» يحتفظ بالرموز كما هي.
 const waSafe = t => String(t || '').replace(/\u26A0\uFE0F?/g, 'تنبيه:').replace(/[\uFE0F\u200D\u20E3]/g, '').replace(/[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\u{1F3FB}-\u{1F3FF}]/gu, '').replace(/^[ \t]+/gm, '').replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n');
+/* مخاطبة المدرب: يسبق اسمه لقب دائماً (أ. م. د.). إن كتب لقباً بنفسه قبل اسمه يُترك كما كتبه، وإلا يُضاف لقبه المختار في التسجيل (أو «أ.» افتراضياً) */
+const TITLE_PREFIX = /^\s*(?:أ\.?\s?د\.?|أ\.?|د\.?|م\.?|الأستاذ(?:ة)?|أستاذ(?:ة)?|الدكتور(?:ة)?|دكتور(?:ة)?|المهندس(?:ة)?|مهندس(?:ة)?|بروفيسور|Prof\.?|Dr\.?|Eng\.?)(?=\s|$)/i;
+const addrName = (name, hon) => { const t = String(name || '').trim(); return !t ? '' : TITLE_PREFIX.test(t) ? t : `${hon || 'أ.'} ${t}`; };
+const addrFirst = (name, hon) => { const t = String(name || '').trim(), m = TITLE_PREFIX.exec(t), bare = m ? t.slice(m[0].length).trim() : t; return bare ? `${m ? m[0].trim() : (hon || 'أ.')} ${bare.split(/\s+/)[0]}` : ''; };
+const honOf = (a, t) => (a && a.extra && a.extra.hon) || (t && t.id && ((Store.get(`private/${t.id}/extra`) || {}).hon)) || '';
 const waLink = (p, text = '') => { const d = phoneDigits(p); text = waSafe(text); return d ? `https://wa.me/${d}${text ? '?text=' + encodeURIComponent(text) : ''}` : ''; };
 const validPhone = p => /^9665\d{8}$/.test(phoneDigits(p));
 const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(e || '').trim());

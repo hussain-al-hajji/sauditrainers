@@ -126,6 +126,7 @@ const Data = (() => {
       publishedAt: Date.now(), updatedAt: Date.now(), appId: app.id,
       ...(trial ? Trial.fresh() : {})   // القبول المبدئي: تفعيل شهر تجربة مجانية تلقائياً
     };
+    if ((app.extra || {}).hon === 'د.' && !TITLE_PREFIX.test(t.name || '')) t.name = `د. ${t.name}`;   // «د.» فقط يظهر في البطاقة تلقائياً
     t.slug = makeSlug(t); claimSlug(t.slug, id);
     const ex = splitExtra(app.extra);
     if (Object.keys(ex.pub).length) t.extra = ex.pub;
@@ -213,7 +214,7 @@ const Tpl = {
   // متغيرات الرسالة: من الطلب (a) والمدرب المنشور (t) والرمز السري
   vars({ a = {}, t = null, secret = '' } = {}) {
     const c = Data.content(), name = (t?.name || a.name || '').trim();
-    return { name, first: name.replace(/^(د|م|أ)\.\s*/, '').split(/\s+/)[0] || name, appId: a.id || t?.appId || '', fee: c.join.fee, period: `${c.join.period} [${Pitch.renew}]`,
+    const hon = honOf(a, t); return { name: addrName(name, hon) || name, first: addrFirst(name, hon) || name, appId: a.id || t?.appId || '', fee: c.join.fee, period: `${c.join.period} [${Pitch.renew}]`,
       benefits: Pitch.listText('mail'), benefitsSplit: Pitch.splitText('mail'), benefitsAll: Pitch.listText('mail', 'all'), payment: c.join.payment, bank: Store.get('settings/payment/bank') || '(أضف بيانات الحساب البنكي في الإدارة ← قوالب)', memberCode: t?.code || '', trialEnd: t?.trialEnd ? fmtDate(t.trialEnd) : '', siteUrl: siteBase().replace(/\/$/, ''), secret,
       loginUrl: `${siteBase()}#/login`, profileUrl: t ? profileUrl(t) : '', statusUrl: `${siteBase()}#/status?id=${a.id || ''}` };
   },
