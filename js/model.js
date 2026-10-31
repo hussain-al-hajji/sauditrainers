@@ -20,7 +20,8 @@ const Data = (() => {
   const topics = t => splitList(t?.topics);
 
   // الاشتراك مدى الحياة: لا تاريخ انتهاء، والظهور يتحكم به الحالة (منشور/مخفي) فقط
-  const isLive = t => !!t && t.status === 'active';
+  // فترة التجربة المنتهية دون سداد تُخفي البطاقة عن الزوار حتى تأكيد الاشتراك الكامل
+  const isLive = t => !!t && t.status === 'active' && !(t.plan === 'trial' && t.trialEnd && Date.now() > t.trialEnd);
   const all = () => Store.list('trainers').sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0) || (b.publishedAt || 0) - (a.publishedAt || 0));
   const live = () => all().filter(isLive);
   // البحث بالرقم أو بالرابط الحالي أو بأي رابط سابق للمدرب (slugs/ تحفظ الروابط القديمة بعد تغيير الاسم الإنجليزي)
@@ -117,23 +118,34 @@ const Data = (() => {
     loadSpecialties();
     return k;
   }
-  async function publishFromApplication(app) {
+  async function publishFromApplication(app, { trial = false } = {}) {
     const code = await nextCode();
     const id = code.toLowerCase();
     const t = {
       ...pick(app, PUBLIC_FIELDS), id, code, status: 'active', featured: false,
-      publishedAt: Date.now(), updatedAt: Date.now(), appId: app.id
+      publishedAt: Date.now(), updatedAt: Date.now(), appId: app.id,
+      ...(trial ? Trial.fresh() : {})   // القبول المبدئي: تفعيل شهر تجربة مجانية تلقائياً
     };
     t.slug = makeSlug(t); claimSlug(t.slug, id);
     const ex = splitExtra(app.extra);
     if (Object.keys(ex.pub).length) t.extra = ex.pub;
     Store.set(`trainers/${id}`, t);
     Store.set(`private/${id}`, { phone: app.phone || '', email: app.email || '', ...(Object.keys(ex.priv).length ? { extra: ex.priv } : {}) });
-    Store.update(`applications/${app.id}`, { status: 'published', trainerId: id, decidedAt: Date.now() });
-    Store.update(`appStatus/${app.id}`, { status: 'published', ts: Date.now(), trainerSlug: t.slug });
+    const st = trial ? 'accepted' : 'published';
+    Store.update(`applications/${app.id}`, { status: st, trainerId: id, decidedAt: Date.now() });
+    Store.update(`appStatus/${app.id}`, { status: st, ts: Date.now(), trainerSlug: t.slug });
     const secret = await Security.issueCode(t);
-    Security.log('نشر مدرب', `${t.name} (${code})`, `من الطلب ${app.id}`);
+    Security.log(trial ? 'بدء فترة تجربة مدرب' : 'نشر مدرب', `${t.name} (${code})`, `من الطلب ${app.id}`);
     return { trainer: Store.get(`trainers/${id}`), secret };
+  }
+
+  // تأكيد السداد: ترقية حساب التجربة إلى الاشتراك الكامل (تُفتح الميزات الست)
+  function activateFull(app) {
+    const id = app.trainerId; if (!id) throw new Error('لا يوجد حساب تجربة لهذا الطلب');
+    Store.update(`trainers/${id}`, { plan: 'full', trialEnd: null, fullAt: Date.now(), updatedAt: Date.now() });
+    Store.update(`applications/${app.id}`, { status: 'published', decidedAt: Date.now() });
+    Store.update(`appStatus/${app.id}`, { status: 'published', ts: Date.now() });
+    Security.log('تفعيل الاشتراك الكامل', app.name, `من الطلب ${app.id}`);
   }
 
   function track(kind, id) {
@@ -144,7 +156,7 @@ const Data = (() => {
     if (kind === 'views') Store.bump([`stats/vday/${id}/${dayKeyRiyadh()}`]);   // مشاهدات يومية لإحصاءات المدرب
   }
 
-  return { content, photo, specs, cardSpecs, modes, topics, all, live, trainer, isLive, search, match, regionCounts, specCounts, views, clicks, nextCode, makeSlug, claimSlug, refreshSlug, syncSlugs, addSpecialty, publishFromApplication, track, PUBLIC_FIELDS, pick, splitExtra };
+  return { content, photo, specs, cardSpecs, modes, topics, all, live, trainer, isLive, search, match, regionCounts, specCounts, views, clicks, nextCode, makeSlug, claimSlug, refreshSlug, syncSlugs, addSpecialty, publishFromApplication, activateFull, track, PUBLIC_FIELDS, pick, splitExtra };
 })();
 
 /* الأتمتة (اختيارية): رابط Google Apps Script يرسل البريد من حساب المنصة وينشر في وسائل التواصل.
@@ -177,7 +189,14 @@ const Tpl = {
     if (ps.length > 1 && /^(مع التحية|منصة مدرّبون)/.test(last.trim())) ps.splice(ps.length - 1, 0, `${head}\n{benefits}`); else ps.push(`${head}\n{benefits}`);
     return ps.join('\n\n');
   },
-  get(key) { const t = { ...defaultTemplates()[key], ...(Store.get(`settings/templates/${key}`) || {}) }; return { ...t, body: this.withBenefits(key, t.body), wa: t.wa == null ? t.wa : this.withBenefits(key, t.wa) }; },
+  // قالب القبول المبدئي المحفوظ قبل فترة التجربة (بلا {secret}): تُضاف له فقرة التجربة وبيانات الدخول قبل السداد
+  withTrial(key, text, wa) {
+    text = String(text || ''); if (key !== 'initial' || !text || /\{secret\}/.test(text)) return text;
+    const blk = wa ? '🎁 *فُعّلت لك فترة تجربة مجانية لمدة شهر* (حتى {trialEnd})، وتُفتح الميزات الحصرية بتأكيد الاشتراك الكامل.\n• رقم العضوية: {memberCode}\n• رابط الدخول: {loginUrl}\n• الرمز السري: {secret}'
+      : '🎁 **فُعّلت لك فترة تجربة مجانية لمدة شهر** (حتى {trialEnd}) تتاح فيها مزايا الاشتراك عدا النشر في السوشيال، وملف PDF، والمثبّتة، ومكتبة المدرب، ووظائف التدريب، وكتابة الأخبار؛ وتُفتح عند تأكيد الاشتراك الكامل.\n• رقم العضوية: {memberCode}\n• رابط الدخول: {loginUrl}\n• رمز الدخول السري: {secret}';
+    let i = -2; for (let k = wa ? 2 : 3; k > 0 && i !== -1; k--) i = text.indexOf('\n\n', i + 2); return i < 0 ? `${text}\n\n${blk}` : `${text.slice(0, i)}\n\n${blk}${text.slice(i)}`;
+  },
+  get(key) { const t = { ...defaultTemplates()[key], ...(Store.get(`settings/templates/${key}`) || {}) }; return { ...t, body: this.withBenefits(key, this.withTrial(key, t.body, false)), wa: t.wa == null ? t.wa : this.withBenefits(key, this.withTrial(key, t.wa, true)) }; },
   // نص واتساب: {benefits} بصيغة الواتساب (عناوين بخط عريض)
   waText(text, vars) { return String(text || '').replace(/\{benefits\}/g, Pitch.listText('wa')).replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? '')).trim(); },
   render(text, vars) {
@@ -187,7 +206,7 @@ const Tpl = {
   vars({ a = {}, t = null, secret = '' } = {}) {
     const c = Data.content(), name = (t?.name || a.name || '').trim();
     return { name, first: name.replace(/^(د|م|أ)\.\s*/, '').split(/\s+/)[0] || name, appId: a.id || t?.appId || '', fee: c.join.fee, period: `${c.join.period} [${Pitch.renew}]`,
-      benefits: Pitch.listText('mail'), payment: c.join.payment, bank: Store.get('settings/payment/bank') || '(أضف بيانات الحساب البنكي في الإدارة ← قوالب)', memberCode: t?.code || '', secret,
+      benefits: Pitch.listText('mail'), payment: c.join.payment, bank: Store.get('settings/payment/bank') || '(أضف بيانات الحساب البنكي في الإدارة ← قوالب)', memberCode: t?.code || '', trialEnd: t?.trialEnd ? fmtDate(t.trialEnd) : '', secret,
       loginUrl: `${siteBase()}#/login`, profileUrl: t ? profileUrl(t) : '', statusUrl: `${siteBase()}#/status?id=${a.id || ''}` };
   },
   // الواتساب يستخدم *نص عريض* بدل ** في البريد

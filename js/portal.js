@@ -13,17 +13,18 @@ Pages.me = {
     const tabs = [['home', 'fa-id-card', 'بطاقتي'], ['edit', 'fa-pen-to-square', 'تعديل البيانات'], ['leads', 'fa-inbox', 'طلبات موجهة لك', fresh], ['bc', 'fa-bullhorn', 'طلبات عامة', bcNew + Opps.unreadAds(t.id).length]];
     const annNew = News.unread(t.id).length;
     try { Push.setBadge(fresh + bcNew + Broadcast.noticesNew(t.id) + annNew + Opps.unread(t.id).length + Library.unread(t.id) + Reviews.unread(t.id)); } catch { /* ignore */ }
-    tabs.push(['opps', 'fa-briefcase', 'وظائف التدريب', Opps.unreadJobs(t.id).length]);
-    if (featureOn('news')) tabs.push(['news', 'fa-newspaper', 'أخباري']);
+    const lk = Trial.locked(t);   // فترة التجربة: التبويبات الثلاثة تظهر باهتة مع قفل
+    tabs.push(['opps', 'fa-briefcase', 'وظائف التدريب', lk ? 0 : Opps.unreadJobs(t.id).length, lk]);
+    if (featureOn('news')) tabs.push(['news', 'fa-newspaper', 'أخباري', 0, lk]);
     tabs.push(['vid', 'fa-circle-play', 'نماذج الفيديو']);
-    tabs.push(['lib', 'fa-book-open', 'مكتبة المدرب', Library.unread(t.id)]);
+    tabs.push(['lib', 'fa-book-open', 'مكتبة المدرب', lk ? 0 : Library.unread(t.id), lk]);
     tabs.push(['rv', 'fa-star', 'مراجعات وتوصيات', Reviews.unread(t.id)]);
     if (featureOn('announcements')) tabs.push(['ann', 'fa-bell-concierge', 'إعلانات', annNew]);
     if (!tabs.some(x => x[0] === this.tab)) this.tab = 'home';
     return `<div class="wrap dash">
       <aside class="side">
         <div class="who">${Card.avatar(t, 'av')}<div class="grow"><b>${esc(t.name)}</b><small class="num">${esc(t.code)}</small></div><button type="button" class="bell" id="bell" title="الإشعارات" aria-label="الإشعارات"><i class="fa-solid fa-bell"></i>${fresh + bcNew + Broadcast.noticesNew(t.id) ? `<span class="bdg num">${fresh + bcNew + Broadcast.noticesNew(t.id)}</span>` : ''}</button></div>
-        ${tabs.map(([k, i, l, b]) => `<button data-tab="${k}" class="${this.tab === k ? 'on' : ''}"><i class="fa-solid ${i}"></i>${l}${b ? `<span class="badge num">${b}</span>` : ''}</button>`).join('')}
+        ${tabs.map(([k, i, l, b, lock]) => `<button data-tab="${k}" class="${this.tab === k ? 'on' : ''}${lock ? ' locked' : ''}"><i class="fa-solid ${i}"></i>${l}${lock ? '<i class="fa-solid fa-lock tl-l"></i>' : b ? `<span class="badge num">${b}</span>` : ''}</button>`).join('')}
         <hr style="border:0;border-top:1px solid rgba(255,255,255,.08)">
         <button data-go="#/t/${esc(encodeURIComponent(t.slug || t.id))}"><i class="fa-solid fa-arrow-up-right-from-square"></i>صفحتي العامة</button>
         ${Push.available() ? `<button data-push><i class="fa-solid ${Push.state() === 'on' ? 'fa-bell' : 'fa-bell-slash'}"></i>${Push.state() === 'on' ? 'إشعارات الجوال: مفعّلة' : 'تفعيل إشعارات الجوال'}</button>` : ''}
@@ -50,7 +51,8 @@ Pages.me = {
     try { if (fresh && sessionStorage.getItem('st-leads-seen') !== String(fresh)) { sessionStorage.setItem('st-leads-seen', String(fresh)); toast(`لديك ${fresh} ${fresh === 1 ? 'طلب تواصل جديد' : 'طلبات تواصل جديدة'} من جهات تدريبية`); } } catch { /* ignore */ }
     const go = k => { this.tab = k; App.render(); };
     $('#bell', root) && ($('#bell', root).onclick = () => Broadcast.notifications(t, go));
-    ({ home: portalHome, edit: portalEdit, leads: portalLeads, bc: Broadcast.tab, news: News.tab, rv: Reviews.tab, lib: Library.tab, vid: Videos.tab, ann: News.annTab, opps: Opps.tab })[this.tab](main, t);
+    if (Trial.locked(t) && Trial.isTab(this.tab)) Trial.page(main, t, this.tab);
+    else ({ home: portalHome, edit: portalEdit, leads: portalLeads, bc: Broadcast.tab, news: News.tab, rv: Reviews.tab, lib: Library.tab, vid: Videos.tab, ann: News.annTab, opps: Opps.tab })[this.tab](main, t);
     if (this.tab === 'home') completeness(main, t, go);
     if (this.tab !== 'ann') News.annPopup(t, go);
     if (this.tab !== 'bc') Broadcast.popup(t, go);
@@ -88,7 +90,7 @@ function completeness(main, t, go) {
     ['bio', 'نبذة تعريفية', 'edit', has(t.bio)], ['city', 'المدينة', 'edit', has(t.city)], ['topics', 'عناوين الدورات السابقة', 'edit', has(t.topics)],
     ['years', 'سنوات الخبرة', 'edit', has(Number(t.years))], ['hours', 'الساعات التدريبية', 'edit', has(Number(t.hours))], ['programs', 'عدد البرامج والدورات', 'edit', has(Number(t.programs))],
     ['certs', 'الشهادات والاعتمادات', 'edit', has(t.certs)], ['partners', 'جهات تم التعاون معها', 'edit', has(t.partners)],
-    ['vid', 'روابط الفيديو', 'vid', vd], ['rv', 'التوصيات', 'rv', rv], ...(featureOn('news') ? [['news', 'خبر منشور', 'news', nv]] : [])
+    ['vid', 'روابط الفيديو', 'vid', vd], ['rv', 'التوصيات', 'rv', rv], ...(featureOn('news') && !Trial.locked(t) ? [['news', 'خبر منشور', 'news', nv]] : [])
   ];
   const miss = items.filter(x => !x[3]), pct = Math.round(100 * (items.length - miss.length) / items.length);
   if (!miss.length) return;
@@ -105,17 +107,19 @@ function portalHome(main, t) {
   const priv = Store.get(`private/${t.id}`) || {};
   const note = Store.get(`notes/${t.id}`);
   main.innerHTML = `
-    <div class="dash-h"><h2>أهلاً ${esc(firstName(t.name))} 👋</h2><div class="row"><button class="btn gold" id="sh"><i class="fa-solid fa-share-nodes"></i> مشاركة بطاقتي</button></div></div>
+    <div class="dash-h"><h2>أهلاً ${esc(firstName(t.name))} 👋</h2><div class="row"><button class="btn gold ${Trial.locked(t) ? 'dim' : ''}" id="sh"><i class="fa-solid fa-${Trial.locked(t) ? 'lock' : 'share-nodes'}"></i> مشاركة بطاقتي</button></div></div>
+    ${Trial.banner(t)}
     ${t.status !== 'active' ? `<div class="banner warn"><i class="fa-solid fa-eye-slash"></i>بطاقتك غير ظاهرة للزوار حالياً. تواصل مع إدارة المنصة للاستفسار.</div>` : ''}
     ${note?.text ? `<div class="banner ok"><i class="fa-solid fa-bullhorn"></i><div><b>رسالة من الإدارة</b><br>${nl2br(note.text)}</div></div>` : ''}
     <div class="kpis">
       <div class="kpi dark"><i class="fa-solid fa-inbox"></i><b class="num" data-count="${leads.length}">0</b><span>طلب من جهات تدريبية</span></div>
-      <div class="kpi"><i class="fa-solid fa-infinity"></i><b>مدى الحياة</b><span>اشتراكك${t.publishedAt ? ' منذ ' + fmtDate(t.publishedAt) : ''}</span></div>
+      ${Trial.plan(t) === 'full' ? `<div class="kpi"><i class="fa-solid fa-infinity"></i><b>مدى الحياة</b><span>اشتراكك${t.publishedAt ? ' منذ ' + fmtDate(t.publishedAt) : ''}</span></div>` : `<div class="kpi"><i class="fa-solid fa-gift"></i><b>${Trial.plan(t) === 'trial' ? `<span class="num">${Trial.daysLeft(t)}</span> ${Trial.unit(Trial.daysLeft(t))}` : 'انتهت'}</b><span>فترة التجربة المجانية</span></div>`}
     </div>
     ${trainerStatsHTML(t)}
     <div class="editor">
       <div>
-        <div class="pbox"><h3><i class="fa-solid fa-images"></i>صور جاهزة للمشاركة</h3>
+        ${Trial.box(t)}
+        ${Trial.locked(t) ? '' : `<div class="pbox"><h3><i class="fa-solid fa-images"></i>صور جاهزة للمشاركة</h3>
           <p class="muted small">صور عالية الدقة بتصميم بطاقتك، فيها رمز QR يفتح صفحتك مباشرة.</p>
           <div class="share-grid">
             <button class="sh im" data-img="post"><i class="fa-solid fa-image"></i>منشور 4:5</button>
@@ -123,7 +127,7 @@ function portalHome(main, t) {
             <button class="sh wd" data-img="wide"><i class="fa-solid fa-panorama"></i>عرضي 16:9</button>
             <button class="sh cp" id="cl"><i class="fa-solid fa-link"></i>نسخ رابط صفحتي</button>
           </div>
-        </div>
+        </div>`}
         <div class="pbox"><h3><i class="fa-solid fa-palette"></i>لون بطاقتي</h3>
           ${cardTemplate().colors.on ? '<p class="muted small">تعتمد المنصة لوناً موحداً لكل البطاقات حالياً.</p>' : `<p class="muted small">اختر لون بطاقتك التعريفية من الألوان المتاحة، ويُحفظ اختيارك فوراً.</p>
           <div class="themes" id="thm">${CARD_THEMES.map(x => `<label title="${x.name}"><input type="radio" name="theme" value="${x.k}" ${(t.theme || 'brand') === x.k ? 'checked' : ''}><span style="background:linear-gradient(135deg,${x.a},${x.c})${x.light ? ';box-shadow:inset 0 0 0 1px #c9d8c0' : ''}"></span><em>${x.name}</em></label>`).join('')}</div>`}
@@ -140,7 +144,7 @@ function portalHome(main, t) {
           <form id="pc" novalidate style="display:grid;gap:10px">
             ${field('الجوال', `<input type="tel" name="phone" dir="ltr" maxlength="15" placeholder="05xxxxxxxx" value="${esc(priv.phone || '')}">`)}
             ${field('البريد الإلكتروني', `<input type="email" name="email" dir="ltr" maxlength="120" value="${esc(priv.email || '')}">`)}
-            <div class="row between"><small class="muted">تصلك عليهما طلبات الجهات التدريبية. تاريخ الانضمام: ${fmtDate(t.publishedAt)} · الاشتراك مدى الحياة.</small><button class="btn primary sm">حفظ بيانات التواصل</button></div>
+            <div class="row between"><small class="muted">تصلك عليهما طلبات الجهات التدريبية. تاريخ الانضمام: ${fmtDate(t.publishedAt)} ${Trial.plan(t) === 'full' ? '· الاشتراك مدى الحياة.' : ''}</small><button class="btn primary sm">حفظ بيانات التواصل</button></div>
           </form></div>
       </div>
       <div class="preview">${Card.full(t)}</div>
@@ -160,8 +164,9 @@ function portalHome(main, t) {
     Store.update(`trainers/${t.id}`, { theme: i.value, updatedAt: Date.now() });
     $('.preview', main).innerHTML = Card.full({ ...t, theme: i.value }); tilt(main); Security.track('edit', 'لون البطاقة'); toast('تم تغيير لون بطاقتك');
   });
-  $('#sh', main).onclick = () => Card.share(t);
-  $('#cl', main).onclick = () => copyText(profileUrl(t), 'تم نسخ رابط صفحتك');
+  $('#sh', main).onclick = () => (Trial.locked(t) ? Trial.open(t, 'share') : Card.share(t));
+  $('#cl', main) && ($('#cl', main).onclick = () => copyText(profileUrl(t), 'تم نسخ رابط صفحتك'));
+  Trial.wire(main, t);
   $$('[data-img]', main).forEach(b => b.onclick = () => Card.save(t, b.dataset.img));
 }
 
@@ -217,5 +222,5 @@ function portalLeads(main, t) {
       </div>
     </div>`).join('') : `<div class="empty"><i class="fa-solid fa-inbox"></i><h3>لا توجد طلبات بعد</h3><p>شارك بطاقتك لتصل إلى جهات تدريبية أكثر.</p><button class="btn gold" id="sh2"><i class="fa-solid fa-share-nodes"></i> مشاركة بطاقتي</button></div>`}`;
   $$('[data-done]', main).forEach(b => b.onclick = () => Store.update(`leads/${b.dataset.done}`, { status: 'done' }));
-  $('#sh2', main) && ($('#sh2', main).onclick = () => Card.share(t));
+  $('#sh2', main) && ($('#sh2', main).onclick = () => (Trial.locked(t) ? Trial.open(t, 'share') : Card.share(t)));
 }

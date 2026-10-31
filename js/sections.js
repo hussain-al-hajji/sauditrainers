@@ -235,7 +235,7 @@ const SECTION_TYPES = (() => {
     render(sec) {
       const c = Data.content(), P = Pitch.get(), d = { eyebrow: P.eyebrow, title: P.title, text: P.text };
       const price = `<div class="price"><span class="ribbon">${esc(c.join.period)}</span><div class="amt num">${esc(c.join.fee)}<small>ريال</small></div><div class="price-note">${Pitch.renewTag()}</div><div class="price-per">${esc(Pitch.perDay(c.join.fee))}</div>
-        <ul>${P.items.map(b => `<li><i class="fa-solid fa-circle-check"></i>${esc(b.s || b.t)}${Pitch.tag(b.x)}</li>`).join('')}</ul>
+        <ul>${P.items.map(b => `<li><i class="fa-solid fa-circle-check"></i>${esc(b.s || b.t)}${Pitch.tag(b)}</li>`).join('')}</ul>
         <div class="row"><a class="btn gold lg" href="#/join">سجّل كمدرب الآن <i class="fa-solid fa-arrow-left"></i></a><a class="btn glass" href="#/status">متابعة طلب</a></div></div>`;
       if (sec.tpl === 'compact') return `<div class="wrap"><div class="cta-band reveal"><div><span class="eyebrow">${esc(d.eyebrow)}</span><h2>${esc(d.title)}</h2><p>${esc(d.text)}</p></div><div class="row"><span class="amt-inline"><b class="num">${esc(c.join.fee)}</b> ريال ${esc(c.join.period)} ${Pitch.renewTag()}</span><a class="btn gold lg" href="#/join">سجّل الآن</a></div></div></div>`;
       const samples = [
@@ -324,7 +324,8 @@ const SECTION_TYPES = (() => {
     if (n > 1 && cycle > 0) { const prevLast = order(cycle - 1)[n - 1]; if (cur[0] === prevLast) [cur[0], cur[1]] = [cur[1], cur[0]]; }   // لا يتكرر مدرب عند حدود الدورات
     return cur[day % n];
   };
-  const pinList = d => { const ls = live().filter(t => t.id); const pool = d.only === 'featured' ? ls.filter(t => t.featured) : ls; return (pool.length ? pool : ls).sort((a, b) => String(a.id).localeCompare(String(b.id))); };
+  const pinList = d => { const ls = live().filter(t => t.id && t.plan !== 'trial');   // التجربة المجانية لا تظهر في المثبّتة
+     const pool = d.only === 'featured' ? ls.filter(t => t.featured) : ls; return (pool.length ? pool : ls).sort((a, b) => String(a.id).localeCompare(String(b.id))); };
   T.pinned = {
     name: 'المثبّتة (مدرب كل 24 ساعة)', icon: 'fa-thumbtack',
     tpls: [['wide', 'بطاقة عرضية']],

@@ -9,7 +9,7 @@ const PromoSlides = (() => {
   const ben = (ic, t, d = '') => `<div class="pmx-ben"><span class="pmx-ic"><i class="fa-solid ${ic}"></i></span><div><h4>${t}</h4>${d ? `<p>${d}</p>` : ''}</div></div>`;
   const tile = (ic, t, d = '') => `<div class="pmx-tile"><span class="pmx-ic"><i class="fa-solid ${ic}"></i></span><h4>${t}</h4>${d ? `<p>${d}</p>` : ''}</div>`;
   // المزايا تُسحب من المحتوى التسويقي المركزي (Pitch) فتتحدث الشرائح بتحديثه
-  const pit = id => Pitch.byId(id), tg = x => (x && x.x ? Pitch.tag(true) : '');
+  const pit = id => Pitch.byId(id), tg = x => (x ? Pitch.tag(x) : '');
   const bi = id => { const x = pit(id); return x ? ben(x.ic, esc(x.s || x.t), esc(x.sd || '') + tg(x)) : ''; };
   const ti = id => { const x = pit(id); return x ? tile(x.ic, esc(x.s || x.t), esc(x.sd || '') + tg(x)) : ''; };
   const cta = (txt = 'سجّل كمدرب سعودي') => `<button type="button" class="pmx-cta" data-pm-go>${txt}</button>`;

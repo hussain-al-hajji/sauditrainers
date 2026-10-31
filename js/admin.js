@@ -237,7 +237,7 @@ const sentBadge = ts => (ts ? `<span class="pill ok" title="${fmtTs(ts)}"><i cla
 // أزرار إشعارات مرحلة (initial / final): بريد وواتساب مع علامة الإرسال
 function noticeButtons(a, stage, ctx) {
   const k = stage === 'initial' ? 'Initial' : 'Final';
-  return `<div class="notice-box"><b>${stage === 'initial' ? 'إشعار القبول المبدئي والسداد' : 'إشعار القبول النهائي وبيانات الدخول'}</b>
+  return `<div class="notice-box"><b>${stage === 'initial' ? 'إشعار القبول المبدئي (التجربة المجانية وبيانات الدخول والسداد)' : 'إشعار القبول النهائي (تفعيل الاشتراك الكامل)'}</b>
     <div class="notice-btns"><button class="btn sm primary" data-mail="${stage}"><i class="fa-solid fa-envelope"></i> بريد</button>${sentBadge(a['notice' + k + 'Mail'])}
     <button class="btn sm primary" data-wa="${stage}"><i class="fa-brands fa-whatsapp"></i> واتساب</button>${sentBadge(a['notice' + k + 'Wa'])}</div></div>`;
 }
@@ -277,10 +277,11 @@ function appDetail(a) {
           ${early ? `<p class="small muted">راجع بيانات الطلب، فإن كان مستوفياً اضغط القبول المبدئي لتنتقل لمرحلة السداد.</p>
             <button class="btn primary" data-act="initial"><i class="fa-solid fa-circle-check"></i> قبول مبدئي</button>
             <button class="btn ghost" data-act="reject" style="color:var(--bad)"><i class="fa-solid fa-circle-xmark"></i> رفض الطلب</button>` : ''}
-          ${a.status === 'accepted' ? `<div class="banner info"><i class="fa-solid fa-sack-dollar"></i>بانتظار تحويل <b class="num">${esc(Data.content().join.fee)}</b> ريال</div>
-            ${noticeButtons(a, 'initial')}
-            <p class="small muted">بعد التأكد من وصول التحويل اضغط القبول النهائي ليُنشأ حساب المدرب وبطاقته ورمز دخوله.</p>
-            <button class="btn gold" data-act="final"><i class="fa-solid fa-certificate"></i> قبول نهائي (تم تأكيد التحويل)</button>` : ''}
+          ${a.status === 'accepted' ? `${trainer ? `<div class="banner ok"><i class="fa-solid fa-gift"></i><div><b>فترة التجربة المجانية جارية</b> - رقم العضوية <b class="num">${esc(trainer.code)}</b> · ${Trial.plan(trainer) === 'expired' ? 'انتهت' : `تنتهي ${esc(fmtDate(trainer.trialEnd))} (متبقٍ ${Trial.daysLeft(trainer)} يوماً)`}</div></div>` : ''}
+            <div class="banner info"><i class="fa-solid fa-sack-dollar"></i>بانتظار تحويل <b class="num">${esc(Data.content().join.fee)}</b> ريال لتأكيد الاشتراك الكامل</div>
+            ${trainer ? (secret ? noticeButtons(a, 'initial') : '<p class="small muted">لا يتوفر رمز محفوظ؛ جدّد الرمز من تبويب المدربين.</p>') : '<p class="small muted">لم تبدأ فترة التجربة لهذا الطلب (قُبل قبل إضافة الميزة). ابدأها لإنشاء حسابه وإرسال بيانات الدخول.</p><button class="btn primary" data-act="trial"><i class="fa-solid fa-gift"></i> بدء فترة التجربة المجانية</button>'}
+            <p class="small muted">بعد التأكد من وصول التحويل اضغط تأكيد السداد لتفعيل الاشتراك الكامل وفتح كل الميزات.</p>
+            <button class="btn gold" data-act="final"><i class="fa-solid fa-certificate"></i> تأكيد السداد وتفعيل الاشتراك الكامل</button>` : ''}
           ${a.status === 'published' ? `<div class="banner ok"><i class="fa-solid fa-certificate"></i>تم القبول النهائي${trainer ? ` - رقم العضوية <b class="num">${esc(trainer.code)}</b>` : ''}</div>
             ${secret ? noticeButtons(a, 'final') : '<p class="small muted">لا يتوفر رمز محفوظ؛ جدّد الرمز من تبويب المدربين.</p>'}
             ${trainer ? `<a class="btn" href="#/t/${esc(trainer.slug || trainer.id)}" target="_blank"><i class="fa-solid fa-id-card"></i> فتح بطاقته</a>` : ''}` : ''}
@@ -298,27 +299,35 @@ function appDetail(a) {
   m.el.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => {
     const act = b.dataset.act;
     if (act === 'initial') {
-      if (!await confirmBox(`قبول طلب <b>${esc(a.name)}</b> مبدئياً؟ ينتقل لمرحلة السداد وتظهر أزرار إرسال إشعار القبول والسداد.`, { ok: 'قبول مبدئي' })) return;
-      setAppStatus(a, 'accepted'); Store.update(`applications/${a.id}`, { initialAt: Date.now() }); reopen();
+      if (!await confirmBox(`قبول طلب <b>${esc(a.name)}</b> مبدئياً؟ يُفعَّل حسابه تلقائياً لفترة تجربة مجانية (شهر) برقم عضوية ورمز دخول، وتظهر أزرار إرسال إشعار القبول (ببيانات الدخول والسداد).`, { ok: 'قبول مبدئي وبدء التجربة' })) return;
+      try { setAppStatus(a, 'accepted'); Store.update(`applications/${a.id}`, { initialAt: Date.now() }); await Data.publishFromApplication(Store.get(`applications/${a.id}`) || a, { trial: true }); reopen(); }
+      catch (e) { toast(e.message, 'error'); }
+    }
+    if (act === 'trial') {
+      if (!await confirmBox(`بدء فترة تجربة مجانية (شهر) لـ<b>${esc(a.name)}</b>؟ يُنشأ حسابه ورمز دخوله الآن.`, { ok: 'بدء التجربة' })) return;
+      try { await Data.publishFromApplication(Store.get(`applications/${a.id}`) || a, { trial: true }); reopen(); } catch (e) { toast(e.message, 'error'); }
     }
     if (act === 'reject') {
       if (!await confirmBox('رفض هذا الطلب؟ يظهر للمتقدم في صفحة المتابعة أنه غير مقبول.', { ok: 'رفض', danger: true })) return;
       setAppStatus(a, 'rejected', m.$('#pn').value.trim()); reopen();
     }
     if (act === 'final') {
-      if (!await confirmBox(`تأكدت من وصول تحويل <b>${esc(a.name)}</b>؟ يُنشأ الآن حسابه وبطاقته ورقم عضويته ورمز دخوله.`, { ok: 'قبول نهائي' })) return;
-      try { const { trainer: t, secret: sc } = await Data.publishFromApplication(a); Store.update(`applications/${a.id}`, { finalAt: Date.now() }); m.close(); showSecret(t, sc, true); }
-      catch (e) { toast(e.message, 'error'); }
+      const has = !!a.trainerId;
+      if (!await confirmBox(has ? `تأكدت من وصول تحويل <b>${esc(a.name)}</b>؟ يُفعَّل اشتراكه الكامل وتُفتح له الميزات الست المقفلة في التجربة.` : `تأكدت من وصول تحويل <b>${esc(a.name)}</b>؟ يُنشأ الآن حسابه وبطاقته ورقم عضويته ورمز دخوله.`, { ok: has ? 'تفعيل الاشتراك الكامل' : 'قبول نهائي' })) return;
+      try {
+        if (has) { Data.activateFull(a); Store.update(`applications/${a.id}`, { finalAt: Date.now() }); reopen(); }
+        else { const { trainer: t, secret: sc } = await Data.publishFromApplication(a); Store.update(`applications/${a.id}`, { finalAt: Date.now() }); m.close(); showSecret(t, sc, true); }
+      } catch (e) { toast(e.message, 'error'); }
     }
   });
   m.el.querySelectorAll('[data-mail]').forEach(b => b.onclick = () => {
     const stage = b.dataset.mail, cur = Store.get(`applications/${a.id}`);
-    if (stage === 'initial') { sendMailNotice(a.email, Tpl.mail('initial', { a }), { id: a.id, key: 'noticeInitialMail' }); }
+    if (stage === 'initial') { sendMailNotice(a.email, Tpl.mail('initial', { a: cur, t: trainer, secret }), { id: a.id, key: 'noticeInitialMail' }); }
     else { const priv = Store.get(`private/${a.trainerId}`) || {}; sendMailNotice(priv.email || a.email, Tpl.mail('final', { a: cur, t: trainer, secret }), { id: a.id, key: 'noticeFinalMail' }); }
   });
   m.el.querySelectorAll('[data-wa]').forEach(b => b.onclick = () => {
     const stage = b.dataset.wa;
-    if (stage === 'initial') sendWaNotice(a.phone, Tpl.wa('initial', { a }), { id: a.id, key: 'noticeInitialWa' });
+    if (stage === 'initial') sendWaNotice(a.phone, Tpl.wa('initial', { a: Store.get(`applications/${a.id}`) || a, t: trainer, secret }), { id: a.id, key: 'noticeInitialWa' });
     else sendWaNotice((Store.get(`private/${a.trainerId}`) || {}).phone || a.phone, Tpl.wa('final', { a, t: trainer, secret }), { id: a.id, key: 'noticeFinalWa' });
   });
   m.$('#del').onclick = async () => {
@@ -368,14 +377,14 @@ function aTrainers(main) {
       ${list.map(t => `<tr>
         <td><div class="who">${Card.avatar(t, 'av')}<div><b>${esc(t.name)} ${t.featured ? '<i class="fa-solid fa-star" style="color:var(--gold)"></i>' : ''}</b><small class="num">${esc(t.code)}</small> <small>· ${esc(t.title || '')}</small></div></div></td>
         <td>${esc(regionsLabel(t))}</td>
-        <td>${Data.isLive(t) ? '<span class="pill ok">منشور</span>' : '<span class="pill gray">مخفي</span>'} ${Store.get(`secrets/codes/${t.id}`) ? '' : '<span class="pill bad" title="لم يُصدر رمز دخول">بلا رمز</span>'}</td>
+        <td>${Data.isLive(t) ? '<span class="pill ok">منشور</span>' : '<span class="pill gray">مخفي</span>'} ${Store.get(`secrets/codes/${t.id}`) ? '' : '<span class="pill bad" title="لم يُصدر رمز دخول">بلا رمز</span>'} ${t.plan === 'trial' ? (Trial.plan(t) === 'expired' ? '<span class="pill bad" title="انتهت التجربة دون سداد">تجربة منتهية</span>' : `<span class="pill gold" title="تنتهي ${esc(fmtDate(t.trialEnd))}"><i class="fa-solid fa-gift"></i> تجربة · ${Trial.daysLeft(t)} يوم</span>`) : ''}</td>
         <td class="num">${Data.views(t.id)}</td>
         <td class="num">${fmtDate(t.publishedAt)}</td>
         <td><div class="acts">
           <button class="btn sm icon" data-a="edit" data-id="${esc(t.id)}" title="تعديل"><i class="fa-solid fa-pen"></i></button>
           <button class="btn sm icon" data-a="code" data-id="${esc(t.id)}" title="رمز الدخول"><i class="fa-solid fa-key"></i></button>
           <button class="btn sm icon" data-a="feat" data-id="${esc(t.id)}" title="تمييز"><i class="fa-${t.featured ? 'solid' : 'regular'} fa-star"></i></button>
-          <button class="btn sm icon" data-a="vis" data-id="${esc(t.id)}" title="${t.status === 'active' ? 'إخفاء' : 'إظهار'}"><i class="fa-solid fa-${t.status === 'active' ? 'eye-slash' : 'eye'}"></i></button>
+          ${t.plan === 'trial' ? `<button class="btn sm icon" data-a="full" data-id="${esc(t.id)}" title="تفعيل الاشتراك الكامل (تم السداد)"><i class="fa-solid fa-certificate"></i></button>` : ''}<button class="btn sm icon" data-a="vis" data-id="${esc(t.id)}" title="${t.status === 'active' ? 'إخفاء' : 'إظهار'}"><i class="fa-solid fa-${t.status === 'active' ? 'eye-slash' : 'eye'}"></i></button>
           <a class="btn sm icon" href="#/t/${esc(encodeURIComponent(t.slug || t.id))}" title="عرض"><i class="fa-solid fa-arrow-up-right-from-square"></i></a>
         </div></td>
       </tr>`).join('') || '<tr><td colspan="6" class="empty">لا يوجد مدربون مطابقون</td></tr>'}
@@ -392,6 +401,7 @@ function aTrainers(main) {
     const t = Store.get(`trainers/${b.dataset.id}`);
     if (b.dataset.a === 'edit') trainerEditor(t);
     if (b.dataset.a === 'feat') { Store.update(`trainers/${t.id}`, { featured: !t.featured }); Security.log(t.featured ? 'إلغاء تمييز' : 'تمييز مدرب', t.name); }
+    if (b.dataset.a === 'full') { if (await confirmBox(`تفعيل الاشتراك الكامل لـ<b>${esc(t.name)}</b> (تم السداد)؟ تُفتح له الميزات الست المقفلة.`, { ok: 'تفعيل' })) { Store.update(`trainers/${t.id}`, { plan: 'full', trialEnd: null, fullAt: Date.now(), updatedAt: Date.now() }); if (t.appId) { Store.update(`applications/${t.appId}`, { status: 'published', decidedAt: Date.now() }); Store.update(`appStatus/${t.appId}`, { status: 'published', ts: Date.now() }); } Security.log('تفعيل الاشتراك الكامل', t.name); toast('تم تفعيل الاشتراك الكامل'); } return; }
     if (b.dataset.a === 'vis') { Store.update(`trainers/${t.id}`, { status: t.status === 'active' ? 'hidden' : 'active' }); Security.log(t.status === 'active' ? 'إخفاء مدرب' : 'إظهار مدرب', t.name); }
     if (b.dataset.a === 'code') {
       const cur = Store.get(`secrets/codes/${t.id}`);

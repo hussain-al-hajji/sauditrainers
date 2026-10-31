@@ -162,7 +162,7 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     Object.entries(PITCH_GROUPS).forEach(([g, label]) => {
       const list = P.items.filter(i => i.g === g); if (!list.length) return;
       blocks.push({ t: 'h', text: HEAD[g] + label, align: 'start' });
-      list.forEach(i => blocks.push({ t: 'box', text: `${i.em || '✨'}  **${clean(i.t)}**${i.x ? ' [[حصرية للمسجلين]]' : ''}${Pitch.brief(i) ? '\n' + clean(Pitch.brief(i)) : ''}` }));
+      list.forEach(i => blocks.push({ t: 'box', text: `${i.em || '✨'}  **${clean(i.t)}**${i.tr ? ' [[t:متاحة للتجربة المجانية]]' : i.x ? ' [[حصرية للمسجلين]]' : ''}${Pitch.brief(i) ? '\n' + clean(Pitch.brief(i)) : ''}` }));
       if (g === 'value') blocks.push({ t: 'p', text: sub(`رسوم الاشتراك **{fee} ريالاً** للسنة الأولى [[${Pitch.renew}]]، ${Pitch.perDay(fee)}.`), align: 'start' });
     });
     blocks.push({ ...reg });

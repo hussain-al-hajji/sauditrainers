@@ -196,9 +196,9 @@ const Bulletin = (() => {
   // رمز أيقونة Font Awesome من اسم صنفها (للرسم على اللوحة)
   const faGlyph = cls => { try { const i = document.createElement('i'); i.className = `fa-solid ${cls}`; i.style.cssText = 'position:absolute;left:-99px'; document.body.appendChild(i); const c = getComputedStyle(i, '::before').content; i.remove(); return String(c).replace(/^["']|["']$/g, '') || '\uf005'; } catch { return '\uf005'; } };
   // وسم «حصرية للمسجلين» بلون عنبري مميّز على الصور
-  const exPill = (ctx, cxRight, cy, fs = 19) => pill(ctx, 'حصرية للمسجلين', cxRight, cy, { bg: '#FFF1CC', fg: '#8A5A00', fs });
+  const exPill = (ctx, cxRight, cy, fs = 19, tr = false) => tr ? pill(ctx, 'متاحة للتجربة المجانية', cxRight, cy, { bg: '#DDF3E4', fg: '#12643A', fs }) : pill(ctx, 'حصرية للمسجلين', cxRight, cy, { bg: '#FFF1CC', fg: '#8A5A00', fs });
   // المزايا من المحتوى التسويقي المركزي (Pitch)
-  const promoFeats = () => Pitch.top(8).map(i => ({ ic: faGlyph(i.ic || 'fa-star'), label: i.s || i.t, x: !!i.x }));
+  const promoFeats = () => Pitch.top(8).map(i => ({ ic: faGlyph(i.ic || 'fa-star'), label: i.s || i.t, x: !!(i.x || i.tr), tr: !!i.tr }));
   function promo(ctx) {
     frameBg(ctx, true);
     const glow = ctx.createRadialGradient(W * 0.85, H * 0.15, 20, W * 0.85, H * 0.15, W * 0.8); glow.addColorStop(0, 'rgba(35,163,101,.35)'); glow.addColorStop(1, 'rgba(35,163,101,0)'); ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
@@ -211,7 +211,7 @@ const Bulletin = (() => {
     txt(ctx, 'استثمار يتجدد مجاناً: ملفك وفرصك وظهورك في مكان واحد', W - 90, 500, { font: `600 33px ${FONT.body}`, color: C.cream });
     // بطاقات المزايا (عمودان × أربعة صفوف)
     const colW = (W - 180 - 20) / 2, rowH = 104, gy = 16, y0 = 540;
-    promoFeats().forEach(({ ic, label, x: ex }, i) => {
+    promoFeats().forEach(({ ic, label, x: ex, tr }, i) => {
       const col = i % 2, row = Math.floor(i / 2), x = W - 90 - colW - col * (colW + 20), y = y0 + row * (rowH + gy);
       rrect(ctx, x, y, colW, rowH, 24, 'rgba(238,243,229,.10)', 'rgba(201,218,180,.32)');
       const cx = x + colW - 20 - 36, cy = y + rowH / 2;
@@ -219,7 +219,7 @@ const Bulletin = (() => {
       ctx.save(); ctx.font = '900 32px "Font Awesome 6 Free"'; ctx.fillStyle = C.g800; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'ltr'; ctx.fillText(ic, cx, cy + 2); ctx.restore();
       ctx.font = `700 26px ${FONT.body}`; const lines = K().wrap(ctx, label, colW - 36 - 72 - 16, 2), lh = 34, top = cy - (lines.length * lh) / 2 + 26;
       lines.forEach((l, k) => txt(ctx, l, cx - 36 - 18, top + k * lh - (ex ? 10 : 0), { font: ctx.font, color: '#fff' }));
-      if (ex) exPill(ctx, cx - 36 - 18, y + rowH - 20, 15);
+      if (ex) exPill(ctx, cx - 36 - 18, y + rowH - 20, 15, tr);
     });
     // الدعوة + الباركود
     const by = y0 + 4 * (rowH + gy) + 14, bh = H - 90 - by;
@@ -394,7 +394,7 @@ const Bulletin = (() => {
 
   /* ---------- «التقرير الشهري»: غلاف ← أرقام الشهر ← موضوعات مطلوبة ← أخبار الشهر ← 3 بطاقات مزايا ← دعوة للتسجيل ---------- */
   // البطاقات الثلاث من المزايا المركزية: الملف الاحترافي، الفرص، المنصة الحصرية
-  const rptCards = () => ['profile', 'opps', 'exclusive'].map(id => Pitch.byId(id)).filter(Boolean).map(i => ({ ic: faGlyph(i.ic || 'fa-star'), k: i.s || i.t, t: i.t, pts: (i.pts && i.pts.length ? i.pts : [i.sd || '']).slice(0, 3), x: !!i.x }));
+  const rptCards = () => ['profile', 'opps', 'exclusive'].map(id => Pitch.byId(id)).filter(Boolean).map(i => ({ ic: faGlyph(i.ic || 'fa-star'), k: i.s || i.t, t: i.t, pts: (i.pts && i.pts.length ? i.pts : [i.sd || '']).slice(0, 3), x: !!(i.x || i.tr), tr: !!i.tr }));
   function rptCover(ctx, d) {
     frameBg(ctx, true);
     const glow = ctx.createRadialGradient(W * 0.2, H * 0.78, 20, W * 0.2, H * 0.78, W * 0.9); glow.addColorStop(0, 'rgba(35,163,101,.35)'); glow.addColorStop(1, 'rgba(35,163,101,0)'); ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
@@ -465,7 +465,7 @@ const Bulletin = (() => {
     ctx.beginPath(); ctx.arc(cx, cy, 170, 0, Math.PI * 2); ctx.fillStyle = 'rgba(238,243,229,.10)'; ctx.fill(); ctx.strokeStyle = 'rgba(201,218,180,.35)'; ctx.lineWidth = 3; ctx.stroke();
     ctx.beginPath(); ctx.arc(cx, cy, 120, 0, Math.PI * 2); ctx.fillStyle = C.cream; ctx.fill();
     ctx.save(); ctx.font = '900 110px "Font Awesome 6 Free"'; ctx.fillStyle = C.g800; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'ltr'; ctx.fillText(c.ic, cx, cy + 4); ctx.restore();
-    if (c.x) { ctx.font = `700 22px ${FONT.body}`; exPill(ctx, cx + (ctx.measureText('حصرية للمسجلين').width + 34) / 2, 598, 22); }
+    if (c.x) { ctx.font = `700 22px ${FONT.body}`; exPill(ctx, cx + (ctx.measureText(c.tr ? 'متاحة للتجربة المجانية' : 'حصرية للمسجلين').width + 34) / 2, 598, 22, c.tr); }
     txt(ctx, c.k, cx, 690, { font: `900 96px ${FONT.head}`, color: '#fff', align: 'center' });
     ctx.fillStyle = C.sage; ctx.fillRect(cx - 75, 724, 150, 7);
     ctx.font = `600 38px ${FONT.body}`; K().wrap(ctx, c.t, W - 240, 2).forEach((l, k) => txt(ctx, l, cx, 800 + k * 54, { font: ctx.font, color: C.cream, align: 'center' }));

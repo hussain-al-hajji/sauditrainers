@@ -184,15 +184,15 @@ Pages.profile = {
           <div class="pa-row">
             <button class="btn primary lg" id="ask"><i class="fa-solid fa-paper-plane"></i> تواصل مع المدرب</button>
             <button type="button" class="pa-ic" id="cpl" title="نسخ رابط الصفحة" aria-label="نسخ رابط الصفحة"><i class="fa-regular fa-copy"></i></button>
-            <button type="button" class="pa-ic" id="sv" title="تنزيل البطاقة" aria-label="تنزيل البطاقة"><i class="fa-solid fa-download"></i></button>
+            ${Trial.locked(t) ? '' : '<button type="button" class="pa-ic" id="sv" title="تنزيل البطاقة" aria-label="تنزيل البطاقة"><i class="fa-solid fa-download"></i></button>'}
           </div>
         </div>
-        ${Card.shareIcons()}
+        ${Trial.locked(t) ? '' : `${Card.shareIcons()}
         <div class="dl-box">
           <b class="dl-t"><i class="fa-solid fa-download"></i> تنزيل بطاقة المدرب كصورة</b>
           <div class="dl-row"><button type="button" class="btn sm" data-dl="post"><i class="fa-solid fa-image"></i> منشور 4:5</button><button type="button" class="btn sm" data-dl="story"><i class="fa-solid fa-mobile-screen"></i> قصة 9:16</button><button type="button" class="btn sm" data-dl="wide"><i class="fa-solid fa-panorama"></i> عرضية 16:9</button></div>
           <button type="button" class="btn lg dl-pdf" id="tpdf"><i class="fa-solid fa-file-pdf"></i> حفظ ملف سيرة احترافي PDF</button>
-        </div>
+        </div>`}
         ${!Data.isLive(t) ? `<div class="banner warn" style="margin-top:14px"><i class="fa-solid fa-eye-slash"></i>هذه البطاقة غير ظاهرة للزوار حالياً.</div>` : ''}
       </aside>
       <div>

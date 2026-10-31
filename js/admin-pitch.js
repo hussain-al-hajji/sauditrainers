@@ -10,6 +10,7 @@ Pitch.admin = function (el) {
     <div class="pt-top"><b class="num">${i + 1}</b>
       <select data-f="g">${Object.entries(PITCH_GROUPS).map(([k, l]) => sel([k, l], it.g)).join('')}</select>
       <label class="chk"><input type="checkbox" data-f="x" ${it.x ? 'checked' : ''}><span>حصرية للمسجلين</span></label>
+      <label class="chk"><input type="checkbox" data-f="tr" ${it.tr ? 'checked' : ''}><span>متاحة للتجربة المجانية</span></label>
       <label class="chk"><input type="checkbox" data-f="top" ${it.top ? 'checked' : ''}><span>تظهر في بطاقة السعر</span></label>
       <span class="grow"></span><button type="button" class="btn sm" data-mv="-1" title="أعلى">↑</button><button type="button" class="btn sm" data-mv="1" title="أسفل">↓</button><button type="button" class="btn sm danger" data-rm title="حذف">✕</button></div>
     <div class="pt-grid">
@@ -26,7 +27,7 @@ Pitch.admin = function (el) {
     st.items = [...el.querySelectorAll('.pt-it')].map((box, i) => {
       const g = f => box.querySelector(`[data-f="${f}"]`), o = { ...(st.items[i] || {}) };
       ['t', 's', 'sd', 'ic', 'em', 'd', 'b'].forEach(f => { o[f] = g(f).value.trim(); });
-      o.g = g('g').value; o.x = g('x').checked; o.top = g('top').checked;
+      o.g = g('g').value; o.x = g('x').checked; o.tr = g('tr').checked; o.top = g('top').checked;
       const pts = g('pts').value.split('\n').map(x => x.trim()).filter(Boolean); if (pts.length) o.pts = pts; else delete o.pts;
       o.id = o.id || `m${Date.now().toString(36)}${i}`; return o;
     });

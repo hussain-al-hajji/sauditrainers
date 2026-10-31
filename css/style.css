@@ -1427,3 +1427,20 @@ body.preview .local-flag { display: none; }
 .pt-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; } .pt-top b { width: 28px; height: 28px; border-radius: 50%; background: var(--g800); color: #fff; display: grid; place-items: center; font-size: .85rem; }
 
 .price ul { display: grid; gap: 8px; } .price li { line-height: 1.7; }
+
+/* وسم «متاحة للتجربة المجانية» (أخضر) مقابل «حصرية للمسجلين» (عنبري) */
+.ex-tag.tr { background: #DDF3E4; color: #12643A; border-color: #A9DDBC; } .pmx .ex-tag.tr { background: #DDF3E4; color: #12643A; }
+
+/* فترة التجربة المجانية: ميزات باهتة مقفلة وصفحة الشرح */
+.side button.locked { opacity: .5; } .side button.locked:hover { opacity: .8; }
+.tl-l { margin-inline-start: auto; font-size: .72rem; opacity: .8; }
+.btn.dim { opacity: .6; }
+.trial-b { align-items: flex-start; }
+.tl-box .tl-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; }
+.tl-f { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 14px; border: 1px dashed var(--line, #d6e0cd); background: var(--g50, #f6f9f2); color: var(--ink2, #3b4a40); font: 600 .9rem/1.4 var(--f-ui); cursor: pointer; opacity: .6; text-align: start; transition: opacity .15s; }
+.tl-f:hover { opacity: 1; } .tl-f > i:first-child { width: 22px; text-align: center; color: var(--g600, #2d7a4f); }
+.tl-card { max-width: 560px; margin: 8px auto; padding: 26px 24px; text-align: center; border-radius: 22px; background: #fff; border: 1px solid var(--line, #e0e8d8); box-shadow: 0 14px 40px -24px rgba(0,50,25,.35); display: grid; gap: 12px; justify-items: center; }
+.tl-card h2 { margin: 0; font-size: 1.35rem; } .tl-d { margin: 0; color: var(--ink2, #3b4a40); line-height: 1.9; }
+.tl-ic { width: 70px; height: 70px; border-radius: 50%; display: grid; place-items: center; font-size: 1.8rem; background: var(--g50, #eef3e5); color: var(--g700, #1f6b43); opacity: .85; }
+.tl-pts { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; text-align: start; } .tl-pts li { display: flex; gap: 8px; align-items: flex-start; } .tl-pts i { color: var(--g600, #2d7a4f); margin-top: 6px; }
+.tl-note { display: flex; gap: 10px; align-items: flex-start; text-align: start; padding: 12px 14px; border-radius: 14px; background: #FFF8E1; border: 1px solid #F0D38A; color: #6b4a00; line-height: 1.8; font-size: .92rem; }
