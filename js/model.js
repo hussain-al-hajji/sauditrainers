@@ -184,7 +184,7 @@ const Automation = {
 const Tpl = {
   // القوالب المحفوظة بلا {benefits} (للقبول المبدئي والنهائي) تُضاف لها قائمة المزايا تلقائياً قبل سطر التحية الختامي
   withBenefits(key, text) {
-    text = String(text || ''); if (!text || !["initial", "final"].includes(key) || /\{benefits(Split)?\}/.test(text)) return text;
+    text = String(text || ''); if (!text || !["initial", "final"].includes(key) || /\{benefits(Split|All)?\}/.test(text)) return text;
     const head = key === 'initial' ? 'وبمجرد التفعيل تصبح هذه المزايا متاحة لك:' : 'ومن الآن أصبحت هذه المزايا متاحة لك:', ps = text.split('\n\n'), last = ps[ps.length - 1];
     if (ps.length > 1 && /^(مع التحية|منصة مدرّبون)/.test(last.trim())) ps.splice(ps.length - 1, 0, `${head}\n{benefits}`); else ps.push(`${head}\n{benefits}`);
     return ps.join('\n\n');
@@ -196,9 +196,9 @@ const Tpl = {
       : '🎁 **فُعّلت لك فترة تجربة مجانية لمدة شهر** (حتى {trialEnd}) تتاح فيها مزايا الاشتراك عدا النشر في السوشيال، وملف PDF، والمثبّتة، ومكتبة المدرب، ووظائف التدريب، وكتابة الأخبار؛ وتُفتح عند تأكيد الاشتراك الكامل.\n• رقم العضوية: {memberCode}\n• رابط الدخول: {loginUrl}\n• رمز الدخول السري: {secret}';
     let i = -2; for (let k = wa ? 2 : 3; k > 0 && i !== -1; k--) i = text.indexOf('\n\n', i + 2); return i < 0 ? `${text}\n\n${blk}` : `${text.slice(0, i)}\n\n${blk}${text.slice(i)}`;
   },
-  get(key) { const t = { ...defaultTemplates()[key], ...(Store.get(`settings/templates/${key}`) || {}) }; const sp = x => (key === 'initial' && x ? x.replace(/\{benefits\}/g, '{benefitsSplit}') : x); return { ...t, body: sp(this.withBenefits(key, this.withTrial(key, t.body, false))), wa: t.wa == null ? t.wa : sp(this.withBenefits(key, this.withTrial(key, t.wa, true))) }; },
+  get(key) { const t = { ...defaultTemplates()[key], ...(Store.get(`settings/templates/${key}`) || {}) }; const sp = x => (x && key === 'initial' ? x.replace(/\{benefits\}/g, '{benefitsSplit}') : x && key === 'final' ? x.replace(/\{benefits\}/g, '{benefitsAll}') : x); return { ...t, body: sp(this.withBenefits(key, this.withTrial(key, t.body, false))), wa: t.wa == null ? t.wa : sp(this.withBenefits(key, this.withTrial(key, t.wa, true))) }; },
   // نص واتساب: {benefits} بصيغة الواتساب (عناوين بخط عريض)
-  waText(text, vars) { return String(text || '').replace(/\{benefitsSplit\}/g, Pitch.splitText('wa')).replace(/\{benefits\}/g, Pitch.listText('wa')).replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? '')).trim(); },
+  waText(text, vars) { return String(text || '').replace(/\{benefitsSplit\}/g, Pitch.splitText('wa')).replace(/\{benefitsAll\}/g, Pitch.listText('wa', 'all')).replace(/\{benefits\}/g, Pitch.listText('wa')).replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? '')).trim(); },
   render(text, vars) {
     return String(text || '').replace(/\{(\w+)\}/g, (_, k) => (vars[k] == null ? '' : String(vars[k]))).replace(/\*\*(.+?)\*\*/g, '$1').replace(/\n{3,}/g, '\n\n').trim();
   },
@@ -206,7 +206,7 @@ const Tpl = {
   vars({ a = {}, t = null, secret = '' } = {}) {
     const c = Data.content(), name = (t?.name || a.name || '').trim();
     return { name, first: name.replace(/^(د|م|أ)\.\s*/, '').split(/\s+/)[0] || name, appId: a.id || t?.appId || '', fee: c.join.fee, period: `${c.join.period} [${Pitch.renew}]`,
-      benefits: Pitch.listText('mail'), benefitsSplit: Pitch.splitText('mail'), payment: c.join.payment, bank: Store.get('settings/payment/bank') || '(أضف بيانات الحساب البنكي في الإدارة ← قوالب)', memberCode: t?.code || '', trialEnd: t?.trialEnd ? fmtDate(t.trialEnd) : '', secret,
+      benefits: Pitch.listText('mail'), benefitsSplit: Pitch.splitText('mail'), benefitsAll: Pitch.listText('mail', 'all'), payment: c.join.payment, bank: Store.get('settings/payment/bank') || '(أضف بيانات الحساب البنكي في الإدارة ← قوالب)', memberCode: t?.code || '', trialEnd: t?.trialEnd ? fmtDate(t.trialEnd) : '', secret,
       loginUrl: `${siteBase()}#/login`, profileUrl: t ? profileUrl(t) : '', statusUrl: `${siteBase()}#/status?id=${a.id || ''}` };
   },
   // الواتساب يستخدم *نص عريض* بدل ** في البريد

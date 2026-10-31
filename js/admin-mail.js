@@ -79,12 +79,13 @@ function aMail(main) {
       <button data-mt="initial" class="${tab === 'initial' ? 'on' : ''}"><i class="fa-solid fa-gift"></i>القبول المبدئي والتجربة</button>
       <button data-mt="report" class="${tab === 'report' ? 'on' : ''}"><i class="fa-solid fa-file-pdf"></i>التقرير الشهري</button>
       <button data-mt="rcpt" class="${tab === 'rcpt' ? 'on' : ''}"><i class="fa-solid fa-envelope-circle-check"></i>إدارة المدعوّين <span class="badge num">${counts.i}</span></button>
+      <button data-mt="tests" class="${tab === 'tests' ? 'on' : ''}"><i class="fa-solid fa-vial"></i>رسائل تجريبية</button>
       <button data-mt="hist" class="${tab === 'hist' ? 'on' : ''}"><i class="fa-solid fa-clock-rotate-left"></i>السجل</button>
     </div>
     <div id="mbody"></div>`;
   $$('[data-mt]', main).forEach(b => b.onclick = () => { MailUI.tab = b.dataset.mt; aMail(main); });
   const body = $('#mbody', main);
-  ({ compose: mailCompose, weekly: mailWeekly, weekly2: mailWeeklyUnreg, initial: mailInitial, report: mailMonthlyReport, rcpt: mailRecipients, hist: mailHistory })[tab](body, main, counts);
+  ({ compose: mailCompose, weekly: mailWeekly, weekly2: mailWeeklyUnreg, initial: mailInitial, tests: mailTests, report: mailMonthlyReport, rcpt: mailRecipients, hist: mailHistory })[tab](body, main, counts);
 }
 function mailBanner() {
   if (!Automation.on) return `<div class="banner warn"><i class="fa-solid fa-plug-circle-xmark"></i><span>الإرسال يحتاج ربط بريد المنصة (رابط السكربت <code>automationUrl</code> في <code>js/config.js</code> وإضافة ملف <code>Campaign.gs</code> للسكربت). يمكنك الكتابة والمعاينة الآن.</span></div>`;
