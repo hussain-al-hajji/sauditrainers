@@ -90,6 +90,7 @@ const TrainerPdf = (() => {
         K.txt(ctx, clean(t.name), PX, 118, { font: `600 24px ${FONT.body}`, color: C.sage, align: 'left' });
         y = TOP;
       };
+      const center2 = (x, str, cx, yy, o) => K.txt(x, str, cx, yy, { ...o, align: 'center' });
       const need = h => { if (y + h > BOT) newPage(); };
       const link = (x, yy, w, h, u) => { if (/^https:\/\//.test(u)) ctx.__links.push({ x, y: yy, w, h, url: u }); };
       const heading = (title, count, keep = 80) => {
@@ -117,36 +118,62 @@ const TrainerPdf = (() => {
         if (rowY != null) y += h + 34;
       };
 
-      /* الصفحة الأولى: ترويسة المدرب */
-      newPage();
-      const ph = 400, px = PX, pw = CW;
-      const g = ctx.createLinearGradient(px, y, px + pw, y + ph); g.addColorStop(0, C.g900); g.addColorStop(1, C.g800); K.rrect(ctx, px, y, pw, ph, 34, g);
-      try { ctx.save(); KT.rr(ctx, px, y, pw, ph, 34); ctx.clip(); ctx.fillStyle = ctx.createPattern(KT.patternTile(C.sage, 0.1), 'repeat'); ctx.fillRect(px, y, pw, ph); ctx.restore(); } catch { /* بلا نقش */ }
-      const R = 112, cx = px + pw - 34 - R - 6, cy = y + ph / 2;
-      K.avatar(ctx, { ...t }, photo, cx, cy, R, C.sage);
-      seal(ctx, cx + R * 0.72, cy + R * 0.72, 40, C.sage, C.g900);
-      const tr = cx - R - 40, qs = 150, avail = tr - (px + 34 + qs + 16 + 30);
-      const nfs = K.fitFont(ctx, clean(t.name), 900, 60, 34, avail, FONT.head);
-      let ty = y + 96; K.txt(ctx, clean(t.name), tr, ty, { font: `900 ${nfs}px ${FONT.head}`, color: '#fff' });
-      ctx.font = `600 29px ${FONT.body}`; const tl = KT.wrap(ctx, clean(t.title), avail, 3);
-      tl.forEach((l, i) => K.txt(ctx, l, tr, ty + 54 + i * 42, { font: ctx.font, color: C.sage }));
-      const loc = [regionsLabel(t), t.city].filter(Boolean).join(' · ');
-      let py = ty + 54 + tl.length * 42 + 22;
-      if (loc) { const w = K.pill(ctx, loc, tr, py + 14, { bg: 'rgba(238,243,229,.14)', fg: '#fff', fs: 24 }); void w; py += 62; }
-      if (t.tot) K.pill(ctx, 'حاصل على شهادة تدريب المدربين', tr, py + 14, { bg: 'rgba(238,243,229,.14)', fg: C.sage, fs: 22 });
-      K.qr(ctx, url, px + 34, y + ph - 34 - qs - 16, qs); link(px + 34, y + ph - 34 - qs - 16, qs + 16, qs + 16, url);
-      K.txt(ctx, 'صفحتي على المنصة', px + 34 + (qs + 16) / 2, y + ph - 34 - qs - 30, { font: `700 22px ${FONT.body}`, color: C.sage, align: 'center' });
-      y += ph + 22;
-      const stats = [[t.years, 'سنة خبرة'], [t.hours, 'ساعة تدريبية'], [t.programs, 'برنامج ودورة']].filter(s => Number(s[0]) > 0);
-      if (stats.length) {
-        const sw = (CW - (stats.length - 1) * 18) / stats.length;
-        stats.forEach((s, i) => {
-          const sx = W - PX - sw - i * (sw + 18); K.rrect(ctx, sx, y, sw, 118, 24, '#fff', C.line, 1.5);
-          K.txt(ctx, `+${Number(s[0]).toLocaleString('en-US')}`, sx + sw / 2, y + 66, { font: `900 54px ${FONT.head}`, color: C.g800, align: 'center', dir: 'ltr' });
-          K.txt(ctx, s[1], sx + sw / 2, y + 102, { font: `600 24px ${FONT.body}`, color: C.muted, align: 'center' });
+      /* غلاف أمامي بروح البطاقة التعريفية: صورة وشارة توثيق واسم وسطر تعريفي ومنطقة وإحصاءات وتخصصات وتذييل بالرمز */
+      const mkPage = () => { const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); x.direction = 'rtl'; x.textAlign = 'right'; x.__links = c.__links = []; return [c, x]; };
+      const darkBase = (x, glowX, glowY) => {
+        K.frameBg(x, true);
+        const gl = x.createRadialGradient(glowX, glowY, 20, glowX, glowY, W * 0.85); gl.addColorStop(0, 'rgba(35,163,101,.32)'); gl.addColorStop(1, 'rgba(35,163,101,0)'); x.fillStyle = gl; x.fillRect(0, 0, W, H);
+        const M = 38; x.strokeStyle = 'rgba(201,218,180,.8)'; x.lineWidth = 3; KT.rr(x, M, M, W - 2 * M, H - 2 * M, 44); x.stroke();
+        x.strokeStyle = 'rgba(201,218,180,.26)'; x.lineWidth = 1.5; KT.rr(x, M + 14, M + 14, W - 2 * M - 28, H - 2 * M - 28, 34); x.stroke();
+      };
+      const center = (x, str, cy, o) => K.txt(x, str, W / 2, cy, { ...o, align: 'center' });
+      const pillC = (x, str, cy, o) => { x.font = `700 ${o.fs || 24}px ${FONT.body}`; const w = x.measureText(str).width + 34; return K.pill(x, str, W / 2 + w / 2, cy, o); };
+      {
+        const [c0, x0] = mkPage(); pages.push(c0); darkBase(x0, W * 0.5, H * 0.3);
+        if (logo) { const lh = 92, lw = lh * logo.width / logo.height; x0.drawImage(logo, W - 96 - lw, 84, lw, lh); }
+        K.pill(x0, 'ملف المدرب', 96 + 190, 130, { bg: 'rgba(238,243,229,.14)', fg: C.cream, fs: 25 });
+        const R = 170, cx = W / 2, cy = 410;
+        K.avatar(x0, { ...t }, photo, cx, cy, R, C.sage);
+        seal(x0, cx + R * 0.7, cy + R * 0.7, 52, C.cream, C.g900);
+        const nfs = K.fitFont(x0, clean(t.name), 900, 78, 40, 880, FONT.head);
+        center(x0, clean(t.name), 700, { font: `900 ${nfs}px ${FONT.head}`, color: '#fff' });
+        x0.font = `600 33px ${FONT.body}`; const tl = KT.wrap(x0, clean(t.title), 860, 2);
+        tl.forEach((l, i) => center(x0, l, 764 + i * 46, { font: x0.font, color: C.sage }));
+        let ly = 764 + (tl.length - 1) * 46 + 66;
+        const loc = [regionsLabel(t), t.city].filter(Boolean).join(' · ');
+        if (loc) { pillC(x0, loc, ly, { bg: 'rgba(238,243,229,.12)', fg: C.cream, fs: 25 }); ly += 62; }
+        if (t.tot) { pillC(x0, 'حاصل على شهادة تدريب المدربين', ly, { bg: 'rgba(238,243,229,.12)', fg: C.sage, fs: 22 }); ly += 62; }
+        const stats = [[t.years, 'سنة خبرة'], [t.hours, 'ساعة تدريبية'], [t.programs, 'برنامج ودورة']].filter(s => Number(s[0]) > 0);
+        let sy = Math.max(ly + 18, 880);
+        if (stats.length) {
+          const sw = 270, gap = 18, tw = stats.length * sw + (stats.length - 1) * gap;
+          stats.forEach((s, i) => {
+            const sx = W / 2 + tw / 2 - sw - i * (sw + gap); K.rrect(x0, sx, sy, sw, 118, 26, 'rgba(238,243,229,.10)', 'rgba(201,218,180,.32)');
+            center2(x0, `+${Number(s[0]).toLocaleString('en-US')}`, sx + sw / 2, sy + 66, { font: `900 52px ${FONT.head}`, color: '#fff', dir: 'ltr' });
+            center2(x0, s[1], sx + sw / 2, sy + 100, { font: `600 23px ${FONT.body}`, color: C.sage });
+          });
+          sy += 118 + 30;
+        }
+        // التخصصات (رقاقات تشبه رقاقات البطاقة)
+        const specs = data.sp.slice(0, 4); x0.font = `700 26px ${FONT.body}`;
+        const rowsW = []; let cur = [], cw = 0;
+        specs.forEach(sn => { const w = Math.min(560, x0.measureText(sn).width + 44); if (cur.length && cw + 12 + w > 900) { rowsW.push(cur); cur = []; cw = 0; } cw += (cur.length ? 12 : 0) + w; cur.push([sn, w]); });
+        if (cur.length) rowsW.push(cur);
+        rowsW.slice(0, 2).forEach(row => {
+          const tw = row.reduce((a, r) => a + r[1], 0) + (row.length - 1) * 12; let rx = W / 2 + tw / 2;
+          row.forEach(([sn, w]) => { K.rrect(x0, rx - w, sy, w, 56, 28, 'rgba(238,243,229,.10)', 'rgba(201,218,180,.35)'); x0.save(); x0.beginPath(); x0.rect(rx - w + 12, sy, w - 24, 56); x0.clip(); center2(x0, sn, rx - w / 2, sy + 37, { font: `700 26px ${FONT.body}`, color: C.cream }); x0.restore(); rx -= w + 12; });
+          sy += 68;
         });
-        y += 118 + 34;
+        // تذييل بنفس روح البطاقة: رمز QR ونص الدعوة واسم المنصة
+        const fy = H - 38 - 14 - 150, fh = 150; K.rrect(x0, 70, fy, W - 140, fh, 28, 'rgba(0,26,14,.45)', 'rgba(201,218,180,.22)');
+        const qs = 100; K.qr(x0, url, 100, fy + (fh - qs - 16) / 2, qs); c0.__links.push({ x: 100, y: fy + (fh - qs - 16) / 2, w: qs + 16, h: qs + 16, url });
+        K.txt(x0, 'لقراءة السيرة الذاتية والتواصل تفضل بزيارة منصة', W - 100, fy + 62, { font: `500 25px ${FONT.body}`, color: C.sage });
+        K.txt(x0, 'مدرّبون سعوديّون', W - 100, fy + 112, { font: `900 38px ${FONT.head}`, color: '#fff' });
+        x0.font = `900 38px ${FONT.head}`; const bw = x0.measureText('مدرّبون سعوديّون').width;
+        K.txt(x0, 'SaudiTrainers.sa', W - 100 - bw - 26, fy + 112, { font: `800 30px ${FONT.brand}`, color: C.cream, dir: 'ltr' });
+        c0.__links.push({ x: 70, y: fy, w: W - 140, h: fh, url });
       }
+      newPage();
 
       /* الأقسام بترتيب الصفحة العامة */
       if (clean(t.bio)) { heading('نبذة تعريفية'); paragraph(t.bio); }
@@ -234,6 +261,24 @@ const TrainerPdf = (() => {
         nt.forEach((l, i) => K.txt(ctx, l, W - PX - 30, ny + 52 + i * 42, { font: ctx.font, color: C.g900 }));
         K.txt(ctx, url.replace(/^https?:\/\//, ''), W - PX - 30, ny + nh - 26, { font: `800 26px ${FONT.brand}`, color: C.g800, dir: 'ltr' });
         link(PX, ny, CW, nh, url);
+      }
+      /* غلاف خلفي: تعريف مختصر بالمنصة ودعوة لتصفح السير الذاتية والتسجيل */
+      {
+        const [c1, x1] = mkPage(); pages.push(c1); darkBase(x1, W * 0.5, H * 0.75);
+        const base = siteBase();
+        if (logo) { const lh = 130, lw = lh * logo.width / logo.height; x1.drawImage(logo, W / 2 - lw / 2, 190, lw, lh); }
+        center(x1, 'دليل المدربين السعوديين', 470, { font: `900 62px ${FONT.head}`, color: '#fff' });
+        x1.fillStyle = C.sage; x1.fillRect(W / 2 - 60, 504, 120, 6);
+        x1.font = `500 31px ${FONT.body}`; KT.wrap(x1, 'مدربون ومدربات سعوديون بسيرهم الذاتية في مكان واحد، تتصفحها وتتواصل معهم مباشرة.', 800, 2).forEach((l, i) => center(x1, l, 575 + i * 46, { font: x1.font, color: C.cream }));
+        [['للجهات التدريبية', 'تصفّح السير الذاتية واختر المدرب المناسب لبرنامجك، أو أرسل طلبك.'], ['للمدربين السعوديين', 'سجّل بطاقتك وصفحتك المهنية لتظهر أمام الجهات وتصلك الفرص.']].forEach(([h, tx], i) => {
+          const by = 700 + i * 170; K.rrect(x1, 90, by, W - 180, 146, 28, 'rgba(238,243,229,.08)', 'rgba(201,218,180,.28)');
+          K.txt(x1, h, W - 90 - 34, by + 52, { font: `900 32px ${FONT.head}`, color: C.sage });
+          x1.font = `500 26px ${FONT.body}`; KT.wrap(x1, tx, W - 180 - 70, 2).forEach((l, k) => K.txt(x1, l, W - 90 - 34, by + 96 + k * 36, { font: x1.font, color: C.cream }));
+        });
+        const qs = 150, qy = 1030; K.qr(x1, base, W / 2 - (qs + 16) / 2, qy, qs); c1.__links.push({ x: W / 2 - (qs + 16) / 2, y: qy, w: qs + 16, h: qs + 16, url: base });
+        const site = base.replace(/^https?:\/\//, '').replace(/\/$/, ''); x1.font = `800 34px ${FONT.brand}`; x1.direction = 'ltr'; const sw = x1.measureText(site).width + 60; x1.direction = 'rtl';
+        K.rrect(x1, W / 2 - sw / 2, qy + qs + 38, sw, 62, 31, 'rgba(238,243,229,.14)', 'rgba(201,218,180,.45)'); center2(x1, site, W / 2, qy + qs + 38 + 42, { font: `800 34px ${FONT.brand}`, color: '#fff', dir: 'ltr' });
+        c1.__links.push({ x: W / 2 - sw / 2, y: qy + qs + 38, w: sw, h: 62, url: base });
       }
       return pages;
     };
