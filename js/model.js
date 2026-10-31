@@ -206,7 +206,7 @@ const Tpl = {
   vars({ a = {}, t = null, secret = '' } = {}) {
     const c = Data.content(), name = (t?.name || a.name || '').trim();
     return { name, first: name.replace(/^(د|م|أ)\.\s*/, '').split(/\s+/)[0] || name, appId: a.id || t?.appId || '', fee: c.join.fee, period: `${c.join.period} [${Pitch.renew}]`,
-      benefits: Pitch.listText('mail'), benefitsSplit: Pitch.splitText('mail'), benefitsAll: Pitch.listText('mail', 'all'), payment: c.join.payment, bank: Store.get('settings/payment/bank') || '(أضف بيانات الحساب البنكي في الإدارة ← قوالب)', memberCode: t?.code || '', trialEnd: t?.trialEnd ? fmtDate(t.trialEnd) : '', secret,
+      benefits: Pitch.listText('mail'), benefitsSplit: Pitch.splitText('mail'), benefitsAll: Pitch.listText('mail', 'all'), payment: c.join.payment, bank: Store.get('settings/payment/bank') || '(أضف بيانات الحساب البنكي في الإدارة ← قوالب)', memberCode: t?.code || '', trialEnd: t?.trialEnd ? fmtDate(t.trialEnd) : '', siteUrl: siteBase().replace(/\/$/, ''), secret,
       loginUrl: `${siteBase()}#/login`, profileUrl: t ? profileUrl(t) : '', statusUrl: `${siteBase()}#/status?id=${a.id || ''}` };
   },
   // الواتساب يستخدم *نص عريض* بدل ** في البريد
