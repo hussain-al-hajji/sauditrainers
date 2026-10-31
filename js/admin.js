@@ -281,14 +281,14 @@ function appDetail(a) {
       <div>
         <div style="transform:scale(.8);transform-origin:top center;margin-bottom:-110px">${Card.full({ ...a, id: '__app' }, { preview: true })}</div>
         <div class="stage-actions">
-          ${early ? `<p class="small muted">راجع بيانات الطلب، فإن كان مستوفياً اضغط القبول المبدئي لتنتقل لمرحلة السداد.</p>
-            <button class="btn primary" data-act="initial"><i class="fa-solid fa-circle-check"></i> قبول مبدئي</button>
+          ${early ? `<p class="small muted">راجع بيانات الطلب، فإن كان مستوفياً اضغط الزر: يتفعل الشهر المجاني فوراً، ويُنشأ الحساب والصفحة والبطاقة ورقم العضوية ورمز الدخول، ويصل المدرب بريد «مبروك! حسابك جاهز».</p>
+            <button class="btn primary" data-act="initial"><i class="fa-solid fa-gift"></i> قبول مبدئي وبدء التجربة المجانية</button>
             <button class="btn ghost" data-act="reject" style="color:var(--bad)"><i class="fa-solid fa-circle-xmark"></i> رفض الطلب</button>` : ''}
           ${a.status === 'accepted' ? `${trainer ? `<div class="banner ok"><i class="fa-solid fa-gift"></i><div><b>فترة التجربة المجانية جارية</b> - رقم العضوية <b class="num">${esc(trainer.code)}</b> · ${Trial.plan(trainer) === 'expired' ? 'انتهت' : `تنتهي ${esc(fmtDate(trainer.trialEnd))} (متبقٍ ${Trial.daysLeft(trainer)} يوماً)`}</div></div>` : ''}
             <div class="banner info"><i class="fa-solid fa-sack-dollar"></i>بانتظار تحويل <b class="num">${esc(Data.content().join.fee)}</b> ريال لتأكيد الاشتراك الكامل</div>
             ${trainer ? (secret ? noticeButtons(a, 'initial') : '<p class="small muted">لا يتوفر رمز محفوظ؛ جدّد الرمز من تبويب المدربين.</p>') : '<p class="small muted">لم تبدأ فترة التجربة لهذا الطلب (قُبل قبل إضافة الميزة). ابدأها لإنشاء حسابه وإرسال بيانات الدخول.</p><button class="btn primary" data-act="trial"><i class="fa-solid fa-gift"></i> بدء فترة التجربة المجانية</button>'}
-            <p class="small muted">بعد التأكد من وصول التحويل اضغط تأكيد السداد لتفعيل الاشتراك الكامل وفتح كل الميزات.</p>
-            <button class="btn gold" data-act="final"><i class="fa-solid fa-certificate"></i> تأكيد السداد وتفعيل الاشتراك الكامل</button>` : ''}
+            <p class="small muted">بعد التأكد من وصول التحويل اضغط «قبول نهائي وتأكيد السداد» لتفعيل الاشتراك الكامل وفتح كل الميزات.</p>
+            <button class="btn gold" data-act="final"><i class="fa-solid fa-certificate"></i> قبول نهائي وتأكيد السداد</button>` : ''}
           ${a.status === 'published' ? `<div class="banner ok"><i class="fa-solid fa-certificate"></i>تم القبول النهائي${trainer ? ` - رقم العضوية <b class="num">${esc(trainer.code)}</b>` : ''}</div>
             ${secret ? noticeButtons(a, 'final') : '<p class="small muted">لا يتوفر رمز محفوظ؛ جدّد الرمز من تبويب المدربين.</p>'}
             ${trainer ? `<a class="btn" href="#/t/${esc(trainer.slug || trainer.id)}" target="_blank"><i class="fa-solid fa-id-card"></i> فتح بطاقته</a>` : ''}` : ''}
@@ -306,7 +306,7 @@ function appDetail(a) {
   m.el.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => {
     const act = b.dataset.act;
     if (act === 'initial') {
-      if (!await confirmBox(`قبول طلب <b>${esc(a.name)}</b> مبدئياً؟ يُفعَّل حسابه تلقائياً لفترة تجربة مجانية (شهر) برقم عضوية ورمز دخول، وتظهر أزرار إرسال إشعار القبول (ببيانات الدخول والسداد).`, { ok: 'قبول مبدئي وبدء التجربة' })) return;
+      if (!await confirmBox(`قبول طلب <b>${esc(a.name)}</b> مبدئياً؟ يُفعَّل حسابه تلقائياً لفترة تجربة مجانية (شهر) برقم عضوية ورمز دخول، وتظهر أزرار إرسال إشعار القبول (ببيانات الدخول والسداد).`, { ok: 'قبول مبدئي وبدء التجربة المجانية' })) return;
       try { setAppStatus(a, 'accepted'); Store.update(`applications/${a.id}`, { initialAt: Date.now() }); const r = await Data.publishFromApplication(Store.get(`applications/${a.id}`) || a, { trial: true }); await autoInitialMail(a, r); reopen(); }
       catch (e) { toast(e.message, 'error'); }
     }
@@ -320,7 +320,7 @@ function appDetail(a) {
     }
     if (act === 'final') {
       const has = !!a.trainerId;
-      if (!await confirmBox(has ? `تأكدت من وصول تحويل <b>${esc(a.name)}</b>؟ يُفعَّل اشتراكه الكامل وتُفتح له الميزات الست المقفلة في التجربة.` : `تأكدت من وصول تحويل <b>${esc(a.name)}</b>؟ يُنشأ الآن حسابه وبطاقته ورقم عضويته ورمز دخوله.`, { ok: has ? 'تفعيل الاشتراك الكامل' : 'قبول نهائي' })) return;
+      if (!await confirmBox(has ? `تأكدت من وصول تحويل <b>${esc(a.name)}</b>؟ يُفعَّل اشتراكه الكامل وتُفتح له الميزات الست المقفلة في التجربة.` : `تأكدت من وصول تحويل <b>${esc(a.name)}</b>؟ يُنشأ الآن حسابه وبطاقته ورقم عضويته ورمز دخوله.`, { ok: 'قبول نهائي وتأكيد السداد' })) return;
       try {
         if (has) { Data.activateFull(a); Store.update(`applications/${a.id}`, { finalAt: Date.now() }); reopen(); }
         else { const { trainer: t, secret: sc } = await Data.publishFromApplication(a); Store.update(`applications/${a.id}`, { finalAt: Date.now() }); m.close(); showSecret(t, sc, true); }
