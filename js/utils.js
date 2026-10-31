@@ -152,9 +152,9 @@ function leaksContact(text) {
 }
 const safeUrl = u => { u = String(u || '').trim(); if (!u) return ''; if (!/^https?:\/\//i.test(u)) u = 'https://' + u; return /^https?:\/\/[^\s"'<>]+$/i.test(u) ? u : ''; };
 const phoneDigits = p => { let d = toEnDigits(p).replace(/\D/g, ''); if (d.startsWith('00')) d = d.slice(2); if (d.startsWith('05')) d = '966' + d.slice(1); else if (d.startsWith('5') && d.length === 9) d = '966' + d; return d; };
-// رموز تعبيرية خارج المستوى الأساسي (🌟 🎁 🔒 🎉) تظهر «�» في بعض نسخ واتساب (ويب/سطح المكتب) عند فتحها من رابط wa.me؛ نستبدلها ببدائل مضمونة ونحذف الباقي
-const WA_EMOJI = { '🌟': '✨', '🎁': '✨', '🎉': '✨', '🔒': '❌', '👋': '', '🙏': '' };
-const waSafe = t => String(t || '').replace(/\uFE0F/g, '').replace(/[\u{10000}-\u{10FFFF}]/gu, ch => (WA_EMOJI[ch] != null ? WA_EMOJI[ch] : '')).replace(/[ \t]+\n/g, '\n').replace(/^ +/gm, m => m);
+// الرموز التعبيرية كلها (✅ ⚠️ 🎁 🌟 ...) قد تظهر «�» في واتساب (ويب/سطح المكتب) عند فتح الرسالة من رابط wa.me، فتُحذف من نص الرابط كله
+// (⚠ تصير «تنبيه:»)، ويبقى النص العربي والنجوم العريضة وسليماً. ونسخ النص بالأزرار «نسخ» يحتفظ بالرموز كما هي.
+const waSafe = t => String(t || '').replace(/\u26A0\uFE0F?/g, 'تنبيه:').replace(/[\uFE0F\u200D\u20E3]/g, '').replace(/[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\u{1F3FB}-\u{1F3FF}]/gu, '').replace(/^[ \t]+/gm, '').replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n');
 const waLink = (p, text = '') => { const d = phoneDigits(p); text = waSafe(text); return d ? `https://wa.me/${d}${text ? '?text=' + encodeURIComponent(text) : ''}` : ''; };
 const validPhone = p => /^9665\d{8}$/.test(phoneDigits(p));
 const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(String(e || '').trim());

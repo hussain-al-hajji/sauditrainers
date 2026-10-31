@@ -239,7 +239,7 @@ function noticeButtons(a, stage, ctx) {
   const k = stage === 'initial' ? 'Initial' : 'Final';
   return `<div class="notice-box"><b>${stage === 'initial' ? 'إشعار القبول المبدئي (التجربة المجانية وبيانات الدخول والسداد)' : 'إشعار القبول النهائي (تفعيل الاشتراك الكامل)'}</b>
     <div class="notice-btns"><button class="btn sm primary" data-mail="${stage}"><i class="fa-solid fa-envelope"></i> بريد</button>${sentBadge(a['notice' + k + 'Mail'])}
-    <button class="btn sm primary" data-wa="${stage}"><i class="fa-brands fa-whatsapp"></i> واتساب</button>${sentBadge(a['notice' + k + 'Wa'])}</div></div>`;
+    <button class="btn sm primary" data-wa="${stage}"><i class="fa-brands fa-whatsapp"></i> واتساب</button><button class="btn sm" data-wacp="${stage}" title="نسخ نص الواتساب بكل رموزه لتلصقه يدوياً"><i class="fa-solid fa-copy"></i> نسخ النص</button>${sentBadge(a['notice' + k + 'Wa'])}</div></div>`;
 }
 
 // عند القبول المبدئي: إشعار بريدي فوري (من بريد المنصة) بالشهر المجاني وبيانات الدخول؛ بدون الأتمتة تبقى أزرار الإرسال اليدوي
@@ -336,6 +336,10 @@ function appDetail(a) {
     const stage = b.dataset.wa;
     if (stage === 'initial') sendWaNotice(a.phone, Tpl.wa('initial', { a: Store.get(`applications/${a.id}`) || a, t: trainer, secret }), { id: a.id, key: 'noticeInitialWa' });
     else sendWaNotice((Store.get(`private/${a.trainerId}`) || {}).phone || a.phone, Tpl.wa('final', { a, t: trainer, secret }), { id: a.id, key: 'noticeFinalWa' });
+  });
+  m.el.querySelectorAll('[data-wacp]').forEach(b => b.onclick = () => {
+    const cur = Store.get(`applications/${a.id}`) || a;
+    copyText(Tpl.wa(b.dataset.wacp === 'initial' ? 'initial' : 'final', { a: cur, t: trainer, secret }), 'تم نسخ نص الواتساب بكامل رموزه');
   });
   m.$('#del').onclick = async () => {
     if (!await confirmBox('حذف هذا الطلب نهائياً؟', { ok: 'حذف', danger: true })) return;
