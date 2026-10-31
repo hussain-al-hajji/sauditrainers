@@ -7,6 +7,7 @@ Pages.me = {
     const s = Auth.current();
     const t = Store.get(`trainers/${s.id}`);
     if (!t) return `<div class="wrap empty"><i class="fa-solid fa-circle-exclamation"></i><h3>تعذّر تحميل بياناتك</h3><button class="btn" onclick="Auth.logout()">خروج</button></div>`;
+    if (Trial.plan(t) === 'expired') return Trial.expiredPage(t);
     const leads = Store.list('leads').filter(l => l.trainerId === t.id);
     const fresh = leads.filter(l => l.status === 'new').length;
     const bcNew = Broadcast.unread(t.id).length;
@@ -44,7 +45,7 @@ Pages.me = {
     });
     Push.sync(); setTimeout(() => Push.invite(() => App.render()), 1500);
     const t = Store.get(`trainers/${s.id}`);
-    if (!t) return;
+    if (!t || Trial.plan(t) === 'expired') return;
     const main = $('#pt', root);
     // تنبيه بالطلبات الجديدة مرة واحدة في الجلسة
     const fresh = Store.list('leads').filter(l => l.trainerId === t.id && l.status === 'new').length;

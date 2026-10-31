@@ -106,7 +106,8 @@ const Security = (() => {
       touch();
     } else if (session?.kind === 'trainer') {
       // أول فتح بعد هذا التحديث بلا سجل نشاط: نعدّه نشطاً الآن
-      if (lastActive('trainer') && idleExpired('trainer')) { session = null; setTimeout(() => toast('انتهت جلستك لعدم الدخول أكثر من 3 أيام، أدخل رمزك من جديد'), 800); }
+      if (Trial.plan(await Store.readOnce(`trainers/${session.id}`)) === 'expired') { session = null; setTimeout(() => toast(Trial.expiredMsg()), 800); }
+      else if (lastActive('trainer') && idleExpired('trainer')) { session = null; setTimeout(() => toast('انتهت جلستك لعدم الدخول أكثر من 3 أيام، أدخل رمزك من جديد'), 800); }
       else touch('trainer');
     }
     if (user && !session) {
@@ -131,12 +132,14 @@ const Security = (() => {
       catch (e) { throw new Error(authMsg(e)); }
       const s = await roleFor(Store.auth.currentUser);
       if (!s || s.kind !== 'trainer') { await Store.auth.signOut(); throw new Error('الرمز غير صحيح'); }
+      if (Trial.plan(await Store.readOnce(`trainers/${s.id}`)) === 'expired') { await Store.auth.signOut(); throw new Error(Trial.expiredMsg()); }
       Auth.set(s); touch('trainer'); await applyScope(s); track('login', 'تسجيل دخول');
       return s;
     }
     const codes = Store.get('secrets/codes') || {};
     const id = Object.keys(codes).find(k => normCode(codes[k]) === code);
     if (!id || !Store.get(`trainers/${id}`)) throw new Error('الرمز غير صحيح');
+    if (Trial.plan(Store.get(`trainers/${id}`)) === 'expired') throw new Error(Trial.expiredMsg());
     const s = { kind: 'trainer', id };
     Auth.set(s); track('login', 'تسجيل دخول');
     return s;

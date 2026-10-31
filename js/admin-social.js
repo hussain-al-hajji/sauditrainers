@@ -161,7 +161,7 @@ function manualPublish(post) {
 }
 
 function postEditor(post) {
-  const live = Data.all().filter(t => t.status === 'active');
+  const live = Data.all().filter(Data.isLive);
   let t = post.trainerId ? Store.get(`trainers/${post.trainerId}`) : null;
   const plats = post.platforms || { x: true, linkedin: true, instagram: true };
   const when = post.scheduledAt || (() => { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(20, 0, 0, 0); return d.getTime(); })();

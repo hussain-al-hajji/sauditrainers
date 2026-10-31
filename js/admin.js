@@ -242,13 +242,20 @@ function noticeButtons(a, stage, ctx) {
     <button class="btn sm primary" data-wa="${stage}"><i class="fa-brands fa-whatsapp"></i> واتساب</button>${sentBadge(a['notice' + k + 'Wa'])}</div></div>`;
 }
 
+// عند القبول المبدئي: إشعار بريدي فوري (من بريد المنصة) بالشهر المجاني وبيانات الدخول؛ بدون الأتمتة تبقى أزرار الإرسال اليدوي
+async function autoInitialMail(a, r) {
+  if (!Automation.on || !a.email) return;
+  const cur = Store.get(`applications/${a.id}`) || a;
+  await sendMailNotice(a.email, Tpl.mail('initial', { a: cur, t: r.trainer, secret: r.secret }), { id: a.id, key: 'noticeInitialMail' });
+}
+
 function appDetail(a) {
   if (!a) return;
   const st = Store.get(`appStatus/${a.id}`) || {};
   const trainer = a.trainerId ? Store.get(`trainers/${a.trainerId}`) : null;
   const secret = a.trainerId ? Store.get(`secrets/codes/${a.trainerId}`) : '';
   const early = ['new', 'review', 'interview'].includes(a.status);
-  const stages = [['new', 'استلام'], ['accepted', 'قبول مبدئي'], ['published', 'قبول نهائي']];
+  const stages = [['new', 'استلام'], ['accepted', 'قبول مبدئي (شهر مجاني)'], ['published', 'قبول نهائي']];
   const at = a.status === 'published' ? 2 : a.status === 'accepted' ? 1 : 0;
   const m = modal(`<h3><i class="fa-solid fa-user-plus"></i> طلب ${esc(a.name)} <span class="pill ${APP_STATUS[a.status]?.tone}">${APP_STATUS[a.status]?.name}</span></h3>
     <div class="stagebar ${a.status === 'rejected' ? 'rej' : ''}">${stages.map(([k, l], i) => `<span class="${i < at ? 'done' : i === at ? 'cur' : ''}"><i class="fa-solid ${i < at ? 'fa-check' : ['fa-inbox', 'fa-circle-check', 'fa-certificate'][i]}"></i>${l}</span>`).join('')}</div>
@@ -300,12 +307,12 @@ function appDetail(a) {
     const act = b.dataset.act;
     if (act === 'initial') {
       if (!await confirmBox(`قبول طلب <b>${esc(a.name)}</b> مبدئياً؟ يُفعَّل حسابه تلقائياً لفترة تجربة مجانية (شهر) برقم عضوية ورمز دخول، وتظهر أزرار إرسال إشعار القبول (ببيانات الدخول والسداد).`, { ok: 'قبول مبدئي وبدء التجربة' })) return;
-      try { setAppStatus(a, 'accepted'); Store.update(`applications/${a.id}`, { initialAt: Date.now() }); await Data.publishFromApplication(Store.get(`applications/${a.id}`) || a, { trial: true }); reopen(); }
+      try { setAppStatus(a, 'accepted'); Store.update(`applications/${a.id}`, { initialAt: Date.now() }); const r = await Data.publishFromApplication(Store.get(`applications/${a.id}`) || a, { trial: true }); await autoInitialMail(a, r); reopen(); }
       catch (e) { toast(e.message, 'error'); }
     }
     if (act === 'trial') {
       if (!await confirmBox(`بدء فترة تجربة مجانية (شهر) لـ<b>${esc(a.name)}</b>؟ يُنشأ حسابه ورمز دخوله الآن.`, { ok: 'بدء التجربة' })) return;
-      try { await Data.publishFromApplication(Store.get(`applications/${a.id}`) || a, { trial: true }); reopen(); } catch (e) { toast(e.message, 'error'); }
+      try { const r = await Data.publishFromApplication(Store.get(`applications/${a.id}`) || a, { trial: true }); await autoInitialMail(a, r); reopen(); } catch (e) { toast(e.message, 'error'); }
     }
     if (act === 'reject') {
       if (!await confirmBox('رفض هذا الطلب؟ يظهر للمتقدم في صفحة المتابعة أنه غير مقبول.', { ok: 'رفض', danger: true })) return;

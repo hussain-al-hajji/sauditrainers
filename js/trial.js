@@ -54,7 +54,19 @@ const Trial = (() => {
   }
   function wire(root, t) { $$('[data-tl]', root).forEach(b => b.onclick = () => { const k = b.dataset.tl; if (isTab(k)) { Portal.tab = k; App.render(); } else open(t, k); }); }
 
+  // انتهاء التجربة: الحساب مُعطّل (لا دخول ولا ظهور) والبيانات محفوظة؛ للاستمرار: تفاصيل الاشتراك في البريد أو التواصل مع الإدارة
+  const contact = () => { const c = (Data.content().contact || {}), wa = window.ST_CONFIG.platformWhatsapp || c.whatsapp || ''; return { wa, email: c.email || '' }; };
+  const expiredMsg = () => { const c = contact(); return `انتهت فترة التجربة المجانية وتعطّل الدخول إلى هذا الحساب وإخفاء ملفك من المنصة (بياناتك محفوظة ولم تُحذف). للاستمرار أكّد اشتراكك ب${rule()}؛ راجع تفاصيل الاشتراك في رسالة القبول بريدك الإلكتروني، أو تواصل مع الإدارة${c.wa ? ' عبر واتساب ' + c.wa : ''}${c.email ? (c.wa ? ' أو' : '') + ' عبر البريد ' + c.email : ''}.`; };
+  // صفحة المدرب المنتهية تجربته (إن بقي مسجلاً على جهازه): إشعار وخيارات التواصل بدل اللوحة
+  function expiredPage(t) {
+    const c = contact();
+    return `<div class="wrap"><div class="tl-card" style="margin-top:40px"><div class="tl-ic"><i class="fa-solid fa-hourglass-end"></i></div>
+      <h2>انتهت فترة التجربة المجانية</h2>
+      <p class="tl-d">أهلاً ${esc(firstName(t.name))}، تعطّل الدخول إلى حسابك وأُخفي ملفك من المنصة. بياناتك محفوظة ولم تُحذف، وتعود فور تأكيد اشتراكك.</p>
+      <div class="tl-note"><i class="fa-solid fa-circle-info"></i><div><b>للاستمرار في الاستفادة من المنصة</b><br>${esc(rule())}. تجد تفاصيل الاشتراك وبيانات السداد في رسالة القبول المبدئي على بريدك الإلكتروني، أو تواصل مع الإدارة.</div></div>
+      <div class="row" style="gap:8px;justify-content:center;flex-wrap:wrap">${contactBtn(t)}${c.email ? `<a class="btn" href="mailto:${esc(c.email)}"><i class="fa-solid fa-envelope"></i> ${esc(c.email)}</a>` : ''}<button class="btn ghost" onclick="Auth.logout()">خروج</button></div></div></div>`;
+  }
   // بدء التجربة: أيام الشهر من الآن
   const fresh = () => { const now = Date.now(); return { plan: 'trial', trialStart: now, trialEnd: now + DAYS * DAY }; };
-  return { unit, DAYS, LOCKED, plan, locked, daysLeft, page, open, isTab, banner, box, wire, fresh, rule };
+  return { expiredMsg, expiredPage, unit, DAYS, LOCKED, plan, locked, daysLeft, page, open, isTab, banner, box, wire, fresh, rule };
 })();
