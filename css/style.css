@@ -1444,3 +1444,14 @@ body.preview .local-flag { display: none; }
 .tl-ic { width: 70px; height: 70px; border-radius: 50%; display: grid; place-items: center; font-size: 1.8rem; background: var(--g50, #eef3e5); color: var(--g700, #1f6b43); opacity: .85; }
 .tl-pts { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; text-align: start; } .tl-pts li { display: flex; gap: 8px; align-items: flex-start; } .tl-pts i { color: var(--g600, #2d7a4f); margin-top: 6px; }
 .tl-note { display: flex; gap: 10px; align-items: flex-start; text-align: start; padding: 12px 14px; border-radius: 14px; background: #FFF8E1; border: 1px solid #F0D38A; color: #6b4a00; line-height: 1.8; font-size: .92rem; }
+
+/* صفحة النشرة الشهرية العامة */
+.mo-wrap { margin-top: 26px; } .mo-bar { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin-bottom: 8px; }
+.mo-h { display: flex; align-items: center; gap: 10px; margin: 30px 0 14px; font-size: 1.3rem; } .mo-h i { color: var(--g600, #2d7a4f); }
+.mo-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.mo-stat { padding: 18px 20px; border-radius: 20px; background: #fff; border: 1px solid var(--line, #e0e8d8); box-shadow: 0 10px 30px -22px rgba(0,50,25,.4); border-right: 6px solid var(--g700, #1f6b43); display: grid; gap: 4px; }
+.mo-stat b { font: 900 2.2rem/1.1 var(--f-head, inherit); color: var(--g800, #0b4a2b); } .mo-stat span { font-weight: 700; } .mo-stat small { color: var(--ink2, #46544b); line-height: 1.7; }
+.mo-topics { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.mo-t { padding: 14px 16px; border-radius: 16px; background: var(--g50, #f1f6ea); border: 1px solid var(--line, #e0e8d8); display: grid; gap: 6px; align-content: start; } .mo-t small { color: var(--ink2, #46544b); }
+.mo-grp { margin: 0 0 22px; } .mo-tr { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 1.05rem; color: inherit; text-decoration: none; } .mo-tr .av { width: 40px; height: 40px; }
+.mo-stat b.num { font-size: 2.2rem; line-height: 1.1; font-weight: 900; color: var(--g800, #0b4a2b); }

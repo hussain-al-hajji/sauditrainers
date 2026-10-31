@@ -73,6 +73,15 @@ Pages.admin = {
   mount(root) {
     if (Auth.current()?.kind !== 'admin') return mountAdminLogin(root);
     this.wireMenu(root);
+    // ترحيل مرة واحدة: إضافة «النشرة الشهرية» إلى قائمة الموقع المحفوظة (يمكن حذفها لاحقاً من الصفحة الرئيسية ← القائمة)
+    try {
+      const saved = arr(Store.get('content/nav/list'));
+      if (saved.length && !Store.get('settings/navMonthly') && !saved.some(x => x.href === '#/monthly')) {
+        const i = saved.findIndex(x => x.href === '#/news'), at = i >= 0 ? i + 1 : saved.length, next = saved.slice(); next.splice(at, 0, { id: 'nav-monthly', href: '#/monthly', label: 'النشرة الشهرية', vis: true });
+        Store.set('content/nav/list', next);
+      }
+      if (!Store.get('settings/navMonthly')) Store.set('settings/navMonthly', true);
+    } catch { /* ignore */ }
     MonthStats.start();
     $$('[data-menu-edit]', root).forEach(b => b.onclick = () => { this.menuEdit = !this.menuEdit; this.wireMenu(root); });
     $('[data-out]', root).onclick = () => Auth.logout();

@@ -242,7 +242,13 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     body.innerHTML = `<div class="pbox"><h3><i class="fa-solid fa-file-pdf"></i> التقرير الشهري (PDF)</h3>
       <p class="small muted">ملف PDF بتصميم نشرة المدربين عن الشهر المختار، ومحتواه نفس الرسالة الشهرية لغير المسجلين: زيارات الشهر والإجمالي، فرص التعاون والوظائف، الموضوعات المطلوبة بعدد فرصها، أخبار المدربين، ثم ثلاث بطاقات لأهم المزايا وصفحة ختامية بدعوة للتسجيل.</p>
       <div class="bl-bar"><label>الشهر<select id="mr-ym">${months.map(m => `<option value="${m}" ${m === U.ym ? 'selected' : ''}>${esc(ymLabel(m))}</option>`).join('')}</select></label>
-        <button class="btn primary" id="mr-gen"><i class="fa-solid fa-wand-magic-sparkles"></i> توليد التقرير</button></div></div>`;
+        <button class="btn primary" id="mr-gen"><i class="fa-solid fa-wand-magic-sparkles"></i> توليد التقرير</button></div></div>
+      <div class="pbox" style="margin-top:12px"><h3><i class="fa-solid fa-globe"></i> صفحة «النشرة الشهرية» في الموقع</h3>
+        <p class="small muted">تُعرض نفس محتويات التقرير في صفحة عامة (القائمة الرئيسية ← النشرة الشهرية) مع زر تحميل PDF. انشر الشهر المختار بعد مراجعته؛ ويمكنك تحديثه بنشره من جديد أو سحبه.</p>
+        <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn gold" id="mr-pub"><i class="fa-solid fa-cloud-arrow-up"></i> نشر الشهر المختار في الموقع</button><a class="btn" href="#/monthly" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> فتح الصفحة</a></div>
+        <div id="mr-pubs" style="margin-top:10px">${Monthly.snaps().map(s => `<span class="pill gold" style="margin:2px">${esc(s.mname)} <button type="button" class="btn sm icon" data-unpub="${esc(s.ym)}" title="سحب من الموقع"><i class="fa-solid fa-xmark"></i></button></span>`).join('') || '<small class="muted">لم تُنشر نشرة بعد.</small>'}</div></div>`;
+    $('#mr-pub', body).onclick = async () => { U.ym = $('#mr-ym', body).value; const d = reportData(U.ym); if (!await confirmBox(`نشر نشرة <b>${esc(d.mname)}</b> في الموقع؟ (${d.titles.length} موضوعاً و${d.news.length} خبراً)`, { ok: 'نشر' })) return; Store.set(`content/monthly/${U.ym}`, Monthly.snapshot(d)); Security.log('نشر النشرة الشهرية', d.mname); toast('نُشرت النشرة في الموقع'); mailMonthlyReport(body); };
+    $$('[data-unpub]', body).forEach(b => b.onclick = async () => { if (await confirmBox('سحب هذه النشرة من الموقع؟', { ok: 'سحب', danger: true })) { Store.remove(`content/monthly/${b.dataset.unpub}`); Security.log('سحب النشرة الشهرية', b.dataset.unpub); mailMonthlyReport(body); } });
     $('#mr-ym', body).onchange = e => { U.ym = e.target.value; };
     $('#mr-gen', body).onclick = () => { U.ym = $('#mr-ym', body).value; Bulletin.report(reportData(U.ym)); };
   };

@@ -519,7 +519,13 @@ const Bulletin = (() => {
     $$('.bl-th', m.el).forEach(b => b.onclick = async () => { const i = +b.dataset.i; deliver(new Blob([await toPng(cvs[i])], { type: 'image/png' }), `${base}-${String(i + 1).padStart(2, '0')}.png`); });
   }
 
+  // تنزيل «النشرة الشهرية» PDF مباشرة (من الصفحة العامة) دون نافذة معاينة
+  async function reportPdf(d) {
+    toast('جارٍ تجهيز النشرة PDF…');
+    try { const cvs = await reportBuild(d); await deliver(pdf(cvs), `sauditrainers-monthly-${d.ym}.pdf`); } catch (e) { console.error(e); toast(`تعذّر إنشاء النشرة: ${e.message || e}`, 'error'); }
+  }
+
   // أدوات الرسم لملفات PDF أخرى (مثل «ملف المدرب»): تُسلَّم كدالة لأن الخطوط تُحمَّل عند prepare()
   const kit = () => ({ C, W, H, PX, CW, TOP, BOT, FONT, txt, pill, rrect, fitFont, qr, avatar, frameBg, chrome, prepare, pdf, deliver, toPng, setPhotos: v => { usePhotos = v; }, logo: () => K().loadImage(LOGO.cream) });
-  return { make, build, zip, pdf, limit, og, deliver, report, reportBuild, kit };
+  return { make, build, zip, pdf, limit, og, deliver, report, reportPdf, reportBuild, kit };
 })();
