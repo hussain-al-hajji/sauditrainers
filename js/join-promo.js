@@ -38,7 +38,7 @@ const PromoSlides = (() => {
       <div class="pmx-v pmx-bens">${['opps', 'jobs', 'profile', 'exclusive'].map(bi).join('')}</div>` },
     { id: 'opps', name: 'فرص ووظائف متجددة', theme: 'dark', kick: 'فرص تتجدد كل يوم', html: () => `
       <div class="pmx-t"><h3>فرص ووظائف<span class="acc">تصلك دون أن تبحث</span></h3><p class="sub">ما يصل المنصة من الجهات، وما تنشره الإدارة، وما يُجلب آلياً من الإنترنت، كله في لوحتك.</p>${cta()}</div>
-      <div class="pmx-v pmx-bens">${['opps', 'jobs', 'alerts', 'stats'].map(bi).join('')}</div>` },
+      <div class="pmx-v pmx-bens">${['opps', 'requests', 'jobs', 'alerts'].map(bi).join('')}</div>` },
     { id: 'exclusive', name: 'منصة حصرية للسعوديين', theme: 'light', kick: 'حصرية للمدربين السعوديين', html: () => `
       <div class="pmx-t"><h3>التسجيل حصري<span class="acc">للمدربين السعوديين</span></h3><p class="sub">حين تبحث الجهة عن مدرب سعودي، تجد مكاناً واحداً متخصصاً، وتجدك فيه بين أقرانك لا بين آلاف الحسابات العامة.</p>
         <div class="pmx-chips"><span>تسجيل بشروط</span><span>توثيق للبطاقات</span><span>13 منطقة</span></div>${cta()}</div>

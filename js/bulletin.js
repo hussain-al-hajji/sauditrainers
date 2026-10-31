@@ -198,7 +198,7 @@ const Bulletin = (() => {
   // وسم «حصرية للمسجلين» بلون عنبري مميّز على الصور
   const exPill = (ctx, cxRight, cy, fs = 19) => pill(ctx, 'حصرية للمسجلين', cxRight, cy, { bg: '#FFF1CC', fg: '#8A5A00', fs });
   // المزايا من المحتوى التسويقي المركزي (Pitch)
-  const promoFeats = () => Pitch.get().items.slice(0, 8).map(i => ({ ic: faGlyph(i.ic || 'fa-star'), label: i.s || i.t, x: !!i.x }));
+  const promoFeats = () => Pitch.top(8).map(i => ({ ic: faGlyph(i.ic || 'fa-star'), label: i.s || i.t, x: !!i.x }));
   function promo(ctx) {
     frameBg(ctx, true);
     const glow = ctx.createRadialGradient(W * 0.85, H * 0.15, 20, W * 0.85, H * 0.15, W * 0.8); glow.addColorStop(0, 'rgba(35,163,101,.35)'); glow.addColorStop(1, 'rgba(35,163,101,0)'); ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
