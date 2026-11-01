@@ -249,7 +249,7 @@ const defaultFooter = () => {
       { title: 'المناطق', kind: 'regions', vis: true, links: [] }
     ],
     copy: '© {year} مدرّبون سعوديّون · جميع الحقوق محفوظة',
-    bottom: [{ label: 'سياسة الخصوصية', href: 'privacy.html', vis: true }, { label: 'الإدارة', href: '#/admin', vis: true }]
+    bottom: [{ label: 'اتفاقية الاستخدام', href: 'terms.html', vis: true }, { label: 'سياسة الخصوصية', href: 'privacy.html', vis: true }, { label: 'الإدارة', href: '#/admin', vis: true }]
   };
 };
 const footerHref = h => { h = String(h || '').trim(); return /^(#\/[\w\-/?=&%.]*|https?:\/\/[^\s"'<>]+|mailto:[^\s"'<>]+|tel:[+\d]+|[\w\-/]+\.html(#[\w-]*)?|\/[\w\-/.]*)$/.test(h) ? h : ''; };

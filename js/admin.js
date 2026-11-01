@@ -81,6 +81,13 @@ Pages.admin = {
         Store.set('content/nav/list', next);
       }
       if (!Store.get('settings/navMonthly')) Store.set('settings/navMonthly', true);
+      // وكذلك رابط «اتفاقية الاستخدام» في أسفل التذييل المحفوظ (مرة واحدة)
+      const fb = Store.get('content/footer');
+      if (fb && typeof fb === 'object' && !Store.get('settings/footerTerms')) {
+        const bl = arr(fb.bottom);
+        if (!bl.some(x => /terms\.html/.test(x.href || ''))) { const j = bl.findIndex(x => /privacy\.html/.test(x.href || '')); const nb = bl.slice(); nb.splice(j >= 0 ? j : 0, 0, { label: 'اتفاقية الاستخدام', href: 'terms.html', vis: true }); Store.set('content/footer/bottom', nb); }
+        Store.set('settings/footerTerms', true);
+      }
     } catch { /* ignore */ }
     MonthStats.start();
     $$('[data-menu-edit]', root).forEach(b => b.onclick = () => { this.menuEdit = !this.menuEdit; this.wireMenu(root); });

@@ -44,7 +44,7 @@ Pages.join = {
       + `<div class="wiz-pane" data-p="${last}"><h2>المراجعة والإرسال</h2><div id="sum"></div>
         <div class="req-box"><b>السداد</b><p class="small" style="margin:.3em 0 0">${nl2br(c.join.payment)}</p></div>
         <div class="ack-box"><i class="fa-solid fa-circle-info"></i><p>${nl2br(c.join.disclaimer)}</p></div>
-        <label class="chk consent"><input type="checkbox" name="agree"><span><i class="fa-solid fa-file-signature"></i> أقرّ بصحة البيانات، وأوافق على نشرها في المنصة، وعلى رسوم الاشتراك (<span class="num">${esc(c.join.fee)}</span> ريال ${esc(c.join.period)}، ${esc(Pitch.renew)}) بعد القبول، وأطّلعت على الإقرار أعلاه</span></label>
+        <label class="chk consent"><input type="checkbox" name="agree"><span><i class="fa-solid fa-file-signature"></i> أقرّ بصحة البيانات، وأوافق على نشرها في المنصة، وعلى رسوم الاشتراك (<span class="num">${esc(c.join.fee)}</span> ريال ${esc(c.join.period)}، ${esc(Pitch.renew)}) بعد القبول، وأطّلعت على الإقرار أعلاه و<a href="terms.html" target="_blank" rel="noopener" onclick="event.stopPropagation()">اتفاقية الاستخدام</a></span></label>
       </div>`;
     const form = $('#wf', root);
     const panes = $$('.wiz-pane', root), stepsBtns = $$('#ws button', root);
