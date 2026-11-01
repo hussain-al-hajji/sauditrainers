@@ -155,7 +155,7 @@ function quickShare(box) {
     else if (p === 'linkedin') {
       // النشر باسم صفحة الشركة: لينكدإن لا يقبل الاسم المختصر في رابط الإدارة (يتطلب رقم الصفحة)، فإن وُجد الرقم في «الربط والقوالب ← صفحة لينكدإن» تُفتح نافذة النشر مباشرة،
       // وإلا تُفتح صفحة الشركة نفسها (تظهر لمشرفها بزر «Start a post») ويُنسخ النص لتلصقه.
-      const li = String(Social.settings().handles?.linkedin || '').trim(), num = (/linkedin\.com\/company\/(\d+)/i.exec(li) || /^(\d{5,})$/.exec(li) || [])[1];
+      const li = String(Social.settings().handles?.linkedin || '').trim(), num = (/linkedin\.com\/company\/(\d+)/i.exec(li) || /^(\d{5,})$/.exec(li) || [])[1] || (li ? '' : '103660220');   // رقم صفحة الشركة الافتراضي (saudi-trainers-sa)
       const mm = /linkedin\.com\/company\/([^/?#\s]+)/i.exec(li), slug = mm ? mm[1] : (/^[\w-]+$/.test(li) && !num ? li : 'saudi-trainers-sa');
       copy(text);
       window.open(num ? `https://www.linkedin.com/company/${num}/admin/page-posts/published/?share=true` : `https://www.linkedin.com/company/${slug}/`, '_blank', 'noopener');
