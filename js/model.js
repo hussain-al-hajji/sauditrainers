@@ -197,6 +197,14 @@ const Tpl = {
       : '🎁 **فُعّلت لك فترة تجربة مجانية لمدة شهر** (حتى {trialEnd}) تتاح فيها مزايا الاشتراك عدا النشر في السوشيال، وملف PDF، والمثبّتة، ومكتبة المدرب، ووظائف التدريب، وكتابة الأخبار؛ وتُفتح عند تأكيد الاشتراك الكامل.\n• رقم العضوية: {memberCode}\n• رابط الدخول: {loginUrl}\n• رمز الدخول السري: {secret}';
     let i = -2; for (let k = wa ? 2 : 3; k > 0 && i !== -1; k--) i = text.indexOf('\n\n', i + 2); return i < 0 ? `${text}\n\n${blk}` : `${text.slice(0, i)}\n\n${blk}${text.slice(i)}`;
   },
+  // تنويه «دليل المدرب» في القبول المبدئي والنهائي (بريداً وواتساباً): يُضاف تلقائياً قبل سطر التحية الختامي إن لم يذكره القالب
+  withGuide(key, text, wa) {
+    text = String(text || ''); if (!["initial", "final"].includes(key) || !text || /دليل المدرب/.test(text)) return text;
+    const blk = (wa ? '📘 *دليل المدرب الجديد:* ' : '📘 **دليل المدرب الجديد:** ') + 'جهّزنا لك دليلاً مفصّلاً يشرح كيف تصل الجهات التدريبية إليك، وكل تبويبات لوحتك وصفحتك العامة، وكيف تستفيد منها لتقوية فرصك في الحصول على العقود التدريبية. تجده في أول تبويب يفتح لك عند دخولك إلى لوحتك' + (wa ? ' ({loginUrl})' : ' ({loginUrl})') + '، ويمكنك تنزيله بصيغة PDF.';
+    const ps = text.split('\n\n'), last = ps[ps.length - 1];
+    if (ps.length > 1 && /^(مع التحية|منصة مدرّبون)/.test(last.trim())) ps.splice(ps.length - 1, 0, blk); else ps.push(blk);
+    return ps.join('\n\n');
+  },
   get(key) {
     const def = defaultTemplates()[key], sv = { ...(Store.get(`settings/templates/${key}`) || {}) };
     // قالب «القبول المبدئي» المحفوظ قبل فترة التجربة (بلا {trialEnd}) يُتجاهل ويُستبدل بالنص الجديد؛ أما ما عدّلته بعد ذلك فيبقى
@@ -205,7 +213,7 @@ const Tpl = {
       if (old(sv.body)) { delete sv.body; delete sv.subject; }
       if (old(sv.wa)) delete sv.wa;
     }
-    const t = { ...def, ...sv }; const sp = x => (x && key === 'initial' ? x.replace(/\{benefits\}/g, '{benefitsSplit}') : x && key === 'final' ? x.replace(/\{benefits\}/g, '{benefitsAll}') : x); return { ...t, body: sp(this.withBenefits(key, this.withTrial(key, t.body, false))), wa: t.wa == null ? t.wa : sp(this.withBenefits(key, this.withTrial(key, t.wa, true))) }; },
+    const t = { ...def, ...sv }; const sp = x => (x && key === 'initial' ? x.replace(/\{benefits\}/g, '{benefitsSplit}') : x && key === 'final' ? x.replace(/\{benefits\}/g, '{benefitsAll}') : x); return { ...t, body: sp(this.withGuide(key, this.withBenefits(key, this.withTrial(key, t.body, false)), false)), wa: t.wa == null ? t.wa : sp(this.withGuide(key, this.withBenefits(key, this.withTrial(key, t.wa, true)), true)) }; },
   // نص واتساب: {benefits} بصيغة الواتساب (عناوين بخط عريض)
   waText(text, vars) { return String(text || '').replace(/\{benefitsSplit\}/g, Pitch.splitText('wa')).replace(/\{benefitsAll\}/g, Pitch.listText('wa', 'all')).replace(/\{benefits\}/g, Pitch.listText('wa')).replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? '')).trim(); },
   render(text, vars) {
@@ -249,7 +257,7 @@ const defaultFooter = () => {
       { title: 'المناطق', kind: 'regions', vis: true, links: [] }
     ],
     copy: '© {year} مدرّبون سعوديّون · جميع الحقوق محفوظة',
-    bottom: [{ label: 'اتفاقية الاستخدام', href: 'terms.html', vis: true }, { label: 'دليل المدرب الجديد', href: 'guide.html', vis: true }, { label: 'سياسة الشكاوى', href: 'complaints.html', vis: true }, { label: 'سياسة الخصوصية', href: 'privacy.html', vis: true }, { label: 'الإدارة', href: '#/admin', vis: true }]
+    bottom: [{ label: 'اتفاقية الاستخدام', href: 'terms.html', vis: true }, { label: 'سياسة الشكاوى', href: 'complaints.html', vis: true }, { label: 'سياسة الخصوصية', href: 'privacy.html', vis: true }, { label: 'الإدارة', href: '#/admin', vis: true }]
   };
 };
 const footerHref = h => { h = String(h || '').trim(); return /^(#\/[\w\-/?=&%.]*|https?:\/\/[^\s"'<>]+|mailto:[^\s"'<>]+|tel:[+\d]+|[\w\-/]+\.html(#[\w-]*)?|\/[\w\-/.]*)$/.test(h) ? h : ''; };
@@ -260,7 +268,6 @@ const siteFooter = () => {
   // رابط «اتفاقية الاستخدام» يظهر دائماً ولو كان التذييل محفوظاً قبل إضافته (إلا إن وُجد له بند محفوظ، فيُحترم إخفاؤه أو ترتيبه)
   const bottom = arr(s.bottom); if (!bottom.some(l => /terms\.html/.test(l.href || ''))) { const j = bottom.findIndex(l => /privacy\.html/.test(l.href || '')); bottom.splice(j >= 0 ? j : 0, 0, { label: 'اتفاقية الاستخدام', href: 'terms.html', vis: true }); }
   if (!bottom.some(l => /complaints\.html/.test(l.href || ''))) { const j = bottom.findIndex(l => /privacy\.html/.test(l.href || '')); bottom.splice(j >= 0 ? j : bottom.length, 0, { label: 'سياسة الشكاوى', href: 'complaints.html', vis: true }); }
-  if (!bottom.some(l => /guide\.html/.test(l.href || ''))) { const j = bottom.findIndex(l => /complaints\.html/.test(l.href || '')); bottom.splice(j >= 0 ? j : bottom.length, 0, { label: 'دليل المدرب الجديد', href: 'guide.html', vis: true }); }
   return { tagline: s.tagline ?? d.tagline, socials: arr(s.socials), cols: arr(s.cols).map(norm), copy: s.copy ?? d.copy, bottom };
 };
 const siteTicker = () => { const t = { ...defaultTicker(), ...(Store.get('content/ticker') || {}) }; t.items = arr(t.items).filter(i => i.text); return t; };

@@ -1,7 +1,7 @@
 /* لوحة المدرب: بطاقتي، تعديل البيانات بمعاينة حيّة، الطلبات الواردة */
 
 Pages.me = {
-  tab: 'home',
+  tab: 'guide',
   guard() { const s = Auth.current(); return s?.kind === 'trainer' ? null : '#/login'; },
   render() {
     const s = Auth.current();
@@ -11,7 +11,7 @@ Pages.me = {
     const leads = Store.list('leads').filter(l => l.trainerId === t.id);
     const fresh = leads.filter(l => l.status === 'new').length;
     const bcNew = Broadcast.unread(t.id).length;
-    const tabs = [['home', 'fa-id-card', 'بطاقتي'], ['edit', 'fa-pen-to-square', 'تعديل البيانات'], ['leads', 'fa-inbox', 'طلبات موجهة لك', fresh], ['bc', 'fa-bullhorn', 'طلبات عامة', bcNew + Opps.unreadAds(t.id).length]];
+    const tabs = [['guide', 'fa-compass', 'دليل المدرب'], ['home', 'fa-id-card', 'بطاقتي'], ['edit', 'fa-pen-to-square', 'تعديل البيانات'], ['leads', 'fa-inbox', 'طلبات موجهة لك', fresh], ['bc', 'fa-bullhorn', 'طلبات عامة', bcNew + Opps.unreadAds(t.id).length]];
     const annNew = News.unread(t.id).length;
     try { Push.setBadge(fresh + bcNew + Broadcast.noticesNew(t.id) + annNew + Opps.unread(t.id).length + Library.unread(t.id) + Reviews.unread(t.id)); } catch { /* ignore */ }
     const lk = Trial.locked(t);   // فترة التجربة: التبويبات الثلاثة تظهر باهتة مع قفل
@@ -21,7 +21,7 @@ Pages.me = {
     tabs.push(['lib', 'fa-book-open', 'مكتبة المدرب', lk ? 0 : Library.unread(t.id), lk]);
     tabs.push(['rv', 'fa-star', 'مراجعات وتوصيات', Reviews.unread(t.id)]);
     if (featureOn('announcements')) tabs.push(['ann', 'fa-bell-concierge', 'إعلانات', annNew]);
-    if (!tabs.some(x => x[0] === this.tab)) this.tab = 'home';
+    if (!tabs.some(x => x[0] === this.tab)) this.tab = 'guide';
     return `<div class="wrap dash">
       <aside class="side">
         <div class="who">${Card.avatar(t, 'av')}<div class="grow"><b>${esc(t.name)}</b><small class="num">${esc(t.code)}</small></div><button type="button" class="bell" id="bell" title="الإشعارات" aria-label="الإشعارات"><i class="fa-solid fa-bell"></i>${fresh + bcNew + Broadcast.noticesNew(t.id) ? `<span class="bdg num">${fresh + bcNew + Broadcast.noticesNew(t.id)}</span>` : ''}</button></div>
@@ -53,7 +53,7 @@ Pages.me = {
     const go = k => { this.tab = k; App.render(); };
     $('#bell', root) && ($('#bell', root).onclick = () => Broadcast.notifications(t, go));
     if (Trial.locked(t) && Trial.isTab(this.tab)) Trial.page(main, t, this.tab);
-    else ({ home: portalHome, edit: portalEdit, leads: portalLeads, bc: Broadcast.tab, news: News.tab, rv: Reviews.tab, lib: Library.tab, vid: Videos.tab, ann: News.annTab, opps: Opps.tab })[this.tab](main, t);
+    else ({ guide: Guide.portal, home: portalHome, edit: portalEdit, leads: portalLeads, bc: Broadcast.tab, news: News.tab, rv: Reviews.tab, lib: Library.tab, vid: Videos.tab, ann: News.annTab, opps: Opps.tab })[this.tab](main, t);
     if (this.tab === 'home') completeness(main, t, go);
     if (this.tab !== 'ann') News.annPopup(t, go);
     if (this.tab !== 'bc') Broadcast.popup(t, go);

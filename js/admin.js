@@ -13,7 +13,7 @@ Pages.admin = {
       ['dash', 'fa-chart-pie', 'المؤشرات'], ['apps', 'fa-user-plus', 'طلبات التسجيل', apps.filter(a => a.status === 'new').length], ['trainers', 'fa-id-card', 'المدربون'],
       ['requests', 'fa-handshake-angle', 'فرص التدريب', newReq + Opps.inbox().filter(o => o.status === 'new').length], ['mail', 'fa-envelope', 'المراسلة'], ['news', 'fa-newspaper', 'الأخبار والإعلانات'], ['health', 'fa-heart-pulse', 'صحة الموقع', healthAlerts().length], ['library', 'fa-book-open', 'مكتبة المدرب', Store.list('librarySuggest').filter(s => s && s.status === 'pending').length], ['reviews', 'fa-star', 'مراجعات وتوصيات', Store.list('reviews').filter(r => r && r.status === 'pending').length], ['opps', 'fa-briefcase', 'وظائف'], ['social', 'fa-share-nodes', 'النشر الاجتماعي', Store.list('social').filter(p => p.status === 'failed').length],
       ['home', 'fa-house', 'الصفحة الرئيسية'], ['forms', 'fa-rectangle-list', 'النماذج'], ['templates', 'fa-envelope-open-text', 'قوالب'], ['seo', 'fa-magnifying-glass-chart', 'SEO'], ['specs', 'fa-shapes', 'التخصصات'], ['halls', 'fa-building-columns', 'القاعات', Store.list('hallReqs').filter(r => r.status === 'new').length],
-      ['content', 'fa-pen-ruler', 'المحتوى العام'], ['admins', 'fa-user-shield', 'المشرفون'], ['backup', 'fa-database', 'البيانات والسجل']
+      ['content', 'fa-pen-ruler', 'المحتوى العام'], ['guide', 'fa-compass', 'دليل المدرب'], ['admins', 'fa-user-shield', 'المشرفون'], ['backup', 'fa-database', 'البيانات والسجل']
     ];
     const order = arr(Store.get('settings/adminMenu'));
     const pos = k => { const i = order.indexOf(k); return i < 0 ? 1000 + all.findIndex(t => t[0] === k) : i; };
@@ -104,7 +104,7 @@ Pages.admin = {
     }
     $('[data-preview]', root).onclick = () => TrainerPreview.open();
     const main = $('#at', root);
-    ({ dash: aDash, apps: aApps, trainers: aTrainers, requests: aRequests, mail: aMail, social: aSocial, news: News.admin, reviews: Reviews.admin, library: Library.admin, health: aHealth, opps: Opps.admin, home: aHome, forms: aForms, templates: aTemplates, seo: aSeo, specs: aSpecs, halls: aHalls, content: aContent, admins: aAdmins, backup: aBackup })[this.tab](main);
+    ({ dash: aDash, apps: aApps, trainers: aTrainers, requests: aRequests, mail: aMail, social: aSocial, news: News.admin, reviews: Reviews.admin, library: Library.admin, guide: Guide.admin, health: aHealth, opps: Opps.admin, home: aHome, forms: aForms, templates: aTemplates, seo: aSeo, specs: aSpecs, halls: aHalls, content: aContent, admins: aAdmins, backup: aBackup })[this.tab](main);
   },
   // تبويبات التحرير لا يُعاد رسمها تلقائياً حتى لا تضيع التعديلات غير المحفوظة، وكذلك أثناء ترتيب القائمة
   get static() { return this.menuEdit || ['content', 'home', 'forms', 'templates', 'specs'].includes(this.tab); }

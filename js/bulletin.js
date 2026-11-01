@@ -310,24 +310,34 @@ const Bulletin = (() => {
     return new Blob([concat([...loc, cd, concat([u32(0x06054b50), u16(0), u16(0), u16(files.length), u16(files.length), u32(cd.length), u32(off), u16(0)])])], { type: 'application/zip' });
   }
   const b64 = d => { const bin = atob(d.split(',')[1]), u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return u; };
-  function pdf(cvs) {
+  // opts.sc: معامل دقة اللوحة (اللوحة بحجم صفحة × sc، فتُكتب الصفحة بحجمها المنطقي) · opts.q: جودة JPEG · opts.title: عنوان الملف
+  // روابط الصفحة: {x,y,w,h,url} خارجي، أو {x,y,w,h,page} داخلي إلى صفحة أخرى (رقم من 0)
+  function pdf(cvs, opts = {}) {
+    const sc = opts.sc || 1, q = opts.q || 0.92, utf16 = s => 'FEFF' + [...s].map(c => c.codePointAt(0).toString(16).padStart(4, '0')).join('').toUpperCase();
     const chunks = [], offs = []; let len = 0; const push = b => { chunks.push(b); len += b.length; };
     const obj = (n, parts) => { offs[n] = len; push(enc(`${n} 0 obj\n`)); parts.forEach(p => push(typeof p === 'string' ? enc(p) : p)); push(enc('\nendobj\n')); };
     push(enc('%PDF-1.4\n'));
-    const N = cvs.length, pw = W * 0.75, ph = H * 0.75;
-    obj(1, ['<< /Type /Catalog /Pages 2 0 R >>']);
+    const N = cvs.length, k = 0.75 / sc;
+    obj(1, ['<< /Type /Catalog /Pages 2 0 R /Lang (ar) >>']);
     obj(2, [`<< /Type /Pages /Count ${N} /Kids [${cvs.map((_, i) => `${3 + 3 * i} 0 R`).join(' ')}] >>`]);
     let next = 3 + 3 * N; const annots = [];
     cvs.forEach((cv, i) => {
-      const jpg = b64(cv.toDataURL('image/jpeg', 0.92)), p = 3 + 3 * i, content = `q ${pw} 0 0 ${ph} 0 0 cm /Im0 Do Q`;
-      const refs = (cv.__links || []).filter(l => /^https:\/\//.test(l.url)).map(l => { const id = next++; annots.push([id, l]); return `${id} 0 R`; });
+      const pw = +(cv.width * k).toFixed(2), ph = +(cv.height * k).toFixed(2);
+      const jpg = b64(cv.toDataURL('image/jpeg', q)), p = 3 + 3 * i, content = `q ${pw} 0 0 ${ph} 0 0 cm /Im0 Do Q`;
+      const refs = (cv.__links || []).filter(l => l.page != null ? l.page >= 0 && l.page < N : /^https:\/\//.test(l.url)).map(l => { const id = next++; annots.push([id, l, ph]); return `${id} 0 R`; });
       obj(p, [`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pw} ${ph}] /Resources << /XObject << /Im0 ${p + 2} 0 R >> >> /Contents ${p + 1} 0 R${refs.length ? ` /Annots [${refs.join(' ')}]` : ''} >>`]);
       obj(p + 1, [`<< /Length ${content.length} >>\nstream\n${content}\nendstream`]);
-      obj(p + 2, [`<< /Type /XObject /Subtype /Image /Width ${W} /Height ${H} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`, jpg, '\nendstream']);
+      obj(p + 2, [`<< /Type /XObject /Subtype /Image /Width ${cv.width} /Height ${cv.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`, jpg, '\nendstream']);
     });
-    annots.forEach(([id, l]) => { const u = encodeURI(l.url).replace(/[()\\]/g, ''), f = v => (v * 0.75).toFixed(1); obj(id, [`<< /Type /Annot /Subtype /Link /Border [0 0 0] /Rect [${f(l.x)} ${((H - l.y - l.h) * 0.75).toFixed(1)} ${f(l.x + l.w)} ${((H - l.y) * 0.75).toFixed(1)}] /A << /S /URI /URI (${u}) >> >>`]); });
+    annots.forEach(([id, l, ph]) => {
+      const f = v => (v * k).toFixed(1), rect = `${f(l.x)} ${(ph - (l.y + l.h) * k).toFixed(1)} ${f(l.x + l.w)} ${(ph - l.y * k).toFixed(1)}`;
+      const act = l.page != null ? `/Dest [${3 + 3 * l.page} 0 R /XYZ 0 ${(+cvs[l.page].height * k).toFixed(1)} null]` : `/A << /S /URI /URI (${encodeURI(l.url).replace(/[()\\]/g, '')}) >>`;
+      obj(id, [`<< /Type /Annot /Subtype /Link /Border [0 0 0] /Rect [${rect}] ${act} >>`]);
+    });
+    let info = '';
+    if (opts.title) { info = ` /Info ${next} 0 R`; obj(next++, [`<< /Title <${utf16(opts.title)}> /Producer (SaudiTrainers.sa) >>`]); }
     const xr = len, cnt = next;
-    push(enc(`xref\n0 ${cnt}\n0000000000 65535 f \n${Array.from({ length: cnt - 1 }, (_, i) => `${String(offs[i + 1]).padStart(10, '0')} 00000 n \n`).join('')}trailer\n<< /Size ${cnt} /Root 1 0 R >>\nstartxref\n${xr}\n%%EOF`));
+    push(enc(`xref\n0 ${cnt}\n0000000000 65535 f \n${Array.from({ length: cnt - 1 }, (_, i) => `${String(offs[i + 1]).padStart(10, '0')} 00000 n \n`).join('')}trailer\n<< /Size ${cnt} /Root 1 0 R${info} >>\nstartxref\n${xr}\n%%EOF`));
     return new Blob(chunks, { type: 'application/pdf' });
   }
   const toPng = cv => new Promise(r => cv.toBlob(async b => r(b ? new Uint8Array(await b.arrayBuffer()) : b64(cv.toDataURL('image/png'))), 'image/png'));

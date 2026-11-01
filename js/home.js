@@ -444,7 +444,7 @@ Pages.login = {
     $('#lg', root).onsubmit = async e => {
       e.preventDefault();
       const b = $('button', e.target); b.disabled = true; $('#le', root).textContent = '';
-      try { await Security.trainerLogin(e.target.code.value); location.hash = '#/me'; }
+      try { await Security.trainerLogin(e.target.code.value); Pages.me.tab = 'guide'; location.hash = '#/me'; }
       catch (err) { $('#le', root).textContent = err.message; }
       finally { b.disabled = false; }
     };

@@ -141,7 +141,7 @@ const SEO = (() => {
   }
   function sitemapXml(base, trainers, fo, news) {
     const s = site(), f = fo || files(), e = esc;
-    const urls = s.robotsIndex ? [base, `${base}monthly/`, `${base}terms.html`, `${base}complaints.html`, `${base}guide.html`, ...(f.sitemapTrainers ? trainers.filter(t => !trainerCfg(t.id).noindex).map(t => `${base}t/${t.slug || t.id}/`) : []), ...(f.sitemapTrainers ? (news || []).map(n => `${base}n/${n.id}/`) : [])] : [];
+    const urls = s.robotsIndex ? [base, `${base}monthly/`, `${base}terms.html`, `${base}complaints.html`, ...(f.sitemapTrainers ? trainers.filter(t => !trainerCfg(t.id).noindex).map(t => `${base}t/${t.slug || t.id}/`) : []), ...(f.sitemapTrainers ? (news || []).map(n => `${base}n/${n.id}/`) : [])] : [];
     const extra = u => `${f.changefreq ? `<changefreq>${e(f.changefreq)}</changefreq>` : ''}${f.priority ? `<priority>${e(f.priority)}</priority>` : ''}`;
     return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(u => `  <url><loc>${e(u)}</loc>${extra(u)}</url>`).join('\n')}\n</urlset>\n`;
   }
