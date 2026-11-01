@@ -247,7 +247,7 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
 🗂️ ${d.titles.length} موضوعاً طلبته الجهات${d.news.length ? `\n🏆 وأخبار وإنجازات ${d.news.length} من المدربين` : ''}
 
 اطّلع على النشرة كاملة، وحمّلها PDF من الرابط:
-${siteBase()}#/monthly
+${siteBase()}monthly/
 
 🎁 جرّب المنصة مجاناً لمدة شهر، وسجّل كمدرب سعودي:
 ${siteBase()}#/join
