@@ -223,6 +223,13 @@ const themeOf = k => CARD_THEMES.find(t => t.k === k) || CARD_THEMES[0];
 // تحويل القوائم المخزنة (قد تعود من القاعدة كائناً) إلى مصفوفة
 const arr = x => (Array.isArray(x) ? x.filter(v => v != null) : x && typeof x === 'object' ? Object.values(x) : []);
 
+// لغة التدريب المطلوبة في «اطلب مدرباً» (اختيار واحد إلزامي)
+const TRAIN_LANG = [
+  ['ar', 'لغة التدريب الأساسية هي العربية (محتوى وتقديم)'],
+  ['en', 'لغة التدريب الأساسية هي الإنجليزية (محتوى وتقديم)'],
+  ['both', 'التدريب باللغتين (المحتوى الأساس بالإنجليزية، والتقديم بالإنجليزية والعربية)']
+];
+const trainLang = k => (TRAIN_LANG.find(x => x[0] === k) || [])[1] || '';
 const DELIVERY = [
   { k: 'onsite', name: 'حضوري', icon: 'fa-people-roof' },
   { k: 'online', name: 'عن بُعد', icon: 'fa-laptop' }

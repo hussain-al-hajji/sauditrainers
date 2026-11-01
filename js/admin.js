@@ -677,7 +677,7 @@ function aRequests(main) {
         ${r.kind === 'lead' ? (r.emailedAt ? `<span class="pill ok"><i class="fa-solid fa-envelope-circle-check"></i> أُرسل للمدرب ${ago(r.emailedAt)}</span>` : '') + (r.waSentAt ? `<span class="pill ok"><i class="fa-brands fa-whatsapp"></i> واتساب ${ago(r.waSentAt)}</span>` : '') : ''}
         ${shown ? '<span class="pill gold"><i class="fa-solid fa-table-cells-large"></i> معروض</span>' : ''}<br>
         <small class="muted">${esc(r.person)} · <span class="num">${esc(r.phone)}</span> ${r.email ? '· ' + esc(r.email) : ''} · ${ago(r.ts)}</small>
-        <p><b>الموضوع:</b> ${esc(r.topic)}${r.spec ? ` · <b>التخصص:</b> ${esc(specName(r.spec))}` : ''}${r.region ? ` · <b>المنطقة:</b> ${esc(regionName(r.region))}` : ''}${r.size ? ` · <b class="num">${r.size}</b> متدرب` : ''}${r.when ? ` · <b>الموعد:</b> ${esc(r.when)}` : ''}</p>
+        <p><b>الموضوع:</b> ${esc(r.topic)}${r.spec ? ` · <b>التخصص:</b> ${esc(specName(r.spec))}` : ''}${r.region ? ` · <b>المنطقة:</b> ${esc(regionName(r.region))}` : ''}${r.size ? ` · <b class="num">${r.size}</b> متدرب` : ''}${r.lang ? ` · <b>اللغة:</b> ${esc(trainLang(r.lang))}` : ''}${r.when ? ` · <b>الموعد:</b> ${esc(r.when)}` : ''}</p>
         ${r.msg ? `<p>${nl2br(r.msg)}</p>` : ''}
         ${r.matches?.length ? `<p class="small"><b>الترشيحات الآلية:</b> ${arr(r.matches).map(id => Store.get(`trainers/${id}`)).filter(Boolean).map(x => `<a href="#/t/${esc(x.slug || x.id)}" target="_blank">${esc(x.name)}</a>`).join('، ')}</p>` : ''}
       </div>

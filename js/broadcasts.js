@@ -19,7 +19,7 @@ const Broadcast = (() => {
     return `<div class="lead bc">
       <span class="ic"><i class="fa-solid fa-bullhorn"></i></span>
       <div><b>${esc(b.org || 'جهة تدريبية')}</b> <span class="pill gold">طلب عبر الموقع، أُعيد توجيهه للمدربين</span> <small class="muted">${ago(b.ts)}</small>
-        <p><b>الموضوع:</b> ${esc(b.topic)}${b.spec ? ` · <b>التخصص:</b> ${esc(specName(b.spec))}` : ''}${b.region ? ` · <b>المنطقة:</b> ${esc(regionName(b.region))}` : ''}${b.size ? ` · <b class="num">${esc(b.size)}</b> متدرب` : ''}${b.when ? ` · <b>الموعد:</b> ${esc(b.when)}` : ''}</p>
+        <p><b>الموضوع:</b> ${esc(b.topic)}${b.spec ? ` · <b>التخصص:</b> ${esc(specName(b.spec))}` : ''}${b.region ? ` · <b>المنطقة:</b> ${esc(regionName(b.region))}` : ''}${b.size ? ` · <b class="num">${esc(b.size)}</b> متدرب` : ''}${b.lang ? ` · <b>اللغة:</b> ${esc(trainLang(b.lang))}` : ''}${b.when ? ` · <b>الموعد:</b> ${esc(b.when)}` : ''}</p>
         ${b.msg ? `<p>${nl2br(b.msg)}</p>` : ''}
         ${b.note ? `<p class="small"><i class="fa-solid fa-circle-info"></i> <b>ملاحظة الإدارة:</b> ${nl2br(b.note)}</p>` : ''}
         ${hasContact ? `<p class="small"><b>للتواصل:</b> ${esc(b.person || '')} ${b.phone ? `· <span class="num" dir="ltr">${esc(b.phone)}</span>` : ''} ${b.email ? `· ${esc(b.email)}` : ''}</p>`
@@ -94,7 +94,7 @@ const Broadcast = (() => {
       </form>`);
     $('#bf', m.el).onsubmit = e => {
       e.preventDefault(); const f = e.target, inc = true;
-      const rec = { ts: Date.now(), requestId: r.id, org: r.org || '', topic: r.topic || '', when: r.when || '', msg: r.msg || '', note: f.note.value.trim(), spec: r.spec || '', region: r.region || '', size: Number(r.size) || 0, contact: inc };
+      const rec = { ts: Date.now(), requestId: r.id, org: r.org || '', topic: r.topic || '', when: r.when || '', msg: r.msg || '', note: f.note.value.trim(), spec: r.spec || '', region: r.region || '', size: Number(r.size) || 0, ...(r.lang ? { lang: r.lang } : {}), contact: inc };
       if (inc) { rec.person = r.person || ''; rec.phone = r.phone || ''; rec.email = r.email || ''; }
       const bid = Store.push('broadcasts', rec); Security.log('إعادة توجيه طلب للمدربين', r.org || r.topic); Automation.notify('push', `b:${bid}`);
       toast('أُعيد توجيه الطلب لكل المدربين'); m.close();
