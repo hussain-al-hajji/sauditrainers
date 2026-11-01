@@ -236,6 +236,24 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
       { num: num(opp), label: clean(T.lReq), note: clean(T.tReq) },
       { num: num(jobs), label: clean(T.lJobs), note: clean(T.tJobs) }] };
   }
+  // نص ترويج واتساب لرابط النشرة الشهرية (يُلصق مع الرابط): أرقام الشهر من نفس بيانات التقرير
+  function promoText(ym) {
+    const d = reportData(ym), v = d.stats[0].num, opp = d.stats[2].num, jobs = d.stats[3].num;
+    return `نشرة منصة «مدرّبون سعوديّون» عن ${d.mname} صدرت 📰
+
+📊 ${v} زيارة للمنصة في الشهر
+🤝 ${opp} فرصة تعاون من الجهات التدريبية
+💼 ${jobs} وظيفة تدريب من عشرات المصادر
+🗂️ ${d.titles.length} موضوعاً طلبته الجهات${d.news.length ? `\n🏆 وأخبار وإنجازات ${d.news.length} من المدربين` : ''}
+
+اطّلع على النشرة كاملة، وحمّلها PDF من الرابط:
+${siteBase()}#/monthly
+
+🎁 جرّب المنصة مجاناً لمدة شهر، وسجّل كمدرب سعودي:
+${siteBase()}#/join
+
+المنصة حصرية للمدربين السعوديين، وتجدّد اشتراكك مجاناً بشكل تلقائي مدى الحياة بعد السنة الأولى.`;
+  }
   window.mailMonthlyReport = function (body) {
     const U = MonthlyUI; if (!U.ym) U.ym = prevMonth();
     const months = [...new Set([U.ym, ...monthOptions()])].sort().reverse();
@@ -246,7 +264,10 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
       <div class="pbox" style="margin-top:12px"><h3><i class="fa-solid fa-globe"></i> صفحة «النشرة الشهرية» في الموقع</h3>
         <p class="small muted">تُعرض نفس محتويات التقرير في صفحة عامة (القائمة الرئيسية ← النشرة الشهرية) مع زر تحميل PDF. انشر الشهر المختار بعد مراجعته؛ ويمكنك تحديثه بنشره من جديد أو سحبه.</p>
         <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn gold" id="mr-pub"><i class="fa-solid fa-cloud-arrow-up"></i> نشر الشهر المختار في الموقع</button><a class="btn" href="#/monthly" target="_blank"><i class="fa-solid fa-arrow-up-right-from-square"></i> فتح الصفحة</a></div>
+        <div class="pbox" style="margin:12px 0 0;background:var(--g50,#f6f9f2)"><h4 style="margin:0 0 6px"><i class="fa-brands fa-whatsapp"></i> نص ترويج واتساب للنشرة</h4><textarea id="mr-wa" rows="9" style="width:100%" readonly>${esc(promoText(U.ym))}</textarea><div class="row" style="margin-top:8px"><button class="btn sm primary" id="mr-wacp"><i class="fa-solid fa-copy"></i> نسخ النص</button></div></div>
         <div id="mr-pubs" style="margin-top:10px">${Monthly.snaps().map(s => `<span class="pill gold" style="margin:2px">${esc(s.mname)} <button type="button" class="btn sm icon" data-unpub="${esc(s.ym)}" title="سحب من الموقع"><i class="fa-solid fa-xmark"></i></button></span>`).join('') || '<small class="muted">لم تُنشر نشرة بعد.</small>'}</div></div>`;
+    $('#mr-wacp', body).onclick = () => copyText($('#mr-wa', body).value, 'تم نسخ نص الترويج');
+    $('#mr-ym', body).addEventListener('change', e => { const t = $('#mr-wa', body); if (t) t.value = promoText(e.target.value); });
     $('#mr-pub', body).onclick = async () => { U.ym = $('#mr-ym', body).value; const d = reportData(U.ym); if (!await confirmBox(`نشر نشرة <b>${esc(d.mname)}</b> في الموقع؟ (${d.titles.length} موضوعاً و${d.news.length} خبراً)`, { ok: 'نشر' })) return; Store.set(`content/monthly/${U.ym}`, Monthly.snapshot(d)); Security.log('نشر النشرة الشهرية', d.mname); toast('نُشرت النشرة في الموقع'); mailMonthlyReport(body); };
     $$('[data-unpub]', body).forEach(b => b.onclick = async () => { if (await confirmBox('سحب هذه النشرة من الموقع؟', { ok: 'سحب', danger: true })) { Store.remove(`content/monthly/${b.dataset.unpub}`); Security.log('سحب النشرة الشهرية', b.dataset.unpub); mailMonthlyReport(body); } });
     $('#mr-ym', body).onchange = e => { U.ym = e.target.value; };
