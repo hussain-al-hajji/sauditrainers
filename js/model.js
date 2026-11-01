@@ -257,6 +257,8 @@ const siteFooter = () => {
   const d = defaultFooter(), s = Store.get('content/footer');
   if (!s || typeof s !== 'object') return d;
   const norm = o => ({ ...o, links: arr(o.links) });
-  return { tagline: s.tagline ?? d.tagline, socials: arr(s.socials), cols: arr(s.cols).map(norm), copy: s.copy ?? d.copy, bottom: arr(s.bottom) };
+  // رابط «اتفاقية الاستخدام» يظهر دائماً ولو كان التذييل محفوظاً قبل إضافته (إلا إن وُجد له بند محفوظ، فيُحترم إخفاؤه أو ترتيبه)
+  const bottom = arr(s.bottom); if (!bottom.some(l => /terms\.html/.test(l.href || ''))) { const j = bottom.findIndex(l => /privacy\.html/.test(l.href || '')); bottom.splice(j >= 0 ? j : 0, 0, { label: 'اتفاقية الاستخدام', href: 'terms.html', vis: true }); }
+  return { tagline: s.tagline ?? d.tagline, socials: arr(s.socials), cols: arr(s.cols).map(norm), copy: s.copy ?? d.copy, bottom };
 };
 const siteTicker = () => { const t = { ...defaultTicker(), ...(Store.get('content/ticker') || {}) }; t.items = arr(t.items).filter(i => i.text); return t; };
