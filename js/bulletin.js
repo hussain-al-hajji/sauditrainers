@@ -438,15 +438,14 @@ const Bulletin = (() => {
     const ic = x + w - pad - 28 - 8, cy = y + pad + 28;
     ctx.beginPath(); ctx.arc(ic, cy, 28, 0, Math.PI * 2); ctx.fillStyle = C.g100; ctx.fill();
     ctx.save(); ctx.font = '900 26px "Font Awesome 6 Free"'; ctx.fillStyle = C.g800; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'ltr'; ctx.fillText(rptGlyph((specOf(it.spec) || {}).icon || 'fa-chalkboard-user'), ic, cy + 2); ctx.restore();
-    const tw = w - 2 * pad - 14; let cyy = y + pad + 56 + 12;
-    const long = String(it.c).length > 48, fs = long ? 25 : 28, lh = long ? 36 : 40;
-    ctx.font = `900 ${fs}px ${FONT.head}`; const tl = K().wrap(ctx, it.c, tw, 3);
-    tl.forEach((l, i) => txt(ctx, l, R - 8, cyy + lh * (i + 1) - 10, { font: ctx.font, color: C.g900 })); cyy += tl.length * lh;
-    txt(ctx, it.org || 'جهة تدريبية', R - 8, cyy + 34, { font: `700 22px ${FONT.body}`, color: C.g700 });
-    // أسفل البطاقة: المدينة والشهر، ثم عدد الفرص
-    const by = y + h - pad;
-    const meta = [it.city || '', d.mname.split(' ')[0]].filter(Boolean).join(' · ');
-    txt(ctx, meta, R - 8, by - 54, { font: `500 21px ${FONT.body}`, color: C.muted });
+    // العنوان حتى 3 أسطر في المساحة بين الأيقونة والسطر السفلي (الجهة · المدينة · الشهر في سطر واحد) فلا يتداخل شيء مع شارة العدد
+    const tw = w - 2 * pad - 14, by = y + h - pad, top = y + pad + 62, metaY = by - 54, room = metaY - 30 - top;   // room: ارتفاع أسطر العنوان المتاحة
+    let fs = String(it.c).length > 48 ? 25 : 28, lh = Math.round(fs * 1.34), tl;
+    for (;;) { ctx.font = `900 ${fs}px ${FONT.head}`; tl = K().wrap(ctx, it.c, tw, 3); if (tl.length * lh <= room || fs <= 19) break; fs -= 1; lh = Math.round(fs * 1.34); }
+    tl.forEach((l, i) => txt(ctx, l, R - 8, top + lh * (i + 1) - 8, { font: ctx.font, color: C.g900 }));
+    const meta = [it.org || 'جهة تدريبية', it.city || '', d.mname.split(' ')[0]].filter(Boolean).join(' · ');
+    ctx.font = `600 21px ${FONT.body}`; const mf = fitFont(ctx, meta, 600, 21, 15, tw, FONT.body);
+    ctx.font = `600 ${mf}px ${FONT.body}`; txt(ctx, K().wrap(ctx, meta, tw, 1)[0] || meta, R - 8, metaY, { font: ctx.font, color: C.g700 });
     if (it.n > 0) pill(ctx, `${it.n.toLocaleString('en-US')} ${it.n === 1 ? 'فرصة' : 'فرص'} في هذا المجال`, R - 8, by - 16, { bg: C.g100, fg: C.g800, fs: 20 });
   }
   function rptTopics(ctx, rows, first, total, d) {
