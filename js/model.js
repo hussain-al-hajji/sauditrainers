@@ -249,7 +249,7 @@ const defaultFooter = () => {
       { title: 'المناطق', kind: 'regions', vis: true, links: [] }
     ],
     copy: '© {year} مدرّبون سعوديّون · جميع الحقوق محفوظة',
-    bottom: [{ label: 'اتفاقية الاستخدام', href: 'terms.html', vis: true }, { label: 'سياسة الخصوصية', href: 'privacy.html', vis: true }, { label: 'الإدارة', href: '#/admin', vis: true }]
+    bottom: [{ label: 'اتفاقية الاستخدام', href: 'terms.html', vis: true }, { label: 'سياسة الشكاوى', href: 'complaints.html', vis: true }, { label: 'سياسة الخصوصية', href: 'privacy.html', vis: true }, { label: 'الإدارة', href: '#/admin', vis: true }]
   };
 };
 const footerHref = h => { h = String(h || '').trim(); return /^(#\/[\w\-/?=&%.]*|https?:\/\/[^\s"'<>]+|mailto:[^\s"'<>]+|tel:[+\d]+|[\w\-/]+\.html(#[\w-]*)?|\/[\w\-/.]*)$/.test(h) ? h : ''; };
@@ -259,6 +259,7 @@ const siteFooter = () => {
   const norm = o => ({ ...o, links: arr(o.links) });
   // رابط «اتفاقية الاستخدام» يظهر دائماً ولو كان التذييل محفوظاً قبل إضافته (إلا إن وُجد له بند محفوظ، فيُحترم إخفاؤه أو ترتيبه)
   const bottom = arr(s.bottom); if (!bottom.some(l => /terms\.html/.test(l.href || ''))) { const j = bottom.findIndex(l => /privacy\.html/.test(l.href || '')); bottom.splice(j >= 0 ? j : 0, 0, { label: 'اتفاقية الاستخدام', href: 'terms.html', vis: true }); }
+  if (!bottom.some(l => /complaints\.html/.test(l.href || ''))) { const j = bottom.findIndex(l => /privacy\.html/.test(l.href || '')); bottom.splice(j >= 0 ? j : bottom.length, 0, { label: 'سياسة الشكاوى', href: 'complaints.html', vis: true }); }
   return { tagline: s.tagline ?? d.tagline, socials: arr(s.socials), cols: arr(s.cols).map(norm), copy: s.copy ?? d.copy, bottom };
 };
 const siteTicker = () => { const t = { ...defaultTicker(), ...(Store.get('content/ticker') || {}) }; t.items = arr(t.items).filter(i => i.text); return t; };
