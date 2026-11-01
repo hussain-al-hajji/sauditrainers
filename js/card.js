@@ -64,7 +64,7 @@ const Card = (() => {
       <div class="tm-head"><div class="tm-glow"></div>${t.featured ? '<span class="tm-star" title="مدرب مميز"><i class="fa-solid fa-star"></i></span>' : ''}</div>
       <div class="tm-ring">${avatar(t, 'tm-photo')}</div>
       <div class="tm-body">
-        <h3>${esc(t.name)}<i class="fa-solid fa-circle-check tm-ok" title="موثّق"></i></h3>
+        <h3>${esc(t.name)}${t.plan !== 'trial' ? '<i class="fa-solid fa-circle-check tm-ok" title="موثّق"></i>' : ''}</h3>
         <p class="tm-title">${esc(t.title || '')}</p>
         <div class="tm-meta">${regionsOf(t).length ? `<span><i class="fa-solid fa-location-dot"></i>${esc(regionsLabel(t, true, cardTemplate().maxRegions))}</span>` : ''}${Number(t.years) ? `<span><i class="fa-solid fa-hourglass-half"></i><b class="num">${esc(t.years)}</b> سنة</span>` : ''}</div>
         <div class="tm-chips">${sp.slice(0, 3).map(s => `<span>${esc(specName(s))}</span>`).join('')}${nAll > 3 ? `<span class="more num">+${nAll - 3}</span>` : ''}</div>

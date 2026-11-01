@@ -159,7 +159,7 @@ const TrainerPdf = (() => {
         if (!L) L = plan(92, 0, false);
         const cy = Y0 + L.R;
         K.avatar(x0, { ...t }, photo, cx, cy, L.R, th.accent);
-        seal(x0, cx + L.R * 0.7, cy + L.R * 0.7, Math.round(30 + L.R * 0.13), th.accent, th.light ? '#FFFFFF' : th.a);
+        if (t.plan !== 'trial') seal(x0, cx + L.R * 0.7, cy + L.R * 0.7, Math.round(30 + L.R * 0.13), th.accent, th.light ? '#FFFFFF' : th.a);
         center(x0, nfit.text, L.nameY, { font: `900 ${nfs}px ${FONT.head}`, color: main });
         tl.forEach((l, i) => center(x0, l, L.tY + i * 46, { font: `600 33px ${FONT.body}`, color: soft }));
         let ly = L.tY + (tl.length - 1) * 46 + 26 + 34;
