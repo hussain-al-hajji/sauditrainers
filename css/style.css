@@ -1465,3 +1465,11 @@ body.preview .local-flag { display: none; }
 .act-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .act-box[open] .act-h small i { transform: rotate(180deg); }
 .act-box[open] .tbl-wrap { margin-top: 14px; }
+
+/* النشر السريع لكل مدرب */
+.qs-list { display: grid; gap: 8px; max-height: 520px; overflow: auto; }
+.qs-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 1px solid var(--line, #e0e8d8); border-radius: 16px; background: #fff; flex-wrap: wrap; }
+.qs-row .grow { min-width: 160px; display: grid; } .qs-row small { line-height: 1.4; }
+.qs-bs { display: flex; gap: 6px; flex-wrap: wrap; }
+.qs-b.li:hover { background: #0A66C2; color: #fff; } .qs-b.xx:hover { background: #111; color: #fff; } .qs-b.ig:hover { background: linear-gradient(45deg,#f09433,#dc2743,#bc1888); color: #fff; }
+.qs-b.qs-done { background: #e6f4ea; border-color: #a9ddbc; color: #12643A; }

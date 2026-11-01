@@ -112,10 +112,12 @@ function aSocial(main) {
     <div class="banner ${Automation.on ? 'ok' : 'info'}"><i class="fa-solid ${Automation.on ? 'fa-robot' : 'fa-hand-pointer'}"></i><span>${Automation.on
       ? `النشر الآلي مفعّل${auto.lastRun ? ` · آخر تشغيل ${ago(auto.lastRun)}` : ''}${auto.platforms ? ` · الحسابات المربوطة: ${PLATFORMS.filter(x => auto.platforms[x.k]).map(x => x.name).join('، ') || 'لا شيء بعد'}` : ''}. تُنشر المنشورات المجدولة تلقائياً في موعدها.`
       : 'النشر الآن يدوي بضغطة: يجهّز النص والصورة ويفتح المنصة. لتفعيل النشر الآلي والجدولة اربط Google Apps Script وحسابات المنصات (الخطوات في <a href="#" data-guide="base">دليل الربط</a>).'}</span></div>
+    <div id="qs"></div>
     <div class="cal">${days.map(d => { const n = dayCount(d); return `<div class="cal-d ${n ? 'has' : ''}"><small>${d.toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { weekday: 'short' })}</small><b class="num">${d.getDate()}</b>${n ? `<span class="num">${n}</span>` : ''}</div>`; }).join('')}</div>
     <h3 class="sp-h">المجدولة <span class="muted num">(${up.length})</span></h3>${up.map(row).join('') || '<p class="muted small">لا منشورات مجدولة.</p>'}
     ${drafts.length ? `<h3 class="sp-h">المسودات <span class="muted num">(${drafts.length})</span></h3>${drafts.map(row).join('')}` : ''}
     ${done.length ? `<h3 class="sp-h">السجل</h3>${done.map(row).join('')}` : ''}`;
+  quickShare($('#qs', main));
   $('#new', main).onclick = () => postEditor({});
   $('#bulk', main).onclick = bulkScheduler;
   $('#cfg', main).onclick = socialSettings;
@@ -126,6 +128,39 @@ function aSocial(main) {
   $$('[data-dup]', main).forEach(b => b.onclick = () => { const p = get(b.dataset.dup); postEditor({ ...p, id: null, status: 'draft', results: null, scheduledAt: null }); });
   $$('[data-del]', main).forEach(b => b.onclick = async () => { if (!await confirmBox('حذف المنشور؟', { ok: 'حذف', danger: true })) return; Store.remove(`social/${b.dataset.del}`); Store.remove(`socialImages/${b.dataset.del}`); });
   $$('[data-pub]', main).forEach(b => b.onclick = () => publishNow(get(b.dataset.pub)));
+}
+
+/* نشر سريع: صف لكل مدرب بثلاثة أزرار (لينكدإن · إكس · إنستقرام) كأنها أزرار مشاركة.
+ * لينكدإن وإكس: نافذة جديدة بالنص جاهزاً (نبذة + رابط صفحة المدرب فيظهر بريفيو بطاقته)، ويبقى ضغط «نشر».
+ * إنستقرام لا يقبل نصاً جاهزاً من رابط: يُنسخ النص وتُنزَّل صورة البطاقة 4:5 وتُفتح إنستقرام لرفعها. النص من «الربط والقوالب». */
+const QS = { q: '', n: 30 };
+function quickShare(box) {
+  const KEY = 'st-qs', done = () => { try { return JSON.parse(localStorage.getItem(KEY) || '{}'); } catch { return {}; } };
+  const mark = (id, p) => { try { const d = done(); d[`${id}:${p}`] = Date.now(); localStorage.setItem(KEY, JSON.stringify(d)); } catch { /* ignore */ } };
+  const live = Data.live().filter(t => Trial.plan(t) === 'full'), q = QS.q.trim().toLowerCase();   // المشتركون اشتراكاً كاملاً فقط (القبول النهائي)، لا حسابات التجربة المجانية
+  const list = live.filter(t => !q || `${t.name} ${t.code} ${t.title || ''}`.toLowerCase().includes(q)), shown = list.slice(0, QS.n), dn = done();
+  const btn = (t, p, ic, label, cls) => `<button class="btn sm qs-b ${cls} ${dn[`${t.id}:${p}`] ? 'qs-done' : ''}" data-qs="${p}" data-id="${esc(t.id)}" title="${label}"><i class="${ic}"></i> ${label}${dn[`${t.id}:${p}`] ? ' <i class="fa-solid fa-check"></i>' : ''}</button>`;
+  box.innerHTML = `<div class="pbox qs-box"><h3><i class="fa-solid fa-share-nodes"></i> نشر سريع لكل مدرب <span class="muted num">(${list.length})</span></h3>
+    <p class="small muted">يظهر هنا المدربون المشتركون اشتراكاً كاملاً (القبول النهائي) فقط. اضغط زر المنصة: تفتح نافذة جديدة بالمنشور جاهزاً (إكس ولينكدإن: نبذة + رابط صفحة المدرب مع بريفيو بطاقته)، ويبقى ضغط «نشر». إنستقرام: يُنسخ النص وتُنزَّل صورة البطاقة المناسبة للمنشور وتُفتح إنستقرام لرفعها. علامة ✓ تذكّرك بما نشرته على هذا الجهاز.</p>
+    <input type="search" id="qs-q" placeholder="بحث باسم المدرب أو رقمه…" value="${esc(QS.q)}" style="margin-bottom:10px">
+    <div class="qs-list">${shown.map(t => `<div class="qs-row">${Card.avatar(t, 'av')}<div class="grow"><b>${esc(t.name)}</b><small class="muted">${esc(t.title || '')}</small></div><div class="qs-bs">${btn(t, 'linkedin', 'fa-brands fa-linkedin-in', 'لينكدإن', 'li')}${btn(t, 'x', 'fa-brands fa-x-twitter', 'إكس', 'xx')}${btn(t, 'instagram', 'fa-brands fa-instagram', 'إنستقرام', 'ig')}</div></div>`).join('') || '<p class="muted small">لا مدربين مطابقين.</p>'}</div>
+    ${list.length > shown.length ? `<button class="btn sm" id="qs-more" style="margin-top:10px">عرض المزيد (${list.length - shown.length})</button>` : ''}</div>`;
+  $('#qs-q', box).oninput = debounce(e => { QS.q = e.target.value; quickShare(box); const i = $('#qs-q', box); i.focus(); i.setSelectionRange(i.value.length, i.value.length); }, 200);
+  $('#qs-more', box) && ($('#qs-more', box).onclick = () => { QS.n += 30; quickShare(box); });
+  const enc = encodeURIComponent, copy = txt => { try { navigator.clipboard.writeText(txt); } catch { /* ignore */ } };
+  $$('[data-qs]', box).forEach(b => b.onclick = async () => {
+    const t = Store.get(`trainers/${b.dataset.id}`), p = b.dataset.qs; if (!t) return;
+    const text = Social.caption(p, t);
+    if (p === 'x') window.open(`https://x.com/intent/post?text=${enc(text)}`, '_blank', 'noopener');
+    else if (p === 'linkedin') { copy(text); window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${enc(text)}`, '_blank', 'noopener'); toast('فُتح لينكدإن؛ إن لم يظهر النص فهو منسوخ، الصقه'); }
+    else {
+      copy(text); window.open('https://www.instagram.com/', '_blank', 'noopener');   // تُفتح فوراً قبل توليد الصورة حتى لا يحجبها المتصفح
+      toast('نُسخ النص؛ جارٍ تجهيز صورة البطاقة…');
+      try { const { data } = await Card.toJPEG(t, 'post'); const blob = await fetch(data).then(r => r.blob()); download(`${(t.code || 'card').toLowerCase()}-post.jpg`, blob); toast('نُزّلت الصورة ونُسخ النص: أنشئ منشوراً جديداً في إنستقرام وارفع الصورة والصق النص'); }
+      catch (e) { console.error(e); toast('تعذّر تجهيز الصورة', 'error'); }
+    }
+    mark(t.id, p); b.classList.add('qs-done');
+  });
 }
 
 async function publishNow(post) {
