@@ -152,7 +152,12 @@ function quickShare(box) {
     const t = Store.get(`trainers/${b.dataset.id}`), p = b.dataset.qs; if (!t) return;
     const text = Social.caption(p, t);
     if (p === 'x') window.open(`https://x.com/intent/post?text=${enc(text)}`, '_blank', 'noopener');
-    else if (p === 'linkedin') { copy(text); window.open(`https://www.linkedin.com/feed/?shareActive=true&text=${enc(text)}`, '_blank', 'noopener'); toast('فُتح لينكدإن؛ إن لم يظهر النص فهو منسوخ، الصقه'); }
+    else if (p === 'linkedin') {
+      // النشر باسم صفحة الشركة: رابط نافذة النشر الخاصة بإدارة الصفحة (لا يقبل تعبئة النص، فيُنسخ النص ويُلصق). الصفحة من «الربط والقوالب ← صفحة لينكدإن» وإلا الافتراضية
+      const li = String(Social.settings().handles?.linkedin || '').trim(), mm = /linkedin\.com\/company\/([^/?#\s]+)/i.exec(li), slug = mm ? mm[1] : (/^[\w-]+$/.test(li) ? li : 'saudi-trainers-sa');
+      copy(text); window.open(`https://www.linkedin.com/company/${slug}/admin/page-posts/published/?share=true`, '_blank', 'noopener');
+      toast('نُسخ النص: الصقه في نافذة النشر باسم الصفحة ثم اضغط نشر');
+    }
     else {
       copy(text); window.open('https://www.instagram.com/', '_blank', 'noopener');   // تُفتح فوراً قبل توليد الصورة حتى لا يحجبها المتصفح
       toast('نُسخ النص؛ جارٍ تجهيز صورة البطاقة…');
