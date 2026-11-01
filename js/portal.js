@@ -213,7 +213,7 @@ function portalLeads(main, t) {
       <span class="ic"><i class="fa-solid fa-building"></i></span>
       <div><b>${esc(l.org)}</b> <span class="pill ${l.status === 'new' ? 'gold' : 'gray'}">${l.status === 'new' ? 'جديد' : 'تم التواصل'}</span><br>
         <small class="muted">${esc(l.person)} · ${ago(l.ts)}</small>
-        <p><b>الموضوع:</b> ${esc(l.topic)}${l.when ? ` · <b>الموعد:</b> ${esc(l.when)}` : ''}${l.mode ? ` · ${esc(DELIVERY.find(d => d.k === l.mode)?.name || '')}` : ''}</p>
+        <p><b>الموضوع:</b> ${esc(l.topic)}${l.lang ? ` · <b>اللغة:</b> ${esc(trainLang(l.lang))}` : ''}${l.when ? ` · <b>الموعد:</b> ${esc(l.when)}` : ''}${l.mode ? ` · ${esc(DELIVERY.find(d => d.k === l.mode)?.name || '')}` : ''}</p>
         ${l.msg ? `<p>${nl2br(l.msg)}</p>` : ''}
       </div>
       <div class="acts" style="flex-direction:column">

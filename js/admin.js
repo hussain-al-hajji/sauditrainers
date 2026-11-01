@@ -646,7 +646,7 @@ const leadDraft = (r, t) => `السلام عليكم ${withTitle(t?.name || r.tr
 
 • الجهة: ${r.org}
 • المسؤول: ${r.person}
-• موضوع البرنامج: ${r.topic}${r.when ? `\n• الموعد المتوقع: ${r.when}` : ''}${r.mode ? `\n• طريقة التقديم: ${DELIVERY.find(d => d.k === r.mode)?.name || ''}` : ''}${r.msg ? `\n• التفاصيل: ${r.msg}` : ''}
+• موضوع البرنامج: ${r.topic}${r.lang ? `\n• لغة التدريب: ${trainLang(r.lang)}` : ''}${r.when ? `\n• الموعد المتوقع: ${r.when}` : ''}${r.mode ? `\n• طريقة التقديم: ${DELIVERY.find(d => d.k === r.mode)?.name || ''}` : ''}${r.msg ? `\n• التفاصيل: ${r.msg}` : ''}
 
 للتواصل معهم: ${r.phone}${r.email ? ' - ' + r.email : ''}
 تفاصيل الطلب في لوحتك: ${siteBase()}#/login`;

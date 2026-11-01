@@ -274,6 +274,8 @@ function leadForm(t) {
         ${field('البريد الإلكتروني', '<input type="email" name="email" maxlength="120" dir="ltr">')}
       </div>
       ${field('موضوع البرنامج *', '<input type="text" name="topic" required maxlength="160">')}
+      <fieldset class="lang-pick" style="border:0;padding:0;margin:0;display:grid;gap:8px"><legend style="font-weight:700;margin-bottom:6px">لغة التدريب المطلوبة في البرنامج *</legend>
+        ${TRAIN_LANG.map(([k, l], i) => `<label class="chk lang-opt"><input type="radio" name="lang" value="${k}" ${i === 0 ? 'required' : ''}><span>${esc(l)}</span></label>`).join('')}</fieldset>
       <div class="grid2">
         ${field('الموعد المتوقع', '<input type="text" name="when" placeholder="مثلاً: الأسبوع الأول من الشهر القادم" maxlength="80">')}
         ${field('طريقة التقديم', `<select name="mode">${DELIVERY.map(d => opt(d.k, d.name)).join('')}</select>`)}
@@ -287,6 +289,7 @@ function leadForm(t) {
     if (!d.org || !d.person || !d.topic) { toast('أكمل الحقول المطلوبة', 'error'); return; }
     if (!validPhone(d.phone)) { toast('رقم الجوال غير صحيح', 'error'); return; }
     if (d.email && !validEmail(d.email)) { toast('البريد الإلكتروني غير صحيح', 'error'); return; }
+    if (!TRAIN_LANG.some(x => x[0] === d.lang)) { toast('اختر لغة التدريب المطلوبة', 'error'); return; }
     const id = await Store.pushConfirmed('leads', { ...d, phone: phoneDigits(d.phone), trainerId: t.id, trainerName: t.name, ts: Date.now(), status: 'new' });
     if (!id) { toast('تعذّر إرسال الطلب، أعد المحاولة', 'error'); return; }
     Automation.notify('lead', id); Analytics.event('lead', { day: 'contacts' });
