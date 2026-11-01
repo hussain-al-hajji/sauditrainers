@@ -3,7 +3,7 @@
 
 function aTemplates(main) {
   const chip = ([k, l]) => `<button type="button" class="tvar" data-v="${k}" title="${l}">{${k}}<small>${l}</small></button>`;
-  const sample = () => Tpl.vars({ a: { id: 'ABCD1234', name: 'أ. سارة العتيبي' }, t: { name: 'أ. سارة العتيبي', code: 'ST0012', slug: 'sarah' }, secret: 'ST0012-7K4Q9P' });
+  const sample = () => Tpl.vars({ a: { id: 'ABCD1234', name: 'أ. سارة محمد' }, t: { name: 'أ. سارة محمد', code: 'ST0012', slug: 'sarah' }, secret: 'ST0012-7K4Q9P' });
   const trainerOpts = Store.list('trainers').filter(t => t.name).sort((x, y) => String(x.name).localeCompare(String(y.name), 'ar')).map(t => `<option value="${esc(t.id)}">${esc(t.name)} - ${esc(t.code || '')}${Data.isLive(t) ? '' : ' (مخفي)'}</option>`).join('');
   main.innerHTML = `
     <div class="dash-h"><h2>قوالب الرسائل</h2></div>
@@ -63,7 +63,7 @@ function aTemplates(main) {
 /* قالب البطاقة التعريفية: المحتوى والخصائص والألوان والخطوط، مع معاينة حيّة. يُحفظ في content/cardTemplate ويسري على كل البطاقات وصور المشاركة */
 function cardTemplateBox(host) {
   let draft = cardTemplate(), theme = 'brand', fmt = 'post';
-  const sample = () => ({ name: 'أ. سارة العتيبي', title: 'مدربة معتمدة في القيادة والتحول الرقمي', gender: 'f', noPhoto: true, theme, regions: ['riyadh', 'makkah', 'eastern'], region: 'riyadh', years: 8, hours: 1200, programs: 60, specs: ['leadership', 'digital', 'soft', 'speaking'] });
+  const sample = () => ({ name: 'أ. سارة محمد', title: 'مدربة معتمدة في القيادة والتحول الرقمي', gender: 'f', noPhoto: true, theme, regions: ['riyadh', 'makkah', 'eastern'], region: 'riyadh', years: 8, hours: 1200, programs: 60, specs: ['leadership', 'digital', 'soft', 'speaking'] });
   const get = path => path.split('.').reduce((o, k) => o[k], draft);
   const set = (path, v) => { const k = path.split('.'); const last = k.pop(); k.reduce((o, x) => o[x], draft)[last] = v; };
   const chk = (p, l) => `<label class="chk"><input type="checkbox" data-p="${p}" ${get(p) ? 'checked' : ''}><span>${l}</span></label>`;
@@ -107,7 +107,7 @@ function cardTemplateBox(host) {
 /* قوالب نصوص مشاركة صفحة المدرب (أيقونات المشاركة في الصفحة العامة): لكل منصة نص بلسان المدرب. تُحفظ في content/shareTpl */
 function shareTemplatesBox(host) {
   const PL = [['linkedin', 'لينكدإن', 'fa-brands fa-linkedin-in'], ['instagram', 'إنستقرام', 'fa-brands fa-instagram'], ['x', 'إكس (280 حرفاً)', 'fa-brands fa-x-twitter'], ['whatsapp', 'واتساب', 'fa-brands fa-whatsapp']];
-  const sample = () => ({ name: 'أ. سارة العتيبي', title: 'مدربة معتمدة في القيادة والتحول الرقمي', gender: 'f', regions: ['riyadh', 'makkah'], region: 'riyadh', years: 8, hours: 1200, programs: 150, slug: 'sarah', id: 'st0001', specs: ['leadership', 'digital'], cardSpecs: ['leadership', 'digital'] });
+  const sample = () => ({ name: 'أ. سارة محمد', title: 'مدربة معتمدة في القيادة والتحول الرقمي', gender: 'f', regions: ['riyadh', 'makkah'], region: 'riyadh', years: 8, hours: 1200, programs: 150, slug: 'sarah', id: 'st0001', specs: ['leadership', 'digital'], cardSpecs: ['leadership', 'digital'] });
   const saved = () => Store.get('content/shareTpl') || {};
   const draw = () => {
     host.innerHTML = `<div class="pbox"><h3><i class="fa-solid fa-share-nodes"></i>نصوص مشاركة المدرب ${Object.keys(saved()).length ? '<span class="pill gold">معدَّل</span>' : ''}</h3>

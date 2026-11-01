@@ -4,7 +4,7 @@ const MailTests = { k: 'initial' };
 
 function mailTests(body) {
   const c = Data.content(), to0 = window.ST_CONFIG.adminEmail || (c.contact && c.contact.email) || (Security.currentUser() || {}).email || '';
-  const now = Date.now(), name = 'أ. سارة العتيبي', fee = (c.join || {}).fee || 720;
+  const now = Date.now(), name = 'أ. سارة محمد', fee = (c.join || {}).fee || 720;
   const a = { id: 'TEST-0001', name, email: to0, phone: '966500000000', status: 'accepted' };
   const trial = { id: 'st0000', code: 'ST0000', name, slug: 'sample', plan: 'trial', trialEnd: now + 30 * 864e5 }, full = { ...trial, plan: 'full', trialEnd: null };
   const SEC = 'ST0000-ABC123';

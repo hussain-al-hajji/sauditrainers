@@ -16,9 +16,9 @@ const PromoSlides = (() => {
   // بطاقات نموذجية حقيقية (نفس مكوّن بطاقة المدرب) بلا بيانات أشخاص
   const sampleCard = (i = 0) => {
     const sp = SPECIALTIES.filter(x => x.k !== 'other').slice(i * 3, i * 3 + 3).map(x => x.k), th = CARD_THEMES[i % CARD_THEMES.length].k;
-    const t = [{ name: 'د. فيصل المنصور', title: 'مدرب ريادة الأعمال وإدارة المشاريع', gender: 'm', years: 10, hours: 2400, programs: 120, regions: ['madinah', 'riyadh'], region: 'madinah' },
-      { name: 'أ. سارة العتيبي', title: 'مدربة القيادة والتحول الرقمي', gender: 'f', years: 8, hours: 1500, programs: 80, regions: ['riyadh'], region: 'riyadh' },
-      { name: 'أ. خالد الحربي', title: 'مدرب التسويق والمبيعات', gender: 'm', years: 12, hours: 3000, programs: 150, regions: ['makkah'], region: 'makkah' }][i % 3];
+    const t = [{ name: 'د. فيصل صالح', title: 'مدرب ريادة الأعمال وإدارة المشاريع', gender: 'm', years: 10, hours: 2400, programs: 120, regions: ['madinah', 'riyadh'], region: 'madinah' },
+      { name: 'أ. سارة محمد', title: 'مدربة القيادة والتحول الرقمي', gender: 'f', years: 8, hours: 1500, programs: 80, regions: ['riyadh'], region: 'riyadh' },
+      { name: 'أ. خالد إبراهيم', title: 'مدرب التسويق والمبيعات', gender: 'm', years: 12, hours: 3000, programs: 150, regions: ['makkah'], region: 'makkah' }][i % 3];
     return Card.full({ ...t, id: `__pm${i}`, noPhoto: true, theme: th, specs: sp, cardSpecs: sp }).replace(' data-tilt="8"', '');
   };
   const win = (url, body) => `<div class="pmx-win"><div class="pmx-bar"><i></i><i></i><i></i><span dir="ltr">${url}</span></div>${body}</div>`;

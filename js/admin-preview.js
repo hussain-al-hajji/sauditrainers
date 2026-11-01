@@ -11,7 +11,7 @@ const TrainerPreview = {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#d9e7d0"/><stop offset="1" stop-color="#8fb89a"/></linearGradient></defs><rect width="200" height="200" fill="url(#g)"/><circle cx="100" cy="78" r="34" fill="#f1c9a5"/><path d="M62 70c4-30 22-42 40-42s36 12 38 42c-10-14-24-20-40-20s-28 6-38 20z" fill="#2b2b2b"/><path d="M30 200c4-44 34-68 70-68s66 24 70 68z" fill="#005430"/><path d="M82 132l18 26 18-26z" fill="#fff"/></svg>`;
     const t = {
       id, code: 'ST9999', slug: 'preview-trainer', status: 'active', featured: true, demo: true, publishedAt: now - 120 * 864e5, updatedAt: now,
-      name: 'م. عبدالله العتيبي', nameEn: 'Abdullah Alotaibi', gender: 'm', region: 'riyadh', regions: ['riyadh', 'makkah', 'eastern'], city: 'الرياض', travel: true,
+      name: 'م. عبدالله يوسف', nameEn: 'Abdullah Yousef', gender: 'm', region: 'riyadh', regions: ['riyadh', 'makkah', 'eastern'], city: 'الرياض', travel: true,
       title: 'مدرب معتمد في القيادة والتحول الرقمي وتطوير الأعمال',
       bio: 'مدرب سعودي بخبرة تتجاوز اثنتي عشرة سنة في التدريب والتطوير المؤسسي، قدّمت مئات البرامج لجهات حكومية وخاصة في مختلف مناطق المملكة.\n\nأركّز في برامجي على الجانب التطبيقي: ورش عمل تفاعلية، ودراسات حالة من بيئة العمل السعودية، وأدوات جاهزة يطبّقها المتدرب في يومه التالي.\n\nأؤمن أن التدريب الناجح يُقاس بأثره على الأداء، ولذلك أرفق كل برنامج بخطة متابعة وقياس بعد انتهاء التدريب.',
       specs, cardSpecs: specs.slice(0, 6), modes: ['onsite', 'online'], langs: 'العربية، الإنجليزية', tot: true,
@@ -28,9 +28,9 @@ const TrainerPreview = {
     const vday = {}; for (let i = 0; i < 30; i++) vday[dayKeyRiyadh(i)] = 3 + Math.round(Math.abs(Math.sin(i / 3)) * 9);
     const platform = Store.get('stats/platform') || { updatedAt: now, since: '20230315', sessionsAll: 19931, usersAll: 12786, viewsAll: 43615, users30: 2310, sessions30: 3100, views30: 8000, impressionsAll: 198581, impressionsSince: '2025-06-10' };
     const leads = {
-      l1: { id: 'l1', trainerId: id, org: 'شركة الأفق للتدريب', person: 'سلطان المطيري', topic: 'برنامج القيادة للمشرفين الجدد', when: 'خلال الشهر القادم', mode: 'onsite', phone: '966500000001', email: 'info@example.com', msg: 'نرغب ببرنامج لمدة يومين لعدد 25 متدرباً في الرياض.', ts: now - 3 * 36e5, status: 'new' },
-      l2: { id: 'l2', trainerId: id, org: 'جامعة المستقبل', person: 'د. منى القحطاني', topic: 'ورشة التحول الرقمي لأعضاء هيئة التدريس', when: 'الربع القادم', mode: 'online', phone: '966500000002', email: 'training@example.com', msg: 'ورشة عن بُعد لمدة ثلاث ساعات.', ts: now - 2 * 864e5, status: 'new' },
-      l3: { id: 'l3', trainerId: id, org: 'مؤسسة النخبة', person: 'فهد الدوسري', topic: 'مهارات التفاوض', when: 'الشهر الماضي', mode: 'onsite', phone: '966500000003', email: 'hr@example.com', msg: 'تم الاتفاق وتنفيذ البرنامج.', ts: now - 25 * 864e5, status: 'done' }
+      l1: { id: 'l1', trainerId: id, org: 'شركة الأفق للتدريب', person: 'سلطان عمر', topic: 'برنامج القيادة للمشرفين الجدد', when: 'خلال الشهر القادم', mode: 'onsite', phone: '966500000001', email: 'info@example.com', msg: 'نرغب ببرنامج لمدة يومين لعدد 25 متدرباً في الرياض.', ts: now - 3 * 36e5, status: 'new' },
+      l2: { id: 'l2', trainerId: id, org: 'جامعة المستقبل', person: 'د. منى عبدالله', topic: 'ورشة التحول الرقمي لأعضاء هيئة التدريس', when: 'الربع القادم', mode: 'online', phone: '966500000002', email: 'training@example.com', msg: 'ورشة عن بُعد لمدة ثلاث ساعات.', ts: now - 2 * 864e5, status: 'new' },
+      l3: { id: 'l3', trainerId: id, org: 'مؤسسة النخبة', person: 'فهد أحمد', topic: 'مهارات التفاوض', when: 'الشهر الماضي', mode: 'onsite', phone: '966500000003', email: 'hr@example.com', msg: 'تم الاتفاق وتنفيذ البرنامج.', ts: now - 25 * 864e5, status: 'done' }
     };
     return {
       meta: { createdAt: now, seeded: now }, counters: { trainer: 9999 },

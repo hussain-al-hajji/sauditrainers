@@ -126,7 +126,7 @@ function mailCompose(body, main) {
   let pt;
   const preview = () => {
     clearTimeout(pt);
-    pt = setTimeout(() => { const f = $('#mframe', body); if (f) f.srcdoc = `<meta charset="utf-8"><body style="margin:0">${mailHtml(D, mailVarsFor({ name: 'أ. سارة العتيبي', slug: 'sara' }), mailOpts())}</body>`; }, 120);
+    pt = setTimeout(() => { const f = $('#mframe', body); if (f) f.srcdoc = `<meta charset="utf-8"><body style="margin:0">${mailHtml(D, mailVarsFor({ name: 'أ. سارة محمد', slug: 'sara' }), mailOpts())}</body>`; }, 120);
   };
   const fieldHTML = (b, i, [f, label, kind]) => {
     if (OPT_FIELDS.has(f)) return `<label class="field mail-f mf-${f}"><span>${f === 'align' ? 'المحاذاة' : label}</span><select data-i="${i}" data-f="${f}">${MAIL_OPTS[f].map(([v, l]) => `<option value="${v}" ${(b[f] || MAIL_NEW[b.t][f]) === v ? 'selected' : ''}>${l}</option>`).join('')}</select></label>`;
@@ -245,7 +245,7 @@ function mailRecipients(body, main) {
     <p class="muted small">هنا تضيف وتدير قائمة المدعوّين (بريدات مستوردة لغير المسجلين). اختيار المستلمين يتم في خطوة «المستلمون» أسفل صفحة كتابة الرسالة.</p>
     ${who === 'invitees' ? `<div class="pbox"><h3><i class="fa-solid fa-user-plus"></i>إضافة بريدات مدعوّين</h3>
       <p class="muted small">الصق البريدات (واحد في كل سطر، أو بصيغة «الاسم، البريد»)، أو ارفع ملف CSV/نص. لا يُضاف بريد مسجَّل لدينا مسبقاً ولا المكرر.</p>
-      <textarea id="inv" rows="5" dir="ltr" placeholder="name@example.com&#10;سارة العتيبي, sara@example.com"></textarea>
+      <textarea id="inv" rows="5" dir="ltr" placeholder="name@example.com&#10;سارة محمد, sara@example.com"></textarea>
       <div class="row"><button class="btn primary sm" id="invadd"><i class="fa-solid fa-plus"></i> إضافة للقائمة</button><label class="btn sm"><i class="fa-solid fa-file-csv"></i> رفع ملف<input type="file" id="invfile" accept=".csv,.txt,text/csv,text/plain" hidden></label></div></div>` : `<p class="muted small">يظهر هنا المدربون الذين سجّلوا بريدهم في بياناتهم الخاصة. من لا بريد له لا يمكن مراسلته.</p>`}
     <div class="toolbar"><input type="search" id="rq" placeholder="بحث بالاسم أو البريد" value="${esc(MailUI.q)}">
       <button class="btn sm" id="rall"><i class="fa-solid fa-check-double"></i> تحديد الكل (${selectable.length})</button>
