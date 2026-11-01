@@ -75,7 +75,7 @@ function aMail(main) {
     <div class="mail-tabs">
       <button data-mt="compose" class="${tab === 'compose' ? 'on' : ''}"><i class="fa-solid fa-pen-nib"></i>كتابة الرسالة</button>
       <button data-mt="weekly" class="${tab === 'weekly' ? 'on' : ''}"><i class="fa-solid fa-calendar-week"></i>الرسالة الأسبوعية</button>
-      <button data-mt="weekly2" class="${tab === 'weekly2' ? 'on' : ''}"><i class="fa-solid fa-user-clock"></i>الرسالة الشهرية لغير المسجلين</button>
+      <button data-mt="weekly2" class="${tab === 'weekly2' ? 'on' : ''}"><i class="fa-solid fa-user-clock"></i>النشرة الشهرية (للجيميل)</button>
       <button data-mt="initial" class="${tab === 'initial' ? 'on' : ''}"><i class="fa-solid fa-gift"></i>القبول المبدئي والتجربة</button>
       <button data-mt="report" class="${tab === 'report' ? 'on' : ''}"><i class="fa-solid fa-file-pdf"></i>التقرير الشهري</button>
       <button data-mt="rcpt" class="${tab === 'rcpt' ? 'on' : ''}"><i class="fa-solid fa-envelope-circle-check"></i>إدارة المدعوّين <span class="badge num">${counts.i}</span></button>

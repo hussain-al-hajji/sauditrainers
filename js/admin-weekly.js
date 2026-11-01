@@ -134,25 +134,30 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     const base = siteBase(), blocks = [], mname = ymLabel(ym), last = new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0).getDate(), fee = (Data.content().join || {}).fee || 720;
     const T = homeStatTexts(), st = Store.get(`stats/month/${ym}`) || {}, comp = MonthStats.compute()[ym] || {};
     const opp = Math.max(Number(st.requests) || 0, comp.requests || 0) + Math.max(Number(st.ads) || 0, comp.ads || 0), jobs = Math.max(Number(st.jobs) || 0, comp.jobs || 0);
-    const reg = { t: 'btn', text: 'سجّل كمدرب سعودي', url: `${base}#/join`, align: 'center' };
+    const reg = { t: 'btn', text: 'سجّل كمدرب سعودي', url: `${base}#/join`, align: 'center' }, free = { t: 'p', text: '🎁 **جرّب المنصة مجاناً لمدة شهر**', align: 'center' };
+    const cta = () => { blocks.push({ ...free }); blocks.push({ ...reg }); };   // كما في صفحة النشرة: عبارة التجربة المجانية فوق زر التسجيل، وتتكرر خلال الرسالة
     const sub = x => String(x || '').replace(/\{month\}/g, mname).replace(/\{fee\}/g, String(fee));
+    blocks.push({ t: 'h', text: `النشرة الشهرية لمنصة مدرّبون سعوديّون · ${mname}`, align: 'start' });
     blocks.push({ t: 'p', text: sub(intro), align: 'start' });
-    blocks.push({ ...reg });
+    blocks.push({ t: 'btn', text: 'اقرأ النشرة كاملة وحمّلها PDF', url: `${base}monthly/`, align: 'center' });
+    cta();
     blocks.push({ t: 'h', text: `📊 أرقام المنصة في شهر ${mname}`, align: 'start' });
     blocks.push({ t: 'stat', num: num(monthVisits(ym)), text: `زيارات المنصة خلال شهر ${mname}` });
     blocks.push({ t: 'stat', num: num(platformVisitsTotal()), text: `إجمالي زيارات المنصة حتى ${fmt(Date.now())}` });
     blocks.push({ t: 'stat', num: num(opp), text: clean(T.lReq), note: clean(T.tReq) });
     blocks.push({ t: 'stat', num: num(jobs), text: clean(T.lJobs), note: clean(T.tJobs) });
+    cta();
     // عناوين البرامج المطلوبة: تُسحب تلقائياً من بطاقات قسم «من طلبات هذا الشهر» للشهر المختار (المرفوعة من ملف العناوين)، بلا تكرار
     const seen = new Map(), titles = [];
     Store.list('showcase').filter(x => ymOfTs(x.ts) === ym).sort((a, b) => (b.ts || 0) - (a.ts || 0)).forEach(x => { const c = clean(x.title).replace(/\s+/g, ' '), k = c.toLowerCase(); if (!c) return; if (seen.has(k)) { seen.get(k).n += Number(x.n) || 0; return; } const o = { c, n: Number(x.n) || 0, spec: x.spec, org: clean(x.org), city: clean(x.city), ts: x.ts }; seen.set(k, o); titles.push(o); });
     titles.sort((a, b) => b.n - a.n);   // الأكثر طلباً أولاً
     if (titles.length) {
       blocks.push({ t: 'h', text: '🎯 مجالات وموضوعات التدريب المطلوبة هذا الشهر', align: 'start' });
-      blocks.push({ t: 'box', text: titles.map(x => `• ${x.c}${x.n > 0 ? ` (${num(x.n)} ${x.n === 1 ? 'فرصة' : 'فرص'})` : ''}`).join('\n') });
+      blocks.push({ t: 'box', text: titles.map(x => `• **${x.c}**${[x.org, x.city].filter(Boolean).length ? ` — ${[x.org, x.city].filter(Boolean).join(' · ')}` : ''}${x.n > 0 ? ` (${num(x.n)} ${x.n === 1 ? 'فرصة' : 'فرص'})` : ''}`).join('\n') });
     }
-    blocks.push({ ...reg });
+    cta();
     newsBlocks(blocks, `${ym}-01`, `${ym}-${String(last).padStart(2, '0')}`, base, `${base}#/login`, true, `📰 أخبار المدربين خلال شهر ${mname}`);
+    cta();
     blocks.push({ t: 'hr' });
     blocks.push({ t: 'h', text: '🪧 هكذا تظهر بطاقتك التعريفية', align: 'start' });
     blocks.push({ t: 'img', url: `${base}assets/card-sample.jpg`, alt: 'نموذج افتراضي لبطاقة مدرب على المنصة', w: 'full', align: 'center', link: `${base}#/join` });
@@ -165,7 +170,7 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
       list.forEach(i => blocks.push({ t: 'box', text: `${i.em || '✨'}  **${clean(i.t)}**${i.tr ? ' [[t:متاحة للتجربة المجانية]]' : i.x ? ' [[حصرية للمشتركين]]' : ''}${Pitch.brief(i) ? '\n' + clean(Pitch.brief(i)) : ''}` }));
       if (g === 'value') blocks.push({ t: 'p', text: sub(`رسوم الاشتراك **{fee} ريالاً** للسنة الأولى [[${Pitch.renew}]]، ${Pitch.perDay(fee)}.`), align: 'start' });
     });
-    blocks.push({ ...reg });
+    cta();
     blocks.push({ t: 'hr' });
     blocks.push({ t: 'p', text: sub(outro), align: 'start' });
     return { subject: sub(subject), blocks, atts: [] };
@@ -182,10 +187,10 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     const S = { ...getM(), ...Object.fromEntries(['subject', 'intro', 'outro'].filter(k => U[k] != null).map(k => [k, U[k]])) };
     const months = [...new Set([U.ym, ...monthOptions()])].sort().reverse();
     body.innerHTML = `<div class="pbox">
-      <h3><i class="fa-solid fa-calendar-check"></i> الرسالة الشهرية لغير المسجلين</h3>
+      <h3><i class="fa-solid fa-calendar-check"></i> النشرة الشهرية - قالب جاهز للجيميل</h3>
       <p class="small muted">تُولَّد في بداية كل شهر ميلادي عن الشهر المنتهي: زيارات الشهر والإجمالي، فرص التعاون والوظائف، مجالات التدريب المطلوبة، أخبار المدربين، ثم مزايا المنصة وحساب المدرب ونموذج البطاقة، وزر «سجّل كمدرب سعودي» يتكرر خلالها. المستلمون المتاحون الآن: <b class="num">${mailApplicants().length + mailInvitees().filter(r => !r.optOut).length}</b>.</p>
       <div class="bl-bar"><label>الشهر<select id="mm-ym">${months.map(m => `<option value="${m}" ${m === U.ym ? 'selected' : ''}>${esc(ymLabel(m))}</option>`).join('')}</select></label>
-        <button class="btn primary" id="mm-gen"><i class="fa-solid fa-wand-magic-sparkles"></i> توليد محتوى الرسالة (آخر تحديث للبيانات)</button></div>
+        <button class="btn primary" id="mm-gen"><i class="fa-solid fa-wand-magic-sparkles"></i> توليد النشرة</button></div>
       <div class="pbox" style="margin-top:10px;background:var(--g50)"><b><i class="fa-solid fa-list-check"></i> عناوين ومواضيع التدريب المطلوبة هذا الشهر</b>
         <p class="small muted" style="margin:4px 0 0">تُسحب تلقائياً من بطاقات قسم «من طلبات هذا الشهر» (الفرص → رفع ملف عناوين) للشهر المختار: <b class="num" id="mm-nt">${Store.list('showcase').filter(x => ymOfTs(x.ts) === U.ym).length}</b> عنواناً. إن لم توجد بطاقات للشهر حُذف هذا القسم من الرسالة.</p></div>
       <div id="mm-out" style="margin-top:12px"></div>
