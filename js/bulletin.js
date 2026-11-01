@@ -18,6 +18,13 @@ const Bulletin = (() => {
   function rrect(ctx, x, y, w, h, r, fill, stroke, lw = 1.5) { K().rr(ctx, x, y, w, h, r); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke(); } }
   function txt(ctx, s, x, y, { font, color, align = 'right', dir = 'rtl' }) { ctx.font = font; ctx.fillStyle = color; ctx.textAlign = align; ctx.direction = dir; ctx.fillText(s, x, y); ctx.direction = 'rtl'; }
   function fitFont(ctx, s, weight, maxPx, minPx, maxW, family) { let fs = maxPx; for (; fs > minPx; fs -= 2) { ctx.font = `${weight} ${fs}px ${family}`; if (ctx.measureText(s).width <= maxW) break; } return fs; }
+  // سطر واحد بحد عرض: يصغّر الخط حتى حد أدنى ثم يقتطع بنقاط «…» فلا يتجاوز العرض أبداً (يُستعمل لكل نص ديناميكي في سطر واحد)
+  function fitLine(ctx, s, weight, maxPx, minPx, maxW, family) {
+    s = String(s || ''); const fs = fitFont(ctx, s, weight, maxPx, minPx, maxW, family); ctx.font = `${weight} ${fs}px ${family}`;
+    if (ctx.measureText(s).width <= maxW) return { text: s, fs };
+    let t = s; while (t.length > 1 && ctx.measureText(t + '…').width > maxW) t = t.slice(0, -1);
+    return { text: t.trimEnd() + '…', fs };
+  }
   function pill(ctx, s, rightX, cy, { bg = C.g100, fg = C.g800, fs = 22 } = {}) {
     ctx.font = `700 ${fs}px ${FONT.body}`; const w = ctx.measureText(s).width + 34, h = fs + 20;
     rrect(ctx, rightX - w, cy - h / 2, w, h, h / 2, bg); txt(ctx, s, rightX - w / 2, cy + fs * 0.35, { font: ctx.font, color: fg, align: 'center' }); return w;
@@ -122,11 +129,10 @@ const Bulletin = (() => {
     try { ctx.save(); K().rr(ctx, x, y, w, h, 30); ctx.clip(); ctx.fillStyle = ctx.createPattern(K().patternTile(C.sage, 0.1), 'repeat'); ctx.fillRect(x, y, w, h); ctx.restore(); } catch { /* */ }
     avatar(ctx, t, img, x + w - 26 - R - 4, y + h / 2, R);
     const tr = x + w - 26 - 2 * R - 24, avail = H.avail;
-    const fs = fitFont(ctx, t.name || '', 900, big ? 50 : 36, 24, avail, FONT.head);
+    const nm = fitLine(ctx, (t.name || '') + (cont ? ' (تتمة)' : ''), 900, big ? 50 : 36, 24, avail, FONT.head);   // «تتمة» ضمن سطر الاسم نفسه فلا يتداخل شيء
     const top = y + (h - (H.nameH + H.lines.length * H.lh)) / 2;
-    txt(ctx, t.name || '', tr, top + H.nameH - 14, { font: `900 ${fs}px ${FONT.head}`, color: '#fff' });
+    txt(ctx, nm.text, tr, top + H.nameH - 14, { font: `900 ${nm.fs}px ${FONT.head}`, color: '#fff' });
     H.lines.forEach((l, i) => txt(ctx, l, tr, top + H.nameH + H.lh * (i + 1) - 8, { font: `600 ${H.tfs}px ${FONT.body}`, color: C.sage }));
-    if (cont) pill(ctx, 'تتمة', x + 26 + qs + 24 + 70, y + h / 2, { bg: 'rgba(255,255,255,.14)', fg: C.cream, fs: 18 });   // على يسار الاسم (بجانب الرمز) فلا يغطي الاسم
     qr(ctx, profileUrl(t), x + 26, y + (h - qs - 16) / 2, qs);
     return h;
   }
@@ -408,7 +414,7 @@ const Bulletin = (() => {
     txt(ctx, 'أرقام وفرص وأخبار منصة', W - 100, 730, { font: `600 38px ${FONT.body}`, color: C.cream });
     txt(ctx, 'مدرّبون سعوديّون', W - 100, 786, { font: `600 38px ${FONT.body}`, color: C.cream });
     ctx.font = `800 40px ${FONT.body}`; const w = ctx.measureText(d.mname).width + 80; rrect(ctx, W - 100 - w, 830, w, 80, 40, 'rgba(238,243,229,.12)', 'rgba(201,218,180,.55)'); txt(ctx, d.mname, W - 100 - w / 2, 884, { font: ctx.font, color: C.cream, align: 'center' });
-    [[d.stats[0].num, 'زيارة للمنصة'], [d.stats[2].num, 'فرصة تعاون'], [d.stats[3].num, 'وظيفة']].forEach(([v, l], i) => { const x = W - 100 - i * 300; txt(ctx, String(v), x, 1180, { font: `900 74px ${FONT.head}`, color: '#fff', align: 'right', dir: 'ltr' }); txt(ctx, l, x, 1230, { font: `600 30px ${FONT.body}`, color: C.sage }); });
+    [[d.stats[0].num, 'زيارة للمنصة'], [d.stats[2].num, 'فرصة تعاون'], [d.stats[3].num, 'وظيفة']].forEach(([v, l], i) => { const x = W - 100 - i * 300; const nf = fitFont(ctx, String(v), 900, 74, 36, 270, FONT.head); txt(ctx, String(v), x, 1180, { font: `900 ${nf}px ${FONT.head}`, color: '#fff', align: 'right', dir: 'ltr' }); txt(ctx, l, x, 1230, { font: `600 30px ${FONT.body}`, color: C.sage }); });
     txt(ctx, 'sauditrainers.sa', 100, 1290, { font: `800 34px ${FONT.brand}`, color: C.cream, align: 'left', dir: 'ltr' });   // أسفل الأرقام وتسمياتها فلا يتداخل معها
   }
   function rptStats(ctx, d) {
@@ -526,6 +532,6 @@ const Bulletin = (() => {
   }
 
   // أدوات الرسم لملفات PDF أخرى (مثل «ملف المدرب»): تُسلَّم كدالة لأن الخطوط تُحمَّل عند prepare()
-  const kit = () => ({ C, W, H, PX, CW, TOP, BOT, FONT, txt, pill, rrect, fitFont, qr, avatar, frameBg, chrome, prepare, pdf, deliver, toPng, setPhotos: v => { usePhotos = v; }, logo: () => K().loadImage(LOGO.cream) });
+  const kit = () => ({ C, W, H, PX, CW, TOP, BOT, FONT, txt, pill, rrect, fitFont, fitLine, qr, avatar, frameBg, chrome, prepare, pdf, deliver, toPng, setPhotos: v => { usePhotos = v; }, logo: () => K().loadImage(LOGO.cream) });
   return { make, build, zip, pdf, limit, og, deliver, report, reportPdf, reportBuild, kit };
 })();

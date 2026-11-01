@@ -114,7 +114,7 @@ const TrainerPdf = (() => {
           s = clean(s); if (!s) return; ctx.font = `700 ${fs}px ${FONT.body}`; const w = Math.min(CW, ctx.measureText(s).width + 44);
           if (rowY == null || rx - w < PX) { if (rowY != null) y += h + gap; need(h + gap); rowY = y; rx = W - PX; }
           K.rrect(ctx, rx - w, y, w, h, h / 2, C.g100, 'rgba(0,84,48,.18)', 1.5);
-          ctx.save(); ctx.beginPath(); ctx.rect(rx - w + 14, y, w - 28, h); ctx.clip(); K.txt(ctx, s, rx - w / 2, y + h / 2 + 9, { font: `700 ${fs}px ${FONT.body}`, color: C.g800, align: 'center' }); ctx.restore();
+          ctx.save(); ctx.beginPath(); ctx.rect(rx - w + 14, y, w - 28, h); ctx.clip(); K.txt(ctx, K.fitLine(ctx, s, 700, fs, fs, w - 28, FONT.body).text, rx - w / 2, y + h / 2 + 9, { font: `700 ${fs}px ${FONT.body}`, color: C.g800, align: 'center' }); ctx.restore();
           rx -= w + gap;
         });
         if (rowY != null) y += h + 34;
@@ -138,7 +138,7 @@ const TrainerPdf = (() => {
         K.pill(x0, 'ملف سيرة احترافي', 96 + 230, 130, { bg: A(th.accent, 0.14), fg: main, fs: 25 });
         // التخطيط يُحسب من المساحة المتاحة فوق التذييل: يصغّر حجم الصورة تدريجياً (ثم يقلّل التخصصات) حتى لا يتداخل شيء مع التذييل
         const cx = W / 2, fy = H - 38 - 14 - 150, limit = fy - 24, Y0 = 204;
-        const nfs = K.fitFont(x0, clean(t.name), 900, 78, 40, 880, FONT.head);
+        const nfit = K.fitLine(x0, clean(t.name), 900, 78, 34, 880, FONT.head), nfs = nfit.fs;   // اسم طويل جداً: يصغر ثم يُقتطع بنقاط
         x0.font = `600 33px ${FONT.body}`; const tl = KT.wrap(x0, clean(t.title), 860, 2);
         const loc = [regionsLabel(t), t.city].filter(Boolean).join(' · ');
         const stats = [[t.years, 'سنة خبرة'], [t.hours, 'ساعة تدريبية'], [t.programs, 'برنامج ودورة']].filter(s => Number(s[0]) > 0);
@@ -160,7 +160,7 @@ const TrainerPdf = (() => {
         const cy = Y0 + L.R;
         K.avatar(x0, { ...t }, photo, cx, cy, L.R, th.accent);
         seal(x0, cx + L.R * 0.7, cy + L.R * 0.7, Math.round(30 + L.R * 0.13), th.accent, th.light ? '#FFFFFF' : th.a);
-        center(x0, clean(t.name), L.nameY, { font: `900 ${nfs}px ${FONT.head}`, color: main });
+        center(x0, nfit.text, L.nameY, { font: `900 ${nfs}px ${FONT.head}`, color: main });
         tl.forEach((l, i) => center(x0, l, L.tY + i * 46, { font: `600 33px ${FONT.body}`, color: soft }));
         let ly = L.tY + (tl.length - 1) * 46 + 26 + 34;
         if (loc) { pillC(x0, loc, ly, { bg: A(th.accent, 0.13), fg: main, fs: 25 }); ly += 62; }
