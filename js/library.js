@@ -149,6 +149,7 @@ const Library = (() => {
         ${field('وصف مختصر', `<input name="summary" maxlength="300" value="${esc(r.summary || '')}">`)}
         ${field('المحتوى', `<textarea name="body" rows="10" maxlength="6000">${esc(r.body || '')}</textarea>`, 'استعمل **نص** للخط العريض. القوالب وقوائم التحقق يستطيع المدرب نسخها بزر.')}
         ${field('رابط (اختياري)', `<input name="url" type="url" dir="ltr" value="${esc(r.url || '')}" placeholder="https://…">`)}
+        ${field('الوسوم والمراحل', `<input name="tags" maxlength="120" value="${esc(r.tags || '')}" placeholder="عرض سعر، عقد، تقييم">`, 'مرحلة المورد بالعلامات @قبل أو @أثناء أو @بعد (يجوز الجمع بينها)، وبقية الكلمات للبحث.')}
         <label class="chk"><input type="checkbox" name="pin" ${r.pin ? 'checked' : ''}><span>تثبيت في أعلى المكتبة</span></label>
         <div class="row end" style="flex-wrap:wrap"><button type="button" class="btn ghost" data-close>إلغاء</button><button type="button" class="btn" id="lpv"><i class="fa-solid fa-eye"></i> معاينة</button>
           ${isPub ? '<button class="btn primary" type="submit">حفظ التعديلات</button>' : '<button type="button" class="btn" id="ldr"><i class="fa-solid fa-floppy-disk"></i> حفظ كمسودة</button><button class="btn primary" type="submit">اعتماد ونشر للمدربين</button>'}</div></form>`, { wide: true });
@@ -158,7 +159,7 @@ const Library = (() => {
       if (!f.body.value.trim() && !url) { toast('أضف محتوى أو رابطاً', 'err'); return null; }
       if (f.title.value.trim().length < 3) { toast('اكتب عنواناً', 'err'); return null; }
       const id = r.id || Store.newId(), out = { id, title: f.title.value.trim(), cat: f.cat.value, kind: f.kind.value, ts: Store.get(`library/${id}`)?.ts || r.ts || Date.now() };
-      ['summary', 'body'].forEach(k => { const v = f[k].value.trim(); if (v) out[k] = v; }); if (r.tags) out.tags = r.tags; if (url) out.url = url; if (f.pin.checked) out.pin = true;
+      ['summary', 'body'].forEach(k => { const v = f[k].value.trim(); if (v) out[k] = v; }); const tg = f.tags.value.trim(); if (tg) out.tags = tg; if (url) out.url = url; if (f.pin.checked) out.pin = true;
       return out;
     };
     $('#lpv', m.el).onclick = () => { const f = $('#lf2', m.el); open({ id: r.id || 'preview', title: f.title.value.trim() || '(بلا عنوان)', cat: f.cat.value, kind: f.kind.value, summary: f.summary.value.trim(), body: f.body.value.trim(), url: f.url.value.trim() }, null, { preview: true }); };
