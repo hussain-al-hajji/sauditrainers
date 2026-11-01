@@ -153,10 +153,13 @@ function quickShare(box) {
     const text = Social.caption(p, t);
     if (p === 'x') window.open(`https://x.com/intent/post?text=${enc(text)}`, '_blank', 'noopener');
     else if (p === 'linkedin') {
-      // النشر باسم صفحة الشركة: رابط نافذة النشر الخاصة بإدارة الصفحة (لا يقبل تعبئة النص، فيُنسخ النص ويُلصق). الصفحة من «الربط والقوالب ← صفحة لينكدإن» وإلا الافتراضية
-      const li = String(Social.settings().handles?.linkedin || '').trim(), mm = /linkedin\.com\/company\/([^/?#\s]+)/i.exec(li), slug = mm ? mm[1] : (/^[\w-]+$/.test(li) ? li : 'saudi-trainers-sa');
-      copy(text); window.open(`https://www.linkedin.com/company/${slug}/admin/page-posts/published/?share=true`, '_blank', 'noopener');
-      toast('نُسخ النص: الصقه في نافذة النشر باسم الصفحة ثم اضغط نشر');
+      // النشر باسم صفحة الشركة: لينكدإن لا يقبل الاسم المختصر في رابط الإدارة (يتطلب رقم الصفحة)، فإن وُجد الرقم في «الربط والقوالب ← صفحة لينكدإن» تُفتح نافذة النشر مباشرة،
+      // وإلا تُفتح صفحة الشركة نفسها (تظهر لمشرفها بزر «Start a post») ويُنسخ النص لتلصقه.
+      const li = String(Social.settings().handles?.linkedin || '').trim(), num = (/linkedin\.com\/company\/(\d+)/i.exec(li) || /^(\d{5,})$/.exec(li) || [])[1];
+      const mm = /linkedin\.com\/company\/([^/?#\s]+)/i.exec(li), slug = mm ? mm[1] : (/^[\w-]+$/.test(li) && !num ? li : 'saudi-trainers-sa');
+      copy(text);
+      window.open(num ? `https://www.linkedin.com/company/${num}/admin/page-posts/published/?share=true` : `https://www.linkedin.com/company/${slug}/`, '_blank', 'noopener');
+      toast(num ? 'نُسخ النص: الصقه في نافذة النشر باسم الصفحة ثم اضغط نشر' : 'نُسخ النص: في صفحة الشركة اضغط «Start a post» وألصقه');
     }
     else {
       copy(text); window.open('https://www.instagram.com/', '_blank', 'noopener');   // تُفتح فوراً قبل توليد الصورة حتى لا يحجبها المتصفح
