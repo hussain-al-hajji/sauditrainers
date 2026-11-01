@@ -173,7 +173,7 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     cta();
     blocks.push({ t: 'hr' });
     // الختام: لوحة الرسوم والمزايا بهوية قسم «انضم كمدرب» (مصدرها المحتوى التسويقي المركزي)
-    blocks.push({ t: 'price', ribbon: 'شهر تجربة مجانية', num: String(fee), unit: 'ريال ' + (((Data.content().join || {}).period) || 'للسنة الأولى'), note: Pitch.renew, per: Pitch.perDay(fee),
+    blocks.push({ t: 'price', img: `${base}assets/card-sample.jpg`, alt: 'نموذج بطاقة مدرب على المنصة', ribbon: 'شهر تجربة مجانية', num: String(fee), unit: 'ريال ' + (((Data.content().join || {}).period) || 'للسنة الأولى'), note: Pitch.renew, per: Pitch.perDay(fee),
       items: P.items.filter(i => i.id !== 'trial').map(i => ({ t: clean(i.s || i.t), tag: Pitch.tagText(i), tone: i.tr ? 'g' : 'a' })), text: 'سجّل كمدرب الآن', url: `${base}#/join` });
     blocks.push({ t: 'p', text: sub(outro), align: 'start' });
     return { subject: sub(subject), blocks, atts: [] };
