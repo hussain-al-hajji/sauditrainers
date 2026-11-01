@@ -1473,3 +1473,5 @@ body.preview .local-flag { display: none; }
 .qs-bs { display: flex; gap: 6px; flex-wrap: wrap; }
 .qs-b.li:hover { background: #0A66C2; color: #fff; } .qs-b.xx:hover { background: #111; color: #fff; } .qs-b.ig:hover { background: linear-gradient(45deg,#f09433,#dc2743,#bc1888); color: #fff; }
 .qs-b.qs-done { background: #e6f4ea; border-color: #a9ddbc; color: #12643A; }
+.mo-price { margin-top: 36px; background: linear-gradient(160deg, var(--g700, #1f6b43), var(--g900, #00391F)); text-align: center; }
+.mo-price ul { text-align: start; max-width: 560px; margin-inline: auto; } .mo-price .row { justify-content: center; }

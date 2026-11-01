@@ -65,6 +65,19 @@ function mailBlockHtml(b, vars, o) {
     }
     case 'box': return '<div style="margin:14px 0;padding:16px 20px;background:' + MAIL_BRAND.cream + ';border-right:5px solid ' + MAIL_BRAND.green + ';border-radius:12px;font-size:15px;line-height:1.9;color:' + MAIL_BRAND.ink + ';text-align:right">' + mailText(b.text, vars) + '</div>';
     case 'stat': return '<div style="margin:14px 0;padding:18px 22px;background:' + MAIL_BRAND.cream + ';border-radius:16px;text-align:center"><div style="font-size:44px;font-weight:bold;color:' + MAIL_BRAND.green + ';line-height:1.25">' + mEsc(mailVars(b.num, vars)) + '</div><div style="font-size:16px;font-weight:bold;color:' + MAIL_BRAND.ink + ';line-height:1.7;margin-top:2px">' + mailText(b.text, vars) + '</div>' + (b.note ? '<div style="font-size:13px;line-height:1.8;color:#3A5244;margin-top:6px">' + mailText(b.note, vars) + '</div>' : '') + '</div>';
+    case 'price': {
+      // لوحة الرسوم والمزايا (بهوية قسم «انضم كمدرب» في المنصة): لوحة خضراء داكنة بجداول لتتوافق مع Gmail
+      const GOLD = '#C9A24B', u = mSafeUrl(mailVars(b.url, vars));
+      const li = (b.items || []).map(i => '<tr><td width="22" valign="top" style="padding:5px 0 5px 8px;color:' + GOLD + ';font-size:15px;line-height:1.7">&#10004;</td><td valign="top" style="padding:5px 0;font-size:14.5px;line-height:1.8;color:#EEF3E5;text-align:right">' + mEsc(mailVars(i.t, vars)) + (i.tag ? ' <span style="display:inline-block;padding:1px 9px;border-radius:999px;font-size:11.5px;font-weight:bold;line-height:1.7;' + (i.tone === 'g' ? 'background:#DDF3E4;color:#12643A;border:1px solid #A9DDBC' : 'background:#FFF1CC;color:#8A5A00;border:1px solid #F0D38A') + '">' + mEsc(i.tag) + '</span>' : '') + '</td></tr>').join('');
+      return '<div style="margin:22px 0;padding:26px 22px;background:' + MAIL_BRAND.green + ';background-image:linear-gradient(160deg,#0B6B3F,#00391F);border-radius:24px;text-align:center;color:#EEF3E5">' +
+        (b.ribbon ? '<div style="display:inline-block;background:' + GOLD + ';color:#00391F;font-weight:bold;font-size:13px;padding:5px 16px;border-radius:999px;margin-bottom:12px">&#127873; ' + mEsc(mailVars(b.ribbon, vars)) + '</div>' : '') +
+        '<div style="font-size:52px;font-weight:bold;line-height:1.2;color:#fff">' + mEsc(mailVars(b.num, vars)) + ' <span style="font-size:17px;color:#E4C77A;font-weight:bold">' + mEsc(mailVars(b.unit, vars)) + '</span></div>' +
+        (b.note ? '<div style="margin:8px 0 2px"><span style="display:inline-block;padding:3px 14px;border-radius:999px;background:rgba(255,255,255,.14);border:1px solid rgba(238,243,229,.4);font-size:13px;color:#EEF3E5">&#8734; ' + mEsc(mailVars(b.note, vars)) + '</span></div>' : '') +
+        (b.per ? '<div style="font-size:13px;line-height:1.8;color:#E4C77A;margin:6px 0 0">' + mEsc(mailVars(b.per, vars)) + '</div>' : '') +
+        (li ? '<table role="presentation" width="100%" dir="rtl" style="border-collapse:collapse;margin:16px 0 6px">' + li + '</table>' : '') +
+        (u ? '<div style="margin:16px 0 0"><a href="' + mEsc(u) + '" style="display:inline-block;background:' + GOLD + ';color:#00391F;padding:13px 32px;border-radius:999px;text-decoration:none;font-weight:bold;font-size:16px">' + mEsc(mailVars(b.text, vars)) + '</a></div>' : '') +
+        '</div>';
+    }
     case 'hr': return '<hr style="border:0;border-top:1px solid #DCE6D2;margin:20px 0">';
     default: return '';
   }
@@ -91,6 +104,7 @@ function mailPlain(doc, vars) {
     if (b.t === 'hr') return '----';
     if (b.t === 'btn') return mailVars(b.text, vars) + ': ' + mailVars(b.url, vars);
     if (b.t === 'img') return b.link ? b.link : '';
+    if (b.t === 'price') return mailVars(b.num, vars) + ' ' + mailVars(b.unit, vars) + (b.note ? ' - ' + mailVars(b.note, vars) : '') + (b.per ? '\n' + mailVars(b.per, vars) : '') + '\n' + (b.items || []).map(i => '- ' + mailVars(i.t, vars) + (i.tag ? ' [' + i.tag + ']' : '')).join('\n') + (b.url ? '\n' + mailVars(b.text, vars) + ': ' + mailVars(b.url, vars) : '');
     if (b.t === 'stat') return mailVars(b.num, vars) + ' - ' + mailVars(b.text, vars) + (b.note ? '\n' + mailVars(b.note, vars) : '');
     return mailVars(b.text, vars).replace(/\*\*(.+?)\*\*/g, '$1').replace(/\[\[(?:t:)?(.+?)\]\]/g, '[$1]').replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1 ($2)');
   }).filter(Boolean).join('\n\n');
