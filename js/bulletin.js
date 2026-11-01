@@ -126,7 +126,7 @@ const Bulletin = (() => {
     const top = y + (h - (H.nameH + H.lines.length * H.lh)) / 2;
     txt(ctx, t.name || '', tr, top + H.nameH - 14, { font: `900 ${fs}px ${FONT.head}`, color: '#fff' });
     H.lines.forEach((l, i) => txt(ctx, l, tr, top + H.nameH + H.lh * (i + 1) - 8, { font: `600 ${H.tfs}px ${FONT.body}`, color: C.sage }));
-    if (cont) pill(ctx, 'تتمة', tr, y + 22, { bg: 'rgba(255,255,255,.14)', fg: C.cream, fs: 18 });
+    if (cont) pill(ctx, 'تتمة', x + 26 + qs + 24 + 70, y + h / 2, { bg: 'rgba(255,255,255,.14)', fg: C.cream, fs: 18 });   // على يسار الاسم (بجانب الرمز) فلا يغطي الاسم
     qr(ctx, profileUrl(t), x + 26, y + (h - qs - 16) / 2, qs);
     return h;
   }
@@ -409,7 +409,7 @@ const Bulletin = (() => {
     txt(ctx, 'مدرّبون سعوديّون', W - 100, 786, { font: `600 38px ${FONT.body}`, color: C.cream });
     ctx.font = `800 40px ${FONT.body}`; const w = ctx.measureText(d.mname).width + 80; rrect(ctx, W - 100 - w, 830, w, 80, 40, 'rgba(238,243,229,.12)', 'rgba(201,218,180,.55)'); txt(ctx, d.mname, W - 100 - w / 2, 884, { font: ctx.font, color: C.cream, align: 'center' });
     [[d.stats[0].num, 'زيارة للمنصة'], [d.stats[2].num, 'فرصة تعاون'], [d.stats[3].num, 'وظيفة']].forEach(([v, l], i) => { const x = W - 100 - i * 300; txt(ctx, String(v), x, 1180, { font: `900 74px ${FONT.head}`, color: '#fff', align: 'right', dir: 'ltr' }); txt(ctx, l, x, 1230, { font: `600 30px ${FONT.body}`, color: C.sage }); });
-    txt(ctx, 'sauditrainers.sa', 100, 1240, { font: `800 34px ${FONT.brand}`, color: C.cream, align: 'left', dir: 'ltr' });
+    txt(ctx, 'sauditrainers.sa', 100, 1290, { font: `800 34px ${FONT.brand}`, color: C.cream, align: 'left', dir: 'ltr' });   // أسفل الأرقام وتسمياتها فلا يتداخل معها
   }
   function rptStats(ctx, d) {
     const n = d.stats.length, gap = 24, h = Math.min(250, (BOT - TOP - 70 - (n - 1) * gap) / n);
@@ -464,9 +464,10 @@ const Bulletin = (() => {
     ctx.beginPath(); ctx.arc(cx, cy, 170, 0, Math.PI * 2); ctx.fillStyle = 'rgba(238,243,229,.10)'; ctx.fill(); ctx.strokeStyle = 'rgba(201,218,180,.35)'; ctx.lineWidth = 3; ctx.stroke();
     ctx.beginPath(); ctx.arc(cx, cy, 120, 0, Math.PI * 2); ctx.fillStyle = C.cream; ctx.fill();
     ctx.save(); ctx.font = '900 110px "Font Awesome 6 Free"'; ctx.fillStyle = C.g800; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.direction = 'ltr'; ctx.fillText(c.ic, cx, cy + 4); ctx.restore();
-    if (c.x) { ctx.font = `700 22px ${FONT.body}`; exPill(ctx, cx + (ctx.measureText(c.tr ? 'متاحة للتجربة المجانية' : 'حصرية للمشتركين').width + 34) / 2, 598, 22, c.tr); }
-    txt(ctx, c.k, cx, 690, { font: `900 96px ${FONT.head}`, color: '#fff', align: 'center' });
-    ctx.fillStyle = C.sage; ctx.fillRect(cx - 75, 724, 150, 7);
+    if (c.x) { ctx.font = `700 22px ${FONT.body}`; exPill(ctx, cx + (ctx.measureText(c.tr ? 'متاحة للتجربة المجانية' : 'حصرية للمشتركين').width + 34) / 2, 596, 22, c.tr); }
+    const kf = fitFont(ctx, c.k, 900, 96, 48, W - 200, FONT.head);   // العنوان يصغر ليتسع للعرض، ويبقى تحت وسم الفئة دون تلامس
+    ctx.font = `900 ${kf}px ${FONT.head}`; txt(ctx, K().wrap(ctx, c.k, W - 200, 1)[0], cx, 708, { font: ctx.font, color: '#fff', align: 'center' });
+    ctx.fillStyle = C.sage; ctx.fillRect(cx - 75, 740, 150, 7);
     ctx.font = `600 38px ${FONT.body}`; K().wrap(ctx, c.t, W - 240, 2).forEach((l, k) => txt(ctx, l, cx, 800 + k * 54, { font: ctx.font, color: C.cream, align: 'center' }));
     c.pts.forEach((p, k) => {
       const y = 880 + k * 118; rrect(ctx, 90, y, W - 180, 100, 26, 'rgba(238,243,229,.10)', 'rgba(201,218,180,.32)');
