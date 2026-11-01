@@ -135,29 +135,9 @@ function aDash(main) {
     return rows.length ? rows.map(([k, v]) => `<div class="bar"><span>${esc(name(k))}</span><div class="t"><span style="width:${v / m * 100}%"></span></div><b class="num">${v}</b></div>`).join('') : '<p class="muted small">لا بيانات بعد</p>';
   };
   const top = [...live].sort((a, b) => Data.views(b.id) - Data.views(a.id)).slice(0, 5);
-  // نشاط المدربين: تجميع سجل الدخول والتعديل لكل مدرب
-  const act = {}, evs = [];
-  Object.entries(Store.get('activity') || {}).forEach(([id, m]) => Object.values(m || {}).forEach(e => {
-    if (!e || !e.ts) return;
-    const a = act[id] || (act[id] = { id, logins: 0, edits: 0, lastLogin: 0, lastEdit: 0 });
-    if (e.type === 'login') { a.logins++; a.lastLogin = Math.max(a.lastLogin, e.ts); } else { a.edits++; a.lastEdit = Math.max(a.lastEdit, e.ts); }
-    evs.push({ ...e, tid: id });
-  }));
-  const tname = id => Store.get(`trainers/${id}`)?.name || id;
-  const week = Date.now() - 7 * 864e5;
-  const rows = Object.values(act).sort((a, b) => Math.max(b.lastLogin, b.lastEdit) - Math.max(a.lastLogin, a.lastEdit));
-  const actHTML = `<div class="pbox" style="grid-column:1/-1"><h3><i class="fa-solid fa-user-clock"></i>نشاط المدربين</h3>
-    <div class="kpis" style="margin-bottom:12px">
-      <div class="kpi"><i class="fa-solid fa-right-to-bracket"></i><b class="num">${rows.filter(a => a.lastLogin > week).length}</b><span>دخلوا خلال 7 أيام</span></div>
-      <div class="kpi"><i class="fa-solid fa-pen-to-square"></i><b class="num">${rows.filter(a => a.lastEdit > week).length}</b><span>عدّلوا بياناتهم خلال 7 أيام</span></div>
-      <div class="kpi"><i class="fa-solid fa-user-slash"></i><b class="num">${live.filter(t => !act[t.id]).length}</b><span>لم يدخلوا بعد</span></div>
-    </div>
-    ${rows.length ? `<div class="tbl-wrap" style="overflow:auto"><table class="tbl"><thead><tr><th>المدرب</th><th>آخر دخول</th><th>مرات الدخول</th><th>آخر تعديل</th><th>مرات التعديل</th></tr></thead><tbody>${rows.map(a => `<tr><td><a href="#/t/${esc(a.id)}">${esc(tname(a.id))}</a></td><td>${a.lastLogin ? ago(a.lastLogin) : '—'}</td><td class="num">${a.logins}</td><td>${a.lastEdit ? ago(a.lastEdit) : '—'}</td><td class="num">${a.edits}</td></tr>`).join('')}</tbody></table></div>
-    <h4 style="margin:14px 0 6px">آخر الحركات</h4><div class="log">${evs.sort((a, b) => b.ts - a.ts).slice(0, 12).map(e => `<div><small>${ago(e.ts)}</small><span><b>${esc(tname(e.tid))}</b> - ${e.type === 'login' ? '<i class="fa-solid fa-right-to-bracket"></i> دخل إلى صفحته' : `<i class="fa-solid fa-pen"></i> عدّل ${esc(e.detail || 'بياناته')}`}</span></div>`).join('')}</div>` : '<p class="muted small">لا نشاط للمدربين بعد، يظهر هنا عند دخول أي مدرب أو تعديله لبياناته</p>'}</div>`;
   main.innerHTML = `
     <div class="dash-h"><h2>نظرة عامة</h2><span class="muted small">${fmtTs(Date.now())}</span></div>
     <div id="anx"></div>
-    <div style="margin:14px 0">${actHTML}</div>
     <div class="an-ext-h"><h2><i class="fa-solid fa-id-card"></i> المدربون والطلبات</h2></div>
     <div class="kpis">
       <div class="kpi dark"><i class="fa-solid fa-id-card"></i><b class="num" data-count="${live.length}">0</b><span>مدرب منشور</span></div>
@@ -380,6 +360,32 @@ function showSecret(t, secret, isNew) {
 }
 
 /* ===================== المدربون ===================== */
+/* نشاط المدربين (يظهر في بداية تبويب «المدربون» مطوياً): ثلاثة مربعات ظاهرة، والجدول وآخر الحركات عند الضغط */
+const ActUI = { open: false };
+function trainerActivityHtml() {
+  const live = Data.live();
+  // نشاط المدربين: تجميع سجل الدخول والتعديل لكل مدرب
+  const act = {}, evs = [];
+  Object.entries(Store.get('activity') || {}).forEach(([id, m]) => Object.values(m || {}).forEach(e => {
+    if (!e || !e.ts) return;
+    const a = act[id] || (act[id] = { id, logins: 0, edits: 0, lastLogin: 0, lastEdit: 0 });
+    if (e.type === 'login') { a.logins++; a.lastLogin = Math.max(a.lastLogin, e.ts); } else { a.edits++; a.lastEdit = Math.max(a.lastEdit, e.ts); }
+    evs.push({ ...e, tid: id });
+  }));
+  const tname = id => Store.get(`trainers/${id}`)?.name || id;
+  const week = Date.now() - 7 * 864e5;
+  const rows = Object.values(act).sort((a, b) => Math.max(b.lastLogin, b.lastEdit) - Math.max(a.lastLogin, a.lastEdit));
+  const actHTML = `<details class="pbox act-box" id="actbox" ${ActUI.open ? 'open' : ''} style="margin-bottom:14px"><summary><span class="act-h"><h3 style="margin:0"><i class="fa-solid fa-user-clock"></i>نشاط المدربين</h3><small class="muted"><i class="fa-solid fa-chevron-down"></i> اضغط لعرض التفاصيل</small></span>
+    <div class="kpis" style="margin:12px 0 0">
+      <div class="kpi"><i class="fa-solid fa-right-to-bracket"></i><b class="num">${rows.filter(a => a.lastLogin > week).length}</b><span>دخلوا خلال 7 أيام</span></div>
+      <div class="kpi"><i class="fa-solid fa-pen-to-square"></i><b class="num">${rows.filter(a => a.lastEdit > week).length}</b><span>عدّلوا بياناتهم خلال 7 أيام</span></div>
+      <div class="kpi"><i class="fa-solid fa-user-slash"></i><b class="num">${live.filter(t => !act[t.id]).length}</b><span>لم يدخلوا بعد</span></div>
+    </div></summary>
+    ${rows.length ? `<div class="tbl-wrap" style="overflow:auto"><table class="tbl"><thead><tr><th>المدرب</th><th>آخر دخول</th><th>مرات الدخول</th><th>آخر تعديل</th><th>مرات التعديل</th></tr></thead><tbody>${rows.map(a => `<tr><td><a href="#/t/${esc(a.id)}">${esc(tname(a.id))}</a></td><td>${a.lastLogin ? ago(a.lastLogin) : '—'}</td><td class="num">${a.logins}</td><td>${a.lastEdit ? ago(a.lastEdit) : '—'}</td><td class="num">${a.edits}</td></tr>`).join('')}</tbody></table></div>
+    <h4 style="margin:14px 0 6px">آخر الحركات</h4><div class="log">${evs.sort((a, b) => b.ts - a.ts).slice(0, 12).map(e => `<div><small>${ago(e.ts)}</small><span><b>${esc(tname(e.tid))}</b> - ${e.type === 'login' ? '<i class="fa-solid fa-right-to-bracket"></i> دخل إلى صفحته' : `<i class="fa-solid fa-pen"></i> عدّل ${esc(e.detail || 'بياناته')}`}</span></div>`).join('')}</div>` : '<p class="muted small">لا نشاط للمدربين بعد، يظهر هنا عند دخول أي مدرب أو تعديله لبياناته</p>'}</details>`;
+  return actHTML;
+}
+
 function aTrainers(main) {
   const f = JSON.parse(main.dataset.f || '{}');
   let list = Data.all();
@@ -387,6 +393,7 @@ function aTrainers(main) {
   if (f.region) list = list.filter(t => regionsOf(t).includes(f.region));
   if (f.st === 'live') list = list.filter(Data.isLive); else if (f.st === 'hidden') list = list.filter(t => t.status !== 'active'); else if (f.st === 'nocode') list = list.filter(t => !Store.get(`secrets/codes/${t.id}`));
   main.innerHTML = `
+    ${trainerActivityHtml()}
     <div class="dash-h"><h2>المدربون <span class="muted num" style="font-size:1rem">(${list.length})</span></h2><div class="row"><button class="btn sm" id="imp"><i class="fa-solid fa-file-import"></i> استيراد</button><button class="btn sm" id="tplx"><i class="fa-solid fa-file-arrow-down"></i> قالب الاستيراد</button><button class="btn sm" id="exp"><i class="fa-solid fa-file-csv"></i> تصدير CSV</button><button class="btn primary sm" id="add"><i class="fa-solid fa-plus"></i> إضافة مدرب</button></div></div>
     <div class="toolbar">
       <input type="search" id="tq" placeholder="بحث..." value="${esc(f.q || '')}">
@@ -409,6 +416,7 @@ function aTrainers(main) {
         </div></td>
       </tr>`).join('') || '<tr><td colspan="6" class="empty">لا يوجد مدربون مطابقون</td></tr>'}
     </tbody></table></div>`;
+  $('#actbox', main) && ($('#actbox', main).ontoggle = e => { ActUI.open = e.target.open; });
   const setF = (k, v) => { main.dataset.f = JSON.stringify({ ...f, [k]: v }); aTrainers(main); };
   $('#tq', main).oninput = debounce(e => { setF('q', e.target.value); $('#tq', main).focus(); const i = $('#tq', main); i.setSelectionRange(i.value.length, i.value.length); }, 300);
   $('#tr', main).onchange = e => setF('region', e.target.value);

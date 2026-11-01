@@ -1459,3 +1459,9 @@ body.preview .local-flag { display: none; }
 .mo-cta { margin: 26px 0 4px; padding: 16px 20px; border-radius: 20px; background: linear-gradient(135deg, var(--g800, #0b4a2b), var(--g700, #1f6b43)); color: #fff; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; box-shadow: 0 16px 36px -24px rgba(0,50,25,.6); }
 .mo-cta > span, .mo-free { font: 800 1.1rem/1.5 var(--f-head, inherit); display: inline-flex; align-items: center; gap: 8px; } .mo-cta > span i, .mo-free i { color: var(--gold2, #e9c46a); }
 .mo-free { color: #fff; }
+
+/* نشاط المدربين (مطوي) */
+.act-box > summary { list-style: none; cursor: pointer; } .act-box > summary::-webkit-details-marker { display: none; }
+.act-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.act-box[open] .act-h small i { transform: rotate(180deg); }
+.act-box[open] .tbl-wrap { margin-top: 14px; }
