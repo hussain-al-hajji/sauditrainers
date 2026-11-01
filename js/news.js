@@ -4,7 +4,7 @@
  * مفاتيح التفعيل في content/features/{news,announcements}، والقواعد تمنع النشر ما دامت الميزة معطّلة. */
 
 const News = (() => {
-  const KINDS = [['news', 'خبر', 'fa-newspaper'], ['achievement', 'إنجاز', 'fa-trophy'], ['participation', 'مشاركة', 'fa-microphone-lines'], ['course', 'إعلان دورة', 'fa-chalkboard-user']];
+  const KINDS = [['news', 'خبر', 'fa-newspaper'], ['achievement', 'إنجاز', 'fa-trophy'], ['participation', 'مشاركة', 'fa-microphone-lines'], ['course', 'إعلان دورة', 'fa-chalkboard-user'], ['article', 'مقال', 'fa-pen-nib']];
   const kind = k => KINDS.find(x => x[0] === k) || KINDS[0];
   const all = () => Store.list('news').filter(n => n && n.title && n.trainerId).sort((a, b) => (b.ts || 0) - (a.ts || 0));
   // الأخبار الظاهرة للعموم: مدرب ظاهر فقط
@@ -181,7 +181,7 @@ const News = (() => {
   function tab(main, t) {
     const mine = all().filter(n => n.trainerId === t.id);
     main.innerHTML = `<div class="dash-h"><h2>أخباري</h2><div class="row" style="gap:8px;flex-wrap:wrap">${mine.length ? '<button class="btn" id="nx"><i class="fa-solid fa-share-nodes"></i> تصدير للسوشيال ميديا</button>' : ''}<button class="btn primary" id="nn"><i class="fa-solid fa-plus"></i> خبر جديد</button></div></div>
-      <p class="muted small">اكتب عن نفسك في أي وقت: خبر، إنجاز، مشاركة، أو إعلان دورة. يظهر خبرك باسمك وصورتك في قسم «أخبار المدربين» بالرئيسية وصفحة الأخبار.</p>
+      <p class="muted small">اكتب عن نفسك في أي وقت: خبر، إنجاز، مشاركة، إعلان دورة، أو مقال (لما لا يُعدّ خبراً). يظهر خبرك باسمك وصورتك في قسم «أخبار المدربين» بالرئيسية وصفحة الأخبار.</p>
       ${mine.length ? mine.map(n => `<div class="lead"><span class="ic"><i class="fa-solid ${kind(n.kind)[2]}"></i></span><div><b>${esc(n.title)}</b> <small class="muted">${dateOf(n.ts)}${n.editedAt ? ' · معدّل' : ''}</small><p class="small">${esc(String(n.body || '').slice(0, 160))}</p>${arr(n.links).length ? `<small class="muted"><i class="fa-solid fa-link"></i> ${arr(n.links).length} روابط</small>` : ''}</div>
         <div class="acts" style="flex-direction:column"><a class="btn sm" href="#/news/${esc(n.id)}"><i class="fa-solid fa-eye"></i> عرض</a><button class="btn sm" data-cp="${esc(shareUrl(n))}"><i class="fa-solid fa-share-nodes"></i> رابط المشاركة</button><button class="btn sm" data-ed="${esc(n.id)}"><i class="fa-solid fa-pen"></i> تعديل</button><button class="btn sm danger" data-del="${esc(n.id)}"><i class="fa-solid fa-trash"></i> حذف</button></div></div>`).join('')
         : '<div class="empty"><i class="fa-solid fa-newspaper"></i><h3>لم تنشر أي خبر بعد</h3><p>اضغط «خبر جديد» لتشارك إنجازاً أو مشاركة أو دورة قادمة.</p></div>'}`;
