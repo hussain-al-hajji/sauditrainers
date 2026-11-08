@@ -281,4 +281,77 @@ ${siteBase()}#/join
     $('#mr-ym', body).onchange = e => { U.ym = e.target.value; };
     $('#mr-gen', body).onclick = () => { U.ym = $('#mr-ym', body).value; Bulletin.report(reportData(U.ym)); };
   };
+
+  /* ===== «الرسالة اليومية»: قالب جاهز للجيميل بأعداد الفرص والوظائف المنشورة (اليوم · منذ الأحد · منذ أول الشهر) ===== */
+  // الفرص = طلبات الجهات (اطلب مدرباً + التواصل المباشر) + إعلانات الإدارة، والوظائف = المجلوبة (الحالية والأرشيف)؛ كما تحسبها إحصاءات الشهر في المنصة. الحدود بتوقيت الرياض، والأسبوع يبدأ يوم الأحد.
+  const DAILY_DEFAULT = {
+    subject: 'الرسالة اليومية: فرص ووظائف التدريب - {date}',
+    intro: 'السلام عليكم ورحمة الله وبركاته\n\nزميلنا المدرب،\n\nإليك **ملخص ما نُشر في المنصة** من فرص ووظائف تدريب خلال اليوم والأسبوع والشهر، لتتابعها من حسابك وتتقدّم لما يناسبك.',
+    outro: 'نتمنى لك التوفيق في فرصك القادمة.\n\nمع خالص التحية،\n**فريق منصة مدرّبون سعوديّون**'
+  };
+  const dailyGet = () => ({ ...DAILY_DEFAULT, ...(Store.get('settings/daily') || {}) });
+  const dailyCounts = () => {
+    const RY = 3 * 36e5, now = Date.now(), r = new Date(now + RY), y = r.getUTCFullYear(), m = r.getUTCMonth(), d = r.getUTCDate(), dow = r.getUTCDay();
+    const t0 = Date.UTC(y, m, d) - RY, w0 = Date.UTC(y, m, d - dow) - RY, m0 = Date.UTC(y, m, 1) - RY;
+    const cnt = (nodes, from) => nodes.reduce((a, n) => a + Store.list(n).filter(x => x && x.ts >= from && x.ts <= now + 6e4).length, 0);
+    const opp = ['requests', 'leads', 'opportunities'], job = ['jobs', 'jobsOld'];
+    return { now, t0, w0, m0, oppDay: cnt(opp, t0), oppWeek: cnt(opp, w0), oppMonth: cnt(opp, m0), jobWeek: cnt(job, w0), jobMonth: cnt(job, m0) };
+  };
+  const dayLong = ts => new Date(ts).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Riyadh' });
+  const dayShort = ts => new Date(ts).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' });
+  const dailyEmails = () => [...new Set(Data.live().map(t => String((Store.get(`private/${t.id}`) || {}).email || '').trim().toLowerCase()).filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)))];
+  function buildDaily({ subject, intro, outro }) {
+    const base = siteBase(), c = dailyCounts(), blocks = [], date = dayLong(c.now), wa = (Data.content().contact || {}).whatsapp || window.ST_CONFIG.platformWhatsapp || '';
+    const sub = x => String(x || '').replace(/\{date\}/g, date);
+    const unit = (n, one, many) => (n === 1 ? one : many);
+    blocks.push({ t: 'h', text: `الرسالة اليومية · ${date}`, align: 'start' });
+    blocks.push({ t: 'p', text: sub(intro), align: 'start' });
+    blocks.push({ t: 'h', text: '📌 فرص التدريب المنشورة', align: 'start' });
+    blocks.push({ t: 'stat', num: num(c.oppDay), text: `${unit(c.oppDay, 'فرصة منشورة', 'فرص منشورة')} اليوم`, note: dayShort(c.now) });
+    blocks.push({ t: 'stat', num: num(c.oppWeek), text: `${unit(c.oppWeek, 'فرصة منشورة', 'فرص منشورة')} منذ بداية الأسبوع`, note: `تراكمي من يوم الأحد ${dayShort(c.w0 + 36e5 * 6)} حتى اليوم` });
+    blocks.push({ t: 'stat', num: num(c.oppMonth), text: `${unit(c.oppMonth, 'فرصة منشورة', 'فرص منشورة')} منذ بداية الشهر`, note: `تراكمي من الأول من الشهر (${dayShort(c.m0 + 36e5 * 6)}) حتى اليوم` });
+    blocks.push({ t: 'h', text: '💼 وظائف التدريب المنشورة', align: 'start' });
+    blocks.push({ t: 'stat', num: num(c.jobWeek), text: `${unit(c.jobWeek, 'وظيفة تدريب منشورة', 'وظائف تدريب منشورة')} هذا الأسبوع`, note: 'تراكمي من يوم الأحد حتى اليوم' });
+    blocks.push({ t: 'stat', num: num(c.jobMonth), text: `${unit(c.jobMonth, 'وظيفة تدريب منشورة', 'وظائف تدريب منشورة')} منذ بداية الشهر`, note: 'تراكمي من الأول من الشهر حتى اليوم' });
+    blocks.push({ t: 'h', text: '🔑 كيف تتابع الفرص والوظائف؟', align: 'start' });
+    blocks.push({ t: 'box', text: `**1.** افتح رابط الدخول بالزر أدناه.\n**2.** أدخل **رمز الدخول** الخاص بك (بصيغة ST0000-XXXXXX).\n**3.** ستجد الفرص في تبويب **«طلبات عامة»**، ووظائف التدريب في تبويب **«وظائف التدريب»** (يُفتح لأصحاب الاشتراك الكامل).` });
+    blocks.push({ t: 'btn', text: 'تسجيل الدخول إلى حسابي', url: `${base}#/login`, align: 'center' });
+    blocks.push({ t: 'p', text: '📲 **أُرسل إليك رمز الدخول مسبقاً عبر الواتساب.** وإن فقدته فتواصل معنا بالرد على هذه الرسالة أو عبر واتساب المنصة.', align: 'start' });
+    if (wa && waLink(wa)) blocks.push({ t: 'btn', text: 'تواصل معنا عبر واتساب', url: waLink(wa, 'السلام عليكم، فقدت رمز الدخول إلى حسابي في منصة مدرّبون سعوديّون وأرغب بإعادة إرساله.'), align: 'center' });
+    blocks.push({ t: 'hr' });
+    blocks.push({ t: 'p', text: sub(outro), align: 'start' });
+    return { subject: sub(subject), blocks, atts: [], counts: c };
+  }
+  window.mailDaily = function (body) {
+    const D = window.__dailyUI = window.__dailyUI || { doc: null }, S = { ...dailyGet(), ...Object.fromEntries(['subject', 'intro', 'outro'].filter(k => D[k] != null).map(k => [k, D[k]])) };
+    body.innerHTML = `<div class="pbox">
+      <h3><i class="fa-solid fa-sun"></i> الرسالة اليومية - قالب جاهز للجيميل</h3>
+      <p class="small muted">اضغط «توليد» لتحصل على رسالة بأعداد محدّثة لحظة التوليد: <b>الفرص التدريبية</b> المنشورة اليوم، ومنذ بداية الأسبوع (تراكمي من يوم الأحد)، ومنذ بداية الشهر (من الأول)، و<b>وظائف التدريب</b> المنشورة هذا الأسبوع ومنذ بداية الشهر، مع إرشادات الدخول وزر واتساب المنصة. ثم انسخها بتصميمها والصقها في Gmail، وانسخ إيميلات المدربين المنشورة صفحاتهم للصقها في خانة المستلمين (يفضّل «نسخة مخفية BCC»).</p>
+      <div class="bl-bar"><button class="btn primary" id="dl-gen"><i class="fa-solid fa-wand-magic-sparkles"></i> توليد الرسالة</button>
+        <button class="btn" id="dl-em"><i class="fa-solid fa-at"></i> نسخ إيميلات المدربين المنشورين (<span class="num" id="dl-n">${dailyEmails().length}</span>)</button></div>
+      <div id="dl-out" style="margin-top:12px"></div>
+      <details style="margin-top:12px"><summary style="cursor:pointer"><b><i class="fa-solid fa-pen"></i> النصوص الثابتة (الموضوع والمقدمة والخاتمة)</b></summary>
+        ${field('الموضوع (Subject)', `<input id="dl-sub" value="${esc(S.subject)}">`, 'استعمل {date} لتاريخ اليوم')}
+        ${field('المقدمة', `<textarea id="dl-intro" rows="5">${esc(S.intro)}</textarea>`, 'استعمل **نص** للخط العريض')}
+        ${field('الخاتمة', `<textarea id="dl-outro" rows="4">${esc(S.outro)}</textarea>`)}
+        <button class="btn" id="dl-save"><i class="fa-solid fa-floppy-disk"></i> حفظ النصوص</button></details></div>`;
+    const read = () => ({ subject: $('#dl-sub', body).value.trim(), intro: $('#dl-intro', body).value.trim(), outro: $('#dl-outro', body).value.trim() });
+    $('#dl-save', body).onclick = () => { const r = read(); Object.assign(D, r); Store.set('settings/daily', r); toast('تم الحفظ'); };
+    $('#dl-em', body).onclick = () => { const l = dailyEmails(); if (!l.length) return toast('لا توجد إيميلات لمدربين منشورة صفحاتهم', 'error'); copyText(l.join(', '), `نُسخ ${l.length} إيميلاً، الصقها في خانة المستلمين (BCC) في Gmail`); };
+    const show = doc => {
+      const vars = { name: '', first: 'الزميل', loginUrl: `${siteBase()}#/login`, siteUrl: siteBase(), profileUrl: siteBase() }, html = mailHtml(doc, vars, mailOpts()), c = doc.counts;
+      $('#dl-out', body).innerHTML = `<div class="small" style="margin-bottom:8px"><b>الموضوع:</b> ${esc(doc.subject)}<br><span class="muted">الأعداد وقت التوليد (${esc(dayLong(c.now))}): فرص اليوم <b class="num">${c.oppDay}</b> · الأسبوع <b class="num">${c.oppWeek}</b> · الشهر <b class="num">${c.oppMonth}</b> · وظائف الأسبوع <b class="num">${c.jobWeek}</b> · الشهر <b class="num">${c.jobMonth}</b></span></div>
+        <div class="row" style="gap:8px;flex-wrap:wrap;margin-bottom:8px"><button class="btn primary" id="dl-copy"><i class="fa-regular fa-copy"></i> نسخ الرسالة بتصميمها (للصقها في Gmail)</button>
+          <button class="btn" id="dl-subj"><i class="fa-solid fa-heading"></i> نسخ الموضوع</button><button class="btn" id="dl-html"><i class="fa-solid fa-code"></i> نسخ كود HTML</button>
+          <button class="btn" id="dl-em2"><i class="fa-solid fa-at"></i> نسخ إيميلات المدربين</button></div>
+        <iframe id="dl-frame" style="width:100%;height:70vh;border:1px solid var(--line);border-radius:12px;background:#fff"></iframe>`;
+      $('#dl-frame', body).srcdoc = html;
+      $('#dl-copy', body).onclick = async () => toast((await copyRich(html, mailPlain(doc, vars))) ? 'نُسخت الرسالة بتصميمها: افتح Gmail والصقها (Ctrl+V) في نص الرسالة' : 'تعذّر النسخ تلقائياً: حدّد المعاينة وانسخها يدوياً', 'ok');
+      $('#dl-subj', body).onclick = () => copyText(doc.subject, 'نُسخ الموضوع');
+      $('#dl-html', body).onclick = () => copyText(html, 'نُسخ كود HTML');
+      $('#dl-em2', body).onclick = () => $('#dl-em', body).click();
+    };
+    $('#dl-gen', body).onclick = () => { const r = read(); Object.assign(D, r); D.doc = buildDaily(r); show(D.doc); };
+    if (D.doc) show(D.doc);
+  };
 })();
