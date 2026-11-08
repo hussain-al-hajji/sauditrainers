@@ -1511,3 +1511,10 @@ body.preview .local-flag { display: none; }
 .gd-li > span { display: flex; gap: 4px; padding: 0 8px 6px; } .gd-li .btn.sm { padding: 0 10px; min-width: 0; height: 28px; line-height: 26px; font-size: .8rem; }
 .gd-edit textarea { text-align: start; }
 @media (max-width: 900px) { .gd-ed { grid-template-columns: 1fr; } }
+
+/* مراجعة ملف العناوين قبل النشر (الإدارة): جدول بأعمدة ثابتة مفصولة */
+.sp-wrap { max-height: 440px; overflow: auto; border: 1px solid var(--line, #DCE6D2); border-radius: 12px; }
+.sp-tbl { width: 100%; border-collapse: collapse; font-size: .92rem; min-width: 720px; }
+.sp-tbl th, .sp-tbl td { padding: 8px 10px; border-bottom: 1px solid #E5ECDD; text-align: start; vertical-align: middle; }
+.sp-tbl th { position: sticky; top: 0; background: #EEF3E5; color: var(--g800, #005430); z-index: 1; white-space: nowrap; }
+.sp-tbl .c { text-align: center; white-space: nowrap; } .sp-tbl tr.off { opacity: .45; }

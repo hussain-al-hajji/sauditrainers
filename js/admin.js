@@ -666,7 +666,7 @@ function aRequests(main) {
       <div class="bl-bar"><b><i class="fa-solid fa-file-arrow-up"></i> رفع ملف العناوين المحلَّلة ونشرها في «من طلبات هذا الشهر»</b>
         <button class="btn primary" id="sup"><i class="fa-solid fa-file-arrow-up"></i> رفع ملف (CSV أو نص)</button><button class="btn sm ghost" id="stpl"><i class="fa-solid fa-file-arrow-down"></i> تنزيل القالب</button>
         <input type="file" id="sfile" accept=".csv,.txt,text/csv,text/plain" hidden></div>
-      <p class="muted small" style="margin:4px 0 0">يُستخرج محتوى الملف ويُعرض هنا للمراجعة أولاً (بلا نشر)، وعند «اعتماد ونشر» يظهر في الصفحة الرئيسية. الأعمدة: <b>عنوان الدورة، المدينة</b> (اسم المدينة للحضوري وإلا «عن بعد»)، <b>التخصص، الجهة، الشهر</b> (مثل 2026-11)، <b>عدد الفرص</b>؛ والسطر الأول عنوان الأعمدة وغير الموجود منها اختياري. يُعرض الشهر الأحدث تلقائياً في الرئيسية، ويبقى ما قبله في «طلبات الأشهر السابقة».</p>
+      <p class="muted small" style="margin:4px 0 0">يُستخرج محتوى الملف ويُعرض هنا للمراجعة أولاً (بلا نشر)، وعند «اعتماد ونشر» يظهر في الصفحة الرئيسية. الأعمدة: <b>عنوان الدورة، المدينة</b> (اسم المدينة للحضوري وإلا «عن بعد»)، <b>التخصص، الشهر</b> (اسم الشهر والسنة مثل «نوفمبر 2026»)، <b>عدد الفرص</b>؛ والسطر الأول عنوان الأعمدة وغير الموجود منها اختياري. يُعرض الشهر الأحدث تلقائياً في الرئيسية، ويبقى ما قبله في «طلبات الأشهر السابقة».</p>
       <div id="simp"></div></div>
     <h3 class="rq-part"><i class="fa-solid fa-handshake-angle"></i> الجزء الأول: فرص تضيفها الإدارة</h3>
     <div id="rq-adm"></div>
@@ -702,7 +702,7 @@ function aRequests(main) {
       <p class="muted small">تظهر هذه البطاقات متحركة في الصفحة الرئيسية دون أي بيانات تواصل. اختر من الطلبات بالأسفل بزر <i class="fa-solid fa-table-cells-large"></i> أو أضف يدوياً.</p>
       ${(() => { const ym = ts => { const d = new Date((ts || 0) + 3 * 36e5); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; }, nm = k => new Date(Date.UTC(+k.slice(0, 4), +k.slice(5, 7) - 1, 15)).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { month: 'long', year: 'numeric', timeZone: 'UTC' });
         const g = {}; show.forEach(x => (g[ym(x.ts)] = g[ym(x.ts)] || []).push(x)); const ks = Object.keys(g).sort().reverse(), cur = ks[0];
-        const mini = x => `<div class="sc-mini"><b>${esc(x.title)}</b><small>${esc(x.org || 'جهة تدريبية')}${(x.city || regionName(x.region)) ? ' · ' + esc(x.city || regionName(x.region)) : ''}${x.spec ? ' · ' + esc(specName(x.spec)) : ''}${x.n ? ' · ' + x.n + ' فرصة' : ''} · ${esc(new Date(x.ts).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { month: 'long', year: 'numeric' }))}</small><div class="acts"><button class="btn sm icon" data-se="${esc(x.id)}"><i class="fa-solid fa-pen"></i></button><button class="btn sm icon" data-sx="${esc(x.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`;
+        const mini = x => `<div class="sc-mini"><b>${esc(x.title)}</b><small>${[(x.city || regionName(x.region)) ? esc(x.city || regionName(x.region)) : '', x.spec ? esc(specName(x.spec)) : '', x.n ? x.n + ' فرصة' : '', esc(new Date(x.ts).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { month: 'long', year: 'numeric' }))].filter(Boolean).join(' · ')}</small><div class="acts"><button class="btn sm icon" data-se="${esc(x.id)}"><i class="fa-solid fa-pen"></i></button><button class="btn sm icon" data-sx="${esc(x.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`;
         return ks.map(k => `<details class="sc-month" ${k === cur ? 'open' : ''}><summary><b>${k === cur ? 'المعروض حالياً: ' : 'أرشيف: '}${esc(nm(k))}</b> <span class="pill ${k === cur ? 'gold' : 'gray'}">${g[k].length}</span></summary><div class="sc-admin">${g[k].map(mini).join('')}</div></details>`).join(''); })()}
       <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn sm" id="sa"><i class="fa-solid fa-plus"></i> إضافة يدوياً</button>
       </div>
@@ -726,7 +726,7 @@ function aRequests(main) {
     showcaseEditor(Store.list('showcase').find(x => x.src === r.id) || { src: r.id, title: r.topic, org: r.org, region: r.region || t?.region || '', spec: r.spec || Data.specs(t || {})[0] || '', trainerName: r.trainerName || '', ts: r.ts });
   });
   $('#sa', main).onclick = () => showcaseEditor({ ts: Date.now() });
-  $('#stpl', main).onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿عنوان الدورة,المدينة,التخصص,الجهة,الشهر,عدد الفرص\nمهارات إدارة المشاريع,عن بعد,إدارة المشاريع,جهة تدريبية,2026-11,5\nالمالية لغير الماليين,الرياض,المحاسبة والماليّة,جهة تدريبية,2026-11,3\n'], { type: 'text/csv;charset=utf-8' })); a.download = 'قالب-عناوين-الدورات.csv'; a.click(); };
+  $('#stpl', main).onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeffعنوان الدورة,المدينة,التخصص,الشهر,عدد الفرص\nمهارات إدارة المشاريع,عن بعد,إدارة المشاريع,نوفمبر 2026,5\nالمالية لغير الماليين,الرياض,المحاسبة والماليّة,نوفمبر 2026,3\n'], { type: 'text/csv;charset=utf-8' })); a.download = 'قالب-عناوين-الدورات.csv'; a.click(); };
   $('#sup', main).onclick = () => $('#sfile', main).click();
   $('#sfile', main).onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; ShowcaseImport.pending = ShowcaseImport.parse(await f.text(), f.name); if (!ShowcaseImport.pending.rows.length) { ShowcaseImport.pending = null; toast('لا عناوين في الملف', 'error'); } ShowcaseImport.draw($('#simp', main)); };
   ShowcaseImport.draw($('#simp', main));
@@ -754,7 +754,7 @@ const ShowcaseImport = {
       const mo = monthOf(col.m >= 0 ? r[col.m] : ''), ym = mo ? `${mo.y}-${String(mo.m + 1).padStart(2, '0')}` : nowYm, key = `${ym}|${t.toLowerCase()}`;
       if (seen.has(key)) { dup++; return; } seen.add(key);
       const sraw = col.s >= 0 ? String(r[col.s] || '') : '';
-      rows.push({ on: true, t, c: String(col.c >= 0 ? r[col.c] || '' : '').slice(0, 40), sraw, s: specKey(sraw), o: String(col.o >= 0 ? r[col.o] || '' : '').slice(0, 60), ym, n: Math.max(0, Math.min(9999, parseInt(String(col.n >= 0 ? r[col.n] || '' : '').replace(/[^\d]/g, ''), 10) || 0)), rec: have.get(key) || null });
+      rows.push({ on: true, t, c: String(col.c >= 0 ? r[col.c] || '' : '').slice(0, 40), sraw, s: specKey(sraw), ym, n: Math.max(0, Math.min(9999, parseInt(String(col.n >= 0 ? r[col.n] || '' : '').replace(/[^\d]/g, ''), 10) || 0)), rec: have.get(key) || null });
     });
     return { name: fileName, rows: rows.slice(0, 250), cut: Math.max(0, rows.length - 250), dup };
   },
@@ -765,8 +765,8 @@ const ShowcaseImport = {
     el.innerHTML = `<div class="pbox" style="margin-top:12px;border:2px solid var(--gold,#C9A24B)">
       <h3 style="margin:0 0 4px"><i class="fa-solid fa-list-check"></i> مراجعة الملف قبل النشر <small class="muted">(${esc(P.name || '')})</small></h3>
       <p class="small" style="margin:0 0 8px">المستخرج: <b class="num">${P.rows.length}</b> عنواناً${months.length ? ` للأشهر: ${months.map(m => `<b>${esc(this.ymName(m))}</b>`).join('، ')}` : ''}${P.dup ? ` · استُبعد ${P.dup} مكرراً داخل الملف` : ''}${P.cut ? ` · أُخذ أول 250 فقط (زاد ${P.cut})` : ''}. المحدَّد للنشر: <b class="num">${on.length}</b> (جديد <b class="num">${fresh}</b> · تحديث لعنوان موجود <b class="num">${upd}</b>) · مجموع الفرص <b class="num">${opps}</b>. لا يظهر شيء في الرئيسية قبل الاعتماد.</p>
-      <div class="tbl-wrap" style="max-height:420px;overflow:auto"><table class="tbl"><thead><tr><th style="width:34px"><input type="checkbox" id="sp-all" ${on.length === P.rows.length ? 'checked' : ''}></th><th>العنوان</th><th>المدينة</th><th>التخصص</th><th>الشهر</th><th>الفرص</th><th></th></tr></thead><tbody>
-        ${P.rows.map((r, i) => `<tr class="${r.on ? '' : 'muted'}"><td><input type="checkbox" data-sp="${i}" ${r.on ? 'checked' : ''}></td><td><b>${esc(r.t)}</b>${r.o ? `<br><small class="muted">${esc(r.o)}</small>` : ''}</td><td>${esc(r.c || '—')}</td><td>${r.s ? esc(specName(r.s)) : `<span class="pill warn" title="${esc(r.sraw)}">غير معروف${r.sraw ? ': ' + esc(r.sraw.slice(0, 30)) : ''}</span>`}</td><td class="num">${esc(r.ym)}</td><td class="num">${r.n || '—'}</td><td>${r.rec ? '<span class="pill info">تحديث</span>' : '<span class="pill ok">جديد</span>'}</td></tr>`).join('')}
+      <div class="sp-wrap"><table class="sp-tbl"><thead><tr><th class="c"><input type="checkbox" id="sp-all" ${on.length === P.rows.length ? 'checked' : ''}></th><th>العنوان</th><th>المدينة</th><th>التخصص</th><th>الشهر</th><th class="c">عدد الفرص</th><th class="c">الحالة</th></tr></thead><tbody>
+        ${P.rows.map((r, i) => `<tr class="${r.on ? '' : 'off'}"><td class="c"><input type="checkbox" data-sp="${i}" ${r.on ? 'checked' : ''}></td><td><b>${esc(r.t)}</b></td><td>${esc(r.c || '—')}</td><td>${r.s ? esc(specName(r.s)) : `<span class="pill warn" title="${esc(r.sraw)}">غير معروف${r.sraw ? ': ' + esc(r.sraw.slice(0, 30)) : ''}</span>`}</td><td>${esc(this.ymName(r.ym))}</td><td class="c"><b class="num">${r.n || '—'}</b></td><td class="c">${r.rec ? '<span class="pill info">تحديث</span>' : '<span class="pill ok">جديد</span>'}</td></tr>`).join('')}
       </tbody></table></div>
       <div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn primary" id="sp-ok" ${on.length ? '' : 'disabled'}><i class="fa-solid fa-circle-check"></i> اعتماد ونشر في الصفحة الرئيسية (${on.length})</button><button class="btn" id="sp-no"><i class="fa-solid fa-xmark"></i> إلغاء</button></div></div>`;
     $$('[data-sp]', el).forEach(c => c.onchange = () => { P.rows[+c.dataset.sp].on = c.checked; this.draw(el); });
@@ -780,9 +780,9 @@ const ShowcaseImport = {
     if (!await confirmBox(`اعتماد ${on.length} عنواناً ونشرها في «من طلبات هذا الشهر» في الصفحة الرئيسية؟ (${months.map(m => this.ymName(m)).join('، ')})`, { ok: 'اعتماد ونشر' })) return;
     const now = Date.now(), cur = this.ym(now); let added = 0, updated = 0;
     on.forEach((x, i) => {
-      if (x.rec) { const u = {}; if (x.n) u.n = x.n; if (x.c) u.city = x.c; if (x.s) u.spec = x.s; if (x.o) u.org = x.o; if (Object.keys(u).length) Store.update(`showcase/${x.rec.id}`, u); updated++; return; }
+      if (x.rec) { const u = {}; if (x.n) u.n = x.n; if (x.c) u.city = x.c; if (x.s) u.spec = x.s; if (Object.keys(u).length) Store.update(`showcase/${x.rec.id}`, u); updated++; return; }
       const [y, m] = x.ym.split('-').map(Number), base = x.ym === cur ? now : Date.UTC(y, m - 1, 28, 9);
-      Store.push('showcase', { title: x.t, org: x.o, region: '', city: x.c, spec: x.s, trainerName: '', src: '', n: x.n || null, ts: base - i * 1000 }); added++;
+      Store.push('showcase', { title: x.t, org: '', region: '', city: x.c, spec: x.s, trainerName: '', src: '', n: x.n || null, ts: base - i * 1000 }); added++;
     });
     Security.log('اعتماد عناوين «من طلبات هذا الشهر»', `${added} إضافة · ${updated} تحديث`);
     this.pending = null; this.draw(el); toast(`تم الاعتماد: ${added} إضافة و${updated} تحديث، وتظهر الآن في الصفحة الرئيسية`);
@@ -796,7 +796,6 @@ function showcaseEditor(x) {
     <form id="sf">
       ${field('موضوع البرنامج *', `<input type="text" name="title" required maxlength="90" value="${esc(x.title || '')}">`)}
       <div class="grid2">
-        ${field('الجهة كما تظهر', `<input type="text" name="org" maxlength="60" value="${esc(x.org || '')}" placeholder="اتركه فارغاً لإظهار «جهة تدريبية»">`)}
         ${field('المدرب (اختياري)', `<input type="text" name="trainerName" maxlength="60" value="${esc(x.trainerName || '')}">`)}
         ${field('المدينة أو «عن بعد»', `<input type="text" name="city" maxlength="40" value="${esc(x.city || '')}" placeholder="مثال: الرياض أو عن بعد">`)}
         ${field('المنطقة', `<select name="region"><option value="">—</option>${REGIONS.map(r => opt(r.k, r.name, x.region)).join('')}</select>`)}

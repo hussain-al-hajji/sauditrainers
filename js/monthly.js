@@ -22,7 +22,7 @@ const Monthly = (() => {
         <div class="mo-stats">${d.stats.map(x => `<div class="mo-stat"><b class="num">${esc(x.num)}</b><span>${esc(x.label)}</span>${x.note ? `<small>${esc(x.note)}</small>` : ''}</div>`).join('')}</div>
         ${cta}
         ${d.titles.length ? `<h2 class="mo-h"><i class="fa-solid fa-table-cells-large"></i> موضوعات طلبتها الجهات (${d.titles.length})</h2>
-          <div class="mo-topics">${d.titles.map(t => `<div class="mo-t"><b>${esc(t.c)}</b><small>${esc(t.org || 'جهة تدريبية')}${t.city ? ' · ' + esc(t.city) : ''}${t.spec && specOf(t.spec) ? ' · ' + esc(specName(t.spec)) : ''}</small>${t.n > 1 ? `<span class="pill gold">${t.n} فرصة</span>` : ''}</div>`).join('')}</div>` : ''}
+          <div class="mo-topics">${d.titles.map(t => `<div class="mo-t"><b>${esc(t.c)}</b><small>${[t.city ? esc(t.city) : '', t.spec && specOf(t.spec) ? esc(specName(t.spec)) : ''].filter(Boolean).join(' · ')}</small>${t.n > 0 ? `<span class="pill gold">${t.n} ${t.n === 1 ? 'فرصة' : 'فرص'}</span>` : ''}</div>`).join('')}</div>` : ''}
         ${d.titles.length ? cta : ''}
         <h2 class="mo-h"><i class="fa-solid fa-newspaper"></i> أخبار المدربين في ${esc(s.mname)}</h2>
         ${groups.size ? [...groups.entries()].map(([id, items]) => { const t = Store.get(`trainers/${id}`); return t ? `<div class="mo-grp"><a class="mo-tr" href="#/t/${esc(encodeURIComponent(t.slug || t.id))}">${Card.avatar(t, 'av')}<b>${esc(withTitle ? withTitle(t.name) : t.name)}</b></a><div class="ngrid">${items.map(n => News.card(n)).join('')}</div></div>` : ''; }).join('') : '<p class="muted">لم تُنشر أخبار خلال هذا الشهر.</p>'}

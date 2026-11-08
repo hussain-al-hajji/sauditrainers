@@ -153,7 +153,7 @@ const WeeklyUI = { from: '', to: '', news: true, ads: true, subject: null, intro
     titles.sort((a, b) => b.n - a.n);   // الأكثر طلباً أولاً
     if (titles.length) {
       blocks.push({ t: 'h', text: '🎯 مجالات وموضوعات التدريب المطلوبة هذا الشهر', align: 'start' });
-      blocks.push({ t: 'box', text: titles.map(x => `• **${x.c}**${[x.org, x.city].filter(Boolean).length ? ` — ${[x.org, x.city].filter(Boolean).join(' · ')}` : ''}${x.n > 0 ? ` (${num(x.n)} ${x.n === 1 ? 'فرصة' : 'فرص'})` : ''}`).join('\n') });
+      blocks.push({ t: 'box', text: titles.map(x => `• **${x.c}**${x.city ? ` — ${x.city}` : ''}${x.n > 0 ? ` (${num(x.n)} ${x.n === 1 ? 'فرصة' : 'فرص'})` : ''}`).join('\n') });
     }
     cta();
     newsBlocks(blocks, `${ym}-01`, `${ym}-${String(last).padStart(2, '0')}`, base, `${base}#/login`, true, `📰 أخبار المدربين خلال شهر ${mname}`);

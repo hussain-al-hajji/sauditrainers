@@ -459,7 +459,7 @@ const Bulletin = (() => {
     let fs = String(it.c).length > 48 ? 25 : 28, lh = Math.round(fs * 1.34), tl;
     for (;;) { ctx.font = `900 ${fs}px ${FONT.head}`; tl = K().wrap(ctx, it.c, tw, 3); if (tl.length * lh <= room || fs <= 19) break; fs -= 1; lh = Math.round(fs * 1.34); }
     tl.forEach((l, i) => txt(ctx, l, R - 8, top + lh * (i + 1) - 8, { font: ctx.font, color: C.g900 }));
-    const meta = [it.org || 'جهة تدريبية', it.city || '', d.mname.split(' ')[0]].filter(Boolean).join(' · ');
+    const meta = [it.city || '', d.mname.split(' ')[0]].filter(Boolean).join(' · ');
     ctx.font = `600 21px ${FONT.body}`; const mf = fitFont(ctx, meta, 600, 21, 15, tw, FONT.body);
     ctx.font = `600 ${mf}px ${FONT.body}`; txt(ctx, K().wrap(ctx, meta, tw, 1)[0] || meta, R - 8, metaY, { font: ctx.font, color: C.g700 });
     if (it.n > 0) pill(ctx, `${it.n.toLocaleString('en-US')} ${it.n === 1 ? 'فرصة' : 'فرص'} في هذا المجال`, R - 8, by - 16, { bg: C.g100, fg: C.g800, fs: 20 });
