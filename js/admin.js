@@ -661,7 +661,13 @@ function aRequests(main) {
     <div class="pbox" style="margin-bottom:12px"><div class="bl-bar"><b><i class="fa-solid fa-file-export"></i> تصدير الفرص والطلبات</b>
       <label>الشهر<select id="ex-m"><option value="">كل الأشهر</option>${Opps.exportMonths(all).map(m => `<option value="${m}">${esc(Opps.ymName(m))}</option>`).join('')}</select></label>
       <button class="btn primary" id="ex-go"><i class="fa-solid fa-file-csv"></i> تصدير CSV (إعلانات الإدارة + طلبات الجهات)</button></div>
-      <p class="muted small" style="margin:4px 0 0">ملف واحد بصيغة موحّدة لكل ما نُشر خلال الشهر المختار: إعلانات الإدارة وطلبات «اطلب مدرباً» وطلبات التواصل المباشر، بلا بيانات تواصل شخصية.</p></div>
+      <p class="muted small" style="margin:4px 0 0">ملف واحد بصيغة موحّدة لكل ما نُشر خلال الشهر المختار: إعلانات الإدارة وطلبات «اطلب مدرباً» وطلبات التواصل المباشر، بلا بيانات تواصل شخصية.</p>
+      <hr style="border:0;border-top:1px solid var(--line,#e0e8d8);margin:14px 0">
+      <div class="bl-bar"><b><i class="fa-solid fa-file-arrow-up"></i> رفع ملف العناوين المحلَّلة ونشرها في «من طلبات هذا الشهر»</b>
+        <button class="btn primary" id="sup"><i class="fa-solid fa-file-arrow-up"></i> رفع ملف (CSV أو نص)</button><button class="btn sm ghost" id="stpl"><i class="fa-solid fa-file-arrow-down"></i> تنزيل القالب</button>
+        <input type="file" id="sfile" accept=".csv,.txt,text/csv,text/plain" hidden></div>
+      <p class="muted small" style="margin:4px 0 0">يُستخرج محتوى الملف ويُعرض هنا للمراجعة أولاً (بلا نشر)، وعند «اعتماد ونشر» يظهر في الصفحة الرئيسية. الأعمدة: <b>عنوان الدورة، المدينة</b> (اسم المدينة للحضوري وإلا «عن بعد»)، <b>التخصص، الجهة، الشهر</b> (مثل 2026-11)، <b>عدد الفرص</b>؛ والسطر الأول عنوان الأعمدة وغير الموجود منها اختياري. يُعرض الشهر الأحدث تلقائياً في الرئيسية، ويبقى ما قبله في «طلبات الأشهر السابقة».</p>
+      <div id="simp"></div></div>
     <h3 class="rq-part"><i class="fa-solid fa-handshake-angle"></i> الجزء الأول: فرص تضيفها الإدارة</h3>
     <div id="rq-adm"></div>
     <h3 class="rq-part"><i class="fa-solid fa-inbox"></i> الجزء الثاني: طلبات الجهات التدريبية <small class="muted">(طلبات التواصل مع مدرب محدد + «اطلب مدرباً»)</small></h3>
@@ -695,13 +701,12 @@ function aRequests(main) {
     <details class="pbox" open><summary style="cursor:pointer"><b><i class="fa-solid fa-table-cells-large" style="color:var(--g600)"></i> «من طلبات هذا الشهر»: المعروض والأرشيف (${show.length})</b></summary>
       <p class="muted small">تظهر هذه البطاقات متحركة في الصفحة الرئيسية دون أي بيانات تواصل. اختر من الطلبات بالأسفل بزر <i class="fa-solid fa-table-cells-large"></i> أو أضف يدوياً.</p>
       ${(() => { const ym = ts => { const d = new Date((ts || 0) + 3 * 36e5); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; }, nm = k => new Date(Date.UTC(+k.slice(0, 4), +k.slice(5, 7) - 1, 15)).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { month: 'long', year: 'numeric', timeZone: 'UTC' });
-        const g = {}; show.forEach(x => (g[ym(x.ts)] = g[ym(x.ts)] || []).push(x)); const ks = Object.keys(g).sort().reverse(), cur = g[MonthStats.cur().key] ? MonthStats.cur().key : ks[0];
+        const g = {}; show.forEach(x => (g[ym(x.ts)] = g[ym(x.ts)] || []).push(x)); const ks = Object.keys(g).sort().reverse(), cur = ks[0];
         const mini = x => `<div class="sc-mini"><b>${esc(x.title)}</b><small>${esc(x.org || 'جهة تدريبية')}${(x.city || regionName(x.region)) ? ' · ' + esc(x.city || regionName(x.region)) : ''}${x.spec ? ' · ' + esc(specName(x.spec)) : ''}${x.n ? ' · ' + x.n + ' فرصة' : ''} · ${esc(new Date(x.ts).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { month: 'long', year: 'numeric' }))}</small><div class="acts"><button class="btn sm icon" data-se="${esc(x.id)}"><i class="fa-solid fa-pen"></i></button><button class="btn sm icon" data-sx="${esc(x.id)}"><i class="fa-solid fa-trash"></i></button></div></div>`;
         return ks.map(k => `<details class="sc-month" ${k === cur ? 'open' : ''}><summary><b>${k === cur ? 'المعروض حالياً: ' : 'أرشيف: '}${esc(nm(k))}</b> <span class="pill ${k === cur ? 'gold' : 'gray'}">${g[k].length}</span></summary><div class="sc-admin">${g[k].map(mini).join('')}</div></details>`).join(''); })()}
       <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn sm" id="sa"><i class="fa-solid fa-plus"></i> إضافة يدوياً</button>
-        <button class="btn sm" id="sup"><i class="fa-solid fa-file-arrow-up"></i> رفع ملف عناوين (CSV أو نص)</button><button class="btn sm ghost" id="stpl"><i class="fa-solid fa-file-arrow-down"></i> تنزيل القالب</button>
-        <input type="file" id="sfile" accept=".csv,.txt,text/csv,text/plain" hidden></div>
-      <p class="muted small" style="margin:6px 0 0">الملف: الأعمدة: <b>عنوان الدورة، المدينة</b> (اسم المدينة للحضوري وإلا «عن بعد»)، <b>التخصص، الجهة، الشهر</b> (مثل 2026-10)، <b>عدد الفرص</b>، والسطر الأول عنوان الأعمدة وغير الموجود منها اختياري. ويُستبعد المكرر.</p></div>
+      </div>
+      <p class="muted small" style="margin:6px 0 0">رفع ملف العناوين صار في قسم «تصدير الفرص والطلبات» أعلى الصفحة. يُعرض في الرئيسية الشهر الأحدث تلقائياً، وبقية الأشهر في الأرشيف.</p></div>
     </details>`;
   Opps.adminOpps($('#rq-adm', main), () => aRequests(main));
   $('#ex-go', main).onclick = () => Opps.exportAll($('#ex-m', main).value, all);
@@ -721,30 +726,68 @@ function aRequests(main) {
     showcaseEditor(Store.list('showcase').find(x => x.src === r.id) || { src: r.id, title: r.topic, org: r.org, region: r.region || t?.region || '', spec: r.spec || Data.specs(t || {})[0] || '', trainerName: r.trainerName || '', ts: r.ts });
   });
   $('#sa', main).onclick = () => showcaseEditor({ ts: Date.now() });
-  $('#stpl', main).onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['\ufeffعنوان الدورة,المدينة,التخصص,الجهة,الشهر,عدد الفرص\nمهارات إدارة المشاريع,عن بعد,إدارة المشاريع,جهة تدريبية,2026-10,5\nالمالية لغير الماليين,الرياض,المحاسبة والماليّة,جهة تدريبية,2026-10,3\n'], { type: 'text/csv;charset=utf-8' })); a.download = 'قالب-عناوين-الدورات.csv'; a.click(); };
+  $('#stpl', main).onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿عنوان الدورة,المدينة,التخصص,الجهة,الشهر,عدد الفرص\nمهارات إدارة المشاريع,عن بعد,إدارة المشاريع,جهة تدريبية,2026-11,5\nالمالية لغير الماليين,الرياض,المحاسبة والماليّة,جهة تدريبية,2026-11,3\n'], { type: 'text/csv;charset=utf-8' })); a.download = 'قالب-عناوين-الدورات.csv'; a.click(); };
   $('#sup', main).onclick = () => $('#sfile', main).click();
-  $('#sfile', main).onchange = async e => {
-    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-    // العمود الأول = عنوان الدورة، والثاني (اختياري) = المدينة أو «عن بعد»؛ يدعم علامات الاقتباس وتُتجاوز عناوين الأعمدة المعروفة
+  $('#sfile', main).onchange = async e => { const f = e.target.files[0]; e.target.value = ''; if (!f) return; ShowcaseImport.pending = ShowcaseImport.parse(await f.text(), f.name); if (!ShowcaseImport.pending.rows.length) { ShowcaseImport.pending = null; toast('لا عناوين في الملف', 'error'); } ShowcaseImport.draw($('#simp', main)); };
+  ShowcaseImport.draw($('#simp', main));
+  $$('[data-se]', main).forEach(b => b.onclick = () => showcaseEditor(Store.get(`showcase/${b.dataset.se}`)));
+  $$('[data-sx]', main).forEach(b => b.onclick = () => Store.remove(`showcase/${b.dataset.sx}`));
+}
+
+/* رفع ملف عناوين «من طلبات هذا الشهر»: يُستخرج المحتوى ويُعرض للمراجعة في الإدارة، ولا يُنشر في الرئيسية إلا بعد «اعتماد ونشر».
+ * المفتاح (الشهر + العنوان): عنوان موجود في الشهر نفسه يُحدَّث (العدد والمدينة والتخصص والجهة)، وإلا يُضاف، فلا يمس ملف شهر جديد بطاقات الأشهر السابقة. */
+const ShowcaseImport = {
+  pending: null,
+  ym: ts => { const d = new Date((ts || 0) + 3 * 36e5); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; },
+  ymName: k => new Date(Date.UTC(+k.slice(0, 4), +k.slice(5, 7) - 1, 15)).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { month: 'long', year: 'numeric', timeZone: 'UTC' }),
+  parse(raw, fileName) {
     const cols = l => { const out = []; let cur = '', q = false; for (let k = 0; k < l.length; k++) { const c = l[k]; if (q) { if (c === '"' && l[k + 1] === '"') { cur += '"'; k++; } else if (c === '"') q = false; else cur += c; } else if (c === '"') q = true; else if (c === ',' || c === ';' || c === '\t') { out.push(cur); cur = ''; } else cur += c; } out.push(cur); return out.map(x => x.replace(/\s+/g, ' ').trim()); };
-    const text = (await f.text()).replace(/^\ufeff/, ''), have = new Map(Store.list('showcase').map(x => [String(x.title || '').trim().toLowerCase(), x])), seen = new Set(); let dup = 0; const upd = [];
-    // الأعمدة تُعرف من السطر الأول (عنوان الدورة، المدينة، التخصص، الجهة، الشهر)، وإلا فبالترتيب: عنوان ثم مدينة
-    const lines = text.split(/\r?\n/).filter(l => l.trim()).map(cols), H = lines[0] || [], ix = n => H.findIndex(h => h === n), known = H.some(h => /^(عنوان الدورة|العنوان|title)$/i.test(h));
+    const lines = String(raw).replace(/^\ufeff/, '').split(/\r?\n/).filter(l => l.trim()).map(cols), H = lines[0] || [], ix = n => H.findIndex(h => h === n), known = H.some(h => /^(عنوان الدورة|العنوان|title)$/i.test(h));
     const col = known ? { t: Math.max(0, H.findIndex(h => /^(عنوان الدورة|العنوان|title)$/i.test(h))), c: ix('المدينة'), s: ix('التخصص'), o: ix('الجهة'), m: ix('الشهر'), n: ix('عدد الفرص') } : { t: 0, c: 1, s: -1, o: -1, m: -1, n: -1 };
     const specKey = v => { v = String(v || '').trim(); if (!v) return ''; const hit = SPECIALTIES.find(x => x.k === v || x.name === v) || SPECIALTIES.find(x => x.name.includes(v) || v.includes(x.name)); return hit ? hit.k : ''; };
     const MN = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
     const monthOf = v => { v = String(v || '').trim(); let y, m, a = v.match(/^(\d{4})[-/](\d{1,2})/); if (a) { y = +a[1]; m = +a[2] - 1; } else { const k = MN.findIndex(n => v.includes(n)); a = v.match(/(\d{4})/); if (k >= 0) { m = k; y = a ? +a[1] : new Date().getFullYear(); } } return Number.isInteger(m) && m >= 0 && m < 12 ? { y, m } : null; };
-    const titles = lines.slice(known ? 1 : 0).map(r => ({ t: String(r[col.t] || '').replace(/^[\s•\-–*·]+/, '').slice(0, 90), c: String(col.c >= 0 ? r[col.c] || '' : '').slice(0, 40), s: specKey(col.s >= 0 ? r[col.s] : ''), o: String(col.o >= 0 ? r[col.o] || '' : '').slice(0, 60), m: monthOf(col.m >= 0 ? r[col.m] : ''), n: Math.max(0, Math.min(9999, parseInt(String(col.n >= 0 ? r[col.n] || '' : '').replace(/[^\d]/g, ''), 10) || 0)) })).filter(x => x.t).filter(x => { const k = x.t.toLowerCase(); if (seen.has(k)) { dup++; return false; } seen.add(k); if (have.has(k)) { upd.push({ rec: have.get(k), x }); return false; } return true; });
-    if (!titles.length && !upd.length) return toast('لا عناوين جديدة في الملف', 'error');
-    const take = titles.slice(0, 250);
-    if (!await confirmBox(`${take.length ? `إضافة ${take.length} عنوان` : ''}${take.length && upd.length ? ' و' : ''}${upd.length ? `تحديث ${upd.length} عنوان موجود (العدد والمدينة والتخصص)` : ''} في «من طلبات هذا الشهر»${dup ? ` (استُبعد ${dup} مكرراً داخل الملف)` : ''}${titles.length > take.length ? ` - أول 250 فقط من ${titles.length}` : ''}؟`, { ok: 'تنفيذ' })) return;
-    upd.forEach(({ rec, x }) => { const u = {}; if (x.n) u.n = x.n; if (x.c) u.city = x.c; if (x.s) u.spec = x.s; if (x.o) u.org = x.o; if (Object.keys(u).length) Store.update(`showcase/${rec.id}`, u); });
-    const now = Date.now(), cur = new Date(); take.forEach((x, i) => { const same = x.m && x.m.y === cur.getFullYear() && x.m.m === cur.getMonth(), base = x.m ? (same ? now : Date.UTC(x.m.y, x.m.m, 28, 9)) : now; Store.push('showcase', { title: x.t, org: x.o, region: '', city: x.c, spec: x.s, trainerName: '', src: '', n: x.n || null, ts: base - i * 1000 }); });
-    Security.log('رفع عناوين «من طلبات هذا الشهر»', `${take.length} عنواناً`); toast(`تمّ: ${take.length} إضافة و${upd.length} تحديث`);
-  };
-  $$('[data-se]', main).forEach(b => b.onclick = () => showcaseEditor(Store.get(`showcase/${b.dataset.se}`)));
-  $$('[data-sx]', main).forEach(b => b.onclick = () => Store.remove(`showcase/${b.dataset.sx}`));
-}
+    const nowYm = this.ym(Date.now()), have = new Map(Store.list('showcase').map(x => [`${this.ym(x.ts)}|${String(x.title || '').trim().toLowerCase()}`, x])), seen = new Set(); let dup = 0;
+    const rows = [];
+    lines.slice(known ? 1 : 0).forEach(r => {
+      const t = String(r[col.t] || '').replace(/^[\s•\-–*·]+/, '').slice(0, 90); if (!t) return;
+      const mo = monthOf(col.m >= 0 ? r[col.m] : ''), ym = mo ? `${mo.y}-${String(mo.m + 1).padStart(2, '0')}` : nowYm, key = `${ym}|${t.toLowerCase()}`;
+      if (seen.has(key)) { dup++; return; } seen.add(key);
+      const sraw = col.s >= 0 ? String(r[col.s] || '') : '';
+      rows.push({ on: true, t, c: String(col.c >= 0 ? r[col.c] || '' : '').slice(0, 40), sraw, s: specKey(sraw), o: String(col.o >= 0 ? r[col.o] || '' : '').slice(0, 60), ym, n: Math.max(0, Math.min(9999, parseInt(String(col.n >= 0 ? r[col.n] || '' : '').replace(/[^\d]/g, ''), 10) || 0)), rec: have.get(key) || null });
+    });
+    return { name: fileName, rows: rows.slice(0, 250), cut: Math.max(0, rows.length - 250), dup };
+  },
+  draw(el) {
+    const P = this.pending; if (!el) return;
+    if (!P) { el.innerHTML = ''; return; }
+    const on = P.rows.filter(r => r.on), months = [...new Set(P.rows.map(r => r.ym))].sort().reverse(), fresh = on.filter(r => !r.rec).length, upd = on.length - fresh, opps = on.reduce((a, r) => a + r.n, 0);
+    el.innerHTML = `<div class="pbox" style="margin-top:12px;border:2px solid var(--gold,#C9A24B)">
+      <h3 style="margin:0 0 4px"><i class="fa-solid fa-list-check"></i> مراجعة الملف قبل النشر <small class="muted">(${esc(P.name || '')})</small></h3>
+      <p class="small" style="margin:0 0 8px">المستخرج: <b class="num">${P.rows.length}</b> عنواناً${months.length ? ` للأشهر: ${months.map(m => `<b>${esc(this.ymName(m))}</b>`).join('، ')}` : ''}${P.dup ? ` · استُبعد ${P.dup} مكرراً داخل الملف` : ''}${P.cut ? ` · أُخذ أول 250 فقط (زاد ${P.cut})` : ''}. المحدَّد للنشر: <b class="num">${on.length}</b> (جديد <b class="num">${fresh}</b> · تحديث لعنوان موجود <b class="num">${upd}</b>) · مجموع الفرص <b class="num">${opps}</b>. لا يظهر شيء في الرئيسية قبل الاعتماد.</p>
+      <div class="tbl-wrap" style="max-height:420px;overflow:auto"><table class="tbl"><thead><tr><th style="width:34px"><input type="checkbox" id="sp-all" ${on.length === P.rows.length ? 'checked' : ''}></th><th>العنوان</th><th>المدينة</th><th>التخصص</th><th>الشهر</th><th>الفرص</th><th></th></tr></thead><tbody>
+        ${P.rows.map((r, i) => `<tr class="${r.on ? '' : 'muted'}"><td><input type="checkbox" data-sp="${i}" ${r.on ? 'checked' : ''}></td><td><b>${esc(r.t)}</b>${r.o ? `<br><small class="muted">${esc(r.o)}</small>` : ''}</td><td>${esc(r.c || '—')}</td><td>${r.s ? esc(specName(r.s)) : `<span class="pill warn" title="${esc(r.sraw)}">غير معروف${r.sraw ? ': ' + esc(r.sraw.slice(0, 30)) : ''}</span>`}</td><td class="num">${esc(r.ym)}</td><td class="num">${r.n || '—'}</td><td>${r.rec ? '<span class="pill info">تحديث</span>' : '<span class="pill ok">جديد</span>'}</td></tr>`).join('')}
+      </tbody></table></div>
+      <div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn primary" id="sp-ok" ${on.length ? '' : 'disabled'}><i class="fa-solid fa-circle-check"></i> اعتماد ونشر في الصفحة الرئيسية (${on.length})</button><button class="btn" id="sp-no"><i class="fa-solid fa-xmark"></i> إلغاء</button></div></div>`;
+    $$('[data-sp]', el).forEach(c => c.onchange = () => { P.rows[+c.dataset.sp].on = c.checked; this.draw(el); });
+    $('#sp-all', el).onchange = e => { P.rows.forEach(r => { r.on = e.target.checked; }); this.draw(el); };
+    $('#sp-no', el).onclick = () => { this.pending = null; this.draw(el); };
+    $('#sp-ok', el).onclick = () => this.commit(el);
+  },
+  async commit(el) {
+    const P = this.pending; if (!P) return; const on = P.rows.filter(r => r.on); if (!on.length) return;
+    const months = [...new Set(on.map(r => r.ym))].sort().reverse();
+    if (!await confirmBox(`اعتماد ${on.length} عنواناً ونشرها في «من طلبات هذا الشهر» في الصفحة الرئيسية؟ (${months.map(m => this.ymName(m)).join('، ')})`, { ok: 'اعتماد ونشر' })) return;
+    const now = Date.now(), cur = this.ym(now); let added = 0, updated = 0;
+    on.forEach((x, i) => {
+      if (x.rec) { const u = {}; if (x.n) u.n = x.n; if (x.c) u.city = x.c; if (x.s) u.spec = x.s; if (x.o) u.org = x.o; if (Object.keys(u).length) Store.update(`showcase/${x.rec.id}`, u); updated++; return; }
+      const [y, m] = x.ym.split('-').map(Number), base = x.ym === cur ? now : Date.UTC(y, m - 1, 28, 9);
+      Store.push('showcase', { title: x.t, org: x.o, region: '', city: x.c, spec: x.s, trainerName: '', src: '', n: x.n || null, ts: base - i * 1000 }); added++;
+    });
+    Security.log('اعتماد عناوين «من طلبات هذا الشهر»', `${added} إضافة · ${updated} تحديث`);
+    this.pending = null; this.draw(el); toast(`تم الاعتماد: ${added} إضافة و${updated} تحديث، وتظهر الآن في الصفحة الرئيسية`);
+  }
+};
 
 // بطاقة في قسم «من طلبات هذا الشهر» (تُعرض للعامة دون بيانات تواصل)
 function showcaseEditor(x) {

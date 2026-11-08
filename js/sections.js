@@ -153,14 +153,13 @@ const SECTION_TYPES = (() => {
     }
   };
 
-  /* «من طلبات هذا الشهر»: لا يُحذف شيء؛ تُجمَّع البطاقات بالشهر (بتوقيت الرياض). يُعرض تلقائياً شهر الإحصائية الحالي (يتبدّل يوم 5 من الشهر التالي)
-     إن كان فيه بطاقات، وإلا يستمر عرض أحدث شهر فيه بطاقات؛ ويمكن للزائر الرجوع لأي شهر سابق من الزر تحت العنوان. */
+  /* «من طلبات هذا الشهر»: لا يُحذف شيء؛ تُجمَّع البطاقات بالشهر (بتوقيت الرياض). يُعرض تلقائياً أحدث شهر فيه بطاقات معتمدة (فيظهر شهر جديد فور اعتماد ملفه)؛ ويمكن للزائر الرجوع لأي شهر سابق من الزر تحت العنوان. */
   const ordYm = ts => { const d = new Date((ts || 0) + 3 * 36e5); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; };
   const ordYmName = ym => new Date(Date.UTC(+ym.slice(0, 4), +ym.slice(5, 7) - 1, 15)).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { month: 'long', year: 'numeric', timeZone: 'UTC' });
   const ordState = () => {
     const all = Store.list('showcase'), count = {}; all.forEach(x => { const m = ordYm(x.ts); count[m] = (count[m] || 0) + 1; });
     const months = Object.keys(count).sort().reverse();
-    return { all, count, months, active: forced => (forced && count[forced] ? forced : count[MonthStats.cur().key] ? MonthStats.cur().key : months[0]) };
+    return { all, count, months, active: forced => (forced && count[forced] ? forced : months[0]) };
   };
   const ordList = (d, ym) => Store.list('showcase').filter(x => ordYm(x.ts) === ym).sort((a, b) => b.ts - a.ts).slice(0, Math.max(1, Number(d.count) || 60));
   const ordTile = x => `<article class="ord" style="--pat:${Pattern.css('#EEF3E5', 0.12)}">
