@@ -108,7 +108,7 @@ function mailPlain(doc, vars) {
     if (b.t === 'btn') return mailVars(b.text, vars) + ': ' + mailVars(b.url, vars);
     if (b.t === 'img') return b.link ? b.link : '';
     if (b.t === 'price') return mailVars(b.num, vars) + ' ' + mailVars(b.unit, vars) + (b.note ? ' - ' + mailVars(b.note, vars) : '') + (b.per ? '\n' + mailVars(b.per, vars) : '') + '\n' + (b.items || []).map(i => '- ' + mailVars(i.t, vars) + (i.tag ? ' [' + i.tag + ']' : '')).join('\n') + (b.url ? '\n' + mailVars(b.text, vars) + ': ' + mailVars(b.url, vars) : '');
-    if (b.t === 'stat') return mailVars(b.num, vars) + ' - ' + mailVars(b.text, vars) + (b.note ? '\n' + mailVars(b.note, vars) : '');
+    if (b.t === 'stat') { const pt = x => mailVars(x, vars).replace(/\*\*(.+?)\*\*/g, '$1'); return pt(b.num) + ' - ' + pt(b.text) + (b.note ? '\n' + pt(b.note) : ''); }
     return mailVars(b.text, vars).replace(/\*\*(.+?)\*\*/g, '$1').replace(/\[\[(?:t:)?(.+?)\]\]/g, '[$1]').replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1 ($2)');
   }).filter(Boolean).join('\n\n');
 }

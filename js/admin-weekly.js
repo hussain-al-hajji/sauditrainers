@@ -330,6 +330,7 @@ ${siteBase()}#/join
     body.innerHTML = `<div class="pbox">
       <h3><i class="fa-solid fa-sun"></i> الرسالة اليومية - قالب جاهز للجيميل</h3>
       <p class="small muted">اضغط «توليد» لتحصل على رسالة بأعداد محدّثة لحظة التوليد: <b>الفرص التدريبية</b> المنشورة اليوم، ومنذ بداية الأسبوع (تراكمي من يوم الأحد)، ومنذ بداية الشهر (من الأول)، ولكل رقم تفصيله: «إعلانات فرص تدريب عامة» (نشرتها الإدارة) و«طلبات تواصل مخصصة» (طلبات الجهات إلى الإدارة أو إلى مدربين محددين)، و<b>وظائف التدريب</b> المنشورة هذا الأسبوع ومنذ بداية الشهر، مع إرشادات الدخول وزر واتساب المنصة. ثم انسخها بتصميمها والصقها في Gmail، وانسخ إيميلات المدربين المنشورة صفحاتهم للصقها في خانة المستلمين (يفضّل «نسخة مخفية BCC»).</p>
+      <div class="banner info"><i class="fa-solid fa-clock"></i><span>يمكن أن تُنشأ هذه الرسالة تلقائياً كل يوم الساعة <b>7 مساءً</b> بتوقيت الرياض كمسودة في Gmail حساب المنصة (بإيميلات المدربين في BCC) عبر ملف <code>Daily.gs</code> في Apps Script (انظر <code>integrations/google-apps-script/README.md</code>). الرسالة هنا هي نفسها بأعداد اللحظة.</span></div>
       <div class="bl-bar"><button class="btn primary" id="dl-gen"><i class="fa-solid fa-wand-magic-sparkles"></i> توليد الرسالة</button>
         <button class="btn" id="dl-em"><i class="fa-solid fa-at"></i> نسخ إيميلات المدربين المنشورين (<span class="num" id="dl-n">${dailyEmails().length}</span>)</button></div>
       <div id="dl-out" style="margin-top:12px"></div>
