@@ -229,11 +229,16 @@ const TRAIN_LANG = [
   ['en', 'لغة التدريب الأساسية هي الإنجليزية (محتوى وتقديم)'],
   ['both', 'التدريب باللغتين (المحتوى الأساس بالإنجليزية، والتقديم بالإنجليزية والعربية)']
 ];
-const trainLang = k => (TRAIN_LANG.find(x => x[0] === k) || [])[1] || '';
+// نموذج «التواصل مع مدرب» يزيد خيار «برامج متعددة» للغة وطريقة التقديم (لا يظهر في «اطلب مدرباً» ولا في بيانات المدرب)
+const TRAIN_LANG_LEAD = [...TRAIN_LANG, ['multi', 'برامج متعددة - اللغة حسب طبيعة البرنامج وحسب الاتفاق']];
+const trainLang = k => (TRAIN_LANG_LEAD.find(x => x[0] === k) || [])[1] || '';
 const DELIVERY = [
   { k: 'onsite', name: 'حضوري', icon: 'fa-people-roof' },
   { k: 'online', name: 'عن بُعد', icon: 'fa-laptop' }
 ];
+
+const LEAD_MODES = [...DELIVERY, { k: 'flex', name: 'برامج متعددة - طريقة التقديم حسب طبيعة البرنامج وحسب الاتفاق' }];
+const leadModeName = k => (LEAD_MODES.find(d => d.k === k) || {}).name || '';
 
 const APP_STATUS = {
   new: { name: 'طلب جديد', icon: 'fa-inbox', tone: 'info' },
