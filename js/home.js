@@ -312,10 +312,9 @@ Pages.request = {
             ${field('منطقة التنفيذ', `<select name="region"><option value="">أي منطقة</option>${REGIONS.map(r => opt(r.k, r.name)).join('')}</select>`)}
           </div>
           ${field('موضوع البرنامج أو الدورة *', '<input type="text" name="topic" required maxlength="160" placeholder="مثال: مهارات القيادة للمشرفين الجدد">')}
-          <fieldset class="lang-pick" style="border:0;padding:0;margin:0;display:grid;gap:8px"><legend style="font-weight:700;margin-bottom:6px">لغة التدريب المطلوبة في البرنامج *</legend>
-            ${TRAIN_LANG.map(([k, l], i) => `<label class="chk lang-opt"><input type="radio" name="lang" value="${k}" ${i === 0 ? 'required' : ''}><span>${esc(l)}</span></label>`).join('')}</fieldset>
+          ${field('لغة التدريب المطلوبة في البرنامج *', `<select name="lang" required><option value="">اختر لغة التدريب</option>${TRAIN_LANG_LEAD.map(([k, l]) => opt(k, l)).join('')}</select>`)}
           <div class="grid3">
-            ${field('طريقة التقديم', `<select name="mode"><option value="">أي طريقة</option>${DELIVERY.map(d => opt(d.k, d.name)).join('')}</select>`)}
+            ${field('طريقة التقديم', `<select name="mode"><option value="">أي طريقة</option>${LEAD_MODES.map(d => opt(d.k, d.name)).join('')}</select>`)}
             ${field('عدد المتدربين', '<input type="number" name="size" min="1" max="100000">')}
             ${field('الموعد المتوقع', '<input type="text" name="when" maxlength="80">')}
           </div>
@@ -346,7 +345,7 @@ Pages.request = {
       e.preventDefault();
       const d = formData(form);
       if (!validPhone(d.phone)) { toast('رقم الجوال غير صحيح', 'error'); return; }
-      if (!TRAIN_LANG.some(x => x[0] === d.lang)) { toast('اختر لغة التدريب المطلوبة', 'error'); return; }
+      if (!TRAIN_LANG_LEAD.some(x => x[0] === d.lang)) { toast('اختر لغة التدريب المطلوبة', 'error'); return; }
       const matches = Data.match(d).map(x => x.t.id);
       const rid = await Store.pushConfirmed('requests', { ...d, phone: phoneDigits(d.phone), size: Number(d.size) || 0, matches, ts: Date.now(), status: 'new' });
       if (!rid) { toast('تعذّر إرسال الطلب، أعد المحاولة', 'error'); return; }
