@@ -292,7 +292,7 @@ function statsMount(main) {
     ${statsMonthly()}
     ${statsOpps()}
     ${statsFirebase()}
-    ${ga?.error || gsc?.error ? `<div class="banner warn"><i class="fa-solid fa-triangle-exclamation"></i><span>${esc([ga?.error && 'Analytics: ' + ga.error, gsc?.error && 'Search Console: ' + gsc.error].filter(Boolean).join(' | '))}</span></div>` : ''}`;
+    ${ga?.error || ga?.partialError || gsc?.error ? `<div class="banner warn"><i class="fa-solid fa-triangle-exclamation"></i><span>${esc([ga?.error && 'Analytics: ' + ga.error, ga?.partialError && 'Analytics (فترات ناقصة): ' + ga.partialError, gsc?.error && 'Search Console: ' + gsc.error].filter(Boolean).join(' | '))}</span></div>` : ''}`;
   $$('[data-an-p]', box).forEach(b => b.onclick = () => { Stats.days = +b.dataset.anP; statsMount(main); });
   $$('[data-an-g]', box).forEach(b => b.onclick = () => { Stats.gp = b.dataset.anG; statsMount(main); });
   $$('[data-ym]', box).forEach(tr => tr.onclick = () => { const m = Store.get(`analytics_ext/monthly/${tr.dataset.ym.replace('-', '')}`); m && anMonthDetail(m); });
