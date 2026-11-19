@@ -304,7 +304,7 @@ ${siteBase()}#/join
   const dayShort = ts => new Date(ts).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' });
   const dailyNorm = x => String(x || '').toLowerCase().replace(/[\u064B-\u0652\u0640]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/\s+/g, ' ').trim();
   const dailyExcluded = (t, email, list) => list.some(l => { l = dailyNorm(l); return l && (l.includes('@') ? l === email : (dailyNorm(t.name).includes(l) || dailyNorm(t.code) === l || dailyNorm(t.id) === l)); });
-  const dailyEmails = () => { const ex = String((window.__dailyUI && window.__dailyUI.exclude != null ? window.__dailyUI.exclude : dailyGet().exclude) || '').split('\n').filter(x => x.trim()); return [...new Set(Data.live().map(t => { const e = String((Store.get(`private/${t.id}`) || {}).email || '').trim().toLowerCase(); return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !dailyExcluded(t, e, ex) ? e : ''; }).filter(Boolean))]; };
+  const dailyEmails = () => { const oo = MailOpt.set(), ex = String((window.__dailyUI && window.__dailyUI.exclude != null ? window.__dailyUI.exclude : dailyGet().exclude) || '').split('\n').filter(x => x.trim()); return [...new Set(Data.live().map(t => { const e = String((Store.get(`private/${t.id}`) || {}).email || '').trim().toLowerCase(); return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !dailyExcluded(t, e, ex) && !MailOpt.has(e, oo) ? e : ''; }).filter(Boolean))]; };
   function buildDaily({ subject, intro, outro }) {
     const base = siteBase(), c = dailyCounts(), blocks = [], date = dayLong(c.now), wa = (Data.content().contact || {}).whatsapp || window.ST_CONFIG.platformWhatsapp || '';
     const sub = x => String(x || '').replace(/\{date\}/g, date);
@@ -336,6 +336,7 @@ ${siteBase()}#/join
       <div class="banner info"><i class="fa-solid fa-clock"></i><span>يمكن أن تُنشأ هذه الرسالة تلقائياً كل يوم الساعة <b>7 مساءً</b> بتوقيت الرياض كمسودة في Gmail حساب المنصة (بإيميلات المدربين في BCC) عبر ملف <code>Daily.gs</code> في Apps Script (انظر <code>integrations/google-apps-script/README.md</code>). الرسالة هنا هي نفسها بأعداد اللحظة.</span></div>
       <div class="bl-bar"><button class="btn primary" id="dl-gen"><i class="fa-solid fa-wand-magic-sparkles"></i> توليد الرسالة</button>
         <button class="btn" id="dl-em"><i class="fa-solid fa-at"></i> نسخ إيميلات المدربين المنشورين (<span class="num" id="dl-n">${dailyEmails().length}</span>)</button></div>
+      <div id="dl-opt" class="small muted" style="margin-top:10px"></div>
       <div id="dl-out" style="margin-top:12px"></div>
       <details style="margin-top:12px"><summary style="cursor:pointer"><b><i class="fa-solid fa-pen"></i> النصوص الثابتة (الموضوع والمقدمة والخاتمة)</b></summary>
         ${field('الموضوع (Subject)', `<input id="dl-sub" value="${esc(S.subject)}">`, 'استعمل {date} لتاريخ اليوم')}
@@ -344,6 +345,13 @@ ${siteBase()}#/join
         ${field('مدربون مستثنون من الرسالة اليومية (إيميلاتهم لا تُنسخ ولا تُضاف إلى BCC)', `<textarea id="dl-ex" rows="3" placeholder="اسم المدرب أو رقم عضويته أو إيميله، في كل سطر واحد">${esc(S.exclude)}</textarea>`, 'مثال: أحمد فته')}
         <button class="btn" id="dl-save"><i class="fa-solid fa-floppy-disk"></i> حفظ النصوص</button></details></div>`;
     const read = () => ({ subject: $('#dl-sub', body).value.trim(), intro: $('#dl-intro', body).value.trim(), outro: $('#dl-outro', body).value.trim(), exclude: $('#dl-ex', body).value.trim() });
+    const drawOpt = () => {
+      const hs = Object.keys(Store.get('mailOptOut') || {}); if (!hs.length) { $('#dl-opt', body).innerHTML = ''; return; }
+      const mails = [...Store.list('trainers').map(t => ({ n: t.name, e: String((Store.get(`private/${t.id}`) || {}).email || '').trim() })), ...Store.list('invitees').map(i => ({ n: i.name || '', e: String(i.email || '').trim() }))].filter(x => x.e), known = new Map(mails.map(x => [MailOpt.hash(x.e), x]));
+      $('#dl-opt', body).innerHTML = `<b><i class="fa-solid fa-ban"></i> ألغوا الاشتراك من الرسائل الدورية (${hs.length}):</b> ` + hs.map(h => { const k = known.get(h); return `<span class="pill gray" style="margin:2px">${esc(k ? (k.n || k.e) : 'بريد غير مسجّل في المنصة')} <a href="javascript:void 0" data-optx="${h}" title="إعادة التفعيل">×</a></span>`; }).join('') + ' <span class="muted">(لا تُضاف إيميلاتهم إلى القوائم ولا إلى نسخ إيميلات المدربين)</span>';
+      $$('[data-optx]', body).forEach(a => a.onclick = async () => { if (await confirmBox('إعادة تفعيل الرسائل لهذا البريد؟', { ok: 'إعادة التفعيل' })) { await Store.remove(`mailOptOut/${a.dataset.optx}`); drawOpt(); $('#dl-n', body).textContent = dailyEmails().length; } });
+    };
+    drawOpt();
     $('#dl-save', body).onclick = () => { const r = read(); Object.assign(D, r); Store.set('settings/daily', r); $('#dl-n', body).textContent = dailyEmails().length; toast('تم الحفظ'); };
     $('#dl-em', body).onclick = () => { const l = dailyEmails(); if (!l.length) return toast('لا توجد إيميلات لمدربين منشورة صفحاتهم', 'error'); copyText(l.join(', '), `نُسخ ${l.length} إيميلاً، الصقها في خانة المستلمين (BCC) في Gmail`); };
     const show = doc => {

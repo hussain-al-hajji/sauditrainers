@@ -448,3 +448,32 @@ Pages.login = {
     };
   }
 };
+
+
+/* إلغاء الاشتراك من الرسائل الدورية والآلية (رابط «إلغاء الاشتراك» في ذيل رسائل المنصة): يكتب المستلم بريده فيُحفظ مُجزَّأً ولا تصله رسائل الإرسال الجماعي بعدها */
+Pages.unsubscribe = {
+  static: true,
+  render(params) {
+    const e0 = String(params.get('e') || '').slice(0, 120);
+    return `<div class="auth-wrap"><div class="auth-card">
+      ${logoImg('green', 'auth-logo')}
+      <h2>إلغاء الاشتراك من رسائل المنصة</h2>
+      <p class="muted">اكتب بريدك الإلكتروني الذي تصلك عليه رسائل «مدرّبون سعوديّون» الدورية والآلية (كالرسالة اليومية والنشرات) لنتوقف عن إرسالها إليك. لا يؤثر هذا على رسائل حسابك الضرورية (طلبات التواصل الموجهة إليك وإشعارات القبول).</p>
+      <form id="uf"><input class="code-in" type="email" name="email" dir="ltr" placeholder="name@example.com" autocomplete="email" required maxlength="120" value="${esc(e0)}">
+        <div class="error-msg" id="ue"></div><button class="btn primary lg">إلغاء الاشتراك</button></form>
+      <div id="ud" hidden><div class="banner ok"><i class="fa-solid fa-circle-check"></i><span>تم إلغاء اشتراك هذا البريد من رسائل المنصة الدورية والآلية. نعتذر عن الإزعاج.</span></div></div>
+      <p class="small muted" style="margin-top:14px">لإعادة التفعيل لاحقاً تواصل معنا عبر واتساب المنصة أو بالرد على أي رسالة منا.</p>
+    </div></div>`;
+  },
+  mount(root) {
+    $('#uf', root).onsubmit = async e => {
+      e.preventDefault(); const em = MailOpt.norm(e.target.email.value), er = $('#ue', root); er.textContent = '';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { er.textContent = 'اكتب بريداً إلكترونياً صحيحاً'; return; }
+      const b = e.target.querySelector('button'); b.disabled = true;
+      const ok = await Store.setConfirmed(`mailOptOut/${MailOpt.hash(em)}`, { ts: Date.now() });
+      b.disabled = false;
+      if (!ok) { er.textContent = 'تعذّر تسجيل الطلب الآن، أعد المحاولة بعد قليل أو تواصل معنا.'; return; }
+      e.target.hidden = true; $('#ud', root).hidden = false;
+    };
+  }
+};

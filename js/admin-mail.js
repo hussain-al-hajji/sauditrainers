@@ -41,16 +41,16 @@ const mailOpts = () => ({ site: siteBase(), assets: siteBase() });
 
 /* ===== المستلمون ===== */
 function mailTrainers() {
-  return Store.list('trainers').map(t => ({ k: 't:' + t.id, type: 't', id: t.id, name: t.name || '', hon: honOf(null, t), email: String(Store.get(`private/${t.id}`)?.email || '').trim(), slug: t.slug || t.id, meta: regionsLabel(t) })).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+  return Store.list('trainers').map(t => ({ k: 't:' + t.id, type: 't', id: t.id, name: t.name || '', hon: honOf(null, t), email: String(Store.get(`private/${t.id}`)?.email || '').trim(), slug: t.slug || t.id, meta: regionsLabel(t) })).map(r => ({ ...r, optOut: MailOpt.has(r.email), meta: MailOpt.has(r.email) ? 'ألغى الاشتراك' : r.meta })).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
 }
 // «غير المسجلين»: المتقدمون الذين لم يكتمل قبولهم النهائي (طلب جديد / قيد المراجعة / مقابلة / قبول مبدئي بانتظار السداد)، دون المرفوضين ودون من صار مدرباً مسجلاً
 function mailApplicants() {
   const have = new Set(mailTrainers().map(t => t.email.toLowerCase()).filter(Boolean)), seen = new Set();
-  return Store.list('applications').filter(a => ['new', 'review', 'interview', 'accepted'].includes(a.status)).sort((x, y) => (y.ts || 0) - (x.ts || 0)).map(a => ({ k: 'a:' + a.id, type: 'a', id: a.id, name: a.name || '', hon: honOf(a), email: String(a.email || '').trim(), meta: APP_STATUS[a.status]?.name || '' }))
+  return Store.list('applications').filter(a => ['new', 'review', 'interview', 'accepted'].includes(a.status)).sort((x, y) => (y.ts || 0) - (x.ts || 0)).map(a => ({ k: 'a:' + a.id, type: 'a', id: a.id, name: a.name || '', hon: honOf(a), email: String(a.email || '').trim(), meta: APP_STATUS[a.status]?.name || '' })).map(r => ({ ...r, optOut: MailOpt.has(r.email) }))
     .filter(r => { const e = r.email.toLowerCase(); if (!e || have.has(e) || seen.has(e)) return false; seen.add(e); return true; });
 }
 function mailInvitees() {
-  return Store.list('invitees').map(i => ({ k: 'i:' + i.id, type: 'i', id: i.id, name: i.name || '', email: i.email || '', optOut: !!i.optOut, last: i.lastMailAt, meta: i.optOut ? 'أوقف الاستلام' : (i.lastMailAt ? 'آخر رسالة ' + ago(i.lastMailAt) : 'لم تُرسل له رسالة') })).sort((a, b) => (b.id > a.id ? 1 : -1));
+  return Store.list('invitees').map(i => ({ k: 'i:' + i.id, type: 'i', id: i.id, name: i.name || '', email: i.email || '', optOut: !!i.optOut || MailOpt.has(i.email), last: i.lastMailAt, meta: i.optOut ? 'أوقف الاستلام' : (i.lastMailAt ? 'آخر رسالة ' + ago(i.lastMailAt) : 'لم تُرسل له رسالة') })).sort((a, b) => (b.id > a.id ? 1 : -1));
 }
 const mailKnownEmails = () => new Set([...mailTrainers().map(r => r.email), ...mailInvitees().map(r => r.email), ...Store.list('applications').map(a => String(a.email || '').trim())].filter(Boolean).map(e => e.toLowerCase()));
 

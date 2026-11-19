@@ -97,7 +97,8 @@ function mailHtml(doc, vars, o) {
     '<div style="padding:26px 28px 10px;color:' + MAIL_BRAND.ink + '">' + body + '</div>' +
     '<div style="background:' + MAIL_BRAND.cream + ';padding:16px 20px;text-align:center;font-size:12.5px;line-height:1.9;color:#3A5244">' +
     '<b>' + mEsc(from) + '</b> · <a href="' + mEsc(site) + '" style="color:' + MAIL_BRAND.green + ';text-decoration:none">' + mEsc(site.replace(/^https?:\/\//, '').replace(/\/$/, '')) + '</a><br>' +
-    'إن لم ترغب باستلام رسائل المنصة فردّ عليها بكلمة «إلغاء».</div>' +
+    '<div style="margin-top:10px"><a href="' + mEsc(site) + '#/unsubscribe" style="display:inline-block;padding:6px 18px;border:1px solid ' + MAIL_BRAND.green + ';border-radius:999px;color:' + MAIL_BRAND.green + ';text-decoration:none;font-weight:bold;font-size:12.5px">إلغاء الاشتراك من الرسائل الدورية</a></div>' +
+    '<div style="margin-top:6px">أو ردّ على هذه الرسالة بكلمة «إلغاء».</div></div>' +
     '</div></div>';
 }
 
