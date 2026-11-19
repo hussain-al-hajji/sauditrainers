@@ -287,7 +287,8 @@ ${siteBase()}#/join
   const DAILY_DEFAULT = {
     subject: 'الرسالة اليومية: فرص ووظائف التدريب - {date}',
     intro: 'السلام عليكم ورحمة الله وبركاته\n\nزميلنا المدرب،\n\nإليك **ملخص ما نُشر في المنصة** من فرص ووظائف تدريب خلال اليوم والأسبوع والشهر، لتتابعها من حسابك وتتقدّم لما يناسبك.',
-    outro: 'نتمنى لك التوفيق في فرصك القادمة.\n\nمع خالص التحية،\n**فريق منصة مدرّبون سعوديّون**'
+    outro: 'نتمنى لك التوفيق في فرصك القادمة.\n\nمع خالص التحية،\n**فريق منصة مدرّبون سعوديّون**',
+    exclude: 'أحمد فته'   // مدربون لا تصلهم الرسالة اليومية: سطر لكل اسم مدرب (أو رقم عضويته أو إيميله)
   };
   const dailyGet = () => ({ ...DAILY_DEFAULT, ...(Store.get('settings/daily') || {}) });
   const dailyCounts = () => {
@@ -301,7 +302,9 @@ ${siteBase()}#/join
   };
   const dayLong = ts => new Date(ts).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Asia/Riyadh' });
   const dayShort = ts => new Date(ts).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'long', timeZone: 'Asia/Riyadh' });
-  const dailyEmails = () => [...new Set(Data.live().map(t => String((Store.get(`private/${t.id}`) || {}).email || '').trim().toLowerCase()).filter(e => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)))];
+  const dailyNorm = x => String(x || '').toLowerCase().replace(/[\u064B-\u0652\u0640]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي').replace(/\s+/g, ' ').trim();
+  const dailyExcluded = (t, email, list) => list.some(l => { l = dailyNorm(l); return l && (l.includes('@') ? l === email : (dailyNorm(t.name).includes(l) || dailyNorm(t.code) === l || dailyNorm(t.id) === l)); });
+  const dailyEmails = () => { const ex = String((window.__dailyUI && window.__dailyUI.exclude != null ? window.__dailyUI.exclude : dailyGet().exclude) || '').split('\n').filter(x => x.trim()); return [...new Set(Data.live().map(t => { const e = String((Store.get(`private/${t.id}`) || {}).email || '').trim().toLowerCase(); return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e) && !dailyExcluded(t, e, ex) ? e : ''; }).filter(Boolean))]; };
   function buildDaily({ subject, intro, outro }) {
     const base = siteBase(), c = dailyCounts(), blocks = [], date = dayLong(c.now), wa = (Data.content().contact || {}).whatsapp || window.ST_CONFIG.platformWhatsapp || '';
     const sub = x => String(x || '').replace(/\{date\}/g, date);
@@ -326,7 +329,7 @@ ${siteBase()}#/join
     return { subject: sub(subject), blocks, atts: [], counts: c };
   }
   window.mailDaily = function (body) {
-    const D = window.__dailyUI = window.__dailyUI || { doc: null }, S = { ...dailyGet(), ...Object.fromEntries(['subject', 'intro', 'outro'].filter(k => D[k] != null).map(k => [k, D[k]])) };
+    const D = window.__dailyUI = window.__dailyUI || { doc: null }, S = { ...dailyGet(), ...Object.fromEntries(['subject', 'intro', 'outro', 'exclude'].filter(k => D[k] != null).map(k => [k, D[k]])) };
     body.innerHTML = `<div class="pbox">
       <h3><i class="fa-solid fa-sun"></i> الرسالة اليومية - قالب جاهز للجيميل</h3>
       <p class="small muted">اضغط «توليد» لتحصل على رسالة بأعداد محدّثة لحظة التوليد: <b>الفرص التدريبية</b> المنشورة اليوم، ومنذ بداية الأسبوع (تراكمي من يوم الأحد)، ومنذ بداية الشهر (من الأول)، ولكل رقم تفصيله: «إعلانات فرص تدريب عامة» (نشرتها الإدارة) و«طلبات تواصل مخصصة» (طلبات الجهات إلى الإدارة أو إلى مدربين محددين)، و<b>وظائف التدريب</b> المنشورة هذا الأسبوع ومنذ بداية الشهر، مع إرشادات الدخول وزر واتساب المنصة. ثم انسخها بتصميمها والصقها في Gmail، وانسخ إيميلات المدربين المنشورة صفحاتهم للصقها في خانة المستلمين (يفضّل «نسخة مخفية BCC»).</p>
@@ -338,9 +341,10 @@ ${siteBase()}#/join
         ${field('الموضوع (Subject)', `<input id="dl-sub" value="${esc(S.subject)}">`, 'استعمل {date} لتاريخ اليوم')}
         ${field('المقدمة', `<textarea id="dl-intro" rows="5">${esc(S.intro)}</textarea>`, 'استعمل **نص** للخط العريض')}
         ${field('الخاتمة', `<textarea id="dl-outro" rows="4">${esc(S.outro)}</textarea>`)}
+        ${field('مدربون مستثنون من الرسالة اليومية (إيميلاتهم لا تُنسخ ولا تُضاف إلى BCC)', `<textarea id="dl-ex" rows="3" placeholder="اسم المدرب أو رقم عضويته أو إيميله، في كل سطر واحد">${esc(S.exclude)}</textarea>`, 'مثال: أحمد فته')}
         <button class="btn" id="dl-save"><i class="fa-solid fa-floppy-disk"></i> حفظ النصوص</button></details></div>`;
-    const read = () => ({ subject: $('#dl-sub', body).value.trim(), intro: $('#dl-intro', body).value.trim(), outro: $('#dl-outro', body).value.trim() });
-    $('#dl-save', body).onclick = () => { const r = read(); Object.assign(D, r); Store.set('settings/daily', r); toast('تم الحفظ'); };
+    const read = () => ({ subject: $('#dl-sub', body).value.trim(), intro: $('#dl-intro', body).value.trim(), outro: $('#dl-outro', body).value.trim(), exclude: $('#dl-ex', body).value.trim() });
+    $('#dl-save', body).onclick = () => { const r = read(); Object.assign(D, r); Store.set('settings/daily', r); $('#dl-n', body).textContent = dailyEmails().length; toast('تم الحفظ'); };
     $('#dl-em', body).onclick = () => { const l = dailyEmails(); if (!l.length) return toast('لا توجد إيميلات لمدربين منشورة صفحاتهم', 'error'); copyText(l.join(', '), `نُسخ ${l.length} إيميلاً، الصقها في خانة المستلمين (BCC) في Gmail`); };
     const show = doc => {
       const vars = { name: '', first: 'الزميل', loginUrl: `${siteBase()}#/login`, siteUrl: siteBase(), profileUrl: siteBase() }, html = mailHtml(doc, vars, mailOpts()), c = doc.counts;
